@@ -15,7 +15,6 @@
 - If a threshold switch is attached to a Storage Network component (Storage Controller/Interface), incorrect values
   are displayed for Items/Stacks ([Create#7688](https://github.com/Creators-of-Create/Create/issues/7688))
   
----
 
 ## 0.22 - 2025-03-01
 
@@ -60,7 +59,6 @@
 - **Other Fixes:**
   - Gravity behaves correctly when wearing a Backpack underwater.
 
----
 
 ## 0.20 - 2024-12-01
 
