@@ -16,12 +16,4 @@ public class EnumProperties {
 
     }
 
-    public enum Variant implements StringRepresentable {
-        ACACIA, BAMBOO, BIRCH, CHERRY, CRIMSON, DARK_OAK, JUNGLE, MANGROVE, OAK, SPRUCE, WARPED;
-
-        @Override
-        public @NotNull String getSerializedName() {
-            return name().toLowerCase(Locale.ROOT);
-        }
-    }
 }

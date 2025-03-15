@@ -18,6 +18,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public class StorageInterfaceEntity extends BaseContainerBlockEntity implements ImplementedContainer {
     public int tick = 0;
     public StorageControllerEntity controller = null;
@@ -36,7 +38,7 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity implements 
     private boolean checkController() {
         // Check controller still exists
         if (this.controller != null) {
-            BlockEntity controllerCheck = this.getLevel().getBlockEntity(this.controller.getBlockPos());
+            BlockEntity controllerCheck = Objects.requireNonNull(this.getLevel()).getBlockEntity(this.controller.getBlockPos());
             if (controllerCheck != null) {
                 return controllerCheck.getBlockState().equals(this.controller.getBlockState());
             }

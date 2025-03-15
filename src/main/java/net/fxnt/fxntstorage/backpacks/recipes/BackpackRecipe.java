@@ -3,7 +3,6 @@ package net.fxnt.fxntstorage.backpacks.recipes;
 import com.google.gson.JsonObject;
 import net.fxnt.fxntstorage.backpacks.main.BackpackItem;
 import net.fxnt.fxntstorage.init.ModBlocks;
-import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModRecipes;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.NonNullList;

@@ -1,7 +1,6 @@
 package net.fxnt.fxntstorage.backpacks.main;
 
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
-import com.simibubi.create.content.logistics.stockTicker.PackageOrder;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
@@ -16,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-
+@SuppressWarnings("all")
 public enum BackpackUnpacking implements UnpackingHandler {
     INSTANCE;
 

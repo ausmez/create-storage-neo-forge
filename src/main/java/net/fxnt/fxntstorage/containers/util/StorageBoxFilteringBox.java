@@ -31,7 +31,7 @@ public class StorageBoxFilteringBox extends ValueBoxTransform.Sided {
 
         Direction facing = StorageBox.getDirectionFacing(state);
 
-        if (facing.getAxis().isVertical()) {
+        if (facing != null && facing.getAxis().isVertical()) {
             super.rotate(level, pos, state, ms);
             return;
         }

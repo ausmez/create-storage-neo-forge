@@ -7,7 +7,6 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpacks.main.BackpackItem;
 import net.fxnt.fxntstorage.backpacks.util.BackpackHelper;
 import net.fxnt.fxntstorage.init.ModBlocks;
-import net.fxnt.fxntstorage.init.ModItems;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;

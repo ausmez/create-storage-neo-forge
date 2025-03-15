@@ -1,7 +1,6 @@
 package net.fxnt.fxntstorage.containers;
 
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
-import com.simibubi.create.content.logistics.stockTicker.PackageOrder;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
