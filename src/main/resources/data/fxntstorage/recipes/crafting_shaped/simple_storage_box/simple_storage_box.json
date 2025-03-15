@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "storage_box",
+  "key": {
+    "W": {
+      "item": "minecraft:oak_planks"
+    },
+    "A": {
+      "item": "create:andesite_alloy"
+    },
+    "B": {
+      "item": "minecraft:barrel"
+    },
+    "D": {
+      "item": "create:display_board"
+    }
+  },
+  "pattern": [
+    "AWA",
+    "WBW",
+    "ADA"
+  ],
+  "result": {
+    "item": "fxntstorage:simple_storage_box"
+  },
+  "show_notification": true
+}

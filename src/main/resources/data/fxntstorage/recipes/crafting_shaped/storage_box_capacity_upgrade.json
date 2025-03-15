@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "storage_box",
+  "key": {
+    "B": { "item": "fxntstorage:back_pack_blank_upgrade" },
+    "V": { "item": "create:item_vault" }
+  },
+  "pattern": [
+    " V ",
+    "VBV",
+    " V "
+  ],
+  "result": { "item": "fxntstorage:storage_box_capacity_upgrade", "count": 4 },
+  "show_notification": true
+}

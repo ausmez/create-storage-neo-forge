@@ -1,0 +1,20 @@
+{
+  "values": [
+    "#forge:glass",
+    "#forge:glass_panes",
+    "#minecraft:beds",
+    "#minecraft:candles",
+    "#minecraft:corals",
+    "#minecraft:wool_carpets",
+    "#minecraft:wool",
+    "minecraft:beacon",
+    "minecraft:honeycomb_block",
+    "minecraft:lever",
+    "minecraft:turtle_egg",
+    "minecraft:sniffer_egg",
+    "minecraft:cactus",
+    "minecraft:ochre_froglight",
+    "minecraft:verdant_froglight",
+    "minecraft:pearlescent_froglight"
+  ]
+}

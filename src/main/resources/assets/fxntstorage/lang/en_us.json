@@ -1,0 +1,289 @@
+{
+  "item_group.fxntstorage.create_storage": "Create: Storage",
+  "itemGroup.fxntstorage.main": "FXNT Storage",
+  "itemGroup.fxntstorage.create": "FXNT Storage Create",
+
+  "block.fxntstorage.storage_box": "Industrial Iron Storage Box",
+  "container.fxntstorage.industrial_iron_storage_box": "Industrial Iron Storage Box",
+
+  "block.fxntstorage.andesite_storage_box": "Andesite Storage Box",
+  "container.fxntstorage.andesite_storage_box": "Andesite Storage Box",
+
+  "block.fxntstorage.copper_storage_box": "Copper Storage Box",
+  "container.fxntstorage.copper_storage_box": "Copper Storage Box",
+
+  "block.fxntstorage.brass_storage_box": "Brass Storage Box",
+  "container.fxntstorage.brass_storage_box": "Brass Storage Box",
+
+  "block.fxntstorage.hardened_storage_box": "Hardened Storage Box",
+  "container.fxntstorage.hardened_storage_box": "Hardened Storage Box",
+
+  "block.fxntstorage.simple_storage_box": "Simple Oak Storage Box",
+  "container.fxntstorage.simple_storage_box": "Simple Oak Storage Box",
+
+  "block.fxntstorage.simple_storage_box_spruce": "Simple Spruce Storage Box",
+  "container.fxntstorage.simple_storage_box_spruce": "Simple Spruce Storage Box",
+
+  "block.fxntstorage.simple_storage_box_birch": "Simple Birch Storage Box",
+  "container.fxntstorage.simple_storage_box_birch": "Simple Birch Storage Box",
+
+  "block.fxntstorage.simple_storage_box_jungle": "Simple Jungle Storage Box",
+  "container.fxntstorage.simple_storage_box_jungle": "Simple Jungle Storage Box",
+
+  "block.fxntstorage.simple_storage_box_acacia": "Simple Acacia Storage Box",
+  "container.fxntstorage.simple_storage_box_acacia": "Simple Acacia Storage Box",
+
+  "block.fxntstorage.simple_storage_box_dark_oak": "Simple Dark Oak Storage Box",
+  "container.fxntstorage.simple_storage_box_dark_oak": "Simple Dark Oak Storage Box",
+
+  "block.fxntstorage.simple_storage_box_mangrove": "Simple Mangrove Storage Box",
+  "container.fxntstorage.simple_storage_box_mangrove": "Simple Mangrove Storage Box",
+
+  "block.fxntstorage.simple_storage_box_cherry": "Simple Cherry Storage Box",
+  "container.fxntstorage.simple_storage_box_cherry": "Simple Cherry Storage Box",
+
+  "block.fxntstorage.simple_storage_box_bamboo": "Simple Bamboo Storage Box",
+  "container.fxntstorage.simple_storage_box_bamboo": "Simple Bamboo Storage Box",
+
+  "block.fxntstorage.simple_storage_box_crimson": "Simple Crimson Storage Box",
+  "container.fxntstorage.simple_storage_box_crimson": "Simple Crimson Storage Box",
+
+  "block.fxntstorage.simple_storage_box_warped": "Simple Warped Storage Box",
+  "container.fxntstorage.simple_storage_box_warped": "Simple Warped Storage Box",
+
+  "block.fxntstorage.storage_controller": "Simple Storage Controller",
+  "fxntstorage.container.storage_controller": "Simple Storage Controller",
+
+  "block.fxntstorage.storage_interface": "Simple Storage Interface",
+  "container.fxntstorage.storage_interface": "Simple Storage Interface",
+
+  "block.fxntstorage.passer_block": "Passer",
+  "block.fxntstorage.smart_passer_block": "Smart Passer",
+
+  "block.fxntstorage.back_pack": "Industrial Iron Backpack",
+  "container.fxntstorage.back_pack": "Industrial Iron Backpack",
+  "item.fxntstorage.back_pack": "Industrial Iron Backpack",
+
+  "block.fxntstorage.andesite_back_pack": "Andesite Backpack",
+  "container.fxntstorage.andesite_back_pack": "Andesite Backpack",
+  "item.fxntstorage.andesite_back_pack": "Andesite Backpack",
+
+  "block.fxntstorage.copper_back_pack": "Copper Backpack",
+  "container.fxntstorage.copper_back_pack": "Copper Backpack",
+  "item.fxntstorage.copper_back_pack": "Copper Backpack",
+
+  "block.fxntstorage.brass_back_pack": "Brass Backpack",
+  "container.fxntstorage.brass_back_pack": "Brass Backpack",
+  "item.fxntstorage.brass_back_pack": "Brass Backpack",
+
+  "block.fxntstorage.hardened_back_pack": "Hardened Backpack",
+  "container.fxntstorage.hardened_back_pack": "Hardened Backpack",
+  "item.fxntstorage.hardened_back_pack": "Hardened Backpack",
+
+  "item.fxntstorage.back_pack_blank_upgrade": "Upgrade Template",
+  "item.fxntstorage.back_pack_magnet_upgrade": "Backpack Magnet Upgrade",
+  "item.fxntstorage.back_pack_magnet_upgrade_deactivated": "Backpack Magnet Upgrade",
+  "item.fxntstorage.back_pack_pickblock_upgrade": "Backpack Pick Block Upgrade",
+  "item.fxntstorage.back_pack_pickblock_upgrade_deactivated": "Backpack Pick Block Upgrade",
+  "item.fxntstorage.back_pack_itempickup_upgrade": "Backpack Item Pickup Upgrade",
+  "item.fxntstorage.back_pack_itempickup_upgrade_deactivated": "Backpack Item Pickup Upgrade",
+  "item.fxntstorage.back_pack_flight_upgrade": "Backpack Flight Upgrade",
+  "item.fxntstorage.back_pack_flight_upgrade_deactivated": "Backpack Flight Upgrade",
+  "item.fxntstorage.back_pack_refill_upgrade": "Backpack Refill Upgrade",
+  "item.fxntstorage.back_pack_refill_upgrade_deactivated": "Backpack Refill Upgrade",
+  "item.fxntstorage.back_pack_feeder_upgrade": "Backpack Feeder Upgrade",
+  "item.fxntstorage.back_pack_feeder_upgrade_deactivated": "Backpack Feeder Upgrade",
+  "item.fxntstorage.back_pack_toolswap_upgrade": "Backpack Tool Swap Upgrade",
+  "item.fxntstorage.back_pack_toolswap_upgrade_deactivated": "Backpack Tool Swap Upgrade",
+  "item.fxntstorage.back_pack_falldamage_upgrade": "Backpack Fall Damage Upgrade",
+  "item.fxntstorage.back_pack_falldamage_upgrade_deactivated": "Backpack Fall Damage Upgrade",
+
+  "item.fxntstorage.back_pack_feeder_upgrade.message": "Feeder upgrade just fed you %s!",
+
+  "item.fxntstorage.storage_box_void_upgrade": "Simple Storage Box Void Upgrade",
+  "item.fxntstorage.storage_box_capacity_upgrade": "Simple Storage Box Capacity Upgrade",
+
+  "block.fxntstorage.storage_trim": "Oak Storage Trim",
+  "block.fxntstorage.storage_trim_spruce": "Spruce Storage Trim",
+  "block.fxntstorage.storage_trim_birch": "Birch Storage Trim",
+  "block.fxntstorage.storage_trim_jungle": "Jungle Storage Trim",
+  "block.fxntstorage.storage_trim_acacia": "Acacia Storage Trim",
+  "block.fxntstorage.storage_trim_dark_oak": "Dark Oak Storage Trim",
+  "block.fxntstorage.storage_trim_mangrove": "Mangrove Storage Trim",
+  "block.fxntstorage.storage_trim_cherry": "Cherry Storage Trim",
+  "block.fxntstorage.storage_trim_bamboo": "Bamboo Storage Trim",
+  "block.fxntstorage.storage_trim_crimson": "Crimson Storage Trim",
+  "block.fxntstorage.storage_trim_warped": "Warped Storage Trim",
+
+  "tooltip.fxntstorage.upgrade_deactivated": "DEACTIVATED",
+  "tooltip.fxntstorage.holdForContents": "Hold [%s] to View Contents",
+  "tooltip.fxntstorage.holdForControls": "Hold [%s] for Controls",
+  "tooltip.fxntstorage.holdForDescription": "Hold [%s] for Summary",
+
+  "tooltip.fxntstorage.no_inventory": "No Inventory Contents",
+  "tooltip.fxntstorage.no_inventory_or_upgrades": "No Inventory Contents or Upgrades",
+
+  "tooltip.fxntstorage.upgrade_item_toggle.condition": "Activating/Deactivating",
+  "tooltip.fxntstorage.upgrade_item_toggle.behaviour": "Hold [_Ctrl_] and click the upgrade in an upgrade slot to activate/deactivate.",
+
+  "tooltip.fxntstorage.back_pack.summary": "A _handy backpack_ with two storage compartments and six upgrade slots.",
+  "tooltip.fxntstorage.back_pack.condition1": "Item storage slots",
+  "tooltip.fxntstorage.back_pack.behaviour1": "Allows items to stack up to _%dx_ in each slot. Can be accessed by _hoppers_, _funnels_ or _chutes_.",
+  "tooltip.fxntstorage.back_pack.condition2": "Tool storage slots",
+  "tooltip.fxntstorage.back_pack.behaviour2": "Can be used with the _Tool Swapper_ upgrade. Protected compartment cannot be accessed by _hoppers_, _funnels_ or _chutes_.",
+  "tooltip.fxntstorage.back_pack.condition3": "Upgrade Slots",
+  "tooltip.fxntstorage.back_pack.behaviour3": "Accepts _Backpack Upgrades_ to enhance backpack's functionality.",
+
+  "tooltip.fxntstorage.back_pack_magnet_upgrade.summary": "Picks up items and places them into the _item storage_ slots of the backpack. Range can be configured in the _config_.",
+  "tooltip.fxntstorage.back_pack_magnet_upgrade.exclusion": "Does NOT work with _Item Pickup_ active.",
+  "tooltip.fxntstorage.back_pack_magnet_upgrade.subtext": "Upgrade activates when backpack is either worn or placed on the ground.",
+  "tooltip.fxntstorage.back_pack_magnet_upgrade.condition1": "When backpack worn",
+  "tooltip.fxntstorage.back_pack_magnet_upgrade.behaviour1": "Picks up items in a _%d-block_ radius around the player.",
+  "tooltip.fxntstorage.back_pack_magnet_upgrade.condition2": "When backpack on ground",
+  "tooltip.fxntstorage.back_pack_magnet_upgrade.behaviour2": "Picks up items in a _%d-block_ radius around the backpack.",
+
+  "tooltip.fxntstorage.back_pack_pickblock_upgrade.summary": "Retrieves block items from the backpack's _item storage_ slots when using _Pick Block_.",
+  "tooltip.fxntstorage.back_pack_pickblock_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
+  "tooltip.fxntstorage.back_pack_pickblock_upgrade.condition1": "When backpack worn",
+  "tooltip.fxntstorage.back_pack_pickblock_upgrade.behaviour1": "Picks blocks from the _item storage_ slots when there are none in player inventory.",
+
+  "tooltip.fxntstorage.back_pack_itempickup_upgrade.summary": "Items will be placed in _item storage_ slots instead of player inventory.",
+  "tooltip.fxntstorage.back_pack_itempickup_upgrade.exclusion": "Does NOT work with _Magnet_ active.",
+  "tooltip.fxntstorage.back_pack_itempickup_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
+
+  "tooltip.fxntstorage.back_pack_refill_upgrade.summary": "Refills the selected stack on the _hotbar_ from the _item storage_ slots.",
+  "tooltip.fxntstorage.back_pack_refill_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
+
+  "tooltip.fxntstorage.back_pack_feeder_upgrade.summary": "Feeds the player food when hungry from the _item storage_ slots.",
+  "tooltip.fxntstorage.back_pack_feeder_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
+
+  "tooltip.fxntstorage.back_pack_toolswap_upgrade.summary": "Swaps any tool held in the main hand for the best available tool/weapon from the _tool storage_ slots.",
+  "tooltip.fxntstorage.back_pack_toolswap_upgrade.subtext": "Upgrade activates when backpack is worn on the player's back.",
+  "tooltip.fxntstorage.back_pack_toolswap_upgrade.condition1": "When activated",
+  "tooltip.fxntstorage.back_pack_toolswap_upgrade.behaviour1": "Will prioritize _silk touch_ when beneficial. Only swaps tools from the _tool storage_ slots.",
+
+  "tooltip.fxntstorage.back_pack_falldamage_upgrade.summary": "Prevents the player taking _fall damage_ while wearing the backpack.",
+  "tooltip.fxntstorage.back_pack_falldamage_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
+
+  "tooltip.fxntstorage.storage_box_void_upgrade.summary": "Once a _Simple Storage Box_ is full, additional items inserted will be _voided_.",
+  "tooltip.fxntstorage.storage_box_void_upgrade.subtext": "Only usable on Simple Storage Boxes",
+  "tooltip.fxntstorage.storage_box_capacity_upgrade.summary": "_Doubles_ the storage capacity of a _Simple Storage Box_.",
+  "tooltip.fxntstorage.storage_box_capacity_upgrade.subtext": "Only usable on Simple Storage Boxes",
+
+  "tooltip.fxntstorage.back_pack_flight_upgrade.summary": "Turns any backpack into a fully functional _jetpack_ with flight and hovering abilities, including _underwater_!",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.condition1": "Fuel",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.behaviour1": "Uses _Pressurized Air_ from backtanks for fuel. Backtanks must be worn on the chest or stored in the backpack.",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.condition2": "Flying",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.behaviour2": "Hold _Jump_ to fly upwards to a maximum height of _32 blocks_ above the ground.",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.condition3": "Hovering",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.behaviour3": "Press _%s_, or _Jump_ + _Sneak_ while flying, to enable hovering. Cancel hovering by pressing _%s_ or _Jump_ again.",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.condition4": "Boosting",
+  "tooltip.fxntstorage.back_pack_flight_upgrade.behaviour4": "Hold _Jump_ while gliding with an _Elytra_ equipped to receive a speed boost. Will consume fuel at a _higher_ rate.",
+
+  "fxntstorage.storage_box_void_upgrade_exists": "This storage box already contains a void upgrade",
+  "fxntstorage.storage_box_capacity_upgrade_max": "This storage box has reached maximum capacity",
+  "fxntstorage.shape_cache.cleared": "Create Storage: Shape Cache Cleared",
+
+  "key.fxntstorage.category": "Create: Storage",
+  "key.fxntstorage.toggle_backpack": "Open/Close Backpack (while wearing)",
+  "key.fxntstorage.toggle_jetpack_hover": "Toggle Flight Upgrade Hover Mode",
+  "key.fxntstorage.clear_backpack_shape_cache": "Clear Backpack Shape Cache",
+  "key.fxntstorage.sort_inventory": "Sort Backpack Inventory",
+
+  "item.fxntstorage.jetpack.fuel_low": "Jetpack fuel is low",
+  "item.fxntstorage.jetpack.fuel_depleted": "Jetpack fuel is depleted!",
+  "item.fxntstorage.jetpack.hover_enabled": "Hover Enabled",
+  "item.fxntstorage.jetpack.hover_disabled": "Hover Disabled",
+  "item.fxntstorage.jetpack.elytra_boost_enabled": "Elytra Boost Enabled",
+  "item.fxntstorage.jetpack.elytra_boost_disabled": "Elytra Boost Disabled",
+
+  "fxntstorage.ponder.tag.storage": "Storage Related",
+  "fxntstorage.ponder.tag.storage.description": "Items and components related to Create Storage",
+
+  "fxntstorage.ponder.storage_box_intro.header": "Storage Boxes",
+  "fxntstorage.ponder.storage_box_intro.text_1": "Storage Boxes come in five variants, each holding large quantities of items",
+  "fxntstorage.ponder.storage_box_intro.text_2": "Industrial Iron: 60 slots",
+  "fxntstorage.ponder.storage_box_intro.text_3": "Andesite: 84 slots",
+  "fxntstorage.ponder.storage_box_intro.text_4": "Copper: 108 slots",
+  "fxntstorage.ponder.storage_box_intro.text_5": "Brass: 132 slots",
+  "fxntstorage.ponder.storage_box_intro.text_6": "Hardened: 156 slots",
+
+  "fxntstorage.ponder.storage_box_interact.header": "Interacting with Storage Boxes",
+  "fxntstorage.ponder.storage_box_interact.text_1": "Display panel shows the total items stored and used percentage",
+  "fxntstorage.ponder.storage_box_interact.text_2": "Items can be inserted directly using the front panel",
+  "fxntstorage.ponder.storage_box_interact.text_3": "Sneak right-click with an empty hand to open the inventory",
+  "fxntstorage.ponder.storage_box_interact.text_4": "Indicator light shows the fill status of the storage box",
+  "fxntstorage.ponder.storage_box_interact.text_5": "Blue indicates the storage box is empty",
+  "fxntstorage.ponder.storage_box_interact.text_6": "Green indicates the box contains items and has free slots",
+  "fxntstorage.ponder.storage_box_interact.text_7": "Orange indicates all slots contain items, but are not full stacks",
+  "fxntstorage.ponder.storage_box_interact.text_8": "Red indicates all slots and stacks are full",
+  "fxntstorage.ponder.storage_box_interact.text_9": "Right-click with a wrench to activate Void Mode",
+  "fxntstorage.ponder.storage_box_interact.text_10": "When enabled, items added beyond capacity will be voided",
+
+  "fxntstorage.ponder.storage_box_filter.header": "Using the Filter Slot",
+  "fxntstorage.ponder.storage_box_filter.text_1": "Using items on the filter slot will restrict the items allowed for insertion through the front panel",
+  "fxntstorage.ponder.storage_box_filter.text_2": "Double right-click with an empty hand and filter set to insert all matching items from player's inventory",
+  "fxntstorage.ponder.storage_box_filter.text_3": "Use brass funnels or smart passers to filter items for extraction",
+
+  "fxntstorage.ponder.simple_storage_intro.header": "Simple Storage Boxes",
+  "fxntstorage.ponder.simple_storage_intro.text_1": "Simple Storage Boxes are available in common wood types",
+  "fxntstorage.ponder.simple_storage_intro.text_2": "All Simple Storage Boxes have the same attributes",
+  "fxntstorage.ponder.simple_storage_intro.text_3": "Each box can hold up to 32x max stack size of one item",
+  "fxntstorage.ponder.simple_storage_intro.text_4": "Sand Block = 2048 (64 per stack)",
+  "fxntstorage.ponder.simple_storage_intro.text_5": "Ender Pearl = 512 (16 per stack)",
+  "fxntstorage.ponder.simple_storage_intro.text_6": "Water Bucket = 32 (1 per stack)",
+
+  "fxntstorage.ponder.simple_storage_interact.header": "Interacting with Simple Storage Boxes",
+  "fxntstorage.ponder.simple_storage_interact.text_1": "The front panel displays the item count and percentage used",
+  "fxntstorage.ponder.simple_storage_interact.text_2": "Items can be inserted directly by right-clicking the front panel...",
+  "fxntstorage.ponder.simple_storage_interact.text_3": "...or via automation",
+  "fxntstorage.ponder.simple_storage_interact.text_4": "The filter is set automatically when the first item is added",
+  "fxntstorage.ponder.simple_storage_interact.text_5": "Use the wrench to remove the filter (only when the box is empty)",
+  "fxntstorage.ponder.simple_storage_interact.text_6": "Left-click front panel to extract a single item",
+  "fxntstorage.ponder.simple_storage_interact.text_7": "Left-click while sneaking to remove a whole item stack",
+  "fxntstorage.ponder.simple_storage_interact.text_8": "Right-click with an empty hand while sneaking to open the inventory menu",
+
+  "fxntstorage.ponder.simple_storage_upgrades.header": "Simple Storage Box Upgrades",
+  "fxntstorage.ponder.simple_storage_upgrades.text_1": "Void and Capacity Upgrades are available for Simple Storage Boxes",
+  "fxntstorage.ponder.simple_storage_upgrades.text_2": "Upgrades are applied by using the item on the front panel...",
+  "fxntstorage.ponder.simple_storage_upgrades.text_3": "...or adding via the interface accessed by right-clicking while sneaking",
+  "fxntstorage.ponder.simple_storage_upgrades.text_4": "Void Upgrade will void (delete) any item added beyond the max capacity",
+  "fxntstorage.ponder.simple_storage_upgrades.text_5": "Capacity Upgrade will double the storage for each upgrade",
+  "fxntstorage.ponder.simple_storage_upgrades.text_6": "A total of 9 Capacity Upgrades and 1 Void Upgrade can be added",
+
+  "fxntstorage.ponder.passer_intro.header": "Passer Block",
+  "fxntstorage.ponder.passer_intro.text_1": "Passer blocks pass items from one container to another",
+  "fxntstorage.ponder.passer_intro.text_2": "They can be oriented horizontally...",
+  "fxntstorage.ponder.passer_intro.text_3": "...or vertically, using a wrench",
+  "fxntstorage.ponder.passer_intro.text_4": "Items will only transfer one at a time, similar to hoppers",
+  "fxntstorage.ponder.passer_intro.text_5": "Unlike hoppers, Passers lack intermediate storage or inventory",
+
+  "fxntstorage.ponder.smart_passer_intro.header": "Smart Passer Block",
+  "fxntstorage.ponder.smart_passer_intro.text_1": "Smart Passer blocks pass items from one container to another",
+  "fxntstorage.ponder.smart_passer_intro.text_2": "They can be oriented horizontally...",
+  "fxntstorage.ponder.smart_passer_intro.text_3": "...or vertically, using a wrench",
+  "fxntstorage.ponder.smart_passer_intro.text_4": "The value panel specifies the transfer stack size",
+  "fxntstorage.ponder.smart_passer_intro.text_5": "Items in the filter slot specify what to transfer",
+  "fxntstorage.ponder.smart_passer_intro.text_6": "Redstone power will prevent Smart Passers transferring items",
+
+  "fxntstorage.ponder.storage_controller_intro.header": "Storage Controller",
+  "fxntstorage.ponder.storage_controller_intro.text_1": "Serves as the main input and output point for a Storage Network",
+  "fxntstorage.ponder.storage_controller_intro.text_2": "When placed next to Simple Storage Boxes...",
+  "fxntstorage.ponder.storage_controller_intro.text_3": "...creates a network of connected storage",
+  "fxntstorage.ponder.storage_controller_intro.text_4": "Items can be inserted into the network via the front panel",
+  "fxntstorage.ponder.storage_controller_intro.text_5": "Or via automation using funnels, chutes, hoppers or passers",
+  "fxntstorage.ponder.storage_controller_intro.text_6": "Items can can only be extracted with funnels, chutes, hoppers or passers",
+  "fxntstorage.ponder.storage_controller_intro.text_7": "Simple Storage Boxes can be connected by Storage Trim...",
+  "fxntstorage.ponder.storage_controller_intro.text_8": "...to a Storage Network over larger areas (up to 64 blocks)",
+  "fxntstorage.ponder.storage_controller_intro.text_9": "Illuminates when connected to at least one Simple Storage Box in the network",
+
+  "fxntstorage.ponder.storage_controller_interact.header": "Storage Controller",
+  "fxntstorage.ponder.storage_controller_interact.text_1": "Items can be inserted into and extracted from the network by interacting with the front panel...",
+  "fxntstorage.ponder.storage_controller_interact.text_2": "...or via automation using chutes, funnels, hoppers or passers",
+
+  "fxntstorage.ponder.storage_interface_intro.header": "Storage Interface",
+  "fxntstorage.ponder.storage_interface_intro.text_1": "Storage Interfaces only function within existing storage networks",
+  "fxntstorage.ponder.storage_interface_intro.text_2": "It cannot be directly interacted with by the player",
+  "fxntstorage.ponder.storage_interface_intro.text_3": "Items can be inserted into and extracted from the network with funnels, chutes, hoppers or passers"
+}

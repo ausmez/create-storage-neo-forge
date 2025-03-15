@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "back_pack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:back_pack_blank_upgrade"
+    },
+    "S": {
+      "item": "create:white_sail"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "P": {
+      "item": "create:propeller"
+    },
+    "X": {
+      "item": "minecraft:cobweb"
+    },
+    "Y": {
+      "item": "create:copper_diving_boots"
+    },
+    "Z": {
+      "item": "create:dough"
+    }
+  },
+  "pattern": [
+    "PSP",
+    "IBI",
+    "XYZ"
+  ],
+  "result": {
+    "item": "fxntstorage:back_pack_falldamage_upgrade"
+  },
+  "show_notification": true
+}
