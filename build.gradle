@@ -187,7 +187,7 @@ dependencies {
             runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}") // Needed for Mechanical Crafting recipes
             break
         case "disabled": break
-        default: println("Unknown recipe viewer specified: ${recipe_viewer}. Must be JEI, REI, EMI, or disabled.")
+        default: println("Unknown recipe viewer specified: ${recipe_viewer}. Must be JEI, EMI, or disabled.")
     }
 
     // For more info:
