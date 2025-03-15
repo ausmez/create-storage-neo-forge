@@ -26,7 +26,6 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -47,20 +46,19 @@ public class StorageBox extends BaseEntityBlock implements IWrenchable {
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
     public static final BooleanProperty VOID_UPGRADE = BooleanProperty.create("void_upgrade");
 
-    private final String title;
     private final int slotCount;
 
     private long lastClickTime;
     private UUID lastClickUUID;
 
-    public StorageBox(int slotCount, String title) {
-        super(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK));
-        this.registerDefaultState(this.defaultBlockState()
+    public StorageBox(Properties pProperties, int slotCount) {
+        super(pProperties);
+        registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)
-                .setValue(VOID_UPGRADE, false));
+                .setValue(VOID_UPGRADE, false)
+        );
         this.slotCount = slotCount;
-        this.title = "container.fxntstorage." + title;
     }
 
     @Override
@@ -70,8 +68,9 @@ public class StorageBox extends BaseEntityBlock implements IWrenchable {
 
     @Override
     public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
-        StorageBoxEntity blockEntity = new StorageBoxEntity(pPos, pState);
-        blockEntity.initializeEntity(title, slotCount);
+        BlockEntityType<?> type = ModBlockEntities.STORAGE_BOX_ENTITY.get();
+        StorageBoxEntity blockEntity = new StorageBoxEntity(type, pPos, pState);
+        blockEntity.initializeEntity(slotCount);
         return blockEntity;
     }
 

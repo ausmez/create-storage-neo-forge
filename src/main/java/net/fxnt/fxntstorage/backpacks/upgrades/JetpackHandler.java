@@ -3,7 +3,6 @@ package net.fxnt.fxntstorage.backpacks.upgrades;
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.AllTags;
 import com.simibubi.create.content.equipment.armor.BacktankUtil;
-import com.simibubi.create.foundation.utility.Components;
 import net.fxnt.fxntstorage.backpacks.main.BackpackContainer;
 import net.fxnt.fxntstorage.backpacks.main.BackpackMenu;
 import net.fxnt.fxntstorage.backpacks.main.IBackpackContainer;
@@ -16,6 +15,7 @@ import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
@@ -461,9 +461,9 @@ public class JetpackHandler {
         ServerPlayer sp = (ServerPlayer) player;
         sp.connection.send(new ClientboundSetTitlesAnimationPacket(10, 40, 10));
         sp.connection.send(new ClientboundSetSubtitleTextPacket(
-                Components.literal("⚠ ").withStyle(depleted ? ChatFormatting.RED : ChatFormatting.GOLD)
+                Component.literal("⚠ ").withStyle(depleted ? ChatFormatting.RED : ChatFormatting.GOLD)
                         .append(component.withStyle(ChatFormatting.GRAY))));
-        sp.connection.send(new ClientboundSetTitleTextPacket(Components.immutableEmpty()));
+        sp.connection.send(new ClientboundSetTitleTextPacket(CommonComponents.EMPTY));
     }
 
     public static void processPlayerInputPacket(ServerPlayer player, float forward, float left) {

@@ -10,11 +10,13 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DirectionalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -35,8 +37,8 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
         POWERED = BlockStateProperties.POWERED;
     }
 
-    public PasserBlock(boolean isSmart) {
-        super(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(1.5f));
+    public PasserBlock(Properties pProperties, boolean isSmart) {
+        super(pProperties);
         this.registerDefaultState(this.defaultBlockState()
                 .setValue(FACING, Direction.DOWN)
                 .setValue(POWERED, false)
@@ -48,9 +50,11 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
         if (this.isSmart) {
-            return new PasserSmartEntity(pPos, pState);
+            BlockEntityType<?> type = ModBlockEntities.SMART_PASSER_ENTITY.get();
+            return new PasserSmartEntity(type, pPos, pState);
         } else {
-            return new PasserEntity(pPos, pState);
+            BlockEntityType<?> type = ModBlockEntities.PASSER_ENTITY.get();
+            return new PasserEntity(type, pPos, pState);
         }
     }
 

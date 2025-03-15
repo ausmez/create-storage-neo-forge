@@ -1,8 +1,9 @@
 package net.fxnt.fxntstorage.containers.util;
 
-import com.simibubi.create.foundation.utility.Lang;
 import net.minecraft.util.StringRepresentable;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Locale;
 
 public class EnumProperties {
     public enum StorageUsed implements StringRepresentable {
@@ -10,7 +11,7 @@ public class EnumProperties {
 
         @Override
         public @NotNull String getSerializedName() {
-            return Lang.asId(name());
+            return name().toLowerCase(Locale.ROOT);
         }
 
     }
@@ -20,7 +21,7 @@ public class EnumProperties {
 
         @Override
         public @NotNull String getSerializedName() {
-            return Lang.asId(name());
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 }

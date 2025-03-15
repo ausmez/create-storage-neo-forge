@@ -1,11 +1,11 @@
 package net.fxnt.fxntstorage.passer;
 
-import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.IItemHandler;
 
@@ -17,8 +17,8 @@ public class PasserEntity extends BlockEntity {
     public int updateEveryXTicks = 10;
     private Direction facing;
 
-    public PasserEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.PASSER_ENTITY.get(), pos, blockState);
+    public PasserEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
+        super(pType, pPos, pBlockState);
         this.facing = this.getBlockState().getValue(FACING);
     }
 

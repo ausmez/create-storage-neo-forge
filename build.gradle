@@ -145,16 +145,15 @@ dependencies {
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    implementation fg.deobf("com.simibubi.create:create-${create_minecraft_version}:${create_version}:slim") { transitive = false }
-    implementation fg.deobf("com.jozufozu.flywheel:flywheel-forge-${flywheel_minecraft_version}:${flywheel_version}")
-    implementation fg.deobf("com.tterrag.registrate:Registrate:${registrate_version}")
-//    implementation(fg.deobf("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false })
-//    implementation(fg.deobf("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}"))
-//    compileOnly(fg.deobf("dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}"))
-//    runtimeOnly(fg.deobf("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}"))
-//    implementation(fg.deobf("com.tterrag.registrate:Registrate:${registrate_version}"))
-//    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1"))
-//    implementation("io.github.llamalad7:mixinextras-forge:0.4.1")
+    implementation(fg.deobf("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false })
+    implementation(fg.deobf("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}"))
+//    implementation(fg.deobf("net.createmod.catnip:Catnip-Forge-${minecraft_version}:${catnip_version}"))
+
+    compileOnly(fg.deobf("dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}"))
+    runtimeOnly(fg.deobf("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}"))
+    implementation(fg.deobf("com.tterrag.registrate:Registrate:${registrate_version}"))
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1"))
+    implementation("io.github.llamalad7:mixinextras-forge:0.4.1")
 
     // Apply Mixin AP
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
@@ -174,10 +173,10 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:carry-on-274259:4882500")
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
     runtimeOnly fg.deobf("curse.maven:farmers-delight-398521:5962797")
-//    runtimeOnly fg.deobf("curse.maven:cei-688768:5331908")
+    runtimeOnly fg.deobf("curse.maven:create-enchantment-industry-688768:6288870")
     runtimeOnly fg.deobf("curse.maven:sophisticated-backpacks-422301:6040688")
     runtimeOnly fg.deobf("curse.maven:sophisticated-core-618298:6040682")
-//    runtimeOnly fg.deobf("curse.maven:csa-466792:6063559")
+    runtimeOnly fg.deobf("curse.maven:create-stuff-additions-466792:6261619")
     runtimeOnly fg.deobf("curse.maven:catalogue-459701:4766090")
 //    runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
 

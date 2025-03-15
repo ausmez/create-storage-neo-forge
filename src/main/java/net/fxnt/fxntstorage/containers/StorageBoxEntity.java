@@ -7,14 +7,13 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.inventory.InvManipulationBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.inventory.VersionedInventoryTrackerBehaviour;
-import com.simibubi.create.foundation.utility.BlockFace;
+import com.simibubi.create.foundation.utility.CreateLang;
 import io.netty.buffer.Unpooled;
-import net.fxnt.fxntstorage.FXNTStorage;
+import net.createmod.catnip.math.BlockFace;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.containers.util.EnumProperties;
 import net.fxnt.fxntstorage.containers.util.ImplementedContainer;
 import net.fxnt.fxntstorage.containers.util.StorageBoxFilteringBox;
-import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,6 +21,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
@@ -31,6 +31,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -47,7 +48,6 @@ import java.util.Objects;
 import static net.fxnt.fxntstorage.containers.StorageBox.VOID_UPGRADE;
 
 public class StorageBoxEntity extends SmartBlockEntity implements Container, ImplementedContainer, MenuProvider, ThresholdSwitchObservable {
-    public String title = "Storage Box";
     public int slotCount = 0;
 
     public BlockPos pos;
@@ -92,10 +92,10 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Imp
     };
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
 
-    public StorageBoxEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.STORAGE_BOX_ENTITY.get(), pos, blockState);
+    public StorageBoxEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
         this.pos = pos;
-        this.voidUpgrade = blockState.getValue(VOID_UPGRADE);
+        this.voidUpgrade = state.getValue(VOID_UPGRADE);
     }
 
     @Override
@@ -103,8 +103,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Imp
         return ForgeCapabilities.ITEM_HANDLER.orEmpty(cap, lazyItemHandler);
     }
 
-    public void initializeEntity(String title, int slotCount) {
-        this.title = title;
+    public void initializeEntity(int slotCount) {
         this.slotCount = slotCount;
         this.itemHandler.setSize(this.slotCount);
     }
@@ -144,7 +143,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Imp
 
     @Override
     public @NotNull Component getDisplayName() {
-        return Component.translatable(title);
+        return getBlockState().getBlock().getName();
     }
 
     @NotNull
@@ -156,7 +155,6 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Imp
     }
 
     private void writeStoredData(CompoundTag tag) {
-        tag.putString("title", title);
         tag.putInt("slotCount", slotCount);
         tag.putInt("storedAmount", calculateStoredAmount());
         tag.putInt("percentageUsed", calculatePercentageUsed());
@@ -179,15 +177,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Imp
     @Override
     protected void read(CompoundTag tag, boolean clientPacket) {
         super.read(tag, clientPacket);
-        // TODO: Remove after migration
-        if (tag.contains("inventory")) {
-            FXNTStorage.LOGGER.debug("Found inventory tag on a StorageBox... migrating!");
-            itemHandler.deserializeNBT(tag.getCompound("inventory"));
-            tag.remove("inventory");
-        } else {
-            itemHandler.deserializeNBT(tag.getCompound("Items"));
-        }
-        title = tag.getString("title");
+        itemHandler.deserializeNBT(tag.getCompound("Items"));
         slotCount = tag.getInt("slotCount");
         storedAmount = tag.getInt("storedAmount");
         percentageUsed = tag.getInt("percentageUsed");
@@ -253,6 +243,26 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Imp
             storedAmount += itemHandler.getStackInSlot(i).getCount();
         }
         return storedAmount;
+    }
+
+    private int calculateMaxValue() {
+        int totalSpace = 0;
+        int maxItemStackSize = this.getMaxStackSize();
+        for (int i = 0; i < slotCount; ++i) {
+            if (!itemHandler.getStackInSlot(i).isEmpty()) {
+                maxItemStackSize = itemHandler.getStackInSlot(i).getMaxStackSize();
+            }
+            totalSpace += maxItemStackSize;
+        }
+        return totalSpace;
+    }
+
+    private int calculateCurrentValue() {
+        int usedSpace = 0;
+        for (int i = 0; i < slotCount; ++i) {
+            usedSpace += itemHandler.getStackInSlot(i).getCount();
+        }
+        return usedSpace;
     }
 
     public int calculatePercentageUsed() {
@@ -438,9 +448,28 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Imp
     public void clearContent() {
     }
 
-    // ThresholdSwitchObservable
-    @Override
     public float getPercent() {
         return (float) this.percentageUsed;
+    }
+
+    // ThresholdSwitchObservable
+    @Override
+    public int getMaxValue() {
+        return calculateMaxValue();
+    }
+
+    @Override
+    public int getMinValue() {
+        return 0;
+    }
+
+    @Override
+    public int getCurrentValue() {
+        return calculateCurrentValue();
+    }
+
+    @Override
+    public MutableComponent format(int i) {
+        return CreateLang.translateDirect("create.gui.threshold_switch.currently", i);
     }
 }

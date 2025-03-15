@@ -16,7 +16,7 @@
     "AWA"
   ],
   "result": {
-    "item": "fxntstorage:storage_trim"
+    "item": "fxntstorage:storage_trim", "count": 4
   },
   "show_notification": true
 }

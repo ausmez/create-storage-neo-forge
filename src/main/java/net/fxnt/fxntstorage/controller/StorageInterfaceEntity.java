@@ -2,8 +2,6 @@ package net.fxnt.fxntstorage.controller;
 
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.containers.util.ImplementedContainer;
-import net.fxnt.fxntstorage.init.ModBlockEntities;
-import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -15,16 +13,17 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class StorageInterfaceEntity extends BaseContainerBlockEntity implements ImplementedContainer {
     public int tick = 0;
-    private StorageControllerEntity controller = null;
+    public StorageControllerEntity controller = null;
 
-    public StorageInterfaceEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.STORAGE_INTERFACE_ENTITY.get(), pos, blockState);
+    public StorageInterfaceEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
+        super(pType, pPos, pBlockState);
     }
 
     public void setController(StorageControllerEntity controller) {
@@ -71,6 +70,11 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity implements 
     public int getContainerSize() {
         if (this.controller == null) return 0;
         return this.controller.storageNetwork.items.size();
+    }
+
+    @Override
+    public int getMaxStackSize() {
+        return Integer.MAX_VALUE;
     }
 
     @Override

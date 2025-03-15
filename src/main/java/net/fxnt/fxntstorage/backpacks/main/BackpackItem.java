@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage.backpacks.main;
 
 import com.simibubi.create.foundation.item.TooltipHelper;
+import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpacks.util.BackpackHandler;
 import net.fxnt.fxntstorage.compat.CuriosCompat;
@@ -119,13 +120,13 @@ public class BackpackItem extends BlockItem {
         List<Component> summaryLines = new ArrayList<>();
 
         summaryLines.add(Component.empty());
-        summaryLines.addAll(TooltipHelper.cutTextComponent(Component.translatable(translationKey + ".summary"), TooltipHelper.Palette.STANDARD_CREATE));
+        summaryLines.addAll(TooltipHelper.cutTextComponent(Component.translatable(translationKey + ".summary"), FontHelper.Palette.STANDARD_CREATE));
         summaryLines.add(Component.empty());
         for (int i = 1; i < 10; i++) {
             if (!I18n.exists(translationKey + ".condition" + i)) break;
-            summaryLines.addAll(TooltipHelper.cutTextComponent(Component.translatable(translationKey + ".condition" + i), TooltipHelper.Palette.ALL_GRAY));
+            summaryLines.addAll(TooltipHelper.cutTextComponent(Component.translatable(translationKey + ".condition" + i), FontHelper.Palette.ALL_GRAY));
             summaryLines.addAll(TooltipHelper.cutTextComponent(Component.translatable(translationKey + ".behaviour" + i, placeholder),
-                    TooltipHelper.Palette.STANDARD_CREATE.primary(), TooltipHelper.Palette.STANDARD_CREATE.highlight(), 1));
+                    FontHelper.Palette.STANDARD_CREATE.primary(), FontHelper.Palette.STANDARD_CREATE.highlight(), 1));
         }
 
         if (Screen.hasShiftDown() == Screen.hasControlDown()) {

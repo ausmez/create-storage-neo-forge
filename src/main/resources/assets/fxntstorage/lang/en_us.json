@@ -185,7 +185,7 @@
   "fxntstorage.storage_box_capacity_upgrade_max": "This storage box has reached maximum capacity",
   "fxntstorage.shape_cache.cleared": "Create Storage: Shape Cache Cleared",
 
-  "key.fxntstorage.category": "Create: Storage",
+  "key.fxntstorage.category": "Create Storage",
   "key.fxntstorage.toggle_backpack": "Open/Close Backpack (while wearing)",
   "key.fxntstorage.toggle_jetpack_hover": "Toggle Flight Upgrade Hover Mode",
   "key.fxntstorage.clear_backpack_shape_cache": "Clear Backpack Shape Cache",
@@ -198,7 +198,7 @@
   "item.fxntstorage.jetpack.elytra_boost_enabled": "Elytra Boost Enabled",
   "item.fxntstorage.jetpack.elytra_boost_disabled": "Elytra Boost Disabled",
 
-  "fxntstorage.ponder.tag.storage": "Storage Related",
+  "fxntstorage.ponder.tag.storage": "Create Storage",
   "fxntstorage.ponder.tag.storage.description": "Items and components related to Create Storage",
 
   "fxntstorage.ponder.storage_box_intro.header": "Storage Boxes",
@@ -210,16 +210,16 @@
   "fxntstorage.ponder.storage_box_intro.text_6": "Hardened: 156 slots",
 
   "fxntstorage.ponder.storage_box_interact.header": "Interacting with Storage Boxes",
-  "fxntstorage.ponder.storage_box_interact.text_1": "Display panel shows the total items stored and used percentage",
+  "fxntstorage.ponder.storage_box_interact.text_1": "Display panel shows the total items stored and percentage used",
   "fxntstorage.ponder.storage_box_interact.text_2": "Items can be inserted directly using the front panel",
   "fxntstorage.ponder.storage_box_interact.text_3": "Sneak right-click with an empty hand to open the inventory",
   "fxntstorage.ponder.storage_box_interact.text_4": "Indicator light shows the fill status of the storage box",
   "fxntstorage.ponder.storage_box_interact.text_5": "Blue indicates the storage box is empty",
   "fxntstorage.ponder.storage_box_interact.text_6": "Green indicates the box contains items and has free slots",
-  "fxntstorage.ponder.storage_box_interact.text_7": "Orange indicates all slots contain items, but are not full stacks",
+  "fxntstorage.ponder.storage_box_interact.text_7": "Orange indicates no free slots, however stacks are not full",
   "fxntstorage.ponder.storage_box_interact.text_8": "Red indicates all slots and stacks are full",
   "fxntstorage.ponder.storage_box_interact.text_9": "Right-click with a wrench to activate Void Mode",
-  "fxntstorage.ponder.storage_box_interact.text_10": "When enabled, items added beyond capacity will be voided",
+  "fxntstorage.ponder.storage_box_interact.text_10": "When enabled, items added beyond capacity will be voided (deleted)",
 
   "fxntstorage.ponder.storage_box_filter.header": "Using the Filter Slot",
   "fxntstorage.ponder.storage_box_filter.text_1": "Using items on the filter slot will restrict the items allowed for insertion through the front panel",

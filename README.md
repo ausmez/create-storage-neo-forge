@@ -18,6 +18,9 @@ Changes in this version over Fabric:
 - Added "Elytra Boost" to Jetpack upgrade!
   - Hold "jump" while gliding with a Jetpack upgrade equipped. Boosting will consume backtank air at a much faster rate! (configurable)
 
+### Known Issues
+Create 6.0.x
+- Threshold Switch reports the incorrect number of stacks when reading container contents (https://github.com/Creators-of-Create/Create/issues/7688) 
 
 ---
 

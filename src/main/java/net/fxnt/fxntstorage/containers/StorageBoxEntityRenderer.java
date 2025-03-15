@@ -3,7 +3,7 @@ package net.fxnt.fxntstorage.containers;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringRenderer;
 import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
-import com.simibubi.create.foundation.gui.AbstractSimiScreen;
+import net.createmod.catnip.gui.AbstractSimiScreen;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;

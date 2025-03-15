@@ -6,6 +6,7 @@ import com.mojang.math.Axis;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpacks.main.BackpackItem;
 import net.fxnt.fxntstorage.backpacks.util.BackpackHelper;
+import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -59,15 +60,15 @@ public class BackpackRenderPlayer extends RenderLayer<AbstractClientPlayer, Play
         this.getParentModel().copyPropertiesTo(model);
         model.setupAnim(this.getParentModel());
 
-        if (backpack.getItem().equals(ModItems.BACK_PACK.get())) {
+        if (backpack.getItem().equals(ModBlocks.BACK_PACK.asItem())) {
             TEXTURE_LOCATION = new ResourceLocation(FXNTStorage.MOD_ID, "textures/block/back_pack.png");
-        } else if (backpack.getItem().equals(ModItems.ANDESITE_BACK_PACK.get())) {
+        } else if (backpack.getItem().equals(ModBlocks.ANDESITE_BACK_PACK.asItem())) {
             TEXTURE_LOCATION = new ResourceLocation(FXNTStorage.MOD_ID, "textures/block/andesite_back_pack.png");
-        } else if (backpack.getItem().equals(ModItems.COPPER_BACK_PACK.get())) {
+        } else if (backpack.getItem().equals(ModBlocks.COPPER_BACK_PACK.asItem())) {
             TEXTURE_LOCATION = new ResourceLocation(FXNTStorage.MOD_ID, "textures/block/copper_back_pack.png");
-        } else if (backpack.getItem().equals(ModItems.BRASS_BACK_PACK.get())) {
+        } else if (backpack.getItem().equals(ModBlocks.BRASS_BACK_PACK.asItem())) {
             TEXTURE_LOCATION = new ResourceLocation(FXNTStorage.MOD_ID, "textures/block/brass_back_pack.png");
-        } else if (backpack.getItem().equals(ModItems.HARDENED_BACK_PACK.get())) {
+        } else if (backpack.getItem().equals(ModBlocks.HARDENED_BACK_PACK.asItem())) {
             TEXTURE_LOCATION = new ResourceLocation(FXNTStorage.MOD_ID, "textures/block/hardened_back_pack.png");
         }
 

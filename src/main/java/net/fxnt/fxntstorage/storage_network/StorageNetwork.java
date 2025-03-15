@@ -7,6 +7,7 @@ import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -25,6 +26,7 @@ public class StorageNetwork {
     public Set<BlockPos> components = new HashSet<>();
     public NonNullList<StorageNetworkItem> boxes = NonNullList.create();
     public NonNullList<ItemStack> items = NonNullList.create();
+    //    public NonNullList<PackagerBlock> packagers = NonNullList.create();
     private final HashMap<Integer, Integer> boxSlots = new HashMap<>();
     public int networkVersion = 0;
     private int tick = 0;
@@ -47,7 +49,7 @@ public class StorageNetwork {
             refreshStorageNetwork();
             tick = 0;
         }
-        tick++;
+        ++tick;
     }
 
     private void moveNewItems() {
@@ -115,48 +117,35 @@ public class StorageNetwork {
 
     private Set<BlockPos> getConnectedComponents(Level level, BlockPos origin) {
         if (level == null) return new HashSet<>();
+
         List<BlockPos> positions = new ArrayList<>();
         positions.add(origin);
+//        this.packagers.clear();
         int lastCheckedPos = 0;
         int distanceToController = 0;
 
         while (distanceToController < this.searchRange && lastCheckedPos < positions.size()) {
-
             for (int i = lastCheckedPos; i < positions.size(); i++) {
-
                 BlockPos checkPos = positions.get(i);
 
-                BlockPos pos = checkPos.above();
-                if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(this.controllerPos, pos) <= searchRange * searchRange)
-                    addPosition(positions, pos);
-
-                pos = checkPos.below();
-                if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(this.controllerPos, pos) <= searchRange * searchRange)
-                    addPosition(positions, pos);
-
-                pos = checkPos.north();
-                if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(this.controllerPos, pos) <= searchRange * searchRange)
-                    addPosition(positions, pos);
-
-                pos = checkPos.south();
-                if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(this.controllerPos, pos) <= searchRange * searchRange)
-                    addPosition(positions, pos);
-
-                pos = checkPos.east();
-                if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(this.controllerPos, pos) <= searchRange * searchRange)
-                    addPosition(positions, pos);
-
-                pos = checkPos.west();
-                if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(this.controllerPos, pos) <= searchRange * searchRange)
-                    addPosition(positions, pos);
+                for (Direction direction : Direction.values()) {
+                    BlockPos pos = checkPos.relative(direction);
+                    if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(this.controllerPos, pos) <= searchRange * searchRange) {
+                        addPosition(positions, pos);
+//                        // If adjacent block is a Packager and has a Stock Link attached, add it to packager list
+//                        if (level.getBlockState(pos).getBlock().equals(AllBlocks.PACKAGER.get()) &&
+//                                level.getBlockState(checkPos).is(ModTags.Blocks.STORAGE_NETWORK_CONTROLLERS)) {
+//                            if (level.getBlockState(pos).getValue(PackagerBlock.LINKED)) {
+//                                this.packagers.add((PackagerBlock) level.getBlockState(pos).getBlock());
+//                            }
+//                        }
+                    }
+                }
 
                 lastCheckedPos = i;
-
             }
-            lastCheckedPos++;
-
-            distanceToController++;
-
+            ++lastCheckedPos;
+            ++distanceToController;
         }
 
         return new HashSet<>(positions);

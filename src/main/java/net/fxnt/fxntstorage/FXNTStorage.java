@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage;
 
 import com.simibubi.create.foundation.data.CreateRegistrate;
+import net.createmod.ponder.foundation.PonderIndex;
 import net.fxnt.fxntstorage.backpacks.main.BackpackClientTooltip;
 import net.fxnt.fxntstorage.backpacks.main.BackpackScreen;
 import net.fxnt.fxntstorage.backpacks.main.BackpackTooltip;
@@ -8,11 +9,9 @@ import net.fxnt.fxntstorage.backpacks.renderer.BackpackRenderPlayer;
 import net.fxnt.fxntstorage.backpacks.upgrades.JetpackAirOverlay;
 import net.fxnt.fxntstorage.backpacks.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.containers.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.containers.StorageBoxScreen;
 import net.fxnt.fxntstorage.init.*;
-import net.fxnt.fxntstorage.passer.PasserEntityRenderer;
-import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
+import net.fxnt.fxntstorage.ponder.CsPonderPlugin;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxScreen;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.minecraft.client.Minecraft;
@@ -50,7 +49,7 @@ public class FXNTStorage {
     public static boolean curiosLoaded;
     public static boolean invSorterLoaded;
 
-    public FXNTStorage(FMLJavaModLoadingContext context) {
+    public FXNTStorage(final FMLJavaModLoadingContext context) {
         context.registerConfig(ModConfig.Type.CLIENT, ConfigManager.ClientConfig.CLIENT_SPEC);
         context.registerConfig(ModConfig.Type.COMMON, ConfigManager.CommonConfig.COMMON_SPEC);
 
@@ -58,9 +57,9 @@ public class FXNTStorage {
 
         if (FMLEnvironment.dist == Dist.CLIENT) modEventBus.addListener(FXNTStorage::registerTooltipComponent);
 
-        ModBlocks.register(modEventBus);
-        ModBlockEntities.register(modEventBus);
-        ModItems.register(modEventBus);
+        ModBlocks.register();
+        ModBlockEntities.register();
+        ModItems.register();
         ModRecipes.register(modEventBus);
         ModTabs.register(modEventBus);
         ModMenuTypes.register(modEventBus);
@@ -75,8 +74,11 @@ public class FXNTStorage {
 
     }
 
-    private static void onCommonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(ModNetwork::registerCommonPackets);
+    private static void onCommonSetup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> {
+            ModNetwork.registerCommonPackets();
+            ModUnpackers.registerHandlers();
+        });
     }
 
     private static void registerTooltipComponent(RegisterClientTooltipComponentFactoriesEvent event) {
@@ -103,8 +105,7 @@ public class FXNTStorage {
             MenuScreens.register(ModMenuTypes.BACK_PACK_BLOCK_MENU.get(), BackpackScreen::new);
 
             event.enqueueWork(ModNetwork::registerClientPackets);
-            event.enqueueWork(ModPonder::register);
-            event.enqueueWork(ModPonder::registerTags);
+            PonderIndex.addPlugin(new CsPonderPlugin());
         }
 
         @SubscribeEvent
@@ -126,13 +127,6 @@ public class FXNTStorage {
             event.register(KeybindHandler.TOGGLE_BACKPACK_KEY);
             event.register(KeybindHandler.TOGGLE_JETPACK_HOVER_KEY);
             event.register(KeybindHandler.CLEAR_BACKPACK_SHAPE_CACHE);
-        }
-
-        @SubscribeEvent
-        public static void registerBER(EntityRenderersEvent.RegisterRenderers event) {
-            event.registerBlockEntityRenderer(ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), SimpleStorageBoxEntityRenderer::new);
-            event.registerBlockEntityRenderer(ModBlockEntities.STORAGE_BOX_ENTITY.get(), StorageBoxEntityRenderer::new);
-            event.registerBlockEntityRenderer(ModBlockEntities.SMART_PASSER_ENTITY.get(), PasserEntityRenderer::new);
         }
 
         @SubscribeEvent

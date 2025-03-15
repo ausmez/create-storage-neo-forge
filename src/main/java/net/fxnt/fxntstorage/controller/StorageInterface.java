@@ -17,14 +17,15 @@ import org.jetbrains.annotations.Nullable;
 
 public class StorageInterface extends BaseEntityBlock implements EntityBlock {
 
-    public StorageInterface() {
-        super(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK));
+    public StorageInterface(Properties pProperties) {
+        super(pProperties);
     }
 
     @Override
     @Nullable
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
-        return new StorageInterfaceEntity(pos, state);
+        BlockEntityType<?> type = ModBlockEntities.STORAGE_INTERFACE_ENTITY.get();
+        return new StorageInterfaceEntity(type, pos, state);
     }
 
     @Override

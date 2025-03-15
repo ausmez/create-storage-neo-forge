@@ -24,7 +24,6 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -46,9 +45,9 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
     private long lastClickTime;
     private UUID lastClickUUID;
 
-    public SimpleStorageBox() {
-        super(BlockBehaviour.Properties.copy(Blocks.OAK_PLANKS));
-        this.registerDefaultState(this.defaultBlockState()
+    public SimpleStorageBox(Properties pProperties) {
+        super(pProperties);
+        this.registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)
         );
@@ -56,7 +55,8 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
 
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
-        return new SimpleStorageBoxEntity(pPos, pState);
+        BlockEntityType<?> type = ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get();
+        return new SimpleStorageBoxEntity(type, pPos, pState);
     }
 
     @Nullable

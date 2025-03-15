@@ -1,12 +1,12 @@
 package net.fxnt.fxntstorage.util;
 
-import com.simibubi.create.foundation.utility.Lang;
 import net.fxnt.fxntstorage.backpacks.main.BackpackBlock;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Locale;
 import java.util.Objects;
 
 public class Util {
@@ -110,7 +110,7 @@ public class Util {
 
         @Override
         public @NotNull String getSerializedName() {
-            return Lang.asId(name());
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 

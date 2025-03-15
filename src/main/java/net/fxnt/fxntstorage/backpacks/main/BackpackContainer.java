@@ -214,7 +214,7 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
                 blockEntityTag = BlockItem.getBlockEntityData(itemStack1);
             }
 
-            ContainerHelper.loadAllItems(blockEntityTag, oldItemStacks);
+            if (blockEntityTag != null) ContainerHelper.loadAllItems(blockEntityTag, oldItemStacks);
 
             for (int i = 0; i < iItemHandler.getSlots(); i++) {
                 newItemStacks.set(i, iItemHandler.getStackInSlot(i));

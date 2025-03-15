@@ -1,9 +1,8 @@
 package net.fxnt.fxntstorage.backpacks.upgrades;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.simibubi.create.foundation.gui.element.GuiGameElement;
-import com.simibubi.create.foundation.utility.Color;
-import com.simibubi.create.foundation.utility.Components;
+import net.createmod.catnip.gui.element.GuiGameElement;
+import net.createmod.catnip.theme.Color;
 import net.fxnt.fxntstorage.backpacks.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.minecraft.client.Minecraft;
@@ -57,7 +56,7 @@ public class JetpackAirOverlay implements IGuiOverlay {
         poseStack.pushPose();
 
         poseStack.translate((float) width / 2 + 90, height - 33, 0);
-        Component text = Components.literal(StringUtil.formatTickDuration(Math.max(0, timeLeft - 1) * 20));
+        Component text = Component.literal(StringUtil.formatTickDuration(Math.max(0, timeLeft - 1) * 20));
 
         int color = 0xFF_FFFFFF;
         if (timeLeft < 60 && timeLeft % 2 == 0) {

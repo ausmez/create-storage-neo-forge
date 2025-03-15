@@ -20,15 +20,12 @@
     },
     "Y": {
       "item": "create:copper_diving_boots"
-    },
-    "Z": {
-      "item": "create:dough"
     }
   },
   "pattern": [
     "PSP",
     "IBI",
-    "XYZ"
+    "XYX"
   ],
   "result": {
     "item": "fxntstorage:back_pack_falldamage_upgrade"

@@ -1,10 +1,10 @@
 package net.fxnt.fxntstorage.simple_storage;
 
 import com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchObservable;
+import com.simibubi.create.foundation.utility.CreateLang;
 import io.netty.buffer.Unpooled;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.containers.util.EnumProperties;
-import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
@@ -14,6 +14,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -26,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.Capability;
@@ -48,7 +50,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     public int itemStackSize = 64;
     public int maxCapacity = baseCapacity; // Measured in stacks so max planks = 64 * 8000, max ender pearls = 16 * 8000
     public int maxItemCapacity = itemStackSize * maxCapacity;
-    public int slot0MaxCapacity = maxItemCapacity - itemStackSize;
+    public int slot0MaxCapacity = maxItemCapacity; // - itemStackSize;
     public int slot0Amount = 0;
     public int slot1Amount = 0;
     public int storedAmount = 0;
@@ -80,13 +82,41 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            if (isPlayerInteraction || slot <= 1)
-                return super.extractItem(slot, amount, simulate);
+            if (isPlayerInteraction || slot <= 1) {
+                if (amount == 0) {
+                    return ItemStack.EMPTY;
+                } else {
+                    this.validateSlotIndex(slot);
+                    ItemStack existing = this.stacks.get(slot);
+                    if (existing.isEmpty()) {
+                        return ItemStack.EMPTY;
+                    } else {
+                        int toExtract = Math.min(amount, maxItemCapacity);
+                        if (existing.getCount() <= toExtract) {
+                            if (!simulate) {
+                                this.stacks.set(slot, ItemStack.EMPTY);
+                                this.onContentsChanged(slot);
+                                return existing;
+                            } else {
+                                return existing.copy();
+                            }
+                        } else {
+                            if (!simulate) {
+                                this.stacks.set(slot, ItemHandlerHelper.copyStackWithSize(existing, existing.getCount() - toExtract));
+                                this.onContentsChanged(slot);
+                            }
+
+                            return ItemHandlerHelper.copyStackWithSize(existing, toExtract);
+                        }
+                    }
+                }
+            }
             return ItemStack.EMPTY;
         }
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            if (slot > 2 && stack.is(ModTags.Items.STORAGE_BOX_UPGRADE)) return true;
             if (filterTest(stack)) {
                 if (isPlayerInteraction)
                     return true;
@@ -98,12 +128,18 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
             }
             return false;
         }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            if (slot == 0) return maxItemCapacity;
+            return super.getSlotLimit(slot);
+        }
     };
     private LazyOptional<IItemHandlerModifiable> lazyItemHandler = LazyOptional.empty();
 
-    public SimpleStorageBoxEntity(BlockPos position, BlockState state) {
-        super(ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), position, state);
-        this.pos = position;
+    public SimpleStorageBoxEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
+        super(pType, pPos, pBlockState);
+        this.pos = pPos;
     }
 
     @Override
@@ -152,7 +188,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
             this.itemStackSize = filterItem.getMaxStackSize();
             // If the filter has an item then get max stack size of item and multiply by maxCapacity
             this.maxItemCapacity = this.maxCapacity * filterItem.getMaxStackSize();
-            this.slot0MaxCapacity = this.maxItemCapacity - filterItem.getMaxStackSize();
+            this.slot0MaxCapacity = this.maxItemCapacity; // - filterItem.getMaxStackSize();
         }
         return this.maxItemCapacity;
     }
@@ -192,7 +228,6 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     @Override
     public void saveAdditional(@NotNull CompoundTag tag) {
         this.saveInventoryToTag(tag);
-        tag.putString("title", this.title);
         tag.putInt("slotCount", this.slotCount);
         tag.putInt("maxCapacity", this.maxCapacity);
         tag.putInt("maxItemCapacity", this.getMaxItemCapacity());
@@ -226,7 +261,6 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
         this.loadInventoryFromTag(tag);
-        this.title = tag.getString("title");
         this.slotCount = tag.getInt("slotCount");
         this.maxCapacity = tag.getInt("maxCapacity");
         this.maxItemCapacity = tag.getInt("maxItemCapacity");
@@ -296,7 +330,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         ItemStack slot0 = this.itemHandler.getStackInSlot(0);
         ItemStack slot1 = this.itemHandler.getStackInSlot(1);
 
-        if (getPercent() == 100 && !voidUpgrade) return;
+//        if (getPercent() == 100 && !voidUpgrade) return;
 
         // If full & using void upgrade then items go into slot 2 (delete them all!)
         if (!this.itemHandler.getStackInSlot(2).isEmpty()) {
@@ -500,8 +534,6 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         return this.filterItem.isEmpty() || ItemStack.isSameItemSameTags(stack, this.filterItem);
     }
 
-    // ThresholdSwitchObservable //
-    @Override
     public float getPercent() {
         return (float) this.storedAmount / this.maxItemCapacity * 100;
     }
@@ -555,8 +587,6 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     }
 
     public boolean canPlaceItem(int index, @NotNull ItemStack itemStack) {
-        // TODO: Changes to TRUE immediately after removing an item from the container, and for some reason,
-        // TODO: the belt funnel will insist on inserting to Slot2????
         // Check filter
         if (!this.filterTest(itemStack)) return false;
 
@@ -574,4 +604,24 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         // NOOP
     }
 
+    // ThresholdSwitchObservable //
+    @Override
+    public int getMaxValue() {
+        return this.maxItemCapacity;
+    }
+
+    @Override
+    public int getMinValue() {
+        return 0;
+    }
+
+    @Override
+    public int getCurrentValue() {
+        return this.storedAmount;
+    }
+
+    @Override
+    public MutableComponent format(int i) {
+        return CreateLang.translateDirect("create.gui.threshold_switch.currently", i);
+    }
 }

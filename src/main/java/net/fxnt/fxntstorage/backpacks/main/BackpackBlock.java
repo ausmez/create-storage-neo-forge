@@ -34,7 +34,6 @@ import org.jetbrains.annotations.Nullable;
 public class BackpackBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
-    public final String title;
     public final int maxStackSize;
 
     public static final int itemSlotCount = 108;
@@ -42,16 +41,16 @@ public class BackpackBlock extends BaseEntityBlock {
     public static final int upgradeSlotCount = 6;
     public static final int totalSlotCount = itemSlotCount + toolSlotCount + upgradeSlotCount;
 
-    public BackpackBlock(String title, int maxStackSize) {
-        super(Properties.copy(Blocks.WHITE_WOOL).noOcclusion());
+    public BackpackBlock(Properties pProperties, int maxStackSize) {
+        super(pProperties);
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.NORTH));
-        this.title = "container.fxntstorage." + title;
         this.maxStackSize = maxStackSize;
     }
 
     @Override
     public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
-        BackpackEntity blockEntity = new BackpackEntity(pPos, pState);
+        BlockEntityType<?> type = ModBlockEntities.BACK_PACK_ENTITY.get();
+        BackpackEntity blockEntity = new BackpackEntity(type, pPos, pState);
         blockEntity.setData(totalSlotCount, maxStackSize);
         return blockEntity;
     }

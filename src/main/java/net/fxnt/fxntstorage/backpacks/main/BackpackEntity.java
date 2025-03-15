@@ -1,8 +1,7 @@
 package net.fxnt.fxntstorage.backpacks.main;
 
 import net.fxnt.fxntstorage.backpacks.upgrades.BackpackAsBlockUpgradeHandler;
-import net.fxnt.fxntstorage.init.ModBlockEntities;
-import net.fxnt.fxntstorage.init.ModItems;
+import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
@@ -23,7 +22,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -78,10 +77,10 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
     private LazyOptional<IItemHandlerModifiable> lazyItemHandler = LazyOptional.empty();
     private final int GHOST_SLOT = itemHandler.getSlots() - 1;
 
-    public BackpackEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.BACK_PACK_ENTITY.get(), pos, blockState);
-        this.pos = pos;
-        this.block = blockState.getBlock();
+    public BackpackEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
+        super(pType, pPos, pBlockState);
+        this.pos = pPos;
+        this.block = pBlockState.getBlock();
         if (this.block instanceof BackpackBlock backpackBlock) {
             this.maxStackSize = backpackBlock.getMaxStackSize();
         }
@@ -130,7 +129,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         if (blockLevel != null) {
             return this.block.getCloneItemStack(this.level, this.pos, this.getBlockState()).getHoverName();
         } else {
-            return new ItemStack(ModItems.BACK_PACK.get()).getHoverName();
+            return new ItemStack(ModBlocks.BACK_PACK.get()).getHoverName();
         }
     }
 
@@ -295,7 +294,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         }
     }
 
-    private void moveItems() {
+    public void moveItems() {
         ItemStack ghostSlot = this.itemHandler.getStackInSlot(GHOST_SLOT);
 
         // Incoming items are placed into GHOST_SLOT

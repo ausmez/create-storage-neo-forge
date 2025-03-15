@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage.item.upgrades;
 
 import com.simibubi.create.foundation.item.TooltipHelper;
+import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.util.Util;
@@ -85,36 +86,36 @@ public class UpgradeItem extends Item {
         if (Screen.hasShiftDown()) {
             // Add summary component
             text.add(Component.empty());
-            text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary"), TooltipHelper.Palette.STANDARD_CREATE));
+            text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary"), FontHelper.Palette.STANDARD_CREATE));
             text.add(Component.empty());
 
             if (Objects.equals(name.replaceAll("_deactivated$", ""), Util.MAGNET_UPGRADE) ||
                     Objects.equals(name.replaceAll("_deactivated$", ""), Util.ITEMPICKUP_UPGRADE)) {
                 placeholder = ConfigManager.CommonConfig.BACKPACK_MAGNET_RANGE.get().toString();
-                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".exclusion"), TooltipHelper.Palette.STANDARD_CREATE));
+                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".exclusion"), FontHelper.Palette.STANDARD_CREATE));
                 text.add(Component.empty());
             }
 
             // Add up to 9 conditions/behaviours
             for (int i = 1; i < 10; i++) {
                 if (!I18n.exists(translateKey + ".condition" + i)) break;
-                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".condition" + i), TooltipHelper.Palette.ALL_GRAY));
+                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".condition" + i), FontHelper.Palette.ALL_GRAY));
                 text.addAll(TooltipHelper.cutTextComponent(
                         Component.translatable(translateKey + ".behaviour" + i, placeholder),
-                        TooltipHelper.Palette.STANDARD_CREATE.primary(), TooltipHelper.Palette.STANDARD_CREATE.highlight(), 1));
+                        FontHelper.Palette.STANDARD_CREATE.primary(), FontHelper.Palette.STANDARD_CREATE.highlight(), 1));
             }
 
             // Add a final condition/behaviour for toggling the upgrade
             if (!name.equals(Util.STORAGE_BOX_CAPACITY_UPGRADE) && !name.equals(Util.STORAGE_BOX_VOID_UPGRADE)) {
-                text.addAll(TooltipHelper.cutTextComponent(Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.condition"), TooltipHelper.Palette.ALL_GRAY));
+                text.addAll(TooltipHelper.cutTextComponent(Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.condition"), FontHelper.Palette.ALL_GRAY));
                 text.addAll(TooltipHelper.cutTextComponent(
                         Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.behaviour"),
-                        TooltipHelper.Palette.STANDARD_CREATE.primary(), TooltipHelper.Palette.STANDARD_CREATE.highlight(), 1));
+                        FontHelper.Palette.STANDARD_CREATE.primary(), FontHelper.Palette.STANDARD_CREATE.highlight(), 1));
                 text.add(Component.empty());
             }
 
             // Finally add any subtext components
-            text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".subtext"), TooltipHelper.Palette.GRAY_AND_GOLD.highlight(), TooltipHelper.Palette.GRAY_AND_GOLD.highlight()));
+            text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".subtext"), FontHelper.Palette.GRAY_AND_GOLD.highlight(), FontHelper.Palette.GRAY_AND_GOLD.highlight()));
         }
 
         tooltipComponents.addAll(text);
@@ -130,14 +131,14 @@ public class UpgradeItem extends Item {
         if (Screen.hasShiftDown()) {
             // Add summary component
             text.add(Component.empty());
-            text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary"), TooltipHelper.Palette.STANDARD_CREATE));
+            text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary"), FontHelper.Palette.STANDARD_CREATE));
             text.add(Component.empty());
 
             // Add a condition/behaviour for toggling the upgrade
-            text.addAll(TooltipHelper.cutTextComponent(Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.condition"), TooltipHelper.Palette.ALL_GRAY));
+            text.addAll(TooltipHelper.cutTextComponent(Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.condition"), FontHelper.Palette.ALL_GRAY));
             text.addAll(TooltipHelper.cutTextComponent(
                     Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.behaviour"),
-                    TooltipHelper.Palette.STANDARD_CREATE.primary(), TooltipHelper.Palette.STANDARD_CREATE.highlight(), 1));
+                    FontHelper.Palette.STANDARD_CREATE.primary(), FontHelper.Palette.STANDARD_CREATE.highlight(), 1));
 
             if (!Screen.hasControlDown()) text.add(Component.empty());
         }
@@ -147,10 +148,10 @@ public class UpgradeItem extends Item {
             text.add(Component.empty());
             for (int i = 1; i < 10; i++) {
                 if (!I18n.exists(translateKey + ".condition" + i)) break;
-                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".condition" + i), TooltipHelper.Palette.ALL_GRAY));
+                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".condition" + i), FontHelper.Palette.ALL_GRAY));
                 text.addAll(TooltipHelper.cutTextComponent(
                         Component.translatable(translateKey + ".behaviour" + i, placeholder, placeholder),
-                        TooltipHelper.Palette.PURPLE.primary(), TooltipHelper.Palette.PURPLE.highlight(), 1));
+                        FontHelper.Palette.PURPLE.primary(), FontHelper.Palette.PURPLE.highlight(), 1));
             }
         }
 

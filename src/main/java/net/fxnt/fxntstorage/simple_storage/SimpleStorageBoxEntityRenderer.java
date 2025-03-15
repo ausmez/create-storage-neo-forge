@@ -2,7 +2,7 @@ package net.fxnt.fxntstorage.simple_storage;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import com.simibubi.create.foundation.gui.AbstractSimiScreen;
+import net.createmod.catnip.gui.AbstractSimiScreen;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;

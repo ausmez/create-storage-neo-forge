@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.backpacks.recipes;
 
 import com.google.gson.JsonObject;
 import net.fxnt.fxntstorage.backpacks.main.BackpackItem;
+import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModRecipes;
 import net.fxnt.fxntstorage.util.Util;
@@ -56,13 +57,13 @@ public class BackpackRecipe extends ShapedRecipe {
             if (entityTag.contains("maxStackSize")) {
                 int newMaxStackSize = entityTag.getInt("maxStackSize");
                 // Handle different backpack types
-                if (craftedStack.getItem().equals(ModItems.ANDESITE_BACK_PACK.get())) {
+                if (craftedStack.getItem().equals(ModBlocks.ANDESITE_BACK_PACK.asItem())) {
                     newMaxStackSize = Util.ANDESITE_BACKPACK_STACK_MULTIPLIER;
-                } else if (craftedStack.getItem().equals(ModItems.COPPER_BACK_PACK.get())) {
+                } else if (craftedStack.getItem().equals(ModBlocks.COPPER_BACK_PACK.asItem())) {
                     newMaxStackSize = Util.COPPER_BACKPACK_STACK_MULTIPLIER;
-                } else if (craftedStack.getItem().equals(ModItems.BRASS_BACK_PACK.get())) {
+                } else if (craftedStack.getItem().equals(ModBlocks.BRASS_BACK_PACK.asItem())) {
                     newMaxStackSize = Util.BRASS_BACKPACK_STACK_MULTIPLIER;
-                } else if (craftedStack.getItem().equals(ModItems.HARDENED_BACK_PACK.get())) {
+                } else if (craftedStack.getItem().equals(ModBlocks.HARDENED_BACK_PACK.asItem())) {
                     newMaxStackSize = Util.HARDENED_BACKPACK_STACK_MULTIPLIER;
                 }
                 entityTag.putInt("maxStackSize", newMaxStackSize);

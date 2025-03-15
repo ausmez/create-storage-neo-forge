@@ -3,12 +3,11 @@ package net.fxnt.fxntstorage.passer;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
-import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.IItemHandler;
 
@@ -24,8 +23,8 @@ public class PasserSmartEntity extends SmartBlockEntity {
     private Direction facing;
     public FilteringBehaviour filtering;
 
-    public PasserSmartEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.SMART_PASSER_ENTITY.get(), pos, blockState);
+    public PasserSmartEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
         this.facing = this.getBlockState().getValue(FACING);
     }
 

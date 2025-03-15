@@ -9,8 +9,8 @@
     "A": {
       "item": "create:andesite_alloy"
     },
-    "B": {
-      "item": "minecraft:barrel"
+    "V": {
+      "item": "create:item_vault"
     },
     "D": {
       "item": "create:display_board"
@@ -18,7 +18,7 @@
   },
   "pattern": [
     "AWA",
-    "WBW",
+    "WVW",
     "ADA"
   ],
   "result": {
