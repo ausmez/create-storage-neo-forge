@@ -130,9 +130,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         zOffset += flatItem ? 0 : 0f;
         poseStack.translate(0.5f, 0.175f, zOffset);
-        if (!flatItem) {
-            poseStack.mulPose(Axis.YP.rotationDegrees(180));
-        }
+        poseStack.mulPose(Axis.YP.rotationDegrees(180));
 
         float scale = (flatItem ? 0.25f : 0.5f) + 1 / 64f;
         poseStack.scale(scale, scale, scale);
