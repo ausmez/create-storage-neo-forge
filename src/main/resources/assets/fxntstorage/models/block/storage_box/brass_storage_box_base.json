@@ -1,0 +1,8 @@
+{
+  "parent": "fxntstorage:block/storage_box/storage_box_base",
+  "textures": {
+    "casing": "create:block/brass_casing",
+    "top": "create:block/brass_casing",
+    "particle": "create:block/brass_casing"
+  }
+}

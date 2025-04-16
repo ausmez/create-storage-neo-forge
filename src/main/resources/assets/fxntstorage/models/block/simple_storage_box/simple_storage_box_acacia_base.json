@@ -1,0 +1,8 @@
+{
+  "parent": "fxntstorage:block/storage_box/storage_box_base",
+  "textures": {
+    "casing": "fxntstorage:block/casings/acacia_casing",
+    "top": "fxntstorage:block/casings/acacia_casing",
+    "particle": "fxntstorage:block/casings/acacia_casing"
+  }
+}

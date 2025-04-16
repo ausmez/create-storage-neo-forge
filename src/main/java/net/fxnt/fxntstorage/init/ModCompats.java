@@ -1,0 +1,28 @@
+package net.fxnt.fxntstorage.init;
+
+import net.fxnt.fxntstorage.compat.CarryOnCompat;
+import net.fxnt.fxntstorage.compat.InventorySorterCompat;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
+
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
+public class ModCompats {
+    public static final String CURIOS = "curios";
+    public static final String CARRY_ON = "carryon";
+    public static final String INVENTORY_SORTER = "inventorysorter";
+
+    @SubscribeEvent
+    public static void enqueueCompatMessages(final InterModEnqueueEvent event) {
+        event.enqueueWork(() -> isModLoaded(CARRY_ON, CarryOnCompat::sendIMC));
+        event.enqueueWork(() -> isModLoaded(INVENTORY_SORTER, InventorySorterCompat::sendIMC));
+    }
+
+    private static void isModLoaded(String modId, Runnable runnable) {
+        if (ModList.get().isLoaded(modId)) {
+            runnable.run();
+        }
+    }
+
+}
