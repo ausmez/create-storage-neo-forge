@@ -2,12 +2,13 @@ package net.fxnt.fxntstorage.util;
 
 import io.netty.buffer.Unpooled;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpacks.main.BackpackScreen;
-import net.fxnt.fxntstorage.backpacks.upgrades.BackpackOnBackUpgradeHandler;
-import net.fxnt.fxntstorage.backpacks.util.BackpackHelper;
-import net.fxnt.fxntstorage.backpacks.util.BackpackNetworkHelper;
+import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.cache.BackpackShapeCache;
 import net.fxnt.fxntstorage.cache.PasserShapeCache;
+import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.network.ServerboundPacket;
 import net.minecraft.client.KeyMapping;
@@ -44,12 +45,12 @@ public class KeybindHandler {
                 if (this.isDownOld != pValue && pValue) {
                     ModNetwork.sendToServer(new ServerboundPacket(BackpackNetworkHelper.JETPACK_FLY, new FriendlyByteBuf(Unpooled.buffer().writeByte(Util.JETPACK_KEY_PRESS))));
                     if (new BackpackOnBackUpgradeHandler(player).hasUpgrade(Util.FLIGHT_UPGRADE)) {
-                        player.getPersistentData().putBoolean("fxntJetpackFlying", true);
+                        player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackFlying", true);
                     }
 
                 } else if (this.isDownOld != pValue && !pValue) {
                     ModNetwork.sendToServer(new ServerboundPacket(BackpackNetworkHelper.JETPACK_FLY, new FriendlyByteBuf(Unpooled.buffer().writeByte(Util.JETPACK_KEY_RELEASE))));
-                    player.getPersistentData().putBoolean("fxntJetpackFlying", false);
+                    player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackFlying", false);
                 }
 
                 this.isDownOld = pValue;

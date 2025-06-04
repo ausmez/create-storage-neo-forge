@@ -67,7 +67,19 @@ side = "BOTH"
 modId = "create"
 mandatory = true
 versionRange = "[6.0.3,6.1.0)"
+ordering = "AFTER"
+side = "BOTH"
+[[dependencies.${ mod_id }]]
+modId = "curios"
+mandatory = false
+versionRange = "[5.2.3,6)"
 ordering = "NONE"
+side = "BOTH"
+[[dependencies.${ mod_id }]]
+modId = "vanillabackport"
+mandatory = false
+versionRange = "[1,2)"
+ordering = "AFTER"
 side = "BOTH"
 
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares

@@ -11,6 +11,7 @@
     "fxntstorage:simple_storage_box_cherry",
     "fxntstorage:simple_storage_box_bamboo",
     "fxntstorage:simple_storage_box_crimson",
-    "fxntstorage:simple_storage_box_warped"
+    "fxntstorage:simple_storage_box_warped",
+    { "id" : "fxntstorage:simple_storage_box_pale_oak", "required": false }
   ]
 }

@@ -9,7 +9,7 @@ import net.createmod.ponder.api.element.EntityElement;
 import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
-import net.fxnt.fxntstorage.containers.util.EnumProperties;
+import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.core.BlockPos;

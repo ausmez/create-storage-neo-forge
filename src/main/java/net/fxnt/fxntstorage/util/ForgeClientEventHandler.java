@@ -3,12 +3,12 @@ package net.fxnt.fxntstorage.util;
 import com.mojang.blaze3d.platform.InputConstants;
 import io.netty.buffer.Unpooled;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpacks.main.BackpackMenu;
-import net.fxnt.fxntstorage.backpacks.util.BackpackHelper;
-import net.fxnt.fxntstorage.backpacks.util.BackpackNetworkHelper;
+import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.containers.StorageBoxMenu;
-import net.fxnt.fxntstorage.containers.util.StorageBoxNetworkHelper;
+import net.fxnt.fxntstorage.container.StorageBoxMenu;
+import net.fxnt.fxntstorage.container.util.StorageBoxNetworkHelper;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.network.ServerboundPacket;
 import net.minecraft.client.Minecraft;
@@ -45,8 +45,8 @@ public class ForgeClientEventHandler {
 
         Player player = Minecraft.getInstance().player;
         if (player != null) {
-            player.getPersistentData().putFloat("fxntJetpackforward", forwardImpulse);
-            player.getPersistentData().putFloat("fxntJetpackleft", -leftImpulse);
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putFloat("JetpackForward", forwardImpulse);
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putFloat("JetpackLeft", -leftImpulse);
         }
 
         if (forwardImpulse != lastforwardImpulse || leftImpulse != lastleftImpulse) {
@@ -58,7 +58,6 @@ public class ForgeClientEventHandler {
             lastforwardImpulse = forwardImpulse;
             lastleftImpulse = leftImpulse;
         }
-
     }
 
     /* PickBlockMixin */
@@ -83,7 +82,6 @@ public class ForgeClientEventHandler {
 
             BackpackNetworkHelper.doPickBlock(stack);
         }
-
     }
 
     /* BackpackMenu sort */
@@ -109,10 +107,10 @@ public class ForgeClientEventHandler {
             if (slot == null) return;
 
             // InventorySorter "overrides" for Backpack and StorageBox
-            if (player.containerMenu instanceof BackpackMenu)
-                BackpackNetworkHelper.sortBackpack(slot.index, ConfigManager.ClientConfig.BACKPACK_SORT_ORDER.get());
-            if (player.containerMenu instanceof StorageBoxMenu)
-                StorageBoxNetworkHelper.sortStorageBox(slot.index, ((StorageBoxMenu) player.containerMenu).getContainerSize(), ConfigManager.ClientConfig.STORAGE_BOX_SORT_ORDER.get());
+            if (player.containerMenu instanceof BackpackMenu menu)
+                BackpackNetworkHelper.sortBackpack(slot.index, menu.getSortOrder());
+            if (player.containerMenu instanceof StorageBoxMenu menu)
+                StorageBoxNetworkHelper.sortStorageBox(slot.index, menu.getContainerSize(), menu.getSortOrder());
         }
     }
 

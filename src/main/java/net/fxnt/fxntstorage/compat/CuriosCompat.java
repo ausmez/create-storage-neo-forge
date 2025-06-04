@@ -1,6 +1,6 @@
 package net.fxnt.fxntstorage.compat;
 
-import net.fxnt.fxntstorage.backpacks.main.BackpackItem;
+import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.damagesource.DamageSource;

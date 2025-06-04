@@ -1,15 +1,20 @@
 package net.fxnt.fxntstorage.init;
 
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import net.fxnt.fxntstorage.backpacks.main.BackpackEntity;
-import net.fxnt.fxntstorage.containers.StorageBoxEntity;
-import net.fxnt.fxntstorage.containers.StorageBoxEntityRenderer;
+import com.tterrag.registrate.util.nullness.NonNullSupplier;
+import net.fxnt.fxntstorage.backpack.BackpackEntity;
+import net.fxnt.fxntstorage.container.StorageBoxEntity;
+import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
 import net.fxnt.fxntstorage.passer.PasserEntity;
 import net.fxnt.fxntstorage.passer.PasserSmartEntity;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
+import net.minecraft.world.level.block.Block;
+
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static net.fxnt.fxntstorage.FXNTStorage.REGISTRATE;
 
@@ -19,6 +24,8 @@ public class ModBlockEntities {
             .blockEntity("storage_box_entity", StorageBoxEntity::new)
             .validBlocks(
                     ModBlocks.STORAGE_BOX,
+                    ModBlocks.CARDBOARD_STORAGE_BOX,
+                    ModBlocks.WEATHERED_STORAGE_BOX,
                     ModBlocks.ANDESITE_STORAGE_BOX,
                     ModBlocks.COPPER_STORAGE_BOX,
                     ModBlocks.BRASS_STORAGE_BOX,
@@ -27,9 +34,10 @@ public class ModBlockEntities {
             .renderer(() -> StorageBoxEntityRenderer::new)
             .register();
 
+    @SuppressWarnings("unchecked")
     public static final BlockEntityEntry<SimpleStorageBoxEntity> SIMPLE_STORAGE_BOX_ENTITY = REGISTRATE
             .blockEntity("simple_storage_box_entity", SimpleStorageBoxEntity::new)
-            .validBlocks(
+            .validBlocks((NonNullSupplier<? extends Block>[]) Stream.of(
                     ModBlocks.SIMPLE_STORAGE_BOX,
                     ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE,
                     ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
@@ -40,19 +48,20 @@ public class ModBlockEntities {
                     ModBlocks.SIMPLE_STORAGE_BOX_CHERRY,
                     ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO,
                     ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON,
-                    ModBlocks.SIMPLE_STORAGE_BOX_WARPED
-            )
+                    ModBlocks.SIMPLE_STORAGE_BOX_WARPED,
+                    ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK
+            ).filter(Objects::nonNull).toArray(NonNullSupplier[]::new))
             .renderer(() -> SimpleStorageBoxEntityRenderer::new)
             .register();
 
-    public static final BlockEntityEntry<BackpackEntity> BACK_PACK_ENTITY = REGISTRATE
-            .blockEntity("back_pack_entity", BackpackEntity::new)
+    public static final BlockEntityEntry<BackpackEntity> BACKPACK_ENTITY = REGISTRATE
+            .blockEntity("backpack_entity", BackpackEntity::new)
             .validBlocks(
-                    ModBlocks.BACK_PACK,
-                    ModBlocks.ANDESITE_BACK_PACK,
-                    ModBlocks.COPPER_BACK_PACK,
-                    ModBlocks.BRASS_BACK_PACK,
-                    ModBlocks.HARDENED_BACK_PACK
+                    ModBlocks.BACKPACK,
+                    ModBlocks.ANDESITE_BACKPACK,
+                    ModBlocks.COPPER_BACKPACK,
+                    ModBlocks.BRASS_BACKPACK,
+                    ModBlocks.HARDENED_BACKPACK
             )
             .register();
 

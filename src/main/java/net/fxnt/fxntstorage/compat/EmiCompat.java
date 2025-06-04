@@ -3,8 +3,8 @@ package net.fxnt.fxntstorage.compat;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.widget.Bounds;
-import net.fxnt.fxntstorage.backpacks.main.BackpackScreen;
-import net.fxnt.fxntstorage.containers.StorageBoxScreen;
+import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
+import net.fxnt.fxntstorage.container.StorageBoxScreen;
 import net.minecraft.client.renderer.Rect2i;
 
 public class EmiCompat implements EmiPlugin {

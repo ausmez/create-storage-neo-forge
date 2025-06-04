@@ -36,14 +36,28 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
 
                 return true;
             } else {
-                if (simpleStorageBoxEntity.voidUpgrade) return true;
-
-                int totalToInsert = 0;
-                for (ItemStack itemStack : items) {
-                    if (itemStack != null && !itemStack.isEmpty()) totalToInsert += itemStack.getCount();
+                // Test if all ItemStacks in package are the same
+                ItemStack ref = null;
+                for (ItemStack stack : items) {
+                    if (ref == null) {
+                        ref = stack;
+                    } else if (!ItemStack.isSameItemSameTags(ref, stack)) {
+                        return false;
+                    }
                 }
 
-                return totalToInsert + simpleStorageBoxEntity.storedAmount <= simpleStorageBoxEntity.maxItemCapacity;
+                int totalToInsert = 0;
+                if (simpleStorageBoxEntity.filterTest(ref)) {
+                    if (simpleStorageBoxEntity.voidUpgrade) return true;
+
+                    for (ItemStack itemStack : items) {
+                        if (itemStack != null && !itemStack.isEmpty()) totalToInsert += itemStack.getCount();
+                    }
+
+                    return totalToInsert + simpleStorageBoxEntity.storedAmount <= simpleStorageBoxEntity.maxItemCapacity;
+                }
+
+                return false;
             }
         }
     }

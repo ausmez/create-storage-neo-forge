@@ -1,6 +1,6 @@
 package net.fxnt.fxntstorage.mixin;
 
-import net.fxnt.fxntstorage.backpacks.main.BackpackItem;
+import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;

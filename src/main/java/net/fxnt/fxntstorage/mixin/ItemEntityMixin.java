@@ -1,8 +1,8 @@
 package net.fxnt.fxntstorage.mixin;
 
-import net.fxnt.fxntstorage.backpacks.main.BackpackItem;
-import net.fxnt.fxntstorage.backpacks.upgrades.BackpackOnBackUpgradeHandler;
-import net.fxnt.fxntstorage.backpacks.util.BackpackHelper;
+import net.fxnt.fxntstorage.backpack.BackpackItem;
+import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;

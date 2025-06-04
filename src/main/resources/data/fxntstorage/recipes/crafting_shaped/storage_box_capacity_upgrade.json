@@ -3,7 +3,7 @@
   "category": "misc",
   "group": "storage_box",
   "key": {
-    "B": { "item": "fxntstorage:back_pack_blank_upgrade" },
+    "B": { "item": "fxntstorage:backpack_blank_upgrade" },
     "V": { "item": "create:item_vault" }
   },
   "pattern": [

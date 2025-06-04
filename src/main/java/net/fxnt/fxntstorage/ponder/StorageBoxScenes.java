@@ -8,8 +8,8 @@ import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
 import net.createmod.catnip.math.Pointing;
-import net.fxnt.fxntstorage.containers.StorageBoxEntity;
-import net.fxnt.fxntstorage.containers.util.EnumProperties;
+import net.fxnt.fxntstorage.container.StorageBoxEntity;
+import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,8 +20,8 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Arrays;
 import java.util.List;
 
-import static net.fxnt.fxntstorage.containers.StorageBox.STORAGE_USED;
-import static net.fxnt.fxntstorage.containers.StorageBox.VOID_UPGRADE;
+import static net.fxnt.fxntstorage.container.StorageBox.STORAGE_USED;
+import static net.fxnt.fxntstorage.container.StorageBox.VOID_UPGRADE;
 
 public class StorageBoxScenes {
 

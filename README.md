@@ -1,26 +1,7 @@
-This is a Forge port of Foxynotail's Create:Storage addon from his latest Create YouTube series, with some minor
-tweaks and enhancements to work better in a multiplayer environment.
+This is a Neo/Forge port of FoxyNoTail's [Create: Storage](https://www.curseforge.com/minecraft/mc-mods/create-storageCreate) addon from his second Create YouTube series, with some minor
+tweaks and enhancements.
 
-Changes in this version over Fabric:
-- Backpack will stack items up to 2x, 4x, 8x, 16x, or 32x the maximum item stack (dependent on backpack type)
-- Backpack can be equipped in either the chest slot or back slot (when Curios installed)
-- Backpack feeder upgrade will take negative food effects into account when feeding player
-    - i.e. if side effect is Hunger or Poison, it won't auto feed the player the food item
-- Added a GUI overlay that displays the amount of time left in the backtanks when flying (configurable)
-- Tool Swap upgrade 
-- All tooltips have been overhauled to have more of a "create" feel
-- Implemented ponder scenes for most items
-- Minor tweaks to a few recipes
-- Smart Passers can accept a redstone signal to stop passing items
-- Storage Box no longer requires a dedicated slot for voiding items
-- Storage Box light will turn purple when void mode is enabled
-- Storage controller will now light up when at least 1 Simple Storage Box has been added to the Storage Network
-- Added "Elytra Boost" to Jetpack upgrade!
-  - Hold "jump" while gliding with a Jetpack upgrade equipped. Boosting will consume backtank air at a much faster rate! (configurable)
-
-### Known Issues
-Create 6.0.x
-- Threshold Switch reports the incorrect number of stacks when reading container contents (https://github.com/Creators-of-Create/Create/issues/7688) 
+Check the CHANGELOG for the list of enhancements.
 
 ---
 
@@ -38,17 +19,17 @@ This mod features a handful of Storage Boxes, each with different sized inventor
 - Each can hold 2048* items as default
 - Can only hold one type of item
 - Void Ability
-    - To apply void upgrade: interact with a Simple Storage Void Upgrade
-    - To remove void upgrade: interact with a Simple Storage Void Upgrade
-        - when box has Void Upgrade
-        - or remove via the menu
+  - To apply void upgrade: interact with a Simple Storage Void Upgrade
+  - To remove void upgrade: interact with a Simple Storage Void Upgrade
+    - when box has Void Upgrade
+    - or remove via the menu
 - Capacity Upgrades
-    - Capacity can be increased with Simple Storage Capacity Upgrades
-    - Max 9 Capacity Upgrades can be added
-    - Each capacity upgrade doubles current capacity
-    - Capacity Upgrades can be removed using the menu
+  - Capacity can be increased with Simple Storage Capacity Upgrades
+  - Max 9 Capacity Upgrades can be added
+  - Each capacity upgrade doubles current capacity
+  - Capacity Upgrades can be removed using the menu
 - Filter is set automatically when items are added
-    - To remove Filter: interact with a Wrench (only when box is empty)
+  - To remove Filter: interact with a Wrench (only when box is empty)
 - Menu can be opened by interacting with an empty hand while sneaking
 
 *Note: Capacity is 32x Max Stack Size of items contained.*  
@@ -82,9 +63,9 @@ This mod features a handful of Storage Boxes, each with different sized inventor
 - Each backpack can hold 6 upgrades which affect how the backpack works when worn
 - Different variations of the backpack hold different amounts of items per slot
 - Each has 3 storage compartments:
-    - Main Storage your bulk items and can be interacted with by hoppers / chutes etc.
-    - A safe Tool Storage compartment for your tools and precious items (cannot be interacted with by hoppers)
-    - Upgrade Slots
+  - Main Storage your bulk items and can be interacted with by hoppers / chutes etc.
+  - A safe Tool Storage compartment for your tools and precious items (cannot be interacted with by hoppers)
+  - Upgrade Slots
 
 ## Backpack Upgrades
 ### Magnet Upgrade:

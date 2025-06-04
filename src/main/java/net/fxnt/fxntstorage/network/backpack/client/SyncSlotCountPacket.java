@@ -1,7 +1,7 @@
 package net.fxnt.fxntstorage.network.backpack.client;
 
-import net.fxnt.fxntstorage.backpacks.main.BackpackMenu;
-import net.fxnt.fxntstorage.backpacks.util.BackpackNetworkHelper;
+import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;

@@ -2,7 +2,7 @@ package net.fxnt.fxntstorage.simple_storage;
 
 import com.simibubi.create.AllTags;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
-import net.fxnt.fxntstorage.containers.util.EnumProperties;
+import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
@@ -37,19 +38,22 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-@SuppressWarnings("deprecation")
 public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
+    public static final BooleanProperty COPY_NBT = BooleanProperty.create("copy_nbt");
 
     private long lastClickTime;
     private UUID lastClickUUID;
+    private long lastAttackTime;
+    private UUID lastAttackUUID;
 
     public SimpleStorageBox(Properties pProperties) {
         super(pProperties);
         this.registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)
+                .setValue(COPY_NBT, false)
         );
     }
 
@@ -64,18 +68,19 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> blockEntityType) {
         return createTickerHelper(blockEntityType, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (type, world, pos, entity) -> {
             if (entity instanceof SimpleStorageBoxEntity) {
-                entity.serverTick(type, world);
+                entity.serverTick(type);
             }
         });
     }
 
     @Override
     public void setPlacedBy(@NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
-        if (pStack.hasCustomHoverName()) {
-            BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-            if (blockEntity instanceof SimpleStorageBoxEntity) {
-                ((SimpleStorageBoxEntity) blockEntity).getDisplayName();
+        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
+        if (blockEntity instanceof SimpleStorageBoxEntity be) {
+            if (pStack.hasCustomHoverName()) {
+                be.setCustomName(pStack.getHoverName());
             }
+            be.tick = 999;
         }
     }
 
@@ -107,13 +112,16 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
                     // If box empty, holding wrench & has filter item then remove filter
                     simpleStorageBoxEntity.removeFilter();
                 } else {
-                    // Set filter if item is not an upgrade or empty hand and no items exist and no filter exists
-                    if (!handItem.isEmpty() && !handItem.is(ModTags.Items.STORAGE_BOX_UPGRADE) && simpleStorageBoxEntity.getStoredAmount() == 0 && simpleStorageBoxEntity.filterItem.isEmpty()) {
-                        simpleStorageBoxEntity.setFilter(handItem);
-                    }
+                    // Prevent wrench from being placed in the filter
+                    if (!handItem.is(AllTags.AllItemTags.WRENCH.tag)) {
+                        // Set filter if item is not an upgrade or empty hand and no items exist and no filter exists
+                        if (!handItem.isEmpty() && !handItem.is(ModTags.Items.STORAGE_BOX_UPGRADE) && simpleStorageBoxEntity.getStoredAmount() == 0 && simpleStorageBoxEntity.filterItem.isEmpty()) {
+                            simpleStorageBoxEntity.setFilter(handItem);
+                        }
 
-                    // Transfer items from player to box
-                    simpleStorageBoxEntity.transferToStorage(pPlayer, false);
+                        // Transfer items from player to box
+                        simpleStorageBoxEntity.transferToStorage(pPlayer, false);
+                    }
                 }
             }
 
@@ -137,7 +145,13 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
         BlockEntity blockEntity = level.getBlockEntity(blockPos);
         Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
         if (blockEntity instanceof SimpleStorageBoxEntity storageBoxEntity && !(item instanceof AxeItem)) {
-            storageBoxEntity.transferFromStorage(player);
+            // Small cooldown to prevent double-extraction
+            if (lastAttackTime == 0 || level.getGameTime() - lastAttackTime > 1 && player.getUUID().equals(lastAttackUUID)) {
+                storageBoxEntity.transferFromStorage(player);
+            }
+
+            lastAttackTime = level.getGameTime();
+            lastAttackUUID = player.getUUID();
         }
     }
 
@@ -166,8 +180,8 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    public @NotNull BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    public BlockState rotate(BlockState pState, Rotation pRotation) {
+        return pState.setValue(FACING, pRotation.rotate(pState.getValue(FACING)));
     }
 
     @Override
@@ -178,7 +192,7 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> pBuilder) {
         super.createBlockStateDefinition(pBuilder);
-        pBuilder.add(FACING, STORAGE_USED);
+        pBuilder.add(FACING, STORAGE_USED, COPY_NBT);
     }
 
     @Override
@@ -190,7 +204,7 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
     public int getAnalogOutputSignal(@NotNull BlockState pState, Level pLevel, @NotNull BlockPos pPos) {
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
         if (blockEntity instanceof SimpleStorageBoxEntity entity) {
-            double percentage = (double) entity.storedAmount / entity.maxItemCapacity;
+            double percentage = (double) entity.getStoredAmount() / entity.getMaxItemCapacity();
             return (int) Math.min(percentage * 15, 15);
         }
         return 0;
@@ -208,7 +222,6 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
 
     @Override
     public InteractionResult onWrenched(BlockState state, UseOnContext context) {
-        // Prevent the wrench from rotating the storage box
         return InteractionResult.SUCCESS;
     }
 }

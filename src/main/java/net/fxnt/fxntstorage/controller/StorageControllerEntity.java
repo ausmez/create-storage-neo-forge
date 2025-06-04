@@ -1,7 +1,7 @@
 package net.fxnt.fxntstorage.controller;
 
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.containers.util.ImplementedContainer;
+import net.fxnt.fxntstorage.container.util.ImplementedContainer;
 import net.fxnt.fxntstorage.storage_network.StorageNetwork;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;

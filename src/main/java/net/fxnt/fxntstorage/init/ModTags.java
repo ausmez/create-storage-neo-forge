@@ -12,7 +12,7 @@ public class ModTags {
 
     public static class Blocks {
 
-        public static final TagKey<Block> BACK_PACK = blockTag("back_pack");
+        public static final TagKey<Block> BACKPACK = blockTag("backpack");
         public static final TagKey<Block> BREAKABLE_WITH_ANY_TOOL = blockTag("breakable_with_any_tool");
         public static final TagKey<Block> SIMPLE_STORAGE_BOX = blockTag("simple_storage_box");
         public static final TagKey<Block> STORAGE_BOX = blockTag("storage_box");
@@ -20,20 +20,20 @@ public class ModTags {
         public static final TagKey<Block> STORAGE_TRIM = blockTag("storage_trim");
 
         private static TagKey<Block> blockTag(String name) {
-            return BlockTags.create(new ResourceLocation(FXNTStorage.MOD_ID, name));
+            return BlockTags.create(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, name));
         }
 
     }
 
     public static class Items {
 
-        public static final TagKey<Item> BACK_PACK_ITEM = itemTag("back_pack");
-        public static final TagKey<Item> BACK_PACK_UPGRADE = itemTag("back_pack_upgrade");
+        public static final TagKey<Item> BACKPACK_ITEM = itemTag("backpack");
+        public static final TagKey<Item> BACKPACK_UPGRADE = itemTag("backpack_upgrade");
         public static final TagKey<Item> STORAGE_BOX_ITEM = itemTag("storage_box");
         public static final TagKey<Item> STORAGE_BOX_UPGRADE = itemTag("storage_box_upgrade");
 
         private static TagKey<Item> itemTag(String name) {
-            return ItemTags.create(new ResourceLocation(FXNTStorage.MOD_ID, name));
+            return ItemTags.create(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, name));
         }
 
     }

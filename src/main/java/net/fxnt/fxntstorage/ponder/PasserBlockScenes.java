@@ -4,15 +4,15 @@ import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
-import net.fxnt.fxntstorage.containers.StorageBoxEntity;
-import net.fxnt.fxntstorage.containers.util.EnumProperties;
+import net.fxnt.fxntstorage.container.StorageBoxEntity;
+import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import static net.fxnt.fxntstorage.containers.StorageBox.STORAGE_USED;
+import static net.fxnt.fxntstorage.container.StorageBox.STORAGE_USED;
 
 public class PasserBlockScenes {
     public static void intro(SceneBuilder builder, SceneBuildingUtil util) {

@@ -1,13 +1,15 @@
 package net.fxnt.fxntstorage.network;
 
-import net.fxnt.fxntstorage.backpacks.main.BackpackMenu;
-import net.fxnt.fxntstorage.backpacks.upgrades.BackpackOnBackUpgradeHandler;
-import net.fxnt.fxntstorage.backpacks.upgrades.JetpackHandler;
-import net.fxnt.fxntstorage.backpacks.upgrades.JetpackManager;
-import net.fxnt.fxntstorage.backpacks.util.BackpackHandler;
-import net.fxnt.fxntstorage.backpacks.util.BackpackNetworkHelper;
-import net.fxnt.fxntstorage.containers.StorageBoxMenu;
-import net.fxnt.fxntstorage.containers.util.StorageBoxNetworkHelper;
+import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
+import net.fxnt.fxntstorage.backpack.util.BackpackHandler;
+import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
+import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.container.StorageBoxMenu;
+import net.fxnt.fxntstorage.container.util.StorageBoxNetworkHelper;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -92,10 +94,22 @@ public class ServerboundPacket {
                 }
             }
 
+            if (packet.packetId.equals(BackpackNetworkHelper.SET_SORT_ORDER)) {
+                if (player != null) {
+                    if (player.containerMenu instanceof BackpackMenu menu) {
+                        menu.container.setSortOrder(packet.data.readEnum(SortOrder.class));
+                        menu.container.setDataChanged();
+                    }
+                    if (player.containerMenu instanceof StorageBoxMenu menu) {
+                        menu.setSortOrder(packet.data.readEnum(SortOrder.class));
+                    }
+                }
+            }
+
             if (packet.packetId.equals(BackpackNetworkHelper.SORT_BACKPACK_INVENTORY)) {
                 if (player != null) {
                     if (player.containerMenu instanceof BackpackMenu menu) {
-                        menu.sortBackpackItems(packet.data.readInt(), packet.data.readInt(), packet.data.readByte());
+                        menu.sortBackpackItems(packet.data.readInt(), packet.data.readInt(), packet.data.readEnum(SortOrder.class));
                     }
                 }
             }
@@ -103,7 +117,7 @@ public class ServerboundPacket {
             if (packet.packetId.equals(StorageBoxNetworkHelper.SORT_STORAGE_BOX_INVENTORY)) {
                 if (player != null) {
                     if (player.containerMenu instanceof StorageBoxMenu menu) {
-                        menu.sortStorageItems(packet.data.readInt(), packet.data.readInt(), packet.data.readByte());
+                        menu.sortStorageItems(packet.data.readInt(), packet.data.readInt(), packet.data.readEnum(SortOrder.class));
                     }
                 }
             }
@@ -130,10 +144,10 @@ public class ServerboundPacket {
                     boolean ignoreFanProcessing = packet.data.readBoolean();
                     boolean displayFeederMessage = packet.data.readBoolean();
 
-                    player.getPersistentData().putBoolean("fxntDisplayFeederMessage", displayFeederMessage);
-                    player.getPersistentData().putBoolean("fxntIgnoreFanProcessing", ignoreFanProcessing);
-                    player.getPersistentData().putBoolean("fxntPreferSilkTouch", preferSilkTouch);
-                    player.getPersistentData().put("fxntPrefersSilkTouchList", prefersSilkTouchList);
+                    player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("DisplayFeederMessage", displayFeederMessage);
+                    player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("IgnoreFanProcessing", ignoreFanProcessing);
+                    player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("PreferSilkTouch", preferSilkTouch);
+                    player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).put("PrefersSilkTouchList", prefersSilkTouchList);
                 }
             }
 

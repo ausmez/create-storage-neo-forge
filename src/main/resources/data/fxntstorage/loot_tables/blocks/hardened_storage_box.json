@@ -3,30 +3,81 @@
   "pools": [
     {
       "bonus_rolls": 0.0,
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ],
       "entries": [
         {
-          "type": "minecraft:item",
-          "name": "fxntstorage:hardened_storage_box",
-          "functions": [
+          "type": "minecraft:alternatives",
+          "children": [
             {
-              "function": "minecraft:copy_name",
-              "source": "block_entity"
+              "type": "minecraft:item",
+              "conditions": [
+                {
+                  "condition": "minecraft:all_of",
+                  "terms": [
+                    {
+                      "condition": "minecraft:survives_explosion"
+                    },
+                    {
+                      "block": "fxntstorage:hardened_storage_box",
+                      "condition": "minecraft:block_state_property",
+                      "properties": {
+                        "copy_nbt": true
+                      }
+                    }
+                  ]
+                }
+              ],
+              "functions": [
+                {
+                  "function": "minecraft:copy_name",
+                  "source": "block_entity"
+                },
+                {
+                  "function": "minecraft:copy_nbt",
+                  "source": "block_entity",
+                  "ops": [
+                    {
+                      "source": "SlotCount",
+                      "target": "BlockEntityTag.SlotCount",
+                      "op": "replace"
+                    },
+                    {
+                      "source": "SortOrder",
+                      "target": "BlockEntityTag.SortOrder",
+                      "op": "replace"
+                    },
+                    {
+                      "source": "StoredAmount",
+                      "target": "BlockEntityTag.StoredAmount",
+                      "op": "replace"
+                    },
+                    {
+                      "source": "PercentageUsed",
+                      "target": "BlockEntityTag.PercentageUsed",
+                      "op": "replace"
+                    },
+                    {
+                      "source": "VoidUpgrade",
+                      "target": "BlockEntityTag.VoidUpgrade",
+                      "op": "replace"
+                    },
+                    {
+                      "source": "Items",
+                      "target": "BlockEntityTag.Items",
+                      "op": "replace"
+                    }
+                  ]
+                }
+              ],
+              "name": "fxntstorage:hardened_storage_box"
             },
             {
-              "function": "minecraft:copy_nbt",
-              "source": "block_entity",
-              "ops": [
+              "type": "minecraft:item",
+              "conditions": [
                 {
-                  "op": "replace",
-                  "source": "{}",
-                  "target": "BlockEntityTag"
+                  "condition": "minecraft:survives_explosion"
                 }
-              ]
+              ],
+              "name": "fxntstorage:hardened_storage_box"
             }
           ]
         }

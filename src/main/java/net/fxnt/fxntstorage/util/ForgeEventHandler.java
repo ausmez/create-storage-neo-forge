@@ -1,11 +1,13 @@
 package net.fxnt.fxntstorage.util;
 
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpacks.upgrades.BackpackOnBackUpgradeHandler;
-import net.fxnt.fxntstorage.backpacks.upgrades.JetpackHandler;
-import net.fxnt.fxntstorage.backpacks.upgrades.JetpackManager;
-import net.fxnt.fxntstorage.backpacks.util.BackpackHelper;
+import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.config.ConfigManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -17,7 +19,6 @@ import net.minecraftforge.common.Tags;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
-import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -123,6 +124,9 @@ public class ForgeEventHandler {
         if (event.getEntity() instanceof ServerPlayer player) {
             FXNTStorage.LOGGER.debug("Adding player {} to the JetpackManager", event.getEntity().getUUID());
             JetpackManager.onPlayerJoin(player);
+            if (player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).isEmpty()) {
+                player.getPersistentData().put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, new CompoundTag());
+            }
         }
     }
 

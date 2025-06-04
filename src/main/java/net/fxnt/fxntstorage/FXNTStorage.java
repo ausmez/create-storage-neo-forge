@@ -2,17 +2,19 @@ package net.fxnt.fxntstorage;
 
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import net.createmod.ponder.foundation.PonderIndex;
-import net.fxnt.fxntstorage.backpacks.main.BackpackClientTooltip;
-import net.fxnt.fxntstorage.backpacks.main.BackpackScreen;
-import net.fxnt.fxntstorage.backpacks.main.BackpackTooltip;
-import net.fxnt.fxntstorage.backpacks.renderer.BackpackRenderPlayer;
-import net.fxnt.fxntstorage.backpacks.upgrades.JetpackAirOverlay;
-import net.fxnt.fxntstorage.backpacks.util.BackpackNetworkHelper;
+import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.renderer.BackpackRenderPlayer;
+import net.fxnt.fxntstorage.backpack.tooltip.BackpackClientTooltip;
+import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackAirOverlay;
+import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.containers.StorageBoxScreen;
+import net.fxnt.fxntstorage.container.StorageBoxScreen;
+import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedScreen;
 import net.fxnt.fxntstorage.init.*;
 import net.fxnt.fxntstorage.ponder.CsPonderPlugin;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxScreen;
+import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedScreen;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -71,7 +73,6 @@ public class FXNTStorage {
 
         curiosLoaded = ModList.get().isLoaded(ModCompats.CURIOS);
         invSorterLoaded = ModList.get().isLoaded(ModCompats.INVENTORY_SORTER);
-
     }
 
     private static void onCommonSetup(final FMLCommonSetupEvent event) {
@@ -100,9 +101,11 @@ public class FXNTStorage {
         @SubscribeEvent
         public static void onClientSetup(final FMLClientSetupEvent event) {
             MenuScreens.register(ModMenuTypes.SIMPLE_STORAGE_BOX_MENU.get(), SimpleStorageBoxScreen::createScreen);
+            MenuScreens.register(ModMenuTypes.SIMPLE_STORAGE_BOX_MOUNTED_MENU.get(), SimpleStorageBoxMountedScreen::createScreen);
             MenuScreens.register(ModMenuTypes.STORAGE_BOX_MENU.get(), StorageBoxScreen::createScreen);
-            MenuScreens.register(ModMenuTypes.BACK_PACK_ITEM_MENU.get(), BackpackScreen::new);
-            MenuScreens.register(ModMenuTypes.BACK_PACK_BLOCK_MENU.get(), BackpackScreen::new);
+            MenuScreens.register(ModMenuTypes.STORAGE_BOX_MOUNTED_MENU.get(), StorageBoxMountedScreen::createScreen);
+            MenuScreens.register(ModMenuTypes.BACKPACK_ITEM_MENU.get(), BackpackScreen::new);
+            MenuScreens.register(ModMenuTypes.BACKPACK_BLOCK_MENU.get(), BackpackScreen::new);
 
             event.enqueueWork(ModNetwork::registerClientPackets);
             PonderIndex.addPlugin(new CsPonderPlugin());

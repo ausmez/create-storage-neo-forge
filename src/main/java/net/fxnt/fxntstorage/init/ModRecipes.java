@@ -1,7 +1,7 @@
 package net.fxnt.fxntstorage.init;
 
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpacks.recipes.BackpackRecipe;
+import net.fxnt.fxntstorage.backpack.recipe.BackpackRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;

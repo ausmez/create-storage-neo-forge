@@ -8,8 +8,8 @@ import net.createmod.ponder.api.element.WorldSectionElement;
 import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
-import net.fxnt.fxntstorage.containers.StorageBoxEntity;
-import net.fxnt.fxntstorage.containers.util.EnumProperties;
+import net.fxnt.fxntstorage.container.StorageBoxEntity;
+import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.passer.PasserSmartEntity;
 import net.minecraft.core.BlockPos;
@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
-import static net.fxnt.fxntstorage.containers.StorageBox.STORAGE_USED;
+import static net.fxnt.fxntstorage.container.StorageBox.STORAGE_USED;
 
 public class SmartPasserBlockScenes {
     public static void intro(SceneBuilder builder, SceneBuildingUtil util) {

@@ -1,8 +1,8 @@
 package net.fxnt.fxntstorage.init;
 
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
-import net.fxnt.fxntstorage.backpacks.main.BackpackUnpacking;
-import net.fxnt.fxntstorage.containers.StorageBoxUnpacking;
+import net.fxnt.fxntstorage.backpack.main.BackpackUnpacking;
+import net.fxnt.fxntstorage.container.StorageBoxUnpacking;
 import net.fxnt.fxntstorage.controller.StorageControllerUnpacking;
 import net.fxnt.fxntstorage.controller.StorageInterfaceUnpacking;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxUnpacking;
@@ -31,10 +31,10 @@ public class ModUnpackers {
         UnpackingHandler.REGISTRY.register(ModBlocks.STORAGE_CONTROLLER.get(), StorageControllerUnpacking.INSTANCE);
         UnpackingHandler.REGISTRY.register(ModBlocks.STORAGE_INTERFACE.get(), StorageInterfaceUnpacking.INSTANCE);
 
-        UnpackingHandler.REGISTRY.register(ModBlocks.BACK_PACK.get(), BackpackUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.ANDESITE_BACK_PACK.get(), BackpackUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.COPPER_BACK_PACK.get(), BackpackUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.BRASS_BACK_PACK.get(), BackpackUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.HARDENED_BACK_PACK.get(), BackpackUnpacking.INSTANCE);
+        UnpackingHandler.REGISTRY.register(ModBlocks.BACKPACK.get(), BackpackUnpacking.INSTANCE);
+        UnpackingHandler.REGISTRY.register(ModBlocks.ANDESITE_BACKPACK.get(), BackpackUnpacking.INSTANCE);
+        UnpackingHandler.REGISTRY.register(ModBlocks.COPPER_BACKPACK.get(), BackpackUnpacking.INSTANCE);
+        UnpackingHandler.REGISTRY.register(ModBlocks.BRASS_BACKPACK.get(), BackpackUnpacking.INSTANCE);
+        UnpackingHandler.REGISTRY.register(ModBlocks.HARDENED_BACKPACK.get(), BackpackUnpacking.INSTANCE);
     }
 }

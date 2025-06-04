@@ -1,107 +1,142 @@
 package net.fxnt.fxntstorage.init;
 
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.decoration.encasing.CasingBlock;
 import com.simibubi.create.foundation.data.BuilderTransformers;
+import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.BlockEntry;
-import net.fxnt.fxntstorage.backpacks.main.BackpackBlock;
-import net.fxnt.fxntstorage.backpacks.main.BackpackItem;
-import net.fxnt.fxntstorage.containers.StorageBox;
+import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.BackpackBlock;
+import net.fxnt.fxntstorage.backpack.BackpackItem;
+import net.fxnt.fxntstorage.container.StorageBox;
+import net.fxnt.fxntstorage.container.StorageBoxItem;
+import net.fxnt.fxntstorage.container.mounted.StorageBoxMovementBehaviour;
 import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageInterface;
 import net.fxnt.fxntstorage.passer.PasserBlock;
 import net.fxnt.fxntstorage.registry.SpriteShifts;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
+import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMovementBehaviour;
 import net.fxnt.fxntstorage.util.Util;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraftforge.fml.ModList;
 
-import static net.fxnt.fxntstorage.FXNTStorage.REGISTRATE;
+import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
+import static com.simibubi.create.api.contraption.storage.item.MountedItemStorageType.mountedItemStorage;
 
 public class ModBlocks {
+    private static final CreateRegistrate REGISTRATE = FXNTStorage.REGISTRATE;
+
+    static {
+        REGISTRATE.setCreativeTab(ModTabs.CREATIVE_MODE_TAB);
+    }
 
     // STORAGE BOXES //
+    public static final BlockEntry<StorageBox> CARDBOARD_STORAGE_BOX = REGISTRATE
+            .block("cardboard_storage_box", properties -> new StorageBox(properties, Util.CARDBOARD_STORAGE_BOX_SIZE))
+            .initialProperties(AllBlocks.CARDBOARD_BLOCK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
+            .item(StorageBoxItem::new)
+            .build()
+            .register();
+
     public static final BlockEntry<StorageBox> STORAGE_BOX = REGISTRATE
             .block("storage_box", properties -> new StorageBox(properties, Util.IRON_STORAGE_BOX_SIZE))
             .initialProperties(() -> Blocks.IRON_BLOCK)
-            .item().properties(Item.Properties::fireResistant)
+            .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
+            .item(StorageBoxItem::new)
+            .build()
+            .register();
+
+    public static final BlockEntry<StorageBox> WEATHERED_STORAGE_BOX = REGISTRATE
+            .block("weathered_storage_box", properties -> new StorageBox(properties, Util.IRON_STORAGE_BOX_SIZE))
+            .initialProperties(() -> Blocks.IRON_BLOCK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
+            .item(StorageBoxItem::new)
             .build()
             .register();
 
     public static final BlockEntry<StorageBox> ANDESITE_STORAGE_BOX = REGISTRATE
             .block("andesite_storage_box", properties -> new StorageBox(properties, Util.ANDESITE_STORAGE_BOX_SIZE))
-            .initialProperties(() -> Blocks.IRON_BLOCK)
-            .item().properties(Item.Properties::fireResistant)
+            .initialProperties(() -> Blocks.ANDESITE)
+            .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
+            .item(StorageBoxItem::new)
             .build()
             .register();
 
     public static final BlockEntry<StorageBox> COPPER_STORAGE_BOX = REGISTRATE
             .block("copper_storage_box", properties -> new StorageBox(properties, Util.COPPER_STORAGE_BOX_SIZE))
-            .initialProperties(() -> Blocks.IRON_BLOCK)
-            .item().properties(Item.Properties::fireResistant)
+            .initialProperties(() -> Blocks.COPPER_BLOCK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
+            .item(StorageBoxItem::new)
             .build()
             .register();
 
     public static final BlockEntry<StorageBox> BRASS_STORAGE_BOX = REGISTRATE
             .block("brass_storage_box", properties -> new StorageBox(properties, Util.BRASS_STORAGE_BOX_SIZE))
-            .initialProperties(() -> Blocks.IRON_BLOCK)
-            .item().properties(Item.Properties::fireResistant)
+            .initialProperties(AllBlocks.BRASS_BLOCK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
+            .item(StorageBoxItem::new)
             .build()
             .register();
 
     public static final BlockEntry<StorageBox> HARDENED_STORAGE_BOX = REGISTRATE
             .block("hardened_storage_box", properties -> new StorageBox(properties, Util.HARDENED_STORAGE_BOX_SIZE))
-            .initialProperties(() -> Blocks.IRON_BLOCK)
-            .item().properties(Item.Properties::fireResistant)
+            .initialProperties(() -> Blocks.NETHERITE_BLOCK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
+            .item(StorageBoxItem::new)
             .build()
             .register();
 
 
     // BACKPACKS //
-    public static final BlockEntry<BackpackBlock> BACK_PACK = REGISTRATE
-            .block("back_pack", properties -> new BackpackBlock(properties, Util.IRON_BACKPACK_STACK_MULTIPLIER))
+    public static final BlockEntry<BackpackBlock> BACKPACK = REGISTRATE
+            .block("backpack", properties -> new BackpackBlock(properties, Util.IRON_BACKPACK_STACK_MULTIPLIER))
             .initialProperties(() -> Blocks.WHITE_WOOL)
             .properties(BlockBehaviour.Properties::noCollission)
             .item(BackpackItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
-    public static final BlockEntry<BackpackBlock> ANDESITE_BACK_PACK = REGISTRATE
-            .block("andesite_back_pack", properties -> new BackpackBlock(properties, Util.ANDESITE_BACKPACK_STACK_MULTIPLIER))
+    public static final BlockEntry<BackpackBlock> ANDESITE_BACKPACK = REGISTRATE
+            .block("andesite_backpack", properties -> new BackpackBlock(properties, Util.ANDESITE_BACKPACK_STACK_MULTIPLIER))
             .initialProperties(() -> Blocks.WHITE_WOOL)
             .properties(BlockBehaviour.Properties::noCollission)
             .item(BackpackItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
-    public static final BlockEntry<BackpackBlock> COPPER_BACK_PACK = REGISTRATE
-            .block("copper_back_pack", properties -> new BackpackBlock(properties, Util.COPPER_BACKPACK_STACK_MULTIPLIER))
+    public static final BlockEntry<BackpackBlock> COPPER_BACKPACK = REGISTRATE
+            .block("copper_backpack", properties -> new BackpackBlock(properties, Util.COPPER_BACKPACK_STACK_MULTIPLIER))
             .initialProperties(() -> Blocks.WHITE_WOOL)
             .properties(BlockBehaviour.Properties::noCollission)
             .item(BackpackItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
-    public static final BlockEntry<BackpackBlock> BRASS_BACK_PACK = REGISTRATE
-            .block("brass_back_pack", properties -> new BackpackBlock(properties, Util.BRASS_BACKPACK_STACK_MULTIPLIER))
+    public static final BlockEntry<BackpackBlock> BRASS_BACKPACK = REGISTRATE
+            .block("brass_backpack", properties -> new BackpackBlock(properties, Util.BRASS_BACKPACK_STACK_MULTIPLIER))
             .initialProperties(() -> Blocks.WHITE_WOOL)
             .properties(BlockBehaviour.Properties::noCollission)
             .item(BackpackItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
-    public static final BlockEntry<BackpackBlock> HARDENED_BACK_PACK = REGISTRATE
-            .block("hardened_back_pack", properties -> new BackpackBlock(properties, Util.HARDENED_BACKPACK_STACK_MULTIPLIER))
+    public static final BlockEntry<BackpackBlock> HARDENED_BACKPACK = REGISTRATE
+            .block("hardened_backpack", properties -> new BackpackBlock(properties, Util.HARDENED_BACKPACK_STACK_MULTIPLIER))
             .initialProperties(() -> Blocks.WHITE_WOOL)
             .properties(BlockBehaviour.Properties::noCollission)
             .item(BackpackItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
@@ -140,90 +175,111 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX = REGISTRATE
             .block("simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.OAK_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_SPRUCE = REGISTRATE
             .block("simple_storage_box_spruce", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.SPRUCE_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_BIRCH = REGISTRATE
             .block("simple_storage_box_birch", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.BIRCH_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_JUNGLE = REGISTRATE
             .block("simple_storage_box_jungle", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.JUNGLE_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_ACACIA = REGISTRATE
             .block("simple_storage_box_acacia", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.ACACIA_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_DARK_OAK = REGISTRATE
             .block("simple_storage_box_dark_oak", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.DARK_OAK_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_MANGROVE = REGISTRATE
             .block("simple_storage_box_mangrove", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.MANGROVE_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_CHERRY = REGISTRATE
             .block("simple_storage_box_cherry", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.CHERRY_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_BAMBOO = REGISTRATE
             .block("simple_storage_box_bamboo", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.BAMBOO_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_CRIMSON = REGISTRATE
             .block("simple_storage_box_crimson", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.CRIMSON_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
 
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_WARPED = REGISTRATE
             .block("simple_storage_box_warped", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.WARPED_PLANKS)
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .item(SimpleStorageBoxItem::new)
-            .properties(Item.Properties::fireResistant)
             .build()
             .register();
+
+    public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_PALE_OAK =
+            ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT) ? REGISTRATE
+                    .block("simple_storage_box_pale_oak", SimpleStorageBox::new)
+                    .initialProperties(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS::get)
+                    .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+                    .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+                    .item(SimpleStorageBoxItem::new)
+                    .build()
+                    .register() : null;
 
 
     // CASING BLOCKS //
@@ -293,6 +349,14 @@ public class ModBlocks {
             .transform(BuilderTransformers.casing(() -> SpriteShifts.WARPED_CASING))
             .register();
 
+    public static final BlockEntry<CasingBlock> STORAGE_TRIM_PALE_OAK =
+            ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT) ? REGISTRATE
+                    .block("storage_trim_pale_oak", CasingBlock::new)
+                    .properties(properties -> properties.mapColor(MapColor.QUARTZ))
+                    .transform(BuilderTransformers.casing(() -> SpriteShifts.PALE_OAK_CASING))
+                    .register() : null;
+
     public static void register() {
     }
+
 }

@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
 public class SimpleStorageBoxScreen extends AbstractContainerScreen<SimpleStorageBoxMenu> {
-    private final ResourceLocation guiTexture = new ResourceLocation(FXNTStorage.MOD_ID, "textures/gui/container/simple_storage_box_screen.png");
+    private final ResourceLocation guiTexture = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/gui/container/simple_storage_box_screen.png");
     private final int guiTextureWidth = 176;
     private final int guiTextureHeight = 176;
 

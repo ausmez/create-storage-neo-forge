@@ -5,8 +5,8 @@ import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpacks.main.BackpackScreen;
-import net.fxnt.fxntstorage.containers.StorageBoxScreen;
+import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
+import net.fxnt.fxntstorage.container.StorageBoxScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +21,7 @@ public class JEICompat implements IModPlugin {
 
     @Override
     public @NotNull ResourceLocation getPluginUid() {
-        return new ResourceLocation(FXNTStorage.MOD_ID, "jei_compat");
+        return ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "jei_compat");
     }
 
     @Override

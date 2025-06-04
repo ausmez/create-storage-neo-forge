@@ -1,7 +1,8 @@
 package net.fxnt.fxntstorage.controller;
 
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.containers.util.ImplementedContainer;
+import net.fxnt.fxntstorage.container.util.ImplementedContainer;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -18,8 +19,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
 
+@MethodsReturnNonnullByDefault
+@ParametersAreNonnullByDefault
 public class StorageInterfaceEntity extends BaseContainerBlockEntity implements ImplementedContainer {
     public int tick = 0;
     public StorageControllerEntity controller = null;

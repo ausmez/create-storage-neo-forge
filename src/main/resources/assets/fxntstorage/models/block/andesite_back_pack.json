@@ -1,7 +1,0 @@
-{
-	"parent": "fxntstorage:block/back_pack",
-	"textures": {
-		"0": "fxntstorage:block/andesite_back_pack",
-		"particle": "fxntstorage:block/andesite_back_pack"
-	}
-}

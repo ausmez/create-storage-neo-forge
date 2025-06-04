@@ -8,6 +8,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -86,4 +87,8 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
         pBuilder.add(FACING, CONNECTED);
     }
 
+    @Override
+    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+        return InteractionResult.SUCCESS;
+    }
 }

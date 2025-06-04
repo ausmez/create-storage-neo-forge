@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.storage_network;
 
-import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
@@ -26,7 +25,6 @@ public class StorageNetwork {
     public Set<BlockPos> components = new HashSet<>();
     public NonNullList<StorageNetworkItem> boxes = NonNullList.create();
     public NonNullList<ItemStack> items = NonNullList.create();
-    //    public NonNullList<PackagerBlock> packagers = NonNullList.create();
     private final HashMap<Integer, Integer> boxSlots = new HashMap<>();
     public int networkVersion = 0;
     private int tick = 0;
@@ -40,7 +38,7 @@ public class StorageNetwork {
     }
 
     public void tick() {
-        // Check if boxes removed every tick
+        // Check if boxes removed every updateClientStorageData
         checkBoxes();
         // Move items from blank stack into a matching / empty box
         moveNewItems();
@@ -79,14 +77,12 @@ public class StorageNetwork {
                 BlockEntity blockEntity = this.level.getBlockEntity(removedPos);
                 if (blockEntity instanceof StorageInterfaceEntity storageInterface) {
                     // The connection to the StorageInterface at this position was removed
-                    FXNTStorage.LOGGER.debug("StorageInterface @ {} is forgetting about StorageController @ {}", removedPos, controllerPos);
                     storageInterface.forgetController();
                 }
             }
 
             this.components = newComponents;
-            this.networkVersion++;
-            if (this.networkVersion > 999) this.networkVersion = 0;
+            this.networkVersion = (this.networkVersion + 1) % 1000;
         }
 
         getBoxes(this.level, this.components);
@@ -120,7 +116,7 @@ public class StorageNetwork {
 
         List<BlockPos> positions = new ArrayList<>();
         positions.add(origin);
-//        this.packagers.clear();
+
         int lastCheckedPos = 0;
         int distanceToController = 0;
 
@@ -132,13 +128,6 @@ public class StorageNetwork {
                     BlockPos pos = checkPos.relative(direction);
                     if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(this.controllerPos, pos) <= searchRange * searchRange) {
                         addPosition(positions, pos);
-//                        // If adjacent block is a Packager and has a Stock Link attached, add it to packager list
-//                        if (level.getBlockState(pos).getBlock().equals(AllBlocks.PACKAGER.get()) &&
-//                                level.getBlockState(checkPos).is(ModTags.Blocks.STORAGE_NETWORK_CONTROLLERS)) {
-//                            if (level.getBlockState(pos).getValue(PackagerBlock.LINKED)) {
-//                                this.packagers.add((PackagerBlock) level.getBlockState(pos).getBlock());
-//                            }
-//                        }
                     }
                 }
 
@@ -280,7 +269,7 @@ public class StorageNetwork {
             }
             SimpleStorageBoxEntity blockEntity = this.boxes.get(boxSlot).simpleStorageBoxEntity;
             blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(itemHandler -> {
-                itemHandler.insertItem(itemSlot, itemStack, false);
+                blockEntity.setItem(itemSlot, itemStack);
                 // Update these items as well as the storage box entity items
                 this.items.set(slot, itemHandler.getStackInSlot(itemSlot));
             });

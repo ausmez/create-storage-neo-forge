@@ -1,0 +1,22 @@
+{
+  "type": "fxntstorage:backpack_crafting",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:copper_backpack"
+    },
+    "C": {
+      "item": "create:brass_casing"
+    }
+  },
+  "pattern": [
+    "CCC",
+    "CBC",
+    "CCC"
+  ],
+  "result": {
+    "item": "fxntstorage:brass_backpack"
+  },
+  "show_notification": true
+}

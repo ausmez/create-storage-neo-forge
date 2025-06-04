@@ -4,7 +4,7 @@
   "group": "storage_box",
   "ingredients": [
     {
-      "item": "fxntstorage:back_pack_blank_upgrade"
+      "item": "fxntstorage:backpack_blank_upgrade"
     },
     {
       "item": "minecraft:flint_and_steel"
