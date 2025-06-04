@@ -1,13 +1,17 @@
 # Changelog
 
-## 1.0.0 - 2025-04-09
+## 1.0.0 - 2025-05-09
 
 ## Changes
-- **Create 6.0.0:** Support added for Create 6.0.3+
+- **Create 6.0:**
+  - Support added for Create 6.0.3+
+  - Cardboard and Weathered Iron variants of the Storage Box have been added
 - **Ponder Scenes:** Updated to support new Ponder API
 - **Packager Support:**
   - Can be attached to Backpacks, Storage Boxes, Simple Storage Boxes, Storage Controllers and Storage Interfaces to pack/unpack packages.
-  - Attach a Stock Link to connect a Storage Network to a logistics network. 
+  - Attach a Stock Link to connect a Storage Network to a logistics network.
+- **Optional Dependency:**
+  - Vanilla Backport: Support added for Pale Oak Simple Storage Box and Pale Oak Trim when mod present
 
 ## Known Issues
 - When a Storage Network has multiple Packagers with Stock Links attached, the Stock Keeper will display incorrect
@@ -16,7 +20,7 @@
   are displayed for Items/Stacks ([Create#7688](https://github.com/Creators-of-Create/Create/issues/7688))
   
 
-## 0.22 - 2025-03-01
+## 0.22 - 2025-03-21
 
 ## New Features
 - **GUI Overlay for Backtanks:** Displays remaining air time while flying (configurable).
@@ -36,16 +40,17 @@
 - **Tool Swap Upgrade:**
   - Now configurable to prioritize Silk Touch and specific blocks.
 - **Smart Passer:** Now react to redstone signals to stop passing items.
+- **Simple Storage Box:** Can now be used/interacted with on contraptions for bulk storage
 - **Storage Box Enhancements:**
   - No longer requires a dedicated slot for voiding items in void mode.
   - Indicator light turns purple when void mode is active.
   - Refined player interactions with Storage Boxes and Simple Storage Boxes.
+  - Can now be used/interacted with on contraptions for bulk storage.
 - **Storage Controller:** Lights up when at least one Simple Storage Box is connected to the network.
 - **Tooltip Enhancements:** Now have a more "Create" aesthetic.
 - **Recipe Tweaks:** Minor adjustments and balance improvements.
 
 ## Bug Fixes
-- **Storage Box:** Can be used on contraptions for bulk storage.
 - **Simple Storage Box:** Items on the display no longer render backwards
 - **Storage Interface:** Properly disconnects from the storage network when removed.
 - **Feeder Upgrade:** Stores leftover items in Backpack (or drops if no space) after consumption (e.g., Honey Bottles, "bowl" foods).
@@ -61,6 +66,6 @@
   - Gravity behaves correctly when wearing a Backpack underwater.
 
 
-## 0.20 - 2024-12-01
+## 0.20 - 2025-02-01
 
 - _Initial migration from Fabric release_

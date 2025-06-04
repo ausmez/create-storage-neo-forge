@@ -1,5 +1,7 @@
 package net.fxnt.fxntstorage.network.handler;
 
+import com.simibubi.create.api.contraption.storage.item.MountedItemStorage;
+import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
@@ -7,12 +9,16 @@ import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHandler;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
+import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
+import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedStorage;
 import net.fxnt.fxntstorage.network.packet.*;
+import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedStorage;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -37,7 +43,9 @@ public class ServerPayloadHandler {
                 player.closeContainer();
             if (key == Util.TOGGLE_HOVER) {
                 JetpackHandler jetpackHandler = JetpackManager.getJetpackHandler(player);
-                jetpackHandler.toggleHover();
+                if (jetpackHandler.calculateJetPackFuel(player) > 0) {
+                    jetpackHandler.toggleHover();
+                }
             }
         });
     }
@@ -89,6 +97,10 @@ public class ServerPayloadHandler {
             if (packet.invType() == Util.INV_TYPE_STORAGE_BOX && player.containerMenu instanceof StorageBoxMenu menu) {
                 menu.sortStorageItems(packet.slotStart(), packet.slotEnd(), packet.sortOrder());
             }
+            // StorageBoxMounted sorting
+            if (packet.invType() == Util.INV_TYPE_STORAGE_BOX && player.containerMenu instanceof StorageBoxMountedMenu menu) {
+                menu.sortStorageItems(packet.slotStart(), packet.slotEnd(), packet.sortOrder());
+            }
         });
     }
 
@@ -107,5 +119,38 @@ public class ServerPayloadHandler {
         });
     }
 
+    public void handleSetSortOrderPacket(SetSortOrderPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer player = (ServerPlayer) context.player();
 
+            if (player.containerMenu instanceof BackpackMenu menu) {
+                menu.container.setSortOrder(packet.sortOrder());
+                menu.container.setDataChanged();
+            }
+
+            if (player.containerMenu instanceof StorageBoxMenu menu) {
+                menu.setSortOrder(packet.sortOrder());
+            }
+
+            if (player.containerMenu instanceof StorageBoxMountedMenu menu) {
+                menu.setSortOrder(packet.sortOrder());
+            }
+        });
+    }
+
+    public void handleSetMountedStorageDirtyPacket(SetMountedStorageDirtyPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer player = (ServerPlayer) context.player();
+
+            Entity entity = player.level().getEntity(packet.entityId());
+            if (entity instanceof AbstractContraptionEntity contraptionEntity) {
+                MountedItemStorage storage = contraptionEntity.getContraption().getStorage().getAllItemStorages().get(packet.localPos());
+                if (storage instanceof SimpleStorageBoxMountedStorage) {
+                    ((SimpleStorageBoxMountedStorage) storage).markDirty();
+                } else if (storage instanceof StorageBoxMountedStorage) {
+                    ((StorageBoxMountedStorage) storage).markDirty();
+                }
+            }
+        });
+    }
 }

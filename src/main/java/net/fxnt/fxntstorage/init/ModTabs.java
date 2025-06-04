@@ -12,6 +12,7 @@ import net.minecraft.world.item.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,7 +98,7 @@ public class ModTabs {
         }
 
         @Override
-        public void accept(CreativeModeTab.ItemDisplayParameters parameters, CreativeModeTab.Output output) {
+        public void accept(CreativeModeTab.@NotNull ItemDisplayParameters parameters, CreativeModeTab.@NotNull Output output) {
             List<ItemOrdering> orderings = makeOrdering();
             List<Item> items = new ArrayList<>(collectBlocks());
             items.addAll(collectItems());

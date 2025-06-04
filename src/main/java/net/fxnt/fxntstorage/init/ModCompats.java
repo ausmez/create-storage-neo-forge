@@ -12,6 +12,7 @@ public class ModCompats {
     public static final String CURIOS = "curios";
     public static final String CARRY_ON = "carryon";
     public static final String INVENTORY_SORTER = "inventorysorter";
+    public static final String VANILLA_BACKPORT = "vanillabackport";
 
     @SubscribeEvent
     public static void enqueueCompatMessages(final InterModEnqueueEvent event) {

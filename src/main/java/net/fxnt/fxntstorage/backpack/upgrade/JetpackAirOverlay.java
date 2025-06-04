@@ -14,6 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -21,7 +22,7 @@ public class JetpackAirOverlay implements LayeredDraw.Layer {
     public static final JetpackAirOverlay INSTANCE = new JetpackAirOverlay();
 
     @Override
-    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+    public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.options.hideGui || Objects.requireNonNull(mc.gameMode).getPlayerMode() == GameType.SPECTATOR)
             return;
@@ -66,4 +67,5 @@ public class JetpackAirOverlay implements LayeredDraw.Layer {
 
         poseStack.popPose();
     }
+
 }

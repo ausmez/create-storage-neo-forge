@@ -5,10 +5,12 @@ import net.fxnt.fxntstorage.network.packet.BackpackMenuCtrlPacket;
 import net.fxnt.fxntstorage.network.packet.PickBlockUpgradePacket;
 import net.fxnt.fxntstorage.network.packet.SortInventoryPacket;
 import net.fxnt.fxntstorage.network.packet.SyncClientSettingsPacket;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BackpackNetworkHelper {
@@ -20,18 +22,9 @@ public class BackpackNetworkHelper {
         PacketDistributor.sendToServer(new BackpackMenuCtrlPacket(false));
     }
 
-    public static void sortBackpack(int pSlotId, Util.InventorySortOrder pSortOrder) {
-        byte sortOrder;
+    public static void sortBackpack(int pSlotId, SortOrder pSortOrder) {
         int slotStart;
         int slotEnd;
-
-        if (pSortOrder == Util.InventorySortOrder.NAME) {
-            sortOrder = 1;
-        } else if (pSortOrder == Util.InventorySortOrder.TAG) {
-            sortOrder = 2;
-        } else {
-            sortOrder = 0; // COUNT
-        }
 
         if (pSlotId < Util.ITEM_SLOT_END_RANGE) { // BackpackSlots
             slotStart = Util.ITEM_SLOT_START_RANGE;
@@ -43,7 +36,7 @@ public class BackpackNetworkHelper {
             slotEnd = Util.TOOL_SLOT_END_RANGE;
 
         } else if (pSlotId < Util.UPGRADE_SLOT_END_RANGE) {
-            return; // We don't sort upgrade slots
+            return; // Don't sort upgrade slots
         } else if (pSlotId < Util.UPGRADE_SLOT_END_RANGE + 27) {
             slotStart = Util.UPGRADE_SLOT_END_RANGE;
             slotEnd = Util.UPGRADE_SLOT_END_RANGE + 27;
@@ -52,7 +45,7 @@ public class BackpackNetworkHelper {
             slotEnd = Util.UPGRADE_SLOT_END_RANGE + 36;
         }
 
-        PacketDistributor.sendToServer(new SortInventoryPacket(Util.INV_TYPE_BACKPACK, slotStart, slotEnd, sortOrder));
+        PacketDistributor.sendToServer(new SortInventoryPacket(Util.INV_TYPE_BACKPACK, slotStart, slotEnd, pSortOrder));
     }
 
     public static void sendClientSettings() {
@@ -61,8 +54,7 @@ public class BackpackNetworkHelper {
         boolean ignoreFanProcessing = ConfigManager.ClientConfig.MAGNET_IGNORE_FAN_PROCESSING.get();
         boolean displayFeederMessage = ConfigManager.ClientConfig.DISPLAY_FEEDER_MESSAGE.get();
 
-        // TODO: Validate params
-        PacketDistributor.sendToServer(new SyncClientSettingsPacket((List<String>) prefersSilkTouchList, preferSilkTouch, ignoreFanProcessing, displayFeederMessage));
+        PacketDistributor.sendToServer(new SyncClientSettingsPacket(new ArrayList<>(prefersSilkTouchList), preferSilkTouch, ignoreFanProcessing, displayFeederMessage));
     }
 
     public static void doPickBlock(ItemStack stack) {

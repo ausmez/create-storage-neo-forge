@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.*;
 
 @SuppressWarnings("all")
 public enum BackpackUnpacking implements UnpackingHandler {
@@ -38,24 +38,70 @@ public enum BackpackUnpacking implements UnpackingHandler {
 
                 return true;
             } else {
-                int slotsAvailable = 0;
-                for (ItemStack itemStack : items) {
+                int slotLimit = Util.ITEM_SLOT_END_RANGE;
+                int stackMultiplier = backpackEntity.stackMultiplier;
 
-                    for (int i = 0; i < Util.ITEM_SLOT_END_RANGE; ++i) {
-                        ItemStack stack = targetInv.getStackInSlot(i);
-                        int slotMaxStackSize = backpackEntity.stackMultiplier * itemStack.getMaxStackSize();
+                // Virtual copies of slot content and remaining capacity
+                ItemStack[] virtualStacks = new ItemStack[slotLimit];
+                int[] remaining = new int[slotLimit];
 
-                        if (stack.isEmpty() || (ItemStack.isSameItemSameComponents(stack, itemStack) && stack.getCount() < slotMaxStackSize)) {
-                            int availableSpace = slotMaxStackSize - stack.getCount();
-                            if (itemStack.getCount() <= availableSpace) {
-                                ++slotsAvailable;
+                // Initialize from real inventory
+                for (int i = 0; i < slotLimit; i++) {
+                    ItemStack slotStack = targetInv.getStackInSlot(i);
+                    virtualStacks[i] = slotStack.copy();
+
+                    if (slotStack.isEmpty()) {
+                        remaining[i] = -1; // Mark empty, will be calculated when assigned
+                    } else {
+                        remaining[i] = (stackMultiplier * slotStack.getMaxStackSize()) - slotStack.getCount();
+                    }
+                }
+
+                // Try to virtually insert each item
+                outer:
+                for (ItemStack insertStack : items) {
+                    int toInsert = insertStack.getCount();
+
+                    // First pass: try merging into compatible stacks
+                    for (int i = 0; i < slotLimit; i++) {
+                        ItemStack vs = virtualStacks[i];
+                        if (vs.isEmpty()) continue;
+
+                        if (ItemStack.isSameItemSameComponents(vs, insertStack)) {
+                            int insertable = Math.min(remaining[i], toInsert);
+                            if (insertable > 0) {
+                                remaining[i] -= insertable;
+                                vs.grow(insertable);
+                                toInsert -= insertable;
+                                if (toInsert <= 0) continue outer;
                             }
                         }
                     }
 
+                    // Second pass: assign empty slot
+                    for (int i = 0; i < slotLimit; i++) {
+                        ItemStack vs = virtualStacks[i];
+                        if (!vs.isEmpty()) continue;
+
+                        // Initialize empty slot for this item
+                        virtualStacks[i] = insertStack.copy();
+                        virtualStacks[i].setCount(0);
+                        remaining[i] = stackMultiplier * insertStack.getMaxStackSize();
+
+                        int insertable = Math.min(remaining[i], toInsert);
+                        if (insertable > 0) {
+                            remaining[i] -= insertable;
+                            virtualStacks[i].grow(insertable);
+                            toInsert -= insertable;
+                            if (toInsert <= 0) continue outer;
+                        }
+                    }
+
+                    // Could not insert this item fully
+                    return false;
                 }
 
-                return slotsAvailable >= items.size();
+                return true;
             }
         }
     }

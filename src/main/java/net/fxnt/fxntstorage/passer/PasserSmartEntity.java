@@ -62,7 +62,7 @@ public class PasserSmartEntity extends SmartBlockEntity {
         long amount = filtering.getAmount();
         boolean fixedAmount = !filtering.upTo;
 
-        PasserHelper.passItems(level, srcContainer, dstContainer, this.facing, amount, fixedAmount, filterItem); // Set to limit set by filter
+        PasserHelper.passItems(level, srcContainer, dstContainer, amount, fixedAmount, filterItem); // Set to limit set by filter
     }
 
 }

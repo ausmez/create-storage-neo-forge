@@ -4,7 +4,6 @@ import com.mojang.serialization.MapCodec;
 import com.simibubi.create.AllTags;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
-import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -70,7 +69,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> blockEntityType) {
         return createTickerHelper(blockEntityType, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (type, world, pos, entity) -> {
             if (entity instanceof SimpleStorageBoxEntity) {
-                entity.serverTick(type, world);
+                entity.serverTick(type);
             }
         });
     }
@@ -79,7 +78,6 @@ public class SimpleStorageBox extends BaseEntityBlock {
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!oldState.is(this)) level.invalidateCapabilities(pos);
-        // FIXME: Such a dodgy way of triggering an update
         ((SimpleStorageBoxEntity) Objects.requireNonNull(level.getBlockEntity(pos))).tick = 999;
     }
 
@@ -92,11 +90,12 @@ public class SimpleStorageBox extends BaseEntityBlock {
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-        if (stack.has(DataComponents.CUSTOM_NAME)) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof SimpleStorageBoxEntity be) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof SimpleStorageBoxEntity be) {
+            if (stack.has(DataComponents.CUSTOM_NAME)) {
                 be.getDisplayName();
             }
+            be.tick = 999;
         }
     }
 
@@ -128,13 +127,16 @@ public class SimpleStorageBox extends BaseEntityBlock {
                     // If box empty, holding wrench & has filter item then remove filter
                     simpleStorageBoxEntity.removeFilter();
                 } else {
-                    // Set filter if item is not an upgrade or empty hand and no items exist and no filter exists
-                    if (!handItem.isEmpty() && !handItem.is(ModTags.Items.STORAGE_BOX_UPGRADE) && simpleStorageBoxEntity.getStoredAmount() == 0 && simpleStorageBoxEntity.filterItem.isEmpty()) {
-                        simpleStorageBoxEntity.setFilter(handItem);
-                    }
+                    // Prevent wrench from being placed in the filter
+                    if (!handItem.is(AllTags.AllItemTags.WRENCH.tag)) {
+                        // Set filter if item is not an upgrade or empty hand and no items exist and no filter exists
+                        if (!handItem.isEmpty() && !handItem.is(ModTags.Items.STORAGE_BOX_UPGRADE) && simpleStorageBoxEntity.getStoredAmount() == 0 && simpleStorageBoxEntity.filterItem.isEmpty()) {
+                            simpleStorageBoxEntity.setFilter(handItem);
+                        }
 
-                    // Transfer items from player to box
-                    simpleStorageBoxEntity.transferToStorage(player, false);
+                        // Transfer items from player to box
+                        simpleStorageBoxEntity.transferToStorage(player, false);
+                    }
                 }
             }
 
@@ -142,9 +144,8 @@ public class SimpleStorageBox extends BaseEntityBlock {
             lastClickUUID = player.getUUID();
 
             simpleStorageBoxEntity.setChanged();
-
         }
-        return InteractionResult.PASS;
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
@@ -159,7 +160,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
         Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
         if (blockEntity instanceof SimpleStorageBoxEntity storageBoxEntity && !(item instanceof AxeItem)) {
             // Small cooldown to prevent double-extraction
-            if (level.getGameTime() - lastAttackTime > 1 && player.getUUID().equals(lastAttackUUID)) {
+            if (lastAttackTime == 0 || level.getGameTime() - lastAttackTime > 1 && player.getUUID().equals(lastAttackUUID)) {
                 storageBoxEntity.transferFromStorage(player);
             }
 

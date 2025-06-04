@@ -1,10 +1,8 @@
 package net.fxnt.fxntstorage.backpack.main;
 
-import com.google.common.collect.Sets;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.AllTags;
-import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
@@ -12,6 +10,7 @@ import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
 import net.fxnt.fxntstorage.network.packet.SetCarriedPacket;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.NonNullList;
@@ -23,7 +22,10 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -33,18 +35,20 @@ import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 
+@ParametersAreNonnullByDefault
 public class BackpackMenu extends AbstractContainerMenu {
     public IBackpackContainer container;
 
     public final Player player;
     public byte backpackType; // 1 = On Back, 2 = From Hand, 3 = BlockEntity
 
-    private final Set<Slot> quickcraftSlots = Sets.newHashSet();
-    private final int itemSlotCount = BackpackBlock.getItemSlotCount();
-    private final int toolSlotCount = BackpackBlock.getToolSlotCount();
-    private final int upgradeSlotCount = BackpackBlock.getUpgradeSlotCount();
+    public final int ITEM_SLOT_COUNT = BackpackBlock.getItemSlotCount();
+    public final int TOOL_SLOT_COUNT = BackpackBlock.getToolSlotCount();
+    public final int UPGRADE_SLOT_COUNT = BackpackBlock.getUpgradeSlotCount();
+    public final int TOTAL_SLOT_COUNT = ITEM_SLOT_COUNT + TOOL_SLOT_COUNT + UPGRADE_SLOT_COUNT;
     public boolean ctrlKeyDown = false;
 
     public BackpackMenu(MenuType<?> type, int containerId, Inventory playerInventory, IBackpackContainer container, byte backpackType) {
@@ -59,12 +63,12 @@ public class BackpackMenu extends AbstractContainerMenu {
     public void initSlots() {
         Inventory playerInventory = player.getInventory();
 
-        final IBackpackContainer finalContainer = this.container;
+        final IBackpackContainer finalContainer = container;
         IItemHandler itemHandler = container.getItemHandler();
 
         // Add Container Slots
         int index = 0;
-        for (int i = 0; i < itemSlotCount; i++) {
+        for (int i = 0; i < ITEM_SLOT_COUNT; i++) {
             this.addSlot(new BackpackSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack pStack) {
@@ -92,7 +96,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         }
 
         // Add Tool Slots
-        for (int i = 0; i < toolSlotCount; i++) {
+        for (int i = 0; i < TOOL_SLOT_COUNT; i++) {
             this.addSlot(new ToolSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack pStack) {
@@ -120,7 +124,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         }
 
         // Add Upgrade Slots
-        for (int i = 0; i < upgradeSlotCount; i++) {
+        for (int i = 0; i < UPGRADE_SLOT_COUNT; i++) {
             this.addSlot(new UpgradeSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack pStack) {
@@ -159,26 +163,15 @@ public class BackpackMenu extends AbstractContainerMenu {
 
     }
 
-//    @Override
-//    public void setSynchronizer(@NotNull ContainerSynchronizer pSynchronizer) {
-//        // Vanilla synchronizer transfers stack counts as short, need to override
-//        // and transmit stack counts as VarInt to allow for stacks > 32,767
-//        if (player instanceof ServerPlayer serverPlayer) {
-//            super.setSynchronizer(new HighStackCountSync(serverPlayer));
-//        } else {
-//            super.setSynchronizer(pSynchronizer);
-//        }
-//    }
-
     @Override
-    public boolean stillValid(@NotNull Player player) {
+    public boolean stillValid(Player player) {
         if (backpackType == Util.BACKPACK_IN_HAND) {
             ItemStack selectedStack = player.getInventory().getSelected();
             return selectedStack.getItem() instanceof BackpackItem;
         } else if (backpackType == Util.BACKPACK_ON_BACK) {
             return BackpackHelper.isWearingBackpack(player);
         }
-        return true; //TODO manual override!!
+        return true;
     }
 
     private boolean isUniqueUpgrade(IItemHandler itemHandler, Item upgradeItem) {
@@ -188,6 +181,14 @@ public class BackpackMenu extends AbstractContainerMenu {
             }
         }
         return true;
+    }
+
+    public SortOrder getSortOrder() {
+        return container.getSortOrder();
+    }
+
+    public void setSortOrder(SortOrder order) {
+        container.setSortOrder(order);
     }
 
     public int getSlotsSize() {
@@ -207,7 +208,7 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public void clicked(int pSlotId, int pButton, @NotNull ClickType pClickType, @NotNull Player pPlayer) {
+    public void clicked(int pSlotId, int pButton, ClickType pClickType, Player pPlayer) {
         // Prevent moving backpack while it is open
         if (pSlotId >= 0 && backpackType == Util.BACKPACK_IN_HAND) {
             int selectedHotBarSlot = pPlayer.getInventory().selected;
@@ -228,12 +229,9 @@ public class BackpackMenu extends AbstractContainerMenu {
         }
 
         // This variable is a hack to differentiate between automation and player interaction for extractItem/insertItem
-        this.container.setPlayerInteraction(true);
-//        this.doThisClick(pSlotId, pButton, pClickType, player);
-        FXNTStorage.LOGGER.debug("ClickType {}", pClickType);
+        container.setPlayerInteraction(true);
         super.clicked(pSlotId, pButton, pClickType, pPlayer);
-        this.container.setPlayerInteraction(false);
-
+        container.setPlayerInteraction(false);
     }
 
     private boolean isUpgradeItem(ItemStack itemStack) {
@@ -255,16 +253,16 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        Slot slot = this.slots.get(index);
+    public @NotNull ItemStack quickMoveStack(Player player, int index) {
+        Slot slot = slots.get(index);
         ItemStack slotItem = slot.getItem();
 
         // If item is an upgrade item, put it into upgrade slot (Only from player inventory)
         if (isUpgradeItem(slotItem) && index > Util.UPGRADE_SLOT_END_RANGE) {
             // Are there any free upgrade slots
             for (int i = Util.UPGRADE_SLOT_START_RANGE; i < Util.UPGRADE_SLOT_END_RANGE; i++) {
-                if (this.slots.get(i).getItem().isEmpty()) {
-                    this.slots.get(i).safeInsert(slotItem);
+                if (slots.get(i).getItem().isEmpty()) {
+                    slots.get(i).safeInsert(slotItem);
                     return ItemStack.EMPTY;
                 }
             }
@@ -286,8 +284,8 @@ public class BackpackMenu extends AbstractContainerMenu {
             for (Map.Entry<TagKey<Item>, Integer> entry : toolSlotMap.entrySet()) {
                 if (slotItem.is(entry.getKey())) {
                     int slotIndex = Util.TOOL_SLOT_START_RANGE + entry.getValue();
-                    if (this.slots.get(slotIndex).getItem().isEmpty()) {
-                        this.slots.get(slotIndex).safeInsert(slotItem);
+                    if (slots.get(slotIndex).getItem().isEmpty()) {
+                        slots.get(slotIndex).safeInsert(slotItem);
                         return ItemStack.EMPTY;  // Exit early once the tool is placed
                     }
                 }
@@ -295,35 +293,35 @@ public class BackpackMenu extends AbstractContainerMenu {
 
             // If no specific tool slot was available, search in the general range
             for (int i = Util.TOOL_SLOT_START_RANGE + 5; i < Util.TOOL_SLOT_END_RANGE; i++) {
-                if (this.slots.get(i).getItem().isEmpty()) {
-                    this.slots.get(i).safeInsert(slotItem);
+                if (slots.get(i).getItem().isEmpty()) {
+                    slots.get(i).safeInsert(slotItem);
                     return ItemStack.EMPTY;  // Exit once the tool is placed
                 }
             }
         }
 
         // General Quick Move for all other items
-        if (index >= 0 && index < this.slots.size()) {
+        if (index >= 0 && index < slots.size()) {
             ItemStack itemStack = ItemStack.EMPTY;
             if (slot.hasItem()) {
                 ItemStack itemStack2 = slot.getItem();
                 itemStack = itemStack2.copy();
                 if (index < Util.UPGRADE_SLOT_END_RANGE) {
                     // Move itemStack2 from container to player inventory, stacking items right->left
-                    if (!this.moveItemStack(itemStack2, Util.UPGRADE_SLOT_END_RANGE, Util.UPGRADE_SLOT_END_RANGE + 36, true, true)) {
+                    if (!moveItemStack(itemStack2, Util.UPGRADE_SLOT_END_RANGE, Util.UPGRADE_SLOT_END_RANGE + 36, true, true)) {
                         return ItemStack.EMPTY;
                     }
                     // Move itemStack2 from player inventory to container, stacking items left->right
                 } else {
-                    if (this.moveItemStack(itemStack2, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE, false, false)) {
+                    if (moveItemStack(itemStack2, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE, false, false)) {
                         return ItemStack.EMPTY;
                     }
                     // Next, try transferring to tool slot range, starting at offset 5
-                    if (this.moveItemStack(itemStack2, Util.TOOL_SLOT_START_RANGE + 5, Util.TOOL_SLOT_END_RANGE, false, false)) {
+                    if (moveItemStack(itemStack2, Util.TOOL_SLOT_START_RANGE + 5, Util.TOOL_SLOT_END_RANGE, false, false)) {
                         return ItemStack.EMPTY;
                     }
                     // Finally, try transferring to the main tool slots as a last resort
-                    if (this.moveItemStack(itemStack2, Util.TOOL_SLOT_START_RANGE, Util.TOOL_SLOT_END_RANGE, false, false)) {
+                    if (moveItemStack(itemStack2, Util.TOOL_SLOT_START_RANGE, Util.TOOL_SLOT_END_RANGE, false, false)) {
                         return ItemStack.EMPTY;
                     }
                 }
@@ -356,7 +354,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         if ((!fromContainer && !newStack.isDamageableItem() && newStack.getComponentsPatch().isEmpty() && !newStack.isBarVisible())
                 || (fromContainer && newStack.isStackable())) {
             while (!newStack.isEmpty() && (reverseDirection ? i >= startIndex : i < endIndex)) {
-                Slot slot = this.slots.get(i);
+                Slot slot = slots.get(i);
                 ItemStack slotStack = slot.getItem();
                 if (!slotStack.isEmpty() && ItemStack.isSameItemSameComponents(newStack, slotStack)) {
                     // Check if the slot is an UpgradeSlot and adjust the logic accordingly
@@ -403,14 +401,13 @@ public class BackpackMenu extends AbstractContainerMenu {
             }
 
             while (reverseDirection ? i >= startIndex : i < endIndex) {
-                Slot slot = this.slots.get(i);
+                Slot slot = slots.get(i);
                 ItemStack slotStack = slot.getItem();
 
                 if (slotStack.isEmpty() && slot.mayPlace(newStack)) {
 
                     int maxPutSize = (fromContainer) ? Math.min(newStack.getMaxStackSize(), this.container.getStackMultiplier() * newStack.getMaxStackSize()) : Math.max(newStack.getMaxStackSize(), this.container.getStackMultiplier() * newStack.getMaxStackSize());
                     int availableSpace = maxPutSize - slotStack.getCount();
-                    //if (newStack.getCount() > availableSpace) {
 
                     if (fromContainer && !newStack.isStackable()) {
                         // If item is non-stackable only put 1 in
@@ -443,12 +440,12 @@ public class BackpackMenu extends AbstractContainerMenu {
         return bl;
     }
 
-    public boolean toggleUpgrade(int slotId, boolean ctrlKeyDown) {
+    public void toggleUpgrade(int slotId, boolean ctrlKeyDown) {
         IItemHandlerModifiable itemStackHandler = this.container.getItemHandler();
 
         ItemStack itemStack = itemStackHandler.getStackInSlot(slotId);
         if (itemStack.isEmpty()) {
-            return false; // Check if slot is valid and has an item
+            return; // Check if slot is valid and has an item
         }
 
         // Check if the item is a valid upgrade item
@@ -469,18 +466,15 @@ public class BackpackMenu extends AbstractContainerMenu {
 
                 // Notify the container that the item has changed
                 container.setDataChanged();
-                return true;
             } else {
                 // If trying to pick up a deactivated item, toggle back to activated version
                 if (itemName.contains("_deactivated")) {
                     ItemStack stack = getActivatedItem(baseItemName);
                     itemStackHandler.setStackInSlot(slotId, stack);
                     PacketDistributor.sendToPlayer((ServerPlayer) player, new SetCarriedPacket(stack));
-//                    ModNetwork.sendToPlayer((ServerPlayer) player, new ClientboundSetCarriedPacket(stack));
                 }
             }
         }
-        return false;
     }
 
     // Helper methods for toggleUpgrade() to retrieve item stacks
@@ -512,7 +506,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         };
     }
 
-    public void sortBackpackItems(int startIndex, int endIndex, byte sortOrder) {
+    public void sortBackpackItems(int startIndex, int endIndex, SortOrder sortOrder) {
         int stackMultiplier = container.getStackMultiplier();
         ServerPlayer sp = (ServerPlayer) player;
 
@@ -523,7 +517,6 @@ public class BackpackMenu extends AbstractContainerMenu {
         for (int i = startIndex; i < endIndex; i++) {
             ItemStack stack = getSlot(i).getItem();
             if (!stack.isEmpty()) {
-                // TODO: use stack.isStackable?
                 DataComponentPatch patch = stack.getComponentsPatch();
                 Util.ItemWithComponent key = new Util.ItemWithComponent(stack.getItem(), patch);
                 itemCompMap.merge(key, stack.getCount(), Integer::sum);
@@ -533,16 +526,16 @@ public class BackpackMenu extends AbstractContainerMenu {
         // Create a list of entries and sort them
         List<Map.Entry<Util.ItemWithComponent, Integer>> sortedItems = new ArrayList<>(itemCompMap.entrySet());
 
-        // COUNT=0 NAME=1 TAG=2
         switch (sortOrder) {
-            case 1:
+            case SortOrder.MOD:
+                sortedItems.sort(Comparator
+                        .comparing((Map.Entry<Util.ItemWithComponent, Integer> entry) -> BuiltInRegistries.ITEM.getKey(entry.getKey().item()).toString())
+                        .thenComparing(entry -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())
+                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));
+                break;
+            case SortOrder.NAME:
                 sortedItems.sort(Comparator
                         .comparing((Map.Entry<Util.ItemWithComponent, Integer> entry) -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())  // Sort by item name (ascending)
-                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));  // Then sort by count (descending)
-                break;
-            case 2:
-                sortedItems.sort(Comparator
-                        .comparing((Map.Entry<Util.ItemWithComponent, Integer> entry) -> Objects.requireNonNull(BuiltInRegistries.ITEM.getKey(entry.getKey().item())).toString())  // Sort by registry name (ascending)
                         .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));  // Then sort by count (descending)
                 break;
             default:
@@ -563,7 +556,6 @@ public class BackpackMenu extends AbstractContainerMenu {
             DataComponentPatch patch = key.patch();
             int totalCount = entry.getValue();
 
-//            int maxStackSize = (endIndex == Util.ITEM_SLOT_END_RANGE) ? stackMultiplier * item.getMaxStackSize() : item.getMaxStackSize();
             ItemStack tempStack = new ItemStack(item, 1);
             int maxStackSize = (endIndex == Util.ITEM_SLOT_END_RANGE) ? stackMultiplier * tempStack.getMaxStackSize() : tempStack.getMaxStackSize();
 
@@ -589,15 +581,6 @@ public class BackpackMenu extends AbstractContainerMenu {
                 sp.connection.send(new ClientboundContainerSetSlotPacket(player.containerMenu.containerId, getStateId(), i + startIndex, stack));
             }
         }
-    }
-
-    public void setContents(DataComponentPatch componentPatch) {
-//        if (!player.level().isClientSide) return;
-        this.container.setContents(componentPatch);
-    }
-
-    public void setChanged() {
-        this.container.setDataChanged();
     }
 
 }

@@ -24,6 +24,8 @@
   "block.fxntstorage.hardened_storage_box": "Hardened Storage Box",
   "container.fxntstorage.hardened_storage_box": "Hardened Storage Box",
 
+  "container.fxntstorage.simple_storage_box_title": "Simple Storage Box",
+
   "block.fxntstorage.simple_storage_box": "Simple Oak Storage Box",
   "container.fxntstorage.simple_storage_box": "Simple Oak Storage Box",
 
@@ -56,6 +58,9 @@
 
   "block.fxntstorage.simple_storage_box_warped": "Simple Warped Storage Box",
   "container.fxntstorage.simple_storage_box_warped": "Simple Warped Storage Box",
+
+  "block.fxntstorage.simple_storage_box_pale_oak": "Simple Pale Oak Storage Box",
+  "container.fxntstorage.simple_storage_box_pale_oak": "Simple Pale Oak Storage Box",
 
   "block.fxntstorage.storage_controller": "Simple Storage Controller",
   "fxntstorage.container.storage_controller": "Simple Storage Controller",
@@ -120,6 +125,7 @@
   "block.fxntstorage.storage_trim_bamboo": "Bamboo Storage Trim",
   "block.fxntstorage.storage_trim_crimson": "Crimson Storage Trim",
   "block.fxntstorage.storage_trim_warped": "Warped Storage Trim",
+  "block.fxntstorage.storage_trim_pale_oak": "Pale Oak Storage Trim",
 
   "tooltip.fxntstorage.upgrade_deactivated": "DEACTIVATED",
   "tooltip.fxntstorage.holdForContents": "Hold [%s] to View Contents",

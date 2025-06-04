@@ -45,11 +45,9 @@ public class BackpackItem extends BlockItem {
         if (armorType != EquipmentSlot.CHEST) return false;
         if (FXNTStorage.curiosLoaded) {
             AtomicReference<Boolean> ret = new AtomicReference<>(false);
-            CuriosApi.getCuriosInventory(entity).ifPresent(curiosItemHandler -> {
-                curiosItemHandler.getStacksHandler("back").ifPresent(stacksHandler -> {
-                    ret.set(stacksHandler.getStacks().getStackInSlot(0).getItem() instanceof BackpackItem);
-                });
-            });
+            CuriosApi.getCuriosInventory(entity)
+                    .flatMap(curiosItemHandler -> curiosItemHandler.getStacksHandler("back"))
+                    .ifPresent(stacksHandler -> ret.set(stacksHandler.getStacks().getStackInSlot(0).getItem() instanceof BackpackItem));
             return !ret.get();
         }
         return super.canEquip(stack, armorType, entity);

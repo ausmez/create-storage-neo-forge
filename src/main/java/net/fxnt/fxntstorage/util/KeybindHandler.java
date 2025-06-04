@@ -60,7 +60,6 @@ public class KeybindHandler {
 
         @SubscribeEvent
         public static void onKeyInput(ClientTickEvent.Post event) {
-
             Player player = Minecraft.getInstance().player;
 
             if (player != null) {
@@ -76,9 +75,7 @@ public class KeybindHandler {
                     player.sendSystemMessage(Component.translatable("fxntstorage.shape_cache.cleared"));
                 }
             }
-
         }
-
     }
 
     private static void handleActivateDeactivateHover(Player player) {

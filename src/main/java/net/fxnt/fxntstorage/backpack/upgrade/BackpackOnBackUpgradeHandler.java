@@ -29,13 +29,15 @@ import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public class BackpackOnBackUpgradeHandler {
 
-    public Player player;
+    private final Player player;
     private final BackpackHelper helper;
     private final int magnetUpgradeRange = ConfigManager.CommonConfig.BACKPACK_MAGNET_RANGE.get();
     private final ItemStack itemStack;
@@ -48,7 +50,10 @@ public class BackpackOnBackUpgradeHandler {
 
     public boolean hasUpgrade(String upgradeName) {
         if (this.itemStack.isEmpty() || this.itemStack.getComponentsPatch().isEmpty()) return false;
-        List<String> upgrades = this.itemStack.getComponents().get(ModDataComponents.BACKPACK_UPGRADES).stream().toList();
+        List<String> upgrades = Optional.ofNullable(this.itemStack.getComponents().get(ModDataComponents.BACKPACK_UPGRADES))
+                .orElse(List.of())
+                .stream().toList();
+
         return upgrades.contains(upgradeName);
     }
 
@@ -127,7 +132,7 @@ public class BackpackOnBackUpgradeHandler {
         if (doFeed) {
             // Look for food in backpack
             IBackpackContainer container = getContainer();
-            IItemHandlerModifiable itemHandler = (IItemHandlerModifiable) container.getItemHandler();
+            IItemHandlerModifiable itemHandler = container.getItemHandler();
 
             for (int i = 0; i < itemHandler.getSlots(); i++) {
                 ItemStack food = itemHandler.getStackInSlot(i);
@@ -190,7 +195,7 @@ public class BackpackOnBackUpgradeHandler {
         }
     }
 
-    private boolean isEdible(ItemStack stack, LivingEntity player) {
+    private boolean isEdible(@NotNull ItemStack stack, LivingEntity player) {
         if (!stack.has(DataComponents.FOOD)) {
             return false;
         }
@@ -250,7 +255,7 @@ public class BackpackOnBackUpgradeHandler {
         }
     }
 
-    public boolean refillMatchingItem(ItemStack itemStack, int requiredItems, Player player, IBackpackContainer container, int startIndex, int endIndex, int ignoreSlot) {
+    public boolean refillMatchingItem(ItemStack itemStack, int requiredItems, @Nullable Player player, IBackpackContainer container, int startIndex, int endIndex, int ignoreSlot) {
         int amountToPlace = requiredItems;
 
         if (player != null) {

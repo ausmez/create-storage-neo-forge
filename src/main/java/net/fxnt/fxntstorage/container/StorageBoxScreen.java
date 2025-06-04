@@ -2,9 +2,12 @@ package net.fxnt.fxntstorage.container;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
@@ -17,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class StorageBoxScreen extends AbstractContainerScreen<StorageBoxMenu> {
     private final int CONTAINER_SLOTS = menu.getContainerSize();
@@ -76,6 +80,8 @@ public class StorageBoxScreen extends AbstractContainerScreen<StorageBoxMenu> {
     private final int textureWidth = 282;
 
     private boolean atBottom = false;
+
+    private SortOrder currentSortOrder;
 
     public static @NotNull StorageBoxScreen createScreen(StorageBoxMenu menu, Inventory playerInventory, Component title) {
         return new StorageBoxScreen(menu, playerInventory, title);
@@ -159,6 +165,19 @@ public class StorageBoxScreen extends AbstractContainerScreen<StorageBoxMenu> {
     protected void init() {
         super.init();
         isDragging = false;
+
+        currentSortOrder = menu.getSortOrder();
+        Button sortOrder = Button.builder(currentSortOrder.getDisplayName(), button -> {
+                    currentSortOrder = currentSortOrder.next();
+                    button.setMessage(currentSortOrder.getDisplayName());
+                    button.setTooltip(Tooltip.create(Component.literal("Sort by ").append(currentSortOrder.name().toUpperCase(Locale.ROOT))));
+                    menu.setSortOrder(currentSortOrder);
+                })
+                .tooltip(Tooltip.create(Component.literal("Sort by ").append(currentSortOrder.name().toUpperCase(Locale.ROOT))))
+                .size(16, 12)
+                .pos(leftPos + imageWidth - 42, topPos + 4)
+                .build();
+        addRenderableWidget(sortOrder);
     }
 
     private void initializeSlots() {

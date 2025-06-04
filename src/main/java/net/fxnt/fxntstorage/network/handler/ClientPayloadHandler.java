@@ -1,11 +1,18 @@
 package net.fxnt.fxntstorage.network.handler;
 
+import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.network.packet.*;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -82,6 +89,47 @@ public class ClientPayloadHandler {
                     } else {
                         client.player.getPersistentData().putInt("VisualJetpackAir", packet.airRemaining());
                     }
+                }
+            });
+        });
+    }
+
+    public void handleSyncMountedStoragePacket(final SyncMountedStoragePacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Minecraft client = Minecraft.getInstance();
+            client.execute(() -> {
+                if (client.level != null) {
+
+                    Entity entity = client.level.getEntity(packet.contraptionId());
+                    if (entity instanceof AbstractContraptionEntity contraptionEntity) {
+                        StructureTemplate.StructureBlockInfo blockInfo = contraptionEntity.getContraption().getBlocks().get(packet.localPos());
+                        CompoundTag newNbt = blockInfo.nbt();
+                        CompoundTag nbt = packet.nbt();
+                        BlockState oldState = blockInfo.state();
+                        BlockState newState;
+
+                        newNbt.putInt("StoredAmount", nbt.getInt("StoredAmount"));
+                        newNbt.putBoolean("VoidUpgrade", nbt.getBoolean("VoidUpgrade"));
+                        newNbt.putInt("MaxItemCapacity", nbt.getInt("MaxItemCapacity"));
+
+                        if (oldState.getBlock() instanceof SimpleStorageBox) { // SimpleStorageBox
+                            CompoundTag tag = blockInfo.nbt().getCompound("FilterItem");
+                            if ("minecraft:air".equals(tag.getString("id"))) {
+                                newNbt.put("FilterItem", nbt.getCompound("FilterItem") /*packet.filter().save(client.level.registryAccess())*/);
+                            }
+                            newState = oldState.setValue(SimpleStorageBox.STORAGE_USED, packet.fillLevel());
+                        } else { // StorageBox
+                            newNbt.putFloat("PercentageUsed", nbt.getFloat("PercentageUsed"));
+                            newState = oldState
+                                    .setValue(StorageBox.STORAGE_USED, packet.fillLevel())
+                                    .setValue(StorageBox.VOID_UPGRADE, nbt.getBoolean("VoidUpgrade"));
+                        }
+
+                        StructureTemplate.StructureBlockInfo newInfo = new StructureTemplate.StructureBlockInfo(blockInfo.pos(), newState, newNbt);
+                        contraptionEntity.getContraption().getBlocks().put(packet.localPos(), newInfo);
+                        contraptionEntity.getContraption().deferInvalidate = true;
+                    }
+
                 }
             });
         });

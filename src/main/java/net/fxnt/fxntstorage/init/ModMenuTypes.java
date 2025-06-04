@@ -4,7 +4,9 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackBlockMenu;
 import net.fxnt.fxntstorage.backpack.main.BackpackItemMenu;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
+import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxMenu;
+import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
@@ -19,7 +21,9 @@ public class ModMenuTypes {
             DeferredRegister.create(Registries.MENU, FXNTStorage.MOD_ID);
 
     public static final DeferredHolder<MenuType<?>, MenuType<StorageBoxMenu>> STORAGE_BOX_MENU = registerMenuType("storage_box_menu", StorageBoxMenu::new);
+    public static final DeferredHolder<MenuType<?>, MenuType<StorageBoxMountedMenu>> STORAGE_BOX_MOUNTED_MENU = registerMenuType("storage_box_mounted_menu", StorageBoxMountedMenu::new);
     public static final DeferredHolder<MenuType<?>, MenuType<SimpleStorageBoxMenu>> SIMPLE_STORAGE_BOX_MENU = registerMenuType("simple_storage_box_menu", SimpleStorageBoxMenu::new);
+    public static final DeferredHolder<MenuType<?>, MenuType<SimpleStorageBoxMountedMenu>> SIMPLE_STORAGE_BOX_MOUNTED_MENU = registerMenuType("simple_storage_box_mounted_menu", SimpleStorageBoxMountedMenu::new);
     public static final DeferredHolder<MenuType<?>, MenuType<BackpackItemMenu>> BACKPACK_ITEM_MENU = registerMenuType("backpack_item_menu", BackpackItemMenu::new);
     public static final DeferredHolder<MenuType<?>, MenuType<BackpackBlockMenu>> BACKPACK_BLOCK_MENU = registerMenuType("backpack_block_menu", BackpackBlockMenu::new);
 

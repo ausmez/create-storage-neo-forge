@@ -108,7 +108,6 @@ public class SimpleStorageBoxScreen extends AbstractContainerScreen<SimpleStorag
     }
 
     public void renderFilterItemDecoration(GuiGraphics graphics, Font font, ItemStack stack, int x, int y, int amount) {
-
         PoseStack poseStack = graphics.pose();
         poseStack.pushPose();
 

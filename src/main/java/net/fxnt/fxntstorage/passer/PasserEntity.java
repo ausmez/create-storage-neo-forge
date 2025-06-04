@@ -47,7 +47,7 @@ public class PasserEntity extends BlockEntity {
             long amount = 1;
             boolean fixedAmount = false;
 
-            PasserHelper.passItems(level, srcContainer, dstContainer, this.facing, amount, fixedAmount, filterItem); // Set to limit set by filter
+            PasserHelper.passItems(level, srcContainer, dstContainer, amount, fixedAmount, filterItem); // Set to limit set by filter
         }
     }
 

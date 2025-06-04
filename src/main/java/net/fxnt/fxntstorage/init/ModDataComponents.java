@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.init;
 
 import com.mojang.serialization.Codec;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -27,6 +28,11 @@ public class ModDataComponents {
     public static final DataComponentType<Integer> BACKPACK_STACK_MULTIPLIER = register(
             "backpack_stack_multiplier",
             builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT)
+    );
+
+    public static final DataComponentType<SortOrder> INVENTORY_SORT_ORDER = register(
+            "inventory_sort_order",
+            builder -> builder.persistent(SortOrder.CODEC).networkSynchronized(SortOrder.STREAM_CODEC)
     );
 
     private static <T> DataComponentType<T> register(String name, UnaryOperator<DataComponentType.Builder<T>> builder) {

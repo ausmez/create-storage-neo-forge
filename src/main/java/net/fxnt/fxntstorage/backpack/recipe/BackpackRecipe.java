@@ -20,10 +20,6 @@ import java.util.function.Function;
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class BackpackRecipe extends ShapedRecipe {
-    public BackpackRecipe(String group, CraftingBookCategory category, ShapedRecipePattern pattern, ItemStack result, boolean showNotification) {
-        super(group, category, pattern, result, showNotification);
-    }
-
     public BackpackRecipe(ShapedRecipe recipe) {
         super(recipe.getGroup(), recipe.category(), recipe.pattern, recipe.getResultItem(RegistryAccess.EMPTY));
     }

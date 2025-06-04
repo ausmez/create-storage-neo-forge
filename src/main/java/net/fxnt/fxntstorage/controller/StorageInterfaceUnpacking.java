@@ -2,17 +2,20 @@ package net.fxnt.fxntstorage.controller;
 
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
+import net.fxnt.fxntstorage.storage_network.StorageNetwork;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +39,26 @@ public enum StorageInterfaceUnpacking implements UnpackingHandler {
 
                 return true;
             } else {
+                List<ItemStorage> emptyBoxes = new ArrayList<>();
+                Map<Item, List<ItemStorage>> storageBoxes = new HashMap<>();
+
+                for (StorageNetwork.StorageNetworkItem item : storageInterfaceEntity.controller.storageNetwork.boxes) {
+                    Item filterItem = item.simpleStorageBoxEntity.filterItem.getItem();
+                    ItemStorage storage = new ItemStorage(
+                            item.simpleStorageBoxEntity.getMaxItemCapacity(),
+                            item.simpleStorageBoxEntity.getStoredAmount(),
+                            item.simpleStorageBoxEntity.hasVoidUpgrade()
+                    );
+
+                    if (filterItem == Items.AIR) {
+                        emptyBoxes.add(storage);
+                    } else {
+                        storageBoxes.computeIfAbsent(filterItem, k -> new ArrayList<>()).add(storage);
+                    }
+                }
+
                 Map<Util.ItemWithComponent, Integer> itemCounts = new HashMap<>();
                 for (ItemStack stack : items) {
-                    if (stack.isEmpty()) continue;
                     Util.ItemWithComponent key = new Util.ItemWithComponent(stack.getItem(), stack.getComponentsPatch());
                     itemCounts.merge(key, stack.getCount(), Integer::sum);
                 }
@@ -64,17 +84,33 @@ public enum StorageInterfaceUnpacking implements UnpackingHandler {
 
                 for (Map.Entry<ItemStack, Boolean> entry : condensed.entrySet()) {
                     ItemStack itemStack = entry.getKey();
+                    boolean storageFound = false;
 
-                    for (int slot = 0; slot < storageInterfaceEntity.getContainerSize(); ++slot) {
-                        if (storageInterfaceEntity.canPlaceItem(slot, itemStack) && !entry.getValue()) {
-                            entry.setValue(true);
+                    List<ItemStorage> matchingBoxes = storageBoxes.get(itemStack.getItem());
+                    if (matchingBoxes != null) {
+                        for (ItemStorage box : matchingBoxes) {
+                            if (box.voidUpgrade() || box.storedAmount() + itemStack.getCount() <= box.maxCapacity()) {
+                                storageFound = true;
+                                break;
+                            }
                         }
                     }
+
+                    if (!storageFound && !emptyBoxes.isEmpty()) {
+                        ItemStorage box = emptyBoxes.remove(0);
+                        if (box.voidUpgrade() || itemStack.getCount() <= box.maxCapacity()) {
+                            storageFound = true;
+                        }
+                    }
+
+                    entry.setValue(storageFound);
                 }
 
                 return condensed.values().stream().allMatch(Boolean::booleanValue);
-
             }
         }
     }
+
+    private record ItemStorage(int maxCapacity, int storedAmount, boolean voidUpgrade) {}
+
 }

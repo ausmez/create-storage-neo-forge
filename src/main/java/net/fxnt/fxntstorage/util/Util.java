@@ -2,11 +2,8 @@ package net.fxnt.fxntstorage.util;
 
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.minecraft.core.component.DataComponentPatch;
-import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.Item;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.Locale;
 import java.util.Objects;
 
 public class Util {
@@ -77,23 +74,13 @@ public class Util {
     public static byte JETPACK_KEY_RELEASE = 0;
 
     public static String formatNumber(int number) {
-        if (number < 10_000) {
-            return String.valueOf(number); // Numbers less than 10,000 are shown as the full integer
-        } else if (number < 1_000_000) {
-            // For numbers between 10,000 and 999,999, display as "XXX.Xk" or "XXXk"
-            if (number % 1000 == 0) {
-                return String.format("%dk", number / 1000); // Exact thousands
-            } else {
-                return String.format("%.1fk", number / 1000.0); // Otherwise, format to two decimal places
-            }
-        } else {
-            // For numbers 1,000,000 or greater, display as "1.0M" or more
-            if (number % 1_000_000 == 0) {
-                return String.format("%dM", number / 1_000_000); // Exact millions
-            } else {
-                return String.format("%.2fM", number / 1_000_000.0); // Otherwise, format to two decimal places
-            }
-        }
+        if (number < 10_000) return String.valueOf(number);
+        if (number < 1_000_000) return number % 1_000 == 0
+                ? String.format("%dk", number / 1_000)
+                : String.format("%.1fk", number / 1_000.0);
+        return number % 1_000_000 == 0
+                ? String.format("%dM", number / 1_000_000)
+                : String.format("%.2fM", number / 1_000_000.0);
     }
 
     public static boolean isVowel(char c) {
@@ -107,15 +94,6 @@ public class Util {
             if (obj == null || getClass() != obj.getClass()) return false;
             ItemWithComponent that = (ItemWithComponent) obj;
             return item == that.item && Objects.equals(patch, that.patch);
-        }
-    }
-
-    public enum InventorySortOrder implements StringRepresentable {
-        COUNT, NAME, TAG;
-
-        @Override
-        public @NotNull String getSerializedName() {
-            return name().toLowerCase(Locale.ROOT);
         }
     }
 

@@ -47,13 +47,13 @@ import java.util.Objects;
 
 public class JetpackHandler {
     private final Player player;
-    public boolean isHovering = false;
-    public double hoverHeight = 0;
+    private boolean isHovering = false;
+    private double hoverHeight = 0;
     private float jetPackFuelRemaining;
     private long lastRuntime = 0;
 
-    private static final int maxAllowedHeight = 28;
-    private static final double gravity = -0.0784000015258789; //-1.7;
+    private static final int maxAllowedHeight = 32;
+    private static final double gravity = -0.44; //-1.7;
 
     private long airGaugeLastCleared = 0;
     private boolean airGaugeCleared = false;
@@ -210,16 +210,26 @@ public class JetpackHandler {
     }
 
     public void updateJetpackMovement() {
-        Vec3 viewDirection = player.getLookAngle();
-        Vec3 strafeDirection = viewDirection.cross(new Vec3(0, 1, 0)).normalize();
+        Vec3 lookVec = player.getLookAngle();
+        Vec3 flatLookDirection = new Vec3(lookVec.x, 0, lookVec.z);
+
+        if (flatLookDirection.lengthSqr() < 1.0E-6) {
+            float yaw = player.getYRot() * ((float) Math.PI / 180F);
+            flatLookDirection = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
+        }
+        flatLookDirection = flatLookDirection.normalize();
+
+        Vec3 strafeDirection = flatLookDirection.cross(new Vec3(0, 1, 0)).normalize();
 
         double forward = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getFloat("Jetpackforward");
         double strafe = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getFloat("Jetpackleft");
 
-        Vec3 movementDirection = viewDirection.scale(forward).add(strafeDirection.scale(strafe));
+        double forwardWeight = isHovering ? 1.0 : 1.5;
+        double strafeWeight = isHovering ? 0.4 : 0.6;
+        Vec3 movementDirection = flatLookDirection.scale(forward * forwardWeight).add(strafeDirection.scale(strafe * strafeWeight));
 
         // Apply acceleration and max speed
-        double acceleration = isHovering ? 0.025 : 0.25;
+        double acceleration = isHovering ? 0.05 : 0.25;
 
         double horizontalSpeed = calculateHorizontalSpeed();
         Vec3 horizontalVelocity = applyMovementPhysics(player.getDeltaMovement(), movementDirection.normalize(), acceleration, horizontalSpeed);
@@ -264,10 +274,7 @@ public class JetpackHandler {
     }
 
     private Vec3 applyMovementPhysics(@NotNull Vec3 currentVelocity, @NotNull Vec3 direction, double acceleration, double maxSpeed) {
-        // Apply the acceleration to the current velocity in the direction
         Vec3 targetVelocity = currentVelocity.add(direction.scale(acceleration));
-
-        // Calculate the horizontal speed
         double speed = Math.sqrt(targetVelocity.x * targetVelocity.x + targetVelocity.z * targetVelocity.z);
 
         // If horizontal speed exceeds maxSpeed, scale it down to maxSpeed
@@ -281,7 +288,7 @@ public class JetpackHandler {
     }
 
     private double calculateHorizontalSpeed() {
-        double baseFlySpeedBoost = 0.5; //0.25
+        double baseFlySpeedBoost = 0.375; //0.25
         double defaultPlayerSneakSpeed = 0.08;
         double defaultPlayerWaterSpeed = 0.08;
         double defaultPlayerSprintSpeed = 0.13; //0.21;
@@ -322,12 +329,10 @@ public class JetpackHandler {
         double thrust = 0.42;
 
         double currentVerticalSpeed = player.getDeltaMovement().y;
-
-        // Define a base damping factor
         double dampingFactor = (currentVerticalSpeed < 0 && !isJumping) ? 0.05 : 0.15;
 
         // Define the target vertical speed based on player status
-        double verticalTarget;
+        double verticalTarget = gravity;
 
         if (isJumping) {
             verticalTarget = thrust;  // Thrust value for upward movement when jumping
@@ -335,8 +340,6 @@ public class JetpackHandler {
             verticalTarget = 0;  // No vertical movement while swimming
         } else if (player.isInWater()) {
             verticalTarget = gravity / 16;  // Custom gravity in water
-        } else {
-            verticalTarget = gravity;  // Default gravity
         }
 
         // Apply damping to the vertical speed
@@ -365,13 +368,12 @@ public class JetpackHandler {
         return start + factor * (end - start);
     }
 
-    public static double calculateJetPackFuel(Player player) {
+    public double calculateJetPackFuel(Player player) {
         // Check if backpack is equipped, no backpack == no flight upgrade
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         if (backpack.isEmpty()) return 0.0;
 
         List<ItemStack> backtanks = getBacktanksFromPlayer(player, backpack);
-//        List<ItemStack> backtanks = BacktankUtil.getAllWithAir(player);
 
         return backtanks.stream().map(BacktankUtil::getAir).reduce(0, Integer::sum);
     }
@@ -395,12 +397,8 @@ public class JetpackHandler {
         }
         lastRuntime = currRuntime;
 
-        // Remove "VisualJetpackAir" value from persistent player data
-//        ModNetwork.sendToPlayer((ServerPlayer) player, new VisualJetpackAirPacket(-1));
-
         // Retrieve air tanks from chest and backpack
         List<ItemStack> backtanks = getBacktanksFromPlayer(player, backpack);
-//        List<ItemStack> backtanks = BacktankUtil.getAllWithAir(player);
 
         // Sanity check
         if (backtanks.isEmpty()) return;
@@ -445,9 +443,6 @@ public class JetpackHandler {
             IBackpackContainer container = getBackpackContainer(player, backpack);
             IItemHandler inventory = container.getItemHandler();
             itemHandler = container;
-
-//            var cap = backpack.getCapability(Capabilities.ItemHandler.ITEM);
-//            if (cap == null) return backtanks;
 
             for (int i = 0; i < inventory.getSlots(); i++) {
                 ItemStack slotItem = inventory.getStackInSlot(i);
@@ -494,4 +489,5 @@ public class JetpackHandler {
     public static void flyingOnKeyRelease(Entity player) {
         player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackFlying", false);
     }
+
 }

@@ -13,7 +13,6 @@ public class EnumProperties {
         public @NotNull String getSerializedName() {
             return name().toLowerCase(Locale.ROOT);
         }
-
     }
 
 }

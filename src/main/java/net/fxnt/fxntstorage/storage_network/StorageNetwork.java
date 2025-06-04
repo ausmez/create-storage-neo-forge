@@ -1,12 +1,10 @@
 package net.fxnt.fxntstorage.storage_network;
 
-import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -16,12 +14,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class StorageNetwork {
     public final StorageControllerEntity controller;
     public Level level;
@@ -31,7 +27,6 @@ public class StorageNetwork {
     public Set<BlockPos> components = new HashSet<>();
     public NonNullList<StorageNetworkItem> boxes = NonNullList.create();
     public NonNullList<ItemStack> items = NonNullList.create();
-    //    public NonNullList<PackagerBlock> packagers = NonNullList.create();
     private final HashMap<Integer, Integer> boxSlots = new HashMap<>();
     public int networkVersion = 0;
     private int tick = 0;
@@ -84,7 +79,6 @@ public class StorageNetwork {
                 BlockEntity blockEntity = this.level.getBlockEntity(removedPos);
                 if (blockEntity instanceof StorageInterfaceEntity storageInterface) {
                     // The connection to the StorageInterface at this position was removed
-                    FXNTStorage.LOGGER.debug("StorageInterface @ {} is forgetting about StorageController @ {}", removedPos, controllerPos);
                     storageInterface.forgetController();
                 }
             }
@@ -124,7 +118,7 @@ public class StorageNetwork {
 
         List<BlockPos> positions = new ArrayList<>();
         positions.add(origin);
-//        this.packagers.clear();
+
         int lastCheckedPos = 0;
         int distanceToController = 0;
 
@@ -275,10 +269,11 @@ public class StorageNetwork {
                 itemSlot = 0;
             }
             SimpleStorageBoxEntity blockEntity = this.boxes.get(boxSlot).simpleStorageBoxEntity;
-            IItemHandler itemHandler = this.level.getCapability(Capabilities.ItemHandler.BLOCK, blockEntity.pos, null);
+            IItemHandlerModifiable itemHandler = (IItemHandlerModifiable) this.level.getCapability(Capabilities.ItemHandler.BLOCK, blockEntity.pos, null);
 
             if (itemHandler != null) {
-                itemHandler.insertItem(itemSlot, itemStack, false);
+                blockEntity.setItem(itemSlot, itemStack);
+//                itemHandler.setStackInSlot();
                 // Update these items as well as the storage box entity items
                 this.items.set(slot, itemHandler.getStackInSlot(itemSlot));
             }

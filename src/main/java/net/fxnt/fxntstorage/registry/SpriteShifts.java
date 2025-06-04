@@ -18,7 +18,8 @@ public class SpriteShifts {
             CHERRY_CASING = ct("cherry_casing"),
             BAMBOO_CASING = ct("bamboo_casing"),
             CRIMSON_CASING = ct("crimson_casing"),
-            WARPED_CASING = ct("warped_casing");
+            WARPED_CASING = ct("warped_casing"),
+            PALE_OAK_CASING = ct("pale_oak_casing");
 
     private static CTSpriteShiftEntry ct(String name) {
         return CTSpriteShifter.getCT(AllCTTypes.OMNIDIRECTIONAL,

@@ -2,14 +2,13 @@ package net.fxnt.fxntstorage.container;
 
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
-import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -37,11 +36,6 @@ public class StorageBoxMenu extends AbstractContainerMenu {
         this(containerId, playerInventory, Objects.requireNonNull(playerInventory.player.level().getBlockEntity(extraData.readBlockPos())));
     }
 
-    public StorageBoxMenu(MenuType<?> type, int id, Inventory inv, RegistryFriendlyByteBuf extraData) {
-        this(id, inv, Objects.requireNonNull(inv.player.level().getBlockEntity(extraData.readBlockPos())));
-
-    }
-
     public Container getInventory() {
         return this.container;
     }
@@ -62,7 +56,7 @@ public class StorageBoxMenu extends AbstractContainerMenu {
 
     public FilteringBehaviour getFiltering(BlockEntity blockEntity) {
         if (blockEntity instanceof StorageBoxEntity) {
-            return ((StorageBoxEntity) blockEntity).filtering;
+            return ((StorageBoxEntity) blockEntity).getFilter();
         }
         return null;
     }
@@ -102,6 +96,14 @@ public class StorageBoxMenu extends AbstractContainerMenu {
         return this.container.stillValid(pPlayer);
     }
 
+    public SortOrder getSortOrder() {
+        return blockEntity.getSortOrder();
+    }
+
+    public void setSortOrder(SortOrder order) {
+        blockEntity.setSortOrder(order);
+    }
+
     public int getSlotsSize() {
         return slots.size();
     }
@@ -121,12 +123,6 @@ public class StorageBoxMenu extends AbstractContainerMenu {
     public boolean filterTest(ItemStack stack) {
         ItemStack filterItem = filtering.getFilter();
         return FilterItemStack.of(filterItem).test(player.level(), stack);
-    }
-
-    @Override
-    public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        FXNTStorage.LOGGER.debug("ClickType {}", clickType);
-        super.clicked(slotId, button, clickType, player);
     }
 
     @NotNull
@@ -155,7 +151,7 @@ public class StorageBoxMenu extends AbstractContainerMenu {
         return copyOfSrcStack;
     }
 
-    public void sortStorageItems(int startIndex, int endIndex, byte sortOrder) {
+    public void sortStorageItems(int startIndex, int endIndex, SortOrder sortOrder) {
         ServerPlayer sp = (ServerPlayer) player;
 
         // Create a map to track all items (with or without NBT)
@@ -174,16 +170,16 @@ public class StorageBoxMenu extends AbstractContainerMenu {
         // Create a list of entries and sort them
         List<Map.Entry<Util.ItemWithComponent, Integer>> sortedItems = new ArrayList<>(itemCompMap.entrySet());
 
-        // COUNT=0 NAME=1 TAG=2
         switch (sortOrder) {
-            case 1:
+            case SortOrder.MOD:
+                sortedItems.sort(Comparator
+                        .comparing((Map.Entry<Util.ItemWithComponent, Integer> entry) -> BuiltInRegistries.ITEM.getKey(entry.getKey().item()).toString())
+                        .thenComparing(entry -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())
+                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));
+                break;
+            case SortOrder.NAME:
                 sortedItems.sort(Comparator
                         .comparing((Map.Entry<Util.ItemWithComponent, Integer> entry) -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())  // Sort by item name (ascending)
-                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));  // Then sort by count (descending)
-                break;
-            case 2:
-                sortedItems.sort(Comparator
-                        .comparing((Map.Entry<Util.ItemWithComponent, Integer> entry) -> Objects.requireNonNull(BuiltInRegistries.ITEM.getKey(entry.getKey().item())).toString())  // Sort by registry name (ascending)
                         .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));  // Then sort by count (descending)
                 break;
             default:

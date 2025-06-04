@@ -24,7 +24,7 @@ public class BackpackModelPlayer<T extends LivingEntity> extends HumanoidModel<T
     }
 
     @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
+    public void renderToBuffer(@NotNull PoseStack poseStack, @NotNull VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
         modelPart.render(poseStack, buffer, packedLight, packedOverlay, color);
     }
 

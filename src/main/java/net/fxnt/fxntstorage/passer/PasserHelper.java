@@ -17,13 +17,13 @@ public class PasserHelper {
     public static IItemHandler getStorage(Level level, BlockPos blockPos, Direction facing, boolean isSourceContainer) {
         BlockPos containerPos = isSourceContainer ? blockPos.relative(facing.getOpposite()) : blockPos.relative(facing);
         BlockEntity blockEntity = level.getBlockEntity(containerPos);
-        if (blockEntity != null) {
+        if (blockEntity != null && blockEntity.getLevel() != null) {
             return (blockEntity.getLevel()).getCapability(Capabilities.ItemHandler.BLOCK, blockPos, null, blockEntity, facing);
         }
         return null;
     }
 
-    public static void passItems(Level level, IItemHandler srcHandler, IItemHandler dstHandler, Direction facing, long amount, boolean fixedAmount, ItemStack filterItem) {
+    public static void passItems(Level level, IItemHandler srcHandler, IItemHandler dstHandler, long amount, boolean fixedAmount, ItemStack filterItem) {
         if (!(srcHandler instanceof IItemHandlerModifiable srcModifiable) || !(dstHandler instanceof IItemHandlerModifiable dstModifiable))
             return;
 

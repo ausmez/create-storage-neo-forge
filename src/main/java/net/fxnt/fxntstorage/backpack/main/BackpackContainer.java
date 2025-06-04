@@ -4,8 +4,9 @@ import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
+import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -13,16 +14,17 @@ import net.minecraft.world.item.component.ItemContainerContents;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class BackpackContainer implements IBackpackContainer, IItemHandlerModifiable {
     private final int CONTAINER_SIZE = BackpackBlock.getSlotCount();
     private final Player player;
-
     private int stackMultiplier;
     private final ItemStack stack;
 
@@ -30,6 +32,7 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
     private final NonNullList<String> upgrades = NonNullList.create();
 
     private ItemStackHandler cachedHandler;
+    private SortOrder sortOrder;
 
     public BackpackContainer(ItemStack itemStack, @Nullable Player player) {
         this.player = player;
@@ -43,16 +46,10 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
     }
 
     public ItemStackHandler getItemHandler() {
-//        return this.itemHandler;
-        if (cachedHandler == null) {
-            cachedHandler = itemHandler;
-        }
-        return cachedHandler;
-    }
-
-    public void setContents(DataComponentPatch componentPatch) {
-        if (player == null || !player.level().isClientSide) return;
-        this.stack.applyComponents(componentPatch);
+//        if (cachedHandler == null) {
+//            cachedHandler = itemHandler;
+//        }
+        return itemHandler;
     }
 
     public void readInventory(ItemContainerContents contents) {
@@ -72,20 +69,26 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
             this.upgrades.clear();
             List<String> upgradeList = itemStack.getComponents().get(ModDataComponents.BACKPACK_UPGRADES);
 
-            for (int i = 0; i < upgradeList.size(); ++i) {
-                this.upgrades.add(i, upgradeList.get(i));
+            if (upgradeList != null) {
+                this.upgrades.clear();
+                this.upgrades.addAll(upgradeList);
             }
         }
 
-        if (itemStack.getComponents().has(ModDataComponents.BACKPACK_STACK_MULTIPLIER)) {
-            this.stackMultiplier = itemStack.getComponents().get(ModDataComponents.BACKPACK_STACK_MULTIPLIER);
-        }
+        this.stackMultiplier = Optional.ofNullable(
+                itemStack.getComponents().get(ModDataComponents.BACKPACK_STACK_MULTIPLIER)
+        ).orElse(2);
+
+        this.sortOrder = Optional.ofNullable(
+                itemStack.getComponents().get(ModDataComponents.INVENTORY_SORT_ORDER)
+        ).orElse(SortOrder.COUNT);
     }
 
     public void saveItemsToStack() {
         this.stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(this.getItems()));
         this.stack.set(ModDataComponents.BACKPACK_UPGRADES, this.upgrades);
         this.stack.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, this.stackMultiplier);
+        this.stack.set(ModDataComponents.INVENTORY_SORT_ORDER, this.sortOrder);
     }
 
     public List<ItemStack> getItems() {
@@ -98,6 +101,19 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
 
     public NonNullList<String> getUpgrades() {
         return this.upgrades;
+    }
+
+    @Override
+    public SortOrder getSortOrder() {
+        return sortOrder;
+    }
+
+    @Override
+    public void setSortOrder(SortOrder sortOrder) {
+        this.sortOrder = sortOrder;
+        if (this.player.level().isClientSide)
+            PacketDistributor.sendToServer(new SetSortOrderPacket(sortOrder));
+        setDataChanged();
     }
 
     @Override
@@ -153,8 +169,8 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
 
     public void refreshUpgrades() {
         this.upgrades.clear();
-        int UPGRADE_SLOT_START_INDEX = BackpackBlock.itemSlotCount + BackpackBlock.toolSlotCount;
-        int UPGRADE_SLOT_END_INDEX = UPGRADE_SLOT_START_INDEX + BackpackBlock.upgradeSlotCount;
+        int UPGRADE_SLOT_START_INDEX = BackpackBlock.ITEM_SLOT_COUNT + BackpackBlock.TOOL_SLOT_COUNT;
+        int UPGRADE_SLOT_END_INDEX = UPGRADE_SLOT_START_INDEX + BackpackBlock.UPGRADE_SLOT_COUNT;
 
         for (int i = UPGRADE_SLOT_START_INDEX; i < UPGRADE_SLOT_END_INDEX; i++) {
             ItemStack itemStack = this.itemHandler.getStackInSlot(i);
@@ -176,6 +192,9 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
             NonNullList<ItemStack> oldInventory = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
             NonNullList<ItemStack> newInventory = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
 
+            SortOrder oldSort = this.stack.get(ModDataComponents.INVENTORY_SORT_ORDER);
+            SortOrder newSort = this.sortOrder;
+
             for (int i = 0; i < cap.getSlots(); ++i) {
                 oldInventory.set(i, cap.getStackInSlot(i));
             }
@@ -184,11 +203,9 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
                 newInventory.set(j, this.itemHandler.getStackInSlot(j));
             }
 
-            if (!newInventory.equals(oldInventory)) {
+            if (!newInventory.equals(oldInventory) || !newSort.equals(oldSort)) {
                 refreshUpgrades();
                 saveItemsToStack();
-//                FXNTStorage.LOGGER.debug("Saving stack in BackpackContainer");
-//                PacketDistributor.sendToPlayer((ServerPlayer) player, new SyncDataComponentPacket(this.stack.getComponentsPatch()));
             }
         }
     }

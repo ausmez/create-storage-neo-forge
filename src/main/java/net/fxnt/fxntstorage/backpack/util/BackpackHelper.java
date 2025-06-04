@@ -22,11 +22,9 @@ public class BackpackHelper {
     public static boolean isCuriosSlotVisible(Player player, String slotIdentifier) {
         if (player != null) {
             AtomicReference<Boolean> isVisible = new AtomicReference<>(false);
-            CuriosApi.getCuriosInventory(player).ifPresent(curiosItemHandler -> {
-                curiosItemHandler.getStacksHandler(slotIdentifier).ifPresent(stacksHandler -> {
-                    isVisible.set(stacksHandler.getRenders().getFirst());
-                });
-            });
+            CuriosApi.getCuriosInventory(player)
+                    .flatMap(curiosItemHandler -> curiosItemHandler.getStacksHandler(slotIdentifier))
+                    .ifPresent(stacksHandler -> isVisible.set(stacksHandler.getRenders().getFirst()));
             return isVisible.get();
         }
         return false;
@@ -138,7 +136,6 @@ public class BackpackHelper {
 
         boolean success = false;
         int i = startIndex;
-        // TODO: Removed .hasCustomHoverName(). Basically just need to make sure the item can stack (i think?)
         if (!newStack.isDamageableItem() && newStack.getComponentsPatch().isEmpty() && !newStack.isBarVisible()) {
             // If matching slot stack exists
             while (!newStack.isEmpty() && i < endIndex) {

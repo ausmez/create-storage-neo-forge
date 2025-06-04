@@ -3,12 +3,14 @@ package net.fxnt.fxntstorage.backpack.main;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.util.KeybindHandler;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
@@ -21,13 +23,14 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 import static net.fxnt.fxntstorage.util.KeybindHandler.TOGGLE_BACKPACK_KEY;
 
 public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
-    private final int itemSlots = BackpackBlock.getItemSlotCount();
-    private final int toolSlots = BackpackBlock.getToolSlotCount();
-    private final int totalSlots = BackpackBlock.getSlotCount();
+    private final int itemSlots = menu.ITEM_SLOT_COUNT;
+    private final int toolSlots = menu.TOOL_SLOT_COUNT;
+    private final int totalSlots = menu.TOTAL_SLOT_COUNT;
     private final int containerColumns = 12;
     private int containerRows = 5;
     private final int totalRows = (int) Math.ceil((double) itemSlots / containerColumns);
@@ -82,8 +85,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     private ResourceLocation guiTexture = guiTexture4;
     private int textureHeight = guiTexture4Height;
     private final int textureWidth = 282;
-    private static boolean ctrlKeyDown = false;
 
+    private SortOrder currentSortOrder;
 
     public BackpackScreen(BackpackMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -158,6 +161,19 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     protected void init() {
         super.init();
         isDragging = false;
+
+        currentSortOrder = menu.getSortOrder();
+        Button sortOrder = Button.builder(currentSortOrder.getDisplayName(), button -> {
+                    currentSortOrder = currentSortOrder.next();
+                    button.setMessage(currentSortOrder.getDisplayName());
+                    button.setTooltip(Tooltip.create(Component.literal("Sort by ").append(currentSortOrder.name().toUpperCase(Locale.ROOT))));
+                    menu.setSortOrder(currentSortOrder);
+                })
+                .tooltip(Tooltip.create(Component.literal("Sort by ").append(currentSortOrder.name().toUpperCase(Locale.ROOT))))
+                .size(16, 12)
+                .pos(leftPos + imageWidth - 42, topPos + 4)
+                .build();
+        addRenderableWidget(sortOrder);
     }
 
     private void initializeSlots() {
@@ -347,7 +363,6 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
     public final boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL) {
-            ctrlKeyDown = true;
             BackpackNetworkHelper.sendCtrlKeyDown();
         }
         if (this.handleKeyPress(keyCode, scanCode, modifiers)) {
@@ -359,7 +374,6 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL) {
-            ctrlKeyDown = false;
             BackpackNetworkHelper.sendCtrlKeyUp();
         }
         return super.keyReleased(keyCode, scanCode, modifiers);
@@ -401,6 +415,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             this.snapThumbToGradation();
         }
 
+        menu.container.setPlayerInteraction(true); // Needed for QUICK_CRAFT on BlockEntity
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
@@ -420,6 +435,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             this.snapThumbToGradation();
             return true;
         }
+        menu.container.setPlayerInteraction(false); // Needed for QUICK_CRAFT on BlockEntity
         return super.mouseReleased(mouseX, mouseY, button);
     }
 

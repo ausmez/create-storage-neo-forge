@@ -10,16 +10,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class BackpackBlockMenu extends BackpackMenu {
 
-    public BackpackBlockMenu(int containerId, Inventory playerInventory, BackpackEntity entity) {
-        super(ModMenuTypes.BACKPACK_BLOCK_MENU.get(), containerId, playerInventory, entity, Util.BACKPACK_AS_BLOCK);
-    }
-
     public BackpackBlockMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
-        this(containerId, playerInventory, getBlockEntity(playerInventory, extraData.readBlockPos()), Util.BACKPACK_AS_BLOCK);
+        this(containerId, playerInventory, getBlockEntity(playerInventory, extraData.readBlockPos()));
     }
 
-    public BackpackBlockMenu(int containerId, Inventory playerInventory, IBackpackContainer container, byte backPackType) {
-        super(ModMenuTypes.BACKPACK_BLOCK_MENU.get(), containerId, playerInventory, container, backPackType);
+    public BackpackBlockMenu(int containerId, Inventory playerInventory, IBackpackContainer container) {
+        super(ModMenuTypes.BACKPACK_BLOCK_MENU.get(), containerId, playerInventory, container, Util.BACKPACK_AS_BLOCK);
     }
 
     private static IBackpackContainer getBlockEntity(Inventory playerInventory, BlockPos pos) {
@@ -31,4 +27,5 @@ public class BackpackBlockMenu extends BackpackMenu {
             throw new IllegalStateException("Block entity is not correct or is null: " + blockEntityAtPos);
         }
     }
+
 }

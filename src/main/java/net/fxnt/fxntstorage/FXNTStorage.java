@@ -13,12 +13,14 @@ import net.fxnt.fxntstorage.compat.CuriosCompat;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
+import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedScreen;
 import net.fxnt.fxntstorage.init.*;
 import net.fxnt.fxntstorage.network.PacketHandler;
 import net.fxnt.fxntstorage.passer.PasserEntityRenderer;
 import net.fxnt.fxntstorage.ponder.CsPonderPlugin;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxScreen;
+import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedScreen;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -106,7 +108,6 @@ public class FXNTStorage {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_BOX_ENTITY.get(), (e, d) -> e.getItemHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (e, d) -> e.getItemHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BACKPACK_ENTITY.get(), (e, d) -> e.getItemHandler());
-        // TODO: Rewrite Storage Network to use Capabilities natively instead of NeoForge wrapper
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_CONTROLLER_ENTITY.get(), (e, d) -> new InvWrapper(e));
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_INTERFACE_ENTITY.get(), (e, d) -> new InvWrapper(e));
         event.registerItem(Capabilities.ItemHandler.ITEM,
@@ -168,7 +169,9 @@ public class FXNTStorage {
         @SubscribeEvent
         public static void registerScreens(RegisterMenuScreensEvent event) {
             event.register(ModMenuTypes.SIMPLE_STORAGE_BOX_MENU.get(), SimpleStorageBoxScreen::createScreen);
+            event.register(ModMenuTypes.SIMPLE_STORAGE_BOX_MOUNTED_MENU.get(), SimpleStorageBoxMountedScreen::createScreen);
             event.register(ModMenuTypes.STORAGE_BOX_MENU.get(), StorageBoxScreen::createScreen);
+            event.register(ModMenuTypes.STORAGE_BOX_MOUNTED_MENU.get(), StorageBoxMountedScreen::createScreen);
             event.register(ModMenuTypes.BACKPACK_ITEM_MENU.get(), BackpackScreen::new);
             event.register(ModMenuTypes.BACKPACK_BLOCK_MENU.get(), BackpackScreen::new);
         }

@@ -6,10 +6,8 @@ import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -28,7 +26,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 @EventBusSubscriber(modid = FXNTStorage.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
-public class ForgeEventHandler {
+public class EventHandler {
     private static int slowTick = 0;
     private static int mediumTick = 0;
     private static final int slowTicks = 30;
@@ -65,9 +63,10 @@ public class ForgeEventHandler {
         }
     }
 
-    // TODO: Not convinced this is an efficient way to do this
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Pre event) {
+//        FXNTStorage.LOGGER.debug("x={}, y={}, z={}", event.getEntity().getDeltaMovement().x, event.getEntity().getDeltaMovement().y, event.getEntity().getDeltaMovement().z);
+
         boolean hasFlightUpgrade;
 
         Player player = event.getEntity();

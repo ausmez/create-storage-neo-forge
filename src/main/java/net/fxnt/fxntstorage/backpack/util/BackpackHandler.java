@@ -1,10 +1,10 @@
 package net.fxnt.fxntstorage.backpack.util;
 
-import net.fxnt.fxntstorage.backpack.BackpackEntity;
-import net.fxnt.fxntstorage.backpack.main.BackpackBlockMenu;
+import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.main.BackpackItemMenu;
 import net.fxnt.fxntstorage.util.Util;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -42,23 +42,12 @@ public class BackpackHandler {
             public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
                 return new BackpackItemMenu(containerId, player.getInventory(), new BackpackContainer(backpack, player), backpackType);
             }
-        }, buf -> buf.writeByte(backpackType));
-    }
-
-    public static void openBackpackFromBlock(@NotNull ServerPlayer player, BackpackEntity blockEntity) {
-        if (player.level().isClientSide) return;
-
-        player.openMenu(new MenuProvider() {
-            @Override
-            public Component getDisplayName() {
-                return blockEntity.getDisplayName();
-            }
-
-            @Override
-            public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
-                return new BackpackBlockMenu(containerId, inventory, blockEntity);
-            }
-        }, buf -> buf.writeBlockPos(blockEntity.getBlockPos()));
+        }, buf -> {
+            ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, backpack)
+                    .resultOrPartial(err -> FXNTStorage.LOGGER.error("Failed to encode ItemStack: {}", err))
+                    .ifPresent(buf::writeNbt);
+            buf.writeByte(backpackType);
+        });
     }
 
 }

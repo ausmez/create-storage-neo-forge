@@ -1,8 +1,6 @@
 package net.fxnt.fxntstorage.backpack.tooltip;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.createmod.catnip.lang.FontHelper;
-import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -11,51 +9,40 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Comparator;
-
 public class BackpackClientTooltip implements ClientTooltipComponent {
-    private static int width = 0;
-    private static int height = 0;
-
     private static final int ICONS_PER_ROW = 9;
     private static final int ICON_SIZE = 18;
 
     private final BackpackTooltip component;
+    private final int width;
+    private final int height;
 
     public BackpackClientTooltip(BackpackTooltip tooltip) {
         this.component = tooltip;
-        this.calculateHeight();
-        this.calculateWidth();
+        this.width = calculateWidth();
+        this.height = calculateHeight();
     }
 
-    private void calculateWidth() {
+    private int calculateWidth() {
+        Minecraft mc = Minecraft.getInstance();
         int upgradesWidth = component.upgrades.size() * ICON_SIZE;
-        int contentsWidth = this.calculateContentsWidth();
-        int tooltipContentsWidth = component.tooltipText.stream().map(this::getTooltipWidth).max(Comparator.naturalOrder()).orElse(0);
-        width = Math.max(Math.max(upgradesWidth, contentsWidth), tooltipContentsWidth);
+        int contentsWidth = component.storage.stream()
+                .limit(ICONS_PER_ROW)
+                .mapToInt(stack -> Math.max(getStackCountWidth(mc.font, stack), ICON_SIZE))
+                .sum();
+        int tooltipTextWidth = component.tooltipText.stream()
+                .mapToInt(text -> mc.font.width(text.getVisualOrderText()))
+                .max()
+                .orElse(0);
+        return Math.max(Math.max(upgradesWidth, contentsWidth), tooltipTextWidth);
     }
 
-    private int getTooltipWidth(Component component) {
-        return Minecraft.getInstance().font.width(component.getVisualOrderText());
-    }
-
-    private int calculateContentsWidth() {
-        Font fontRenderer = Minecraft.getInstance().font;
-        int contentsWidth = 0;
-
-        for (int i = 0; i < component.storage.size() && i < ICONS_PER_ROW; i++) {
-            int countWidth = this.getStackCountWidth(fontRenderer, component.storage.get(i));
-            contentsWidth += Math.max(countWidth, ICON_SIZE);
-        }
-
-        return contentsWidth;
-    }
-
-    private void calculateHeight() {
+    private int calculateHeight() {
         int upgradesHeight = component.upgrades.isEmpty() ? 0 : 32;
-        int inventoryHeight = component.storage.isEmpty() ? 0 : 12 + (1 + (component.storage.size() - 1) / ICONS_PER_ROW) * 20;
-        int totalHeight = upgradesHeight + inventoryHeight + component.tooltipText.size() * 10;
-        height = totalHeight > 0 ? totalHeight : 12;
+        int storageRows = (component.storage.size() + ICONS_PER_ROW - 1) / ICONS_PER_ROW;
+        int inventoryHeight = component.storage.isEmpty() ? 0 : 12 + storageRows * 20;
+        int textHeight = component.tooltipText.size() * 10;
+        return Math.max(upgradesHeight + inventoryHeight + textHeight, 12);
     }
 
     @Override
@@ -70,85 +57,62 @@ public class BackpackClientTooltip implements ClientTooltipComponent {
 
     @Override
     public void renderImage(@NotNull Font pFont, int pX, int pY, @NotNull GuiGraphics pGuiGraphics) {
-        this.renderTooltip(pFont, pX, pY, pGuiGraphics);
-    }
-
-    private void renderTooltip(Font font, int leftX, int topY, GuiGraphics guiGraphics) {
-        for (Component tooltipLine : component.tooltipText) {
-            topY = this.renderTooltipText(guiGraphics, leftX, topY, font, tooltipLine);
+        for (Component line : component.tooltipText) {
+            pY = renderTooltipText(pGuiGraphics, pX, pY, pFont, line);
         }
-        this.renderContentsTooltip(font, leftX, topY, guiGraphics);
+        renderContents(pFont, pX, pY, pGuiGraphics);
     }
 
-    private void renderContentsTooltip(Font font, int leftX, int topY, GuiGraphics guiGraphics) {
+    private void renderContents(Font pFont, int pX, int pY, GuiGraphics pGuiGraphics) {
         if (!component.upgrades.isEmpty()) {
-            topY = this.renderTooltipText(guiGraphics, leftX, topY, font, Component.translatable("tooltip.fxntstorage.upgrades").append(":").withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
-            topY = this.renderUpgrades(guiGraphics, leftX, topY);
+            pY = renderTooltipText(pGuiGraphics, pX, pY, pFont, Component.literal("Upgrades:").withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
+            pY = renderItemList(pFont, pX, pY, pGuiGraphics, component.upgrades, false);
         }
         if (!component.storage.isEmpty()) {
-            topY = this.renderTooltipText(guiGraphics, leftX, topY, font,
-                    Component.translatable("tooltip.fxntstorage.inventory",
-                            (this.component.item instanceof BackpackItem) ?
-                                    Component.literal(" & ").append(Component.translatable("tooltip.fxntstorage.inventory_tools")).append(":") :
-                                    ":").withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
-            this.renderContents(font, leftX, topY, guiGraphics);
+            pY = renderTooltipText(pGuiGraphics, pX, pY, pFont, Component.literal("Inventory:").withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
+            renderItemList(pFont, pX, pY, pGuiGraphics, component.storage, true);
         }
     }
 
-    private int renderUpgrades(GuiGraphics guiGraphics, int leftX, int topY) {
-        int x = leftX;
+    private int renderItemList(Font font, int xStart, int yStart, GuiGraphics guiGraphics, java.util.List<ItemStack> items, boolean multiline) {
+        int x = xStart;
+        int y = yStart;
 
-        for (ItemStack upgrade : component.upgrades) {
-            guiGraphics.renderItem(upgrade, x, topY);
-            x += ICON_SIZE;
-        }
+        for (int i = 0; i < items.size(); i++) {
+            ItemStack stack = items.get(i);
 
-        topY += 20;
-        return topY;
-    }
+            if (multiline && i > 0 && i % ICONS_PER_ROW == 0) {
+                x = xStart;
+                y += 20;
+            }
 
-    private void renderContents(Font font, int leftX, int topY, GuiGraphics guiGraphics) {
-        int x = leftX;
-
-        for (int i = 0; i < component.storage.size(); i++) {
-            int y = topY + i / ICONS_PER_ROW * 20;
-            if (i % ICONS_PER_ROW == 0) x = leftX;
-
-            ItemStack stack = component.storage.get(i);
-            int stackWidth = Math.max(this.getStackCountWidth(font, stack), ICON_SIZE);
+            int stackWidth = Math.max(getStackCountWidth(font, stack), ICON_SIZE);
             int xOffset = stackWidth - ICON_SIZE;
+
             guiGraphics.renderItem(stack, x + xOffset, y);
-            guiGraphics.renderItemDecorations(font, stack, x + xOffset, y, (stack.getCount() > 1) ? formatNumber(stack.getCount()) : null);
-            x += stackWidth;
+            if (stack.getCount() > 1) {
+                guiGraphics.renderItemDecorations(font, stack, x + xOffset, y, formatNumber(stack.getCount()));
+            }
+
+            x += multiline ? stackWidth : ICON_SIZE;
         }
+
+        return multiline ? y + 20 : y + (items.isEmpty() ? 0 : 20);
     }
 
     private int getStackCountWidth(Font font, ItemStack stack) {
         return font.width(formatNumber(stack.getCount())) + 2;
     }
 
-    private int renderTooltipText(GuiGraphics guiGraphics, int leftX, int topY, Font font, Component tooltip) {
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
-        poseStack.translate(0.0F, 0.0F, (double) 200.0F);
-        guiGraphics.drawString(font, tooltip, leftX, topY, 16777215);
-        poseStack.translate(0.0F, 0.0F, (double) -200.0F);
-        poseStack.popPose();
-        return topY + 10;
+    private int renderTooltipText(GuiGraphics guiGraphics, int x, int y, Font font, Component tooltip) {
+        guiGraphics.drawString(font, tooltip, x, y, 0xFFFFFF, true);
+        return y + 10;
     }
 
     private String formatNumber(int number) {
-        if (number < 1000) return String.valueOf(number); // No suffix, just the number
-
-        // Format for thousands (k)
-        if (number < 1000000) {
-            double value = number / 1000.0;
-            return String.format("%.1fk", value); // 1 decimal place for thousands
-        }
-
-        // Format for millions (M)
-        double value = number / 1000000.0;
-        return String.format("%.2fM", value); // 2 decimal places for millions
+        if (number < 1000) return String.valueOf(number);
+        if (number < 1_000_000) return String.format("%.1fk", number / 1000.0);
+        return String.format("%.2fM", number / 1_000_000.0);
     }
 
 }

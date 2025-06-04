@@ -9,6 +9,7 @@ import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlocks;
+import net.fxnt.fxntstorage.init.ModCompats;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.core.BlockPos;
@@ -16,7 +17,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.fml.ModList;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,18 +35,49 @@ public class SimpleStorageBoxScenes {
         scene.showBasePlate();
         scene.idle(5);
 
-        List<Selection> selectionList = Arrays.asList(
-                util.select().position(4, 1, 1), util.select().position(3, 1, 1),
-                util.select().position(2, 1, 1), util.select().position(1, 1, 1),
-                util.select().position(0, 1, 1), util.select().position(3, 2, 2),
-                util.select().position(2, 2, 2), util.select().position(1, 2, 2),
-                util.select().position(3, 3, 3), util.select().position(2, 3, 3),
-                util.select().position(1, 3, 3)
-        );
+        boolean vanillaBackport = ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT);
+        List<Selection> storageBoxes;
+        Selection supportBlocks1, supportBlocks2;
+        BlockState state1, state2, state3;
 
-        for (Selection selection : selectionList) {
+        if (vanillaBackport) {
+            storageBoxes = Arrays.asList(
+                    util.select().position(4, 1, 1), util.select().position(3, 1, 1),
+                    util.select().position(2, 1, 1), util.select().position(1, 1, 1),
+                    util.select().position(0, 1, 1), util.select().position(4, 2, 2), util.select().position(3, 2, 2),
+                    util.select().position(2, 2, 2), util.select().position(1, 2, 2), util.select().position(0, 2, 2),
+                    util.select().position(3, 3, 3), util.select().position(1, 3, 3)
+            );
+            supportBlocks1 = util.select().fromTo(4,1,2,0,1,2);
+            supportBlocks2 = util.select().fromTo(3,1,3,1,2,3);
+            state1 = ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
+            state2 = ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
+            state3 = ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
+        } else {
+            storageBoxes = Arrays.asList(
+                    util.select().position(4, 1, 1), util.select().position(3, 1, 1),
+                    util.select().position(2, 1, 1), util.select().position(1, 1, 1),
+                    util.select().position(0, 1, 1), util.select().position(3, 2, 2),
+                    util.select().position(2, 2, 2), util.select().position(1, 2, 2),
+                    util.select().position(3, 3, 3), util.select().position(2, 3, 3),
+                    util.select().position(1, 3, 3)
+            );
+            supportBlocks1 = util.select().fromTo(3,1,2,1,1,2);
+            supportBlocks2 = util.select().fromTo(3,1,3,1,2,3);
+            state1 = ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
+            state2 = ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
+            state3 = ModBlocks.SIMPLE_STORAGE_BOX_WARPED.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
+        }
+
+        int counter = 0;
+        for (Selection selection : storageBoxes) {
             scene.world().showSection(selection, Direction.DOWN);
             scene.idle(4);
+            if (counter == 5) {
+                scene.world().showSection(supportBlocks1, Direction.NORTH);
+                scene.world().showSection(supportBlocks2, Direction.NORTH);
+            }
+            ++counter;
         }
 
         scene.overlay().showText(60).text("Simple Storage Boxes are available in common wood types").attachKeyFrame();
@@ -64,8 +98,7 @@ public class SimpleStorageBoxScenes {
             t.setFilter(sand);
             t.setItem(0, sand.copyWithCount(2048));
         });
-        scene.world().modifyBlock(b1, s -> ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.getDefaultState()
-                .setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
+        scene.world().modifyBlock(b1, s -> state1, false);
         scene.overlay().showText(60).text("Sand Block = 2048 (64 per stack)").placeNearTarget().pointAt(util.vector().blockSurface(b1, Direction.NORTH).add(-0.2, 0.25, 0));
         scene.idle(65);
 
@@ -73,8 +106,7 @@ public class SimpleStorageBoxScenes {
             t.setFilter(pearl);
             t.setItem(0, pearl.copyWithCount(512));
         });
-        scene.world().modifyBlock(b2, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK.getDefaultState()
-                .setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
+        scene.world().modifyBlock(b2, s -> state2, false);
         scene.overlay().showText(60).text("Ender Pearl = 512 (16 per stack)").placeNearTarget().pointAt(util.vector().blockSurface(b2, Direction.NORTH).add(-0.2, 0.25, 0));
         scene.idle(65);
 
@@ -82,8 +114,7 @@ public class SimpleStorageBoxScenes {
             t.setFilter(water);
             t.setItem(0, water.copyWithCount(32));
         });
-        scene.world().modifyBlock(b3, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_WARPED.getDefaultState()
-                .setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
+        scene.world().modifyBlock(b3, s -> state3, false);
         scene.overlay().showText(60).text("Water Bucket = 32 (1 per stack)").placeNearTarget().pointAt(util.vector().blockSurface(b3, Direction.NORTH).add(-0.2, 0.25, 0));
         scene.idle(80);
 

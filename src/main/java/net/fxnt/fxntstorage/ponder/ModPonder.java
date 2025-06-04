@@ -2,13 +2,18 @@ package net.fxnt.fxntstorage.ponder;
 
 import com.tterrag.registrate.util.entry.ItemProviderEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
+import net.createmod.ponder.api.registration.MultiSceneBuilder;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.init.ModBlocks;
+import net.fxnt.fxntstorage.init.ModCompats;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.fml.ModList;
 
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public class ModPonder {
     public static final ResourceLocation CREATE_STORAGE = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "storage");
@@ -35,9 +40,7 @@ public class ModPonder {
                     .add(ModBlocks.STORAGE_TRIM)
                     .add(ModItems.STORAGE_BOX_VOID_UPGRADE)
                     .add(ModItems.STORAGE_BOX_CAPACITY_UPGRADE);
-
         }
-
     }
 
     public static class Scenes {
@@ -50,11 +53,17 @@ public class ModPonder {
                     .addStoryBoard("storagebox/interact", StorageBoxScenes::interact, CREATE_STORAGE)
                     .addStoryBoard("storagebox/filter", StorageBoxScenes::filter, CREATE_STORAGE);
 
-            HELPER.forComponents(ModBlocks.SIMPLE_STORAGE_BOX, ModBlocks.SIMPLE_STORAGE_BOX_ACACIA, ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO, ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
-                            ModBlocks.SIMPLE_STORAGE_BOX_CHERRY, ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON, ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK, ModBlocks.SIMPLE_STORAGE_BOX_JUNGLE,
-                            ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE, ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE, ModBlocks.SIMPLE_STORAGE_BOX_WARPED)
-                    .addStoryBoard("simplestoragebox/intro", SimpleStorageBoxScenes::intro, CREATE_STORAGE)
-                    .addStoryBoard("simplestoragebox/interact", SimpleStorageBoxScenes::interact, CREATE_STORAGE)
+            MultiSceneBuilder builder = HELPER.forComponents(Stream.of(
+                    ModBlocks.SIMPLE_STORAGE_BOX, ModBlocks.SIMPLE_STORAGE_BOX_ACACIA, ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO, ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
+                    ModBlocks.SIMPLE_STORAGE_BOX_CHERRY, ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON, ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK, ModBlocks.SIMPLE_STORAGE_BOX_JUNGLE,
+                    ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE, ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE, ModBlocks.SIMPLE_STORAGE_BOX_WARPED, ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK
+            ).filter(Objects::nonNull).toList());
+            if (ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT)) {
+                builder.addStoryBoard("simplestoragebox/intro_alt", SimpleStorageBoxScenes::intro, CREATE_STORAGE);
+            } else {
+                builder.addStoryBoard("simplestoragebox/intro", SimpleStorageBoxScenes::intro, CREATE_STORAGE);
+            }
+            builder.addStoryBoard("simplestoragebox/interact", SimpleStorageBoxScenes::interact, CREATE_STORAGE)
                     .addStoryBoard("simplestoragebox/upgrades", SimpleStorageBoxScenes::upgrades, CREATE_STORAGE);
 
             HELPER.forComponents(ModBlocks.PASSER_BLOCK)
@@ -68,8 +77,6 @@ public class ModPonder {
 
             HELPER.forComponents(ModBlocks.STORAGE_INTERFACE)
                     .addStoryBoard("storageinterface/intro", StorageInterfaceScenes::intro, CREATE_STORAGE);
-
-
         }
     }
 

@@ -15,6 +15,7 @@ import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -52,7 +53,7 @@ public class ToolSwapHandler {
     public record WeaponInfo(ItemStack itemStack, int slot, int durability, double damage) {
     }
 
-    public void doToolSwap(BlockPos blockPos, LivingEntity entity) {
+    public void doToolSwap(@Nullable BlockPos blockPos, @Nullable LivingEntity entity) {
         if (blockPos != null && entity == null) {
             ItemStack currentItem = player.getMainHandItem();
             BlockState blockState = player.level().getBlockState(blockPos);
@@ -60,7 +61,6 @@ public class ToolSwapHandler {
             if (blockState != lastBlockState || currentItem != lastTool) {
                 // Avoid swapping if the best tool is already selected
                 ToolInfo bestTool = findBestToolForBreakingBlock(blockState);
-//                FXNTStorage.LOGGER.debug("bestTool={}", bestTool);
                 if (bestTool != null && !bestTool.itemStack.equals(currentItem)) {
                     swapBlockTool(bestTool);
                 }
@@ -192,7 +192,7 @@ public class ToolSwapHandler {
         if (suitableItems.isEmpty()) return new WeaponInfo(ItemStack.EMPTY, -1, 0, 0);
 
         sortWeapons(suitableItems);
-        return suitableItems.get(0);
+        return suitableItems.getFirst();
     }
 
     public static double getAttackDamage(ItemStack weapon, LivingEntity target) {
@@ -202,9 +202,12 @@ public class ToolSwapHandler {
     }
 
     public static double getBaseAttackDamage(ItemStack itemStack) {
-        return itemStack.getItem().getDamage(itemStack);
-//        return itemStack.getItem().getAttributeModifiers(EquipmentSlot.MAINHAND, itemStack).get(Attributes.ATTACK_DAMAGE).stream()
-//                .mapToDouble(AttributeModifier::getAmount).sum();
+        // Base (1) + attack damage modifier
+        return 1 + itemStack.getAttributeModifiers().modifiers().stream()
+                .filter(e -> e.attribute().is(Attributes.ATTACK_DAMAGE))
+                .mapToDouble(e -> e.modifier().amount())
+                .findFirst()
+                .orElse(0);
     }
 
     public static double calculateEnchantmentDamage(ItemStack weapon, LivingEntity target) {
@@ -220,12 +223,12 @@ public class ToolSwapHandler {
         }
 
         // Check if the target is undead for Smite.
-        if (smiteLevel > 0 && target.getTags().stream().anyMatch((tag) -> tag.equals(EntityTypeTags.SENSITIVE_TO_SMITE.toString()))) {
+        if (smiteLevel > 0 && target.getType().is(EntityTypeTags.SENSITIVE_TO_SMITE)) {
             additionalDamage += smiteLevel * 2.5;  // Each level adds 2.5 extra damage.
         }
 
         // Check if the target is an arthropod for Bane of Arthropods.
-        if (baneLevel > 0 && target.getTags().stream().anyMatch((tag) -> tag.equals(EntityTypeTags.SENSITIVE_TO_BANE_OF_ARTHROPODS.toString()))) {
+        if (baneLevel > 0 && target.getType().is(EntityTypeTags.SENSITIVE_TO_BANE_OF_ARTHROPODS)) {
             additionalDamage += baneLevel * 2.5;  // Each level adds 2.5 extra damage.
         }
 
@@ -278,9 +281,9 @@ public class ToolSwapHandler {
         // List of blocks that the player has specified to use Silk Touch in order to drop the block itself
         CompoundTag pData = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG);
 
-        if (pData.contains("fxntPreferSilkTouch") && pData.getBoolean("fxntPreferSilkTouch")) {
-            if (pData.contains("fxntPrefersSilkTouchList")) {
-                ListTag blockListTag = pData.getList("fxntPrefersSilkTouchList", Tag.TAG_STRING);
+        if (pData.contains("PreferSilkTouch") && pData.getBoolean("PreferSilkTouch")) {
+            if (pData.contains("PrefersSilkTouchList")) {
+                ListTag blockListTag = pData.getList("PrefersSilkTouchList", Tag.TAG_STRING);
                 ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
 
                 List<String> blockList = new ArrayList<>();
@@ -288,7 +291,7 @@ public class ToolSwapHandler {
                     blockList.add(blockListTag.getString(i));
                 }
 
-                if (blockId != null && !blockList.isEmpty())
+                if (!blockList.isEmpty())
                     return blockList.contains(blockId.toString());
             }
             return false;

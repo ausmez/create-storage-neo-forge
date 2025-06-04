@@ -19,6 +19,7 @@ public class InventorySorterCompat {
         InterModComms.sendTo(ModCompats.INVENTORY_SORTER, CONTAINER_BLACKLIST, () -> BuiltInRegistries.MENU.getKey(ModMenuTypes.BACKPACK_BLOCK_MENU.get()));
         InterModComms.sendTo(ModCompats.INVENTORY_SORTER, CONTAINER_BLACKLIST, () -> BuiltInRegistries.MENU.getKey(ModMenuTypes.BACKPACK_ITEM_MENU.get()));
         InterModComms.sendTo(ModCompats.INVENTORY_SORTER, CONTAINER_BLACKLIST, () -> BuiltInRegistries.MENU.getKey(ModMenuTypes.STORAGE_BOX_MENU.get()));
+        InterModComms.sendTo(ModCompats.INVENTORY_SORTER, CONTAINER_BLACKLIST, () -> BuiltInRegistries.MENU.getKey(ModMenuTypes.STORAGE_BOX_MOUNTED_MENU.get()));
     }
 
 }

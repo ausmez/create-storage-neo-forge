@@ -22,7 +22,7 @@ public class StorageInterface extends BaseEntityBlock implements EntityBlock {
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
+    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 

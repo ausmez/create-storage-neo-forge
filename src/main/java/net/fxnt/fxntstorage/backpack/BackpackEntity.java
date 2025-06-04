@@ -1,27 +1,32 @@
 package net.fxnt.fxntstorage.backpack;
 
+import io.netty.buffer.Unpooled;
 import net.fxnt.fxntstorage.backpack.main.BackpackBlockMenu;
 import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.BackpackAsBlockUpgradeHandler;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
+import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.Nameable;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -29,21 +34,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.util.Lazy;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
-public class BackpackEntity extends BaseContainerBlockEntity implements IBackpackContainer {
-    private int slotCount = BackpackBlock.getSlotCount();
+public class BackpackEntity extends BlockEntity implements IBackpackContainer, MenuProvider, Nameable {
+    private int slotCount;
 
     private final BlockPos pos;
     private int lastTick = 0;
@@ -54,21 +57,27 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
 
     private final Block block;
     public int stackMultiplier;
+    private SortOrder sortOrder;
 
     public NonNullList<String> upgrades = NonNullList.create();
     public boolean isPlayerInteraction = false;
 
-    private final ItemStackHandler items = createItemHandler();
-    private final Lazy<IItemHandlerModifiable> itemHandler = Lazy.of(() -> items);
-    private final int GHOST_SLOT = items.getSlots() - 1;
+    private final ItemStackHandler itemHandler;
+    private final int GHOST_SLOT;
 
     public BackpackEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
         this.pos = pPos;
         this.block = pBlockState.getBlock();
+        this.sortOrder = SortOrder.COUNT;
+
         if (this.block instanceof BackpackBlock backpackBlock) {
             this.stackMultiplier = backpackBlock.getStackMultiplier();
+            this.slotCount = BackpackBlock.getSlotCount();
         }
+
+        this.itemHandler = createItemHandler();
+        this.GHOST_SLOT = this.itemHandler.getSlots() - 1;
     }
 
     private ItemStackHandler createItemHandler() {
@@ -86,7 +95,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
                     return false;
                 if (isPlayerInteraction)
                     return true;
-                if (slot != GHOST_SLOT || !items.getStackInSlot(GHOST_SLOT).isEmpty() || isGhostSlotLocked)
+                if (slot != GHOST_SLOT || !itemHandler.getStackInSlot(GHOST_SLOT).isEmpty() || isGhostSlotLocked)
                     return false;
                 return hasEmptyOrNonMaxSlot(stack);
             }
@@ -96,7 +105,6 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
                 super.onContentsChanged(slot);
                 setChanged();
             }
-
         };
     }
 
@@ -114,6 +122,11 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
 
     public void setCustomName(@NotNull Component hoverName) {
         this.customName = hoverName;
+    }
+
+    @Override
+    public @Nullable Component getCustomName() {
+        return this.customName;
     }
 
     @Override
@@ -140,14 +153,22 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
     }
 
     @Override
-    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+    public SortOrder getSortOrder() {
+        return sortOrder;
+    }
+
+    @Override
+    public void setSortOrder(SortOrder sortOrder) {
+        this.sortOrder = sortOrder;
+        if (this.level != null && this.level.isClientSide)
+            PacketDistributor.sendToServer(new SetSortOrderPacket(sortOrder));
+        setChanged();
     }
 
     public List<ItemStack> getStacks() {
         List<ItemStack> stacks = new ArrayList<>(List.of());
-        for (int i = 0; i < items.getSlots(); ++i) {
-            stacks.add(items.getStackInSlot(i));
+        for (int i = 0; i < itemHandler.getSlots(); ++i) {
+            stacks.add(itemHandler.getStackInSlot(i));
         }
         return stacks;
     }
@@ -156,7 +177,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         List<ItemStack> itemStacks = contents.stream().toList();
 
         for (int i = 0; i < itemStacks.size(); i++) {
-            items.setStackInSlot(i, itemStacks.get(i));
+            itemHandler.setStackInSlot(i, itemStacks.get(i));
         }
     }
 
@@ -165,6 +186,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         super.applyImplicitComponents(componentInput);
         componentInput.get(ModDataComponents.BACKPACK_STACK_MULTIPLIER);
         componentInput.get(ModDataComponents.BACKPACK_UPGRADES);
+        componentInput.getOrDefault(ModDataComponents.INVENTORY_SORT_ORDER, SortOrder.COUNT);
         readInventory(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
     }
 
@@ -173,6 +195,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         super.collectImplicitComponents(components);
         components.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, this.stackMultiplier);
         components.set(ModDataComponents.BACKPACK_UPGRADES, this.upgrades);
+        components.set(ModDataComponents.INVENTORY_SORT_ORDER, this.sortOrder);
         components.set(DataComponents.CUSTOM_NAME, this.customName);
         components.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(this.getStacks()));
     }
@@ -180,6 +203,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
     public ItemStack saveToItemStack(ItemStack stack) {
         stack.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, this.stackMultiplier);
         stack.set(ModDataComponents.BACKPACK_UPGRADES, this.upgrades);
+        stack.set(ModDataComponents.INVENTORY_SORT_ORDER, this.sortOrder);
         stack.set(DataComponents.CUSTOM_NAME, this.customName);
         stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(this.getStacks()));
         return stack;
@@ -188,7 +212,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.put("Items", items.serializeNBT(registries));
+        tag.put("Items", itemHandler.serializeNBT(registries));
         ListTag upgradesList = new ListTag();
         for (int i = 0; i < upgrades.size(); i++) {
             upgradesList.add(i, StringTag.valueOf(upgrades.get(i)));
@@ -197,12 +221,13 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         tag.putInt("StackMultiplier", stackMultiplier);
         if (customName != null)
             tag.putString("CustomName", Component.Serializer.toJson(customName, registries));
+        tag.putString("SortOrder", sortOrder.name());
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        items.deserializeNBT(registries, tag.getCompound("Items"));
+        itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
         if (tag.contains("Upgrades")) {
             upgrades.clear();
             ListTag upgradesList = tag.getList("Upgrades", Tag.TAG_STRING);
@@ -211,17 +236,18 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
             }
         }
         stackMultiplier = (tag.contains("StackMultiplier")) ? tag.getInt("StackMultiplier") : this.stackMultiplier;
-        if (tag.contains("CustomName", CompoundTag.TAG_STRING))
+        if (tag.contains("CustomName", Tag.TAG_STRING))
             customName = parseCustomNameSafe(tag.getString("CustomName"), registries);
+        sortOrder = (tag.contains("SortOrder", CompoundTag.TAG_STRING)) ? SortOrder.valueOf(tag.getString("SortOrder")) : SortOrder.COUNT;
     }
 
     public void refreshUpgrades() {
         this.upgrades.clear();
-        int UPGRADE_SLOT_START_INDEX = BackpackBlock.itemSlotCount + BackpackBlock.toolSlotCount;
-        int UPGRADE_SLOT_END_INDEX = UPGRADE_SLOT_START_INDEX + BackpackBlock.upgradeSlotCount;
+        int UPGRADE_SLOT_START_INDEX = BackpackBlock.ITEM_SLOT_COUNT + BackpackBlock.TOOL_SLOT_COUNT;
+        int UPGRADE_SLOT_END_INDEX = UPGRADE_SLOT_START_INDEX + BackpackBlock.UPGRADE_SLOT_COUNT;
 
         for (int i = UPGRADE_SLOT_START_INDEX; i < UPGRADE_SLOT_END_INDEX; i++) {
-            ItemStack itemStack = this.items.getStackInSlot(i);
+            ItemStack itemStack = this.itemHandler.getStackInSlot(i);
             if (itemStack.getItem() instanceof UpgradeItem upgradeItem) {
                 // ADD TO UPGRADE CACHE
                 String upgradeName = upgradeItem.getUpgradeName();
@@ -233,21 +259,29 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
     }
 
     @Override
+    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
-        tag.put("Items", items.serializeNBT(registries));
+        tag.put("Items", itemHandler.serializeNBT(registries));
+        tag.putString("SortOrder", sortOrder.name());
         return tag;
     }
 
     @Override
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider lookupProvider) {
         super.handleUpdateTag(tag, lookupProvider);
-        items.deserializeNBT(lookupProvider, tag.getCompound("Items"));
+        itemHandler.deserializeNBT(lookupProvider, tag.getCompound("Items"));
+        if (tag.contains("SortOrder", CompoundTag.TAG_STRING))
+            this.sortOrder = SortOrder.valueOf(tag.getString("SortOrder"));
     }
 
     private boolean hasEmptyOrNonMaxSlot(ItemStack pStack) {
         for (int i = 0; i < Util.ITEM_SLOT_END_RANGE; i++) {
-            ItemStack stack = this.items.getStackInSlot(i);
+            ItemStack stack = this.itemHandler.getStackInSlot(i);
 
             if (stack.isEmpty() || (ItemStack.isSameItemSameComponents(stack, pStack) && stack.getCount() < this.stackMultiplier * pStack.getMaxStackSize())) {
                 return true;
@@ -258,9 +292,6 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
 
     public static boolean filterTest(@NotNull ItemStack stack) {
         // Test to see if we're allowing this item into the backpack
-        // Use to prevent inception, needs to be called on any backpack interaction (including quick move / mouse interaction)
-        // Add filtering in here to
-        // Prevent inception
         return stack.getItem() instanceof BackpackItem;
     }
 
@@ -291,7 +322,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
     }
 
     public void moveItems() {
-        ItemStack ghostSlot = this.items.getStackInSlot(GHOST_SLOT);
+        ItemStack ghostSlot = this.itemHandler.getStackInSlot(GHOST_SLOT);
 
         // Incoming items are placed into GHOST_SLOT
         // Move items from GHOST_SLOT to first available slot in item storage
@@ -301,7 +332,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         isGhostSlotLocked = true;
 
         for (int i = 0; i < Util.ITEM_SLOT_END_RANGE; i++) {
-            ItemStack mergeSlot = this.items.getStackInSlot(i);
+            ItemStack mergeSlot = this.itemHandler.getStackInSlot(i);
 
             // If an empty slot is found, break out of loop
             if (mergeSlot.isEmpty()) {
@@ -322,7 +353,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
     private void doMove(int mergeSlotId, @NotNull ItemStack mergeStack, ItemStack ghostStack) {
         if (mergeStack.isEmpty()) {
             // Add item to empty slot
-            this.items.setStackInSlot(mergeSlotId, ghostStack.copy());
+            this.itemHandler.setStackInSlot(mergeSlotId, ghostStack.copy());
             ghostStack.shrink(ghostStack.getCount());
         } else {
             // Increment item in merge slot, decrement item in ghost slot
@@ -333,43 +364,6 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         }
         this.setChanged();
         isGhostSlotLocked = false;
-    }
-
-    @Override
-    public int getContainerSize() {
-        return items.getSlots();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return IntStream.range(0, items.getSlots())
-                .mapToObj(items::getStackInSlot)
-                .allMatch(ItemStack::isEmpty);
-    }
-
-    @Override
-    public @NotNull ItemStack getItem(int pSlot) {
-        return items.getStackInSlot(pSlot);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItem(int pSlot, int pAmount) {
-        return items.extractItem(pSlot, pAmount, false);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItemNoUpdate(int pSlot) {
-        return items.insertItem(pSlot, ItemStack.EMPTY, false);
-    }
-
-    @Override
-    public void setItem(int pSlot, @NotNull ItemStack pStack) {
-        items.setStackInSlot(pSlot, pStack);
-        if (pStack.getCount() > this.getStackMultiplier() * pStack.getMaxStackSize()) {
-            pStack.setCount(this.getStackMultiplier() * pStack.getMaxStackSize());
-        }
-
-        this.setChanged();
     }
 
     @Override
@@ -393,50 +387,9 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         super.setChanged();
     }
 
-//    @Override
-//    public boolean stillValid(@NotNull Player player) {
-//        return true; // TODO determine player validity
-//    }
-
-    @Override
-    protected @NotNull AbstractContainerMenu createMenu(int i, @NotNull Inventory inventory) {
-        return new BackpackBlockMenu(i, inventory, this);
-    }
-
-    @Override
-    protected @NotNull Component getDefaultName() {
-        return getDisplayName();
-    }
-
-    @Override
-    protected NonNullList<ItemStack> getItems() {
-        NonNullList<ItemStack> itemList = NonNullList.create();
-        for (int i = 0; i < this.items.getSlots(); ++i) {
-            itemList.add(i, this.items.getStackInSlot(i));
-        }
-        return itemList;
-    }
-
-    @Override
-    protected void setItems(NonNullList<ItemStack> nonNullList) {
-        for (int i = 0; i < nonNullList.size(); ++i) {
-            this.items.setStackInSlot(i, nonNullList.get(i));
-        }
-    }
-
-    @Override
-    public void clearContent() {
-        // noop
-    }
-
     @Override
     public ItemStackHandler getItemHandler() {
-        return this.items;
-    }
-
-    @Override
-    public void setContents(DataComponentPatch componentPatch) {
-        // noop
+        return this.itemHandler;
     }
 
     public int calcRedstoneFromInventory() {
@@ -444,7 +397,7 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
         float proportion = 0.0F;
 
         for (int i = 0; i < Util.ITEM_SLOT_END_RANGE; ++i) {
-            ItemStack itemstack = this.items.getStackInSlot(i);
+            ItemStack itemstack = this.itemHandler.getStackInSlot(i);
             if (!itemstack.isEmpty()) {
                 proportion += (float) itemstack.getCount() / (itemstack.getMaxStackSize() * this.stackMultiplier);
                 ++itemsFound;
@@ -453,6 +406,13 @@ public class BackpackEntity extends BaseContainerBlockEntity implements IBackpac
 
         proportion /= (float) Util.ITEM_SLOT_END_RANGE;
         return Mth.floor(proportion * 14.0F) + (itemsFound > 0 ? 1 : 0);
+    }
+
+    @Override
+    public @Nullable AbstractContainerMenu createMenu(int i, Inventory inventory, Player player) {
+        FriendlyByteBuf extraData = new FriendlyByteBuf(Unpooled.buffer());
+        extraData.writeBlockPos(this.pos);
+        return new BackpackBlockMenu(i, inventory, extraData);
     }
 
 }

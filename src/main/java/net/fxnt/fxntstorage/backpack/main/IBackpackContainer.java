@@ -1,6 +1,6 @@
 package net.fxnt.fxntstorage.backpack.main;
 
-import net.minecraft.core.component.DataComponentPatch;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 public interface IBackpackContainer {
@@ -13,6 +13,8 @@ public interface IBackpackContainer {
 
     void setDataChanged();
 
-    void setContents(DataComponentPatch componentPatch);
+    SortOrder getSortOrder();
+
+    void setSortOrder(SortOrder order);
 
 }

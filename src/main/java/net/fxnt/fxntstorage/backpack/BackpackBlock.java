@@ -3,14 +3,14 @@ package net.fxnt.fxntstorage.backpack;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.fxnt.fxntstorage.backpack.util.BackpackHandler;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.cache.BackpackShapeCache;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
+import net.fxnt.fxntstorage.init.ModDataComponents;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -33,7 +33,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings("deprecation")
+import java.util.Optional;
+
 public class BackpackBlock extends BaseEntityBlock {
     public static final MapCodec<BackpackBlock> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
@@ -44,10 +45,10 @@ public class BackpackBlock extends BaseEntityBlock {
 
     public final int stackMultiplier;
 
-    public static final int itemSlotCount = 108;
-    public static final int toolSlotCount = 24;
-    public static final int upgradeSlotCount = 6;
-    public static final int totalSlotCount = itemSlotCount + toolSlotCount + upgradeSlotCount;
+    public static final int ITEM_SLOT_COUNT = 108;
+    public static final int TOOL_SLOT_COUNT = 24;
+    public static final int UPGRADE_SLOT_COUNT = 6;
+    public static final int TOTAL_SLOT_COUNT = ITEM_SLOT_COUNT + TOOL_SLOT_COUNT + UPGRADE_SLOT_COUNT;
 
     public BackpackBlock(Properties pProperties, int stackMultiplier) {
         super(pProperties);
@@ -64,7 +65,7 @@ public class BackpackBlock extends BaseEntityBlock {
     public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
         BlockEntityType<?> type = ModBlockEntities.BACKPACK_ENTITY.get();
         BackpackEntity blockEntity = new BackpackEntity(type, pPos, pState);
-        blockEntity.setData(totalSlotCount, stackMultiplier);
+        blockEntity.setData(TOTAL_SLOT_COUNT, stackMultiplier);
         return blockEntity;
     }
 
@@ -82,23 +83,25 @@ public class BackpackBlock extends BaseEntityBlock {
             be.readInventory(stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
             if (stack.has(DataComponents.CUSTOM_NAME))
                 be.setCustomName(stack.getHoverName());
+            SortOrder order = Optional.ofNullable(stack.get(ModDataComponents.INVENTORY_SORT_ORDER)).orElse(SortOrder.COUNT);
+            be.setSortOrder(order);
         }
     }
 
     public static int getSlotCount() {
-        return totalSlotCount;
+        return TOTAL_SLOT_COUNT;
     }
 
     public static int getItemSlotCount() {
-        return itemSlotCount;
+        return ITEM_SLOT_COUNT;
     }
 
     public static int getToolSlotCount() {
-        return toolSlotCount;
+        return TOOL_SLOT_COUNT;
     }
 
     public static int getUpgradeSlotCount() {
-        return upgradeSlotCount;
+        return UPGRADE_SLOT_COUNT;
     }
 
     public int getStackMultiplier() {
@@ -116,9 +119,6 @@ public class BackpackBlock extends BaseEntityBlock {
                 return InteractionResult.FAIL;
             }
 
-            // TODO: Is this needed here?
-            // level.playSound(null, player.blockPosition(), SoundEvents.ARMOR_EQUIP_LEATHER, SoundSource.PLAYERS, 0.5F, 1.0F);
-
             ItemStack itemStack = new ItemStack(BackpackItem.byBlock(this));
             itemStack = saveEntityToStack(backpackEntity, itemStack);
             level.removeBlock(pos, false);
@@ -130,7 +130,7 @@ public class BackpackBlock extends BaseEntityBlock {
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof BackpackEntity backPackEntity) {
-            BackpackHandler.openBackpackFromBlock((ServerPlayer) player, backPackEntity);
+            player.openMenu(backPackEntity, pos);
         }
         return InteractionResult.CONSUME;
     }

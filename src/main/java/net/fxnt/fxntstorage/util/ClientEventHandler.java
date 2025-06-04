@@ -6,6 +6,7 @@ import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
+import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
 import net.fxnt.fxntstorage.container.util.StorageBoxNetworkHelper;
 import net.fxnt.fxntstorage.network.packet.PlayerInputPacket;
 import net.minecraft.client.Minecraft;
@@ -30,7 +31,7 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(Dist.CLIENT)
-public class ForgeClientEventHandler {
+public class ClientEventHandler {
     private static double lastforwardImpulse = -99;
     private static double lastleftImpulse = -99;
 
@@ -91,8 +92,8 @@ public class ForgeClientEventHandler {
             return;
 
         if (event.getAction() == InputConstants.PRESS &&
-                (player.containerMenu instanceof BackpackMenu || player.containerMenu instanceof StorageBoxMenu)) {
-            event.setCanceled(true); // Prevent any further processing (might yield undesired results with other mods)
+                (player.containerMenu instanceof BackpackMenu || player.containerMenu instanceof StorageBoxMenu || player.containerMenu instanceof StorageBoxMountedMenu)) {
+            event.setCanceled(true); // Prevent any further processing (might yield undesired results)
 
             final Screen screen = mc.screen;
             if (!(screen instanceof final AbstractContainerScreen<?> containerScreen && !(screen instanceof CreativeModeInventoryScreen)))
@@ -102,10 +103,15 @@ public class ForgeClientEventHandler {
             if (slot == null) return;
 
             // InventorySorter "overrides" for Backpack and StorageBox
-            if (player.containerMenu instanceof BackpackMenu)
-                BackpackNetworkHelper.sortBackpack(slot.index, ConfigManager.ClientConfig.BACKPACK_SORT_ORDER.get());
-            if (player.containerMenu instanceof StorageBoxMenu)
-                StorageBoxNetworkHelper.sortStorageBox(slot.index, ((StorageBoxMenu) player.containerMenu).getContainerSize(), ConfigManager.ClientConfig.STORAGE_BOX_SORT_ORDER.get());
+            if (player.containerMenu instanceof BackpackMenu menu) {
+                BackpackNetworkHelper.sortBackpack(slot.index, menu.getSortOrder());
+            }
+            if (player.containerMenu instanceof StorageBoxMenu menu) {
+                StorageBoxNetworkHelper.sortStorageBox(slot.index, menu.getContainerSize(), menu.getSortOrder());
+            }
+            if (player.containerMenu instanceof StorageBoxMountedMenu menu) {
+                StorageBoxNetworkHelper.sortStorageBox(slot.index, menu.getContainerSize(), menu.getSortOrder());
+            }
         }
     }
 

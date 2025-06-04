@@ -20,10 +20,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 import static net.fxnt.fxntstorage.controller.StorageController.CONNECTED;
 
+@ParametersAreNonnullByDefault
 public class StorageControllerEntity extends BaseContainerBlockEntity implements ImplementedContainer {
     public int tick = 0;
     public long lastInteractTime = 0;
@@ -175,12 +177,12 @@ public class StorageControllerEntity extends BaseContainerBlockEntity implements
     }
 
     @Override
-    protected @NotNull Component getDefaultName() {
-        return Component.empty(); // Required for BaseContainerBlockEntity
+    protected @NotNull Component getDefaultName() { // Required for BaseContainerBlockEntity
+        return getBlockState().getBlock().getName();
     }
 
     @Override
-    protected @NotNull AbstractContainerMenu createMenu(int i, @NotNull Inventory inventory) {
+    protected AbstractContainerMenu createMenu(int i, @NotNull Inventory inventory) {
         return null;
     }
 

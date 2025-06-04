@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage.init;
 
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
+import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import net.fxnt.fxntstorage.backpack.BackpackEntity;
 import net.fxnt.fxntstorage.container.StorageBoxEntity;
 import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
@@ -10,6 +11,10 @@ import net.fxnt.fxntstorage.passer.PasserEntity;
 import net.fxnt.fxntstorage.passer.PasserSmartEntity;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
+import net.minecraft.world.level.block.Block;
+
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import static net.fxnt.fxntstorage.FXNTStorage.REGISTRATE;
 
@@ -29,9 +34,10 @@ public class ModBlockEntities {
             .renderer(() -> StorageBoxEntityRenderer::new)
             .register();
 
+    @SuppressWarnings("unchecked")
     public static final BlockEntityEntry<SimpleStorageBoxEntity> SIMPLE_STORAGE_BOX_ENTITY = REGISTRATE
             .blockEntity("simple_storage_box_entity", SimpleStorageBoxEntity::new)
-            .validBlocks(
+            .validBlocks((NonNullSupplier<? extends Block>[]) Stream.of(
                     ModBlocks.SIMPLE_STORAGE_BOX,
                     ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE,
                     ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
@@ -42,8 +48,9 @@ public class ModBlockEntities {
                     ModBlocks.SIMPLE_STORAGE_BOX_CHERRY,
                     ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO,
                     ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON,
-                    ModBlocks.SIMPLE_STORAGE_BOX_WARPED
-            )
+                    ModBlocks.SIMPLE_STORAGE_BOX_WARPED,
+                    ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK
+            ).filter(Objects::nonNull).toArray(NonNullSupplier[]::new))
             .renderer(() -> SimpleStorageBoxEntityRenderer::new)
             .register();
 

@@ -5,7 +5,7 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.80'
 }
 
-version = mod_version
+version = "$mod_version+mc-$minecraft_version-$mod_loader"
 group = mod_group_id
 
 repositories {
@@ -31,7 +31,6 @@ base {
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 neoForge {
-    // Specify the version of NeoForge to use.
     version = project.neo_version
 
     parchment {
@@ -39,7 +38,6 @@ neoForge {
         minecraftVersion = project.parchment_minecraft_version
     }
 
-    // This line is optional. Access Transformers are automatically detected
     accessTransformers = project.files('src/main/resources/META-INF/accesstransformer.cfg')
 
     // Default run configurations.
@@ -121,27 +119,21 @@ dependencies {
     runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
     // EMI API
     compileOnly("dev.emi:emi-neoforge:${emi_version}:api")
+//    runtimeOnly("dev.emi:emi-neoforge:${emi_version}")
+    compileOnly "curse.maven:vanillabackport-417430:6430146"
 
     // Other mods to include at runtime during development/testing
     runtimeOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}")
     runtimeOnly("curse.maven:jade-324717:${jade_id}")
-//    runtimeOnly("curse.maven:jade-addons-583345:${jadeaddon_id}")
-//    runtimeOnly("curse.maven:inventory-sorter-240633:6235889")
+    runtimeOnly("curse.maven:jade-addons-583345:${jadeaddon_id}")
 //    runtimeOnly("curse.maven:carry-on-274259:5649344")
-    runtimeOnly("curse.maven:configured-457570:5873783")
-//    runtimeOnly("curse.maven:farmers-delight-398521:6154807")
-    runtimeOnly("curse.maven:catalogue-459701:5893750")
-
-
-//    runtimeOnly("curse.maven:create-enchantment-industry-688768:6288870")
-//    runtimeOnly("curse.maven:sophisticated-backpacks-422301:6303380")
-//    runtimeOnly("curse.maven:sophisticated-core-618298:6317050")
-//    runtimeOnly("curse.maven:create-stuff-additions-466792:6261619")
-//    runtimeOnly fg.deobf("curse.maven:spark-361579:4738952")
+//    runtimeOnly("curse.maven:configured-457570:5873783")
+//    runtimeOnly("curse.maven:catalogue-459701:5893750")
+//    runtimeOnly "curse.maven:mouse-tweaks-60089:5637846"
+    runtimeOnly "curse.maven:vanillabackport-417430:6430146"
+    runtimeOnly "curse.maven:platform-997634:6491784"
 }
 
-// This block of code expands all declared replace properties in the specified resource targets.
-// A missing property will result in an error. Properties are expanded using ${} Groovy notation.
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [minecraft_version      : minecraft_version,
                              minecraft_version_range: minecraft_version_range,
@@ -153,17 +145,15 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
                              mod_license            : mod_license,
                              mod_version            : mod_version,
                              mod_authors            : mod_authors,
-                             mod_description        : mod_description]
+                             mod_description        : mod_description,
+                             mod_icon               : mod_icon]
     inputs.properties replaceProperties
     expand replaceProperties
     from "src/main/templates"
     into "build/generated/sources/modMetadata"
 }
 
-// Include the output of "generateModMetadata" as an input directory for the build
-// this works with both building through Gradle and the IDE.
 sourceSets.main.resources.srcDir generateModMetadata
-// To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
 
 // Example configuration to allow publishing using the maven-publish plugin

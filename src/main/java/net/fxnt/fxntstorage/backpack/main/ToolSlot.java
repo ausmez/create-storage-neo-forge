@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.backpack.main;
 
-
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 

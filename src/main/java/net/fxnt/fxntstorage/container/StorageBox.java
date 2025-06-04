@@ -4,9 +4,11 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.simibubi.create.AllTags;
+import com.simibubi.create.foundation.block.IBE;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModDataComponents;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -22,7 +24,6 @@ import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -40,9 +41,10 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
 import java.util.UUID;
 
-public class StorageBox extends BaseEntityBlock {
+public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity> {
     public static final MapCodec<StorageBox> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
                     BlockBehaviour.propertiesCodec(),
@@ -56,7 +58,6 @@ public class StorageBox extends BaseEntityBlock {
 
     private long lastClickTime;
     private UUID lastClickUUID;
-
 
     public StorageBox(Properties pProperties, int slotCount) {
         super(pProperties);
@@ -83,6 +84,16 @@ public class StorageBox extends BaseEntityBlock {
     }
 
     @Override
+    public Class<StorageBoxEntity> getBlockEntityClass() {
+        return StorageBoxEntity.class;
+    }
+
+    @Override
+    public BlockEntityType<? extends StorageBoxEntity> getBlockEntityType() {
+        return ModBlockEntities.STORAGE_BOX_ENTITY.get();
+    }
+
+    @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
         StorageBoxEntity storageBoxEntity = new StorageBoxEntity(ModBlockEntities.STORAGE_BOX_ENTITY.get(), blockPos, blockState);
         storageBoxEntity.initializeEntity(slotCount);
@@ -97,24 +108,20 @@ public class StorageBox extends BaseEntityBlock {
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-        if (stack.has(DataComponents.CUSTOM_NAME)) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof StorageBoxEntity be) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof StorageBoxEntity be) {
+            if (stack.has(DataComponents.CUSTOM_NAME)) {
                 be.setCustomName(stack.getHoverName());
             }
-        }
-    }
-
-    @Override
-    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
-        super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (level.getBlockEntity(pos) instanceof StorageBoxEntity be) {
+            SortOrder order = Optional.ofNullable(stack.get(ModDataComponents.INVENTORY_SORT_ORDER)).orElse(SortOrder.COUNT);
+            be.setSortOrder(order);
             be.lastTick = 999;
         }
     }
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        IBE.onRemove(state, level, pos, newState);
         super.onRemove(state, level, pos, newState, movedByPiston);
         if (!state.is(newState.getBlock()))
             level.invalidateCapabilities(pos);
@@ -187,7 +194,6 @@ public class StorageBox extends BaseEntityBlock {
 
                 lastClickTime = level.getGameTime();
                 lastClickUUID = player.getUUID();
-
             }
 
         }
@@ -213,7 +219,6 @@ public class StorageBox extends BaseEntityBlock {
         if (blockEntity != null && !(item instanceof PickaxeItem || item instanceof AxeItem)) {
             blockEntity.transferFromStorage(pPlayer);
         }
-
     }
 
     @Nullable
@@ -233,13 +238,13 @@ public class StorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public BlockState rotate(BlockState state, LevelAccessor level, BlockPos pos, Rotation direction) {
-        return state.setValue(FACING, direction.rotate(state.getValue(FACING)));
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
     }
 
     @Override
-    public @NotNull BlockState mirror(BlockState pState, Mirror pMirror) {
-        return pState.rotate(pMirror.getRotation(pState.getValue(FACING)));
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
     @Override
@@ -252,7 +257,7 @@ public class StorageBox extends BaseEntityBlock {
     public int getAnalogOutputSignal(@NotNull BlockState pState, Level pLevel, @NotNull BlockPos pPos) {
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
         if (blockEntity instanceof StorageBoxEntity entity) {
-            double percentFull = (double) entity.calculatePercentageUsed() / 100;
+            float percentFull = entity.calculatePercentageUsed() / 100;
             return (int) Math.min(percentFull * 15, 15);
         }
         return 0;

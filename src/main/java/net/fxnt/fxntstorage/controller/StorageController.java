@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.controller;
 import com.mojang.serialization.MapCodec;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
@@ -24,6 +25,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+@MethodsReturnNonnullByDefault
+@ParametersAreNonnullByDefault
 public class StorageController extends BaseEntityBlock implements IWrenchable {
     public static final MapCodec<StorageController> CODEC = simpleCodec(StorageController::new);
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;

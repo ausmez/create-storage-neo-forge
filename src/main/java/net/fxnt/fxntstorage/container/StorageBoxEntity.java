@@ -5,21 +5,22 @@ import com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchObser
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
-import com.simibubi.create.foundation.blockEntity.behaviour.inventory.InvManipulationBehaviour;
-import com.simibubi.create.foundation.blockEntity.behaviour.inventory.VersionedInventoryTrackerBehaviour;
 import com.simibubi.create.foundation.utility.CreateLang;
 import io.netty.buffer.Unpooled;
-import net.createmod.catnip.math.BlockFace;
+import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.container.util.StorageBoxFilteringBox;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.init.ModTags;
+import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
+import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -40,39 +41,38 @@ import net.neoforged.neoforge.common.util.Lazy;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static net.fxnt.fxntstorage.container.StorageBox.VOID_UPGRADE;
 
 public class StorageBoxEntity extends SmartBlockEntity implements Container, MenuProvider, Nameable, ThresholdSwitchObservable {
     public int slotCount = 0;
-
     private Component customName;
 
     public BlockPos pos;
     public int lastTick = 0;
     public int storedAmount = -1;
-    public int percentageUsed = 0;
+    public float percentageUsed = 0;
     public boolean doTick = false;
     public boolean voidUpgrade;
     public int updateEveryXTicks = ConfigManager.CommonConfig.STORAGE_BOX_UPDATE_TIME.get();
 
-    public FilteringBehaviour filtering;
-    public InvManipulationBehaviour invManipulation;
-    public VersionedInventoryTrackerBehaviour invVersionTracker;
+    private FilteringBehaviour filtering;
 
     private final ItemStackHandler items = createItemHandler();
     private final Lazy<IItemHandlerModifiable> itemHandler = Lazy.of(() -> items);
+    private SortOrder sortOrder;
 
     public StorageBoxEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
         this.pos = pos;
         this.voidUpgrade = state.getValue(VOID_UPGRADE);
+        this.sortOrder = SortOrder.COUNT;
     }
 
     private ItemStackHandler createItemHandler() {
@@ -97,11 +97,6 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
                 }
                 return amount;
             }
-
-            @Override
-            public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-                return super.extractItem(slot, amount, simulate);
-            }
         };
     }
 
@@ -124,11 +119,8 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
     @Override
     public void addBehaviours(@NotNull List<BlockEntityBehaviour> behaviours) {
-        invManipulation = new InvManipulationBehaviour(this, (w, p, s) -> new BlockFace(p, Objects.requireNonNull(StorageBox.getDirectionFacing(s))).getOpposite());
-        behaviours.add(invManipulation);
-        behaviours.add(invVersionTracker = new VersionedInventoryTrackerBehaviour(this));
         filtering = new FilteringBehaviour(this, new StorageBoxFilteringBox());
-        behaviours.add(1, filtering);
+        behaviours.add(filtering);
     }
 
     @Override
@@ -146,11 +138,6 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     @Override
-    public boolean hasCustomName() {
-        return customName != null;
-    }
-
-    @Override
     public @Nullable Component getCustomName() {
         return customName;
     }
@@ -162,6 +149,17 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     public @NotNull Component getDisplayName() {
         return customName != null ? customName : getBlockState().getBlock().getName();
+    }
+
+    public SortOrder getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(SortOrder order) {
+        this.sortOrder = order;
+        if (this.level != null && this.level.isClientSide)
+            PacketDistributor.sendToServer(new SetSortOrderPacket(sortOrder));
+        setChanged();
     }
 
     @NotNull
@@ -183,7 +181,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     private void writeStoredData(CompoundTag tag) {
         tag.putInt("SlotCount", slotCount);
         tag.putInt("StoredAmount", calculateStoredAmount());
-        tag.putInt("PercentageUsed", calculatePercentageUsed());
+        tag.putFloat("PercentageUsed", calculatePercentageUsed());
         tag.putBoolean("VoidUpgrade", voidUpgrade);
     }
 
@@ -200,6 +198,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         writeStoredData(tag);
         if (customName != null)
             tag.putString("CustomName", Component.Serializer.toJson(customName, registries));
+        tag.putString("SortOrder", sortOrder.name());
     }
 
     @Override
@@ -208,14 +207,11 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         items.deserializeNBT(registries, tag.getCompound("Items"));
         slotCount = tag.getInt("SlotCount");
         storedAmount = tag.getInt("StoredAmount");
-        percentageUsed = tag.getInt("PercentageUsed");
+        percentageUsed = tag.getFloat("PercentageUsed");
         voidUpgrade = tag.getBoolean("VoidUpgrade");
         if (tag.contains("CustomName", CompoundTag.TAG_STRING))
             customName = parseCustomNameSafe(tag.getString("CustomName"), registries);
-    }
-
-    public ItemStackHandler getItems() {
-        return items;
+        sortOrder = (tag.contains("SortOrder", CompoundTag.TAG_STRING)) ? SortOrder.valueOf(tag.getString("SortOrder")) : SortOrder.COUNT;
     }
 
     public List<ItemStack> getStacks() {
@@ -229,6 +225,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     protected void applyImplicitComponents(DataComponentInput componentInput) {
         super.applyImplicitComponents(componentInput);
+        this.sortOrder = componentInput.getOrDefault(ModDataComponents.INVENTORY_SORT_ORDER, SortOrder.COUNT);
         setVoidUpgrade(componentInput.getOrDefault(ModDataComponents.VOID_UPGRADE, false));
         readInventory(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
     }
@@ -237,7 +234,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
         super.collectImplicitComponents(components);
         components.set(ModDataComponents.VOID_UPGRADE, this.voidUpgrade);
-        components.set(DataComponents.CUSTOM_NAME, this.customName);
+        components.set(ModDataComponents.INVENTORY_SORT_ORDER, this.sortOrder);
         components.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(this.getStacks()));
     }
 
@@ -277,12 +274,16 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         return true;
     }
 
+    public FilteringBehaviour getFilter() {
+        return filtering;
+    }
+
     public int getStoredAmount() {
         return calculateStoredAmount();
     }
 
     public int getPercentageUsed() {
-        return calculatePercentageUsed();
+        return Math.round(calculatePercentageUsed());
     }
 
     public int calculateStoredAmount() {
@@ -313,29 +314,27 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         return usedSpace;
     }
 
-    public int calculatePercentageUsed() {
-        double percentageUsed = 0;
+    public float calculatePercentageUsed() {
         int totalSpace = 0;
         int usedSpace = 0;
+
         for (int i = 0; i < items.getSlots(); i++) {
-            int amountInSlot = items.getStackInSlot(i).getCount();
-            int maxItemStackSize = this.getMaxStackSize();
-            if (!items.getStackInSlot(i).isEmpty()) {
-                maxItemStackSize = items.getStackInSlot(i).getMaxStackSize();
-            }
-            totalSpace += maxItemStackSize;
-            usedSpace += amountInSlot;
+            var stack = items.getStackInSlot(i);
+            int maxStackSize = stack.isEmpty() ? 64 : stack.getMaxStackSize();
+
+            totalSpace += maxStackSize;
+            usedSpace += stack.getCount();
         }
-        if (totalSpace > 0) {
-            percentageUsed = ((double) usedSpace / totalSpace) * 100;
-        }
-        return (int) Math.round(percentageUsed);
+        if (totalSpace == 0) return 0;
+
+        return ((float) usedSpace / totalSpace) * 100;
     }
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         tag.put("Items", items.serializeNBT(registries));
+        tag.putString("SortOrder", sortOrder.name());
         return tag;
     }
 
@@ -343,6 +342,9 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
         super.handleUpdateTag(tag, registries);
         items.deserializeNBT(registries, tag.getCompound("Items"));
+        if (tag.contains("SortOrder", Tag.TAG_STRING)) {
+            this.sortOrder = SortOrder.valueOf(tag.getString("SortOrder"));
+        }
     }
 
     public void tick(Level pLevel, BlockPos pPos, BlockState pState) {
@@ -464,7 +466,6 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     public boolean filterTest(Level level, @NotNull ItemStack stack) {
-        // Prevent a StorageBox being placed in a StorageBox #TheDreamIsReal
         if (stack.is(ModTags.Items.STORAGE_BOX_ITEM)) {
             return false;
         }
@@ -513,6 +514,13 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     public MutableComponent format(int i) {
         return CreateLang.translateDirect("create.gui.threshold_switch.currently", i);
+    }
+
+    public void applyInventoryToBlock(ItemStackHandler wrapped) {
+        for (int i = 0; i < items.getSlots(); ++i) {
+            items.setStackInSlot(i, i < wrapped.getSlots() ? wrapped.getStackInSlot(i) : ItemStack.EMPTY);
+        }
+        FXNTStorage.LOGGER.debug("Block {} has VOID_UPGRADE state of {}", getBlockPos(), getBlockState().getValue(VOID_UPGRADE));
     }
 
 }
