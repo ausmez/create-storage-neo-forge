@@ -132,6 +132,11 @@ dependencies {
 //    runtimeOnly "curse.maven:mouse-tweaks-60089:5637846"
     runtimeOnly "curse.maven:vanillabackport-417430:6430146"
     runtimeOnly "curse.maven:platform-997634:6491784"
+
+//    runtimeOnly "curse.maven:sodium-394468:6382651"
+//    runtimeOnly "curse.maven:dynamiclights-reforged-551736:6044477"
+//    runtimeOnly "curse.maven:magnesium-extras-558905:6394141"
+//    runtimeOnly "curse.maven:irisshaders-455508:6213632"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

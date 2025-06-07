@@ -1,12 +1,11 @@
 # Changelog
 
-## 1.0.0 - 2025-05-09
+## 1.0.0 - 2025-05-19
 
 ## Changes
 - **Create 6.0:**
   - Support added for Create 6.0.3+
   - Cardboard and Weathered Iron variants of the Storage Box have been added
-- **Ponder Scenes:** Updated to support new Ponder API
 - **Packager Support:**
   - Can be attached to Backpacks, Storage Boxes, Simple Storage Boxes, Storage Controllers and Storage Interfaces to pack/unpack packages.
   - Attach a Stock Link to connect a Storage Network to a logistics network.
@@ -29,7 +28,7 @@
   - Hold "jump" while gliding with an Elytra and the Flight upgrade equipped, or toggle with "hover."
   - Boosting consumes backtank air at a faster rate (configurable).
 - **Feeder Upgrade Notification:** Displays a message when the Feeder upgrade feeds an item to the player (configurable).
-- **Sortable Storage:** Middle-click to sort items in Backpacks, Storage Boxes, and Simple Storage Boxes. The order is customizable.
+- **Sortable Storage:** Middle-click to sort items in Backpacks and Storage Boxes. Sort order is customizable.
 
 ## Changes
 - **Backpack Enhancements:**
