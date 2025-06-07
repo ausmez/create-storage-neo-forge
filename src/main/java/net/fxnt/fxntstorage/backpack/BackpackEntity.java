@@ -236,17 +236,6 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     @Override
     public void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
-//        ListTag itemsList = new ListTag();
-//        for (int i = 0; i < this.itemHandler.getSlots(); ++i) {
-//            ItemStack tagStack = this.itemHandler.getStackInSlot(i);
-//            if (!tagStack.isEmpty()) {
-//                CompoundTag compoundTag = new CompoundTag();
-//                compoundTag.putByte("Slot", (byte) i);
-//                tagStack.save(compoundTag);
-//                compoundTag.putInt("ActualCount", tagStack.getCount());
-//                itemsList.add(compoundTag);
-//            }
-//        }
         tag.put("Items", itemHandler.serializeNBT());
 
         ListTag upgradesList = new ListTag();
@@ -258,33 +247,6 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         if (customName != null)
             tag.putString("CustomName", Component.Serializer.toJson(customName));
         tag.putString("SortOrder", this.sortOrder.name());
-    }
-
-    public CompoundTag saveEverything(CompoundTag tag) {
-//        ListTag itemsList = new ListTag();
-//        for (int i = 0; i < this.itemHandler.getSlots(); ++i) {
-//            ItemStack tagStack = this.itemHandler.getStackInSlot(i);
-//            if (!tagStack.isEmpty()) {
-//                CompoundTag compoundTag = new CompoundTag();
-//                compoundTag.putByte("Slot", (byte) i);
-//                tagStack.save(compoundTag);
-//                compoundTag.putInt("ActualCount", tagStack.getCount());
-//                itemsList.add(compoundTag);
-//            }
-//        }
-        tag.put("Items", itemHandler.serializeNBT());
-
-        ListTag upgradesList = new ListTag();
-        for (int i = 0; i < this.upgrades.size(); i++) {
-            upgradesList.add(i, StringTag.valueOf(this.upgrades.get(i)));
-        }
-        tag.put("Upgrades", upgradesList);
-        tag.putInt("StackMultiplier", this.stackMultiplier);
-        if (customName != null)
-            tag.putString("CustomName", Component.Serializer.toJson(customName));
-        tag.putString("SortOrder", this.sortOrder.name());
-
-        return tag;
     }
 
     public ItemStack saveToItemStack(ItemStack stack) {
@@ -325,8 +287,6 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     public @NotNull CompoundTag getUpdateTag() {
         CompoundTag tag = new CompoundTag();
         this.saveAdditional(tag);
-//        tag.put("Items", itemHandler.serializeNBT());
-//        tag.putString("SortOrder", sortOrder.name());
         return tag;
     }
 
@@ -334,9 +294,6 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     public void handleUpdateTag(@NotNull CompoundTag tag) {
         super.handleUpdateTag(tag);
         this.load(tag);
-//        itemHandler.deserializeNBT(tag.getCompound("Items"));
-//        if (tag.contains("SortOrder", CompoundTag.TAG_STRING))
-//            this.sortOrder = SortOrder.valueOf(tag.getString("SortOrder"));
     }
 
     private boolean hasEmptyOrNonMaxSlot(ItemStack pStack) {

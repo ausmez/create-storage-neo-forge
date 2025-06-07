@@ -7,14 +7,13 @@ plugins {
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
 }
 
-version = "${mod_loader}-${minecraft_version}-${mod_version}"
+version = "$mod_version+mc-$minecraft_version-$mod_loader"
 group = mod_group_id
 
 base {
     archivesName = mod_id
 }
 
-// Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
@@ -123,7 +122,7 @@ dependencies {
     compileOnly fg.deobf("curse.maven:vanillabackport-417430:6430157")
 
     // Other mods to include at runtime during development/testing
-//    runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}")
+    runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}")
     runtimeOnly fg.deobf("curse.maven:jade-324717:6271651")
     runtimeOnly fg.deobf("curse.maven:jade-addons-583345:6274674")
 //    runtimeOnly fg.deobf("curse.maven:carry-on-274259:4882500")
