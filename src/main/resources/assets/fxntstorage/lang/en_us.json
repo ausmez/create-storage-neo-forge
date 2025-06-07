@@ -200,11 +200,11 @@
   "fxntstorage.storage_box_capacity_upgrade_max": "This storage box has reached maximum capacity",
   "fxntstorage.shape_cache.cleared": "Create Storage: Shape Cache Cleared",
 
-  "key.fxntstorage.category": "Create Storage",
-  "key.fxntstorage.toggle_backpack": "Open/Close Backpack (while wearing)",
-  "key.fxntstorage.toggle_jetpack_hover": "Toggle Flight Upgrade Hover Mode",
-  "key.fxntstorage.clear_backpack_shape_cache": "Clear Backpack Shape Cache",
-  "key.fxntstorage.sort_inventory": "Sort Backpack Inventory",
+  "hotKey.fxntstorage.category": "Create Storage",
+  "hotKey.fxntstorage.toggle_backpack": "Open/Close Backpack (while wearing)",
+  "hotKey.fxntstorage.toggle_jetpack_hover": "Toggle Flight Upgrade Hover Mode",
+  "hotKey.fxntstorage.clear_backpack_shape_cache": "Clear Backpack Shape Cache",
+  "hotKey.fxntstorage.sort_inventory": "Sort Backpack Inventory",
 
   "item.fxntstorage.jetpack.fuel_low": "Jetpack fuel is low",
   "item.fxntstorage.jetpack.fuel_depleted": "Jetpack fuel is depleted!",

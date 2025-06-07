@@ -1,4 +1,4 @@
-This is a Neo/Forge port of FoxyNoTail's [Create: Storage](https://www.curseforge.com/minecraft/mc-mods/create-storageCreate) addon from his second Create YouTube series, with some minor
+This is a Neo/Forge port of FoxyNoTail's [Create: Storage](https://www.curseforge.com/minecraft/mc-mods/create-storage) addon from his second Create YouTube series, with some minor
 tweaks and enhancements.
 
 Check the CHANGELOG for the list of changes.

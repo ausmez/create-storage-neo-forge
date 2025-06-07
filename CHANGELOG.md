@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 - 2025-XX-XX
+
+## Bug Fixes
+- **Keybind:** Fixed missing keybind descriptions in language file
+
 ## 1.0.0 - 2025-05-19
 
 ## Changes

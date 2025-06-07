@@ -126,10 +126,10 @@ dependencies {
     runtimeOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}")
     runtimeOnly("curse.maven:jade-324717:${jade_id}")
     runtimeOnly("curse.maven:jade-addons-583345:${jadeaddon_id}")
-//    runtimeOnly("curse.maven:carry-on-274259:5649344")
-//    runtimeOnly("curse.maven:configured-457570:5873783")
-//    runtimeOnly("curse.maven:catalogue-459701:5893750")
-//    runtimeOnly "curse.maven:mouse-tweaks-60089:5637846"
+    runtimeOnly("curse.maven:carry-on-274259:5649344")
+    runtimeOnly("curse.maven:configured-457570:5873783")
+    runtimeOnly("curse.maven:catalogue-459701:5893750")
+    runtimeOnly "curse.maven:mouse-tweaks-60089:5637846"
     runtimeOnly "curse.maven:vanillabackport-417430:6430146"
     runtimeOnly "curse.maven:platform-997634:6491784"
 
