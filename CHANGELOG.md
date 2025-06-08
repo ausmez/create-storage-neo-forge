@@ -1,9 +1,16 @@
 # Changelog
 
-## 1.0.1 - 2025-XX-XX
+## 1.0.2 - 2025-06-07
 
 ## Bug Fixes
-- **Keybind:** Fixed missing keybind descriptions in language file
+- **Other Fixes:**
+  - Fixed NBT error when opening Backpack from inventory
+
+## 1.0.1 - 2025-06-07
+
+## Bug Fixes
+- **Other Fixes:**
+  - Fixed missing keybind descriptions in language file
 
 ## 1.0.0 - 2025-05-19
 

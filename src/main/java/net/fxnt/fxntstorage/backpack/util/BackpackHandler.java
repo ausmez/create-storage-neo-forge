@@ -1,10 +1,9 @@
 package net.fxnt.fxntstorage.backpack.util;
 
-import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.main.BackpackItemMenu;
 import net.fxnt.fxntstorage.util.Util;
-import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -43,9 +42,7 @@ public class BackpackHandler {
                 return new BackpackItemMenu(containerId, player.getInventory(), new BackpackContainer(backpack, player), backpackType);
             }
         }, buf -> {
-            ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, backpack)
-                    .resultOrPartial(err -> FXNTStorage.LOGGER.error("Failed to encode ItemStack: {}", err))
-                    .ifPresent(buf::writeNbt);
+            buf.writeNbt(backpack.save(player.level().registryAccess(), new CompoundTag()));
             buf.writeByte(backpackType);
         });
     }
