@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 - 2025-06-12
+
+## Bug Fixes
+- **Backpack:** Fixed an issue where items were not saved unless the backpack was first placed as a block
+- **Storage Network:**
+  - Fixed an issue where items would not stack to the maximum capacity of the Simple Storage Box
+
 ## 1.0.0 - 2025-05-09
 
 ## Changes

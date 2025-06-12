@@ -262,6 +262,7 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
 
         SortOrder oldSort = (blockEntityTag.contains("SortOrder")) ? SortOrder.valueOf(blockEntityTag.getString("SortOrder")) : SortOrder.COUNT;
         SortOrder newSort = (sortOrder != null) ? sortOrder : SortOrder.COUNT;
+        sortOrder = newSort;
 
         if (!itemStacksAreSame(oldItemStacks, newItemStacks) || !newSort.equals(oldSort)) {
             refreshUpgrades();

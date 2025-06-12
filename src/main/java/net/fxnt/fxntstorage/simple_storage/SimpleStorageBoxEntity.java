@@ -516,7 +516,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         int freeSpace = this.getMaxItemCapacity() - this.getStoredAmount();
         int amountToPlace = pStack.getCount();
 
-        return freeSpace > amountToPlace;
+        return freeSpace >= amountToPlace;
     }
 
     public void removeFilter() {
