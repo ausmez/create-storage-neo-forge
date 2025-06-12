@@ -16,7 +16,8 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -207,9 +208,10 @@ public class BackpackOnBackUpgradeHandler {
         FoodProperties foodProperties = food.getFoodProperties(this.player);
         if (foodProperties == null) return false;
 
-        // This should capture most foods with negative effects (maybe add NAUSEA?)
+        // This should capture most foods with negative effects
         for (FoodProperties.PossibleEffect effect : foodProperties.effects()) {
-            if (effect.effect().equals(MobEffects.HUNGER) || effect.effect().equals(MobEffects.POISON))
+            MobEffectInstance instance = effect.effectSupplier().get();
+            if (instance.getEffect().value().getCategory().equals(MobEffectCategory.HARMFUL))
                 return true;
         }
         return false;

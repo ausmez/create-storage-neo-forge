@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.3 - 2025-06-12
+
+## Bug Fixes
+- **Feeder Upgrade:** Now properly evaluates harmful food effects
+- **Storage Network:**
+  - Fixed an issue where items would not stack to the maximum capacity of the Simple Storage Box
+- **Other Fixes:**
+  - Fixed an issue where the game would crash on launch if KubeJS was loaded #2
+
 ## 1.0.2 - 2025-06-07
 
 ## Bug Fixes
