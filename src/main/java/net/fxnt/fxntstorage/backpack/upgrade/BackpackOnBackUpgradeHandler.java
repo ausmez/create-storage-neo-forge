@@ -1,8 +1,8 @@
 package net.fxnt.fxntstorage.backpack.upgrade;
 
 import com.mojang.datafixers.util.Pair;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
+import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
@@ -13,23 +13,27 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -161,7 +165,7 @@ public class BackpackOnBackUpgradeHandler {
                     if (!remainder.isEmpty()) {
                         boolean itemPlaced = false;
                         int firstEmptyStack = -1;
- 
+
                         for (int j = 0; j < itemHandler.getSlots(); j++) {
                             ItemStack stack = itemHandler.getStackInSlot(j);
 
@@ -204,10 +208,28 @@ public class BackpackOnBackUpgradeHandler {
         FoodProperties foodProperties = food.getFoodProperties(this.player);
         if (foodProperties == null) return false;
 
-        // This should capture most foods with negative effects (maybe add NAUSEA?)
+        if (food.is(Items.CHORUS_FRUIT) && !ConfigManager.ClientConfig.ALLOW_CHORUS_FRUIT.get()) return true;
+
+        CompoundTag tag = food.getTag();
+        if (tag != null && tag.contains("Effects", Tag.TAG_LIST)) {
+            ListTag effects = tag.getList("Effects", Tag.TAG_COMPOUND);
+
+            for (Tag entry : effects) {
+                if (!(entry instanceof CompoundTag effectTag)) continue;
+                if (!effectTag.contains("forge:effect_id", Tag.TAG_STRING)) continue;
+
+                String effectString = effectTag.getString("forge:effect_id");
+                ResourceLocation effectId = ResourceLocation.parse(effectString);
+                MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(effectId);
+
+                if (effect != null)
+                    return effect.getCategory().equals(MobEffectCategory.HARMFUL);
+            }
+        }
+
+        // This should capture most foods with negative effects
         for (Pair<MobEffectInstance, Float> effect : foodProperties.getEffects()) {
-            if (effect.getFirst().getEffect() == MobEffects.HUNGER || effect.getFirst().getEffect() == MobEffects.POISON)
-                return true;
+            return (effect.getFirst().getEffect().getCategory().equals(MobEffectCategory.HARMFUL));
         }
         return false;
     }

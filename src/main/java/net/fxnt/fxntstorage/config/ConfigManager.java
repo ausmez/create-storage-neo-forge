@@ -70,6 +70,7 @@ public class ConfigManager {
 
         public static ForgeConfigSpec.BooleanValue DISPLAY_JETPACK_AIR_OVERLAY;
         public static ForgeConfigSpec.BooleanValue DISPLAY_FEEDER_MESSAGE;
+        public static ForgeConfigSpec.BooleanValue ALLOW_CHORUS_FRUIT;
         public static ForgeConfigSpec.BooleanValue MAGNET_IGNORE_FAN_PROCESSING;
         public static ForgeConfigSpec.BooleanValue TOOLSWAP_PREFER_SILK_TOUCH;
         public static ForgeConfigSpec.ConfigValue<List<? extends String>> TOOLSWAP_PREFERS_SILK_TOUCH_LIST;
@@ -79,6 +80,9 @@ public class ConfigManager {
             DISPLAY_FEEDER_MESSAGE = CLIENT_BUILDER
                     .comment("Display a message when the feeder upgrade feeds food to the player")
                     .define("displayFeederMessage", true);
+            ALLOW_CHORUS_FRUIT = CLIENT_BUILDER
+                    .comment("Enables the feeder upgrade to use chorus fruit when feeding the player")
+                    .define("allowChorusFruit", false);
             CLIENT_BUILDER.pop();
 
             CLIENT_BUILDER.comment("Jetpack Upgrade").push("jetpack_upgrade");

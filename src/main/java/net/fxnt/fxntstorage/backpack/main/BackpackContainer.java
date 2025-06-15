@@ -41,7 +41,7 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
     private final LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.of(() -> itemHandler);
     private final NonNullList<String> upgrades = NonNullList.create();
 
-    private SortOrder sortOrder;
+    private SortOrder sortOrder = SortOrder.COUNT;
 
     public BackpackContainer(ItemStack itemStack, Player player) {
         this.player = player;
