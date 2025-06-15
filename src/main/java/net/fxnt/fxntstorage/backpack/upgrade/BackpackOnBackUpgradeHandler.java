@@ -24,6 +24,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.SuspiciousStewEffects;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.EventHooks;
@@ -207,6 +209,15 @@ public class BackpackOnBackUpgradeHandler {
     private boolean hasNegativeEffects(@NotNull ItemStack food) {
         FoodProperties foodProperties = food.getFoodProperties(this.player);
         if (foodProperties == null) return false;
+
+        if (food.is(Items.CHORUS_FRUIT) && !ConfigManager.ClientConfig.ALLOW_CHORUS_FRUIT.get()) return true;
+
+        SuspiciousStewEffects stewEffects = food.get(DataComponents.SUSPICIOUS_STEW_EFFECTS);
+        if (stewEffects != null) {
+            for (SuspiciousStewEffects.Entry entry : stewEffects.effects()) {
+                return entry.effect().value().getCategory().equals(MobEffectCategory.HARMFUL);
+            }
+        }
 
         // This should capture most foods with negative effects
         for (FoodProperties.PossibleEffect effect : foodProperties.effects()) {
