@@ -113,12 +113,12 @@ public class ToolSwapHandler {
         boolean currentToolHasSilkTouch = EnchantmentHelper.getTagEnchantmentLevel(Enchantments.SILK_TOUCH, currentTool) > 0;
         boolean currentToolMeetsSilkTouchRequirement = currentToolIsCorrect && (!needsSilkTouch || currentToolHasSilkTouch);
 
-        if (currentToolMeetsSilkTouchRequirement && !canUseAnyTool) {
+        if (currentToolMeetsSilkTouchRequirement && canUseAnyTool) {
             return null; // Current tool is already sufficient
         }
 
         // If the block can be broken with any tool, add the current tool to the suitable items list
-        if (canUseAnyTool) {
+        if (canUseAnyTool || currentToolIsCorrect) {
             suitableItems.add(new ToolInfo(currentTool, player.getInventory().selected,
                     currentTool.getDestroySpeed(blockState), currentTool.getDamageValue(), currentToolHasSilkTouch));
         }

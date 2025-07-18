@@ -5,8 +5,8 @@ import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.fxnt.fxntstorage.init.ModNetwork;
-import net.fxnt.fxntstorage.network.SetMountedStorageDirtyPacket;
-import net.fxnt.fxntstorage.network.SetSortOrderPacket;
+import net.fxnt.fxntstorage.network.packet.SetMountedStorageDirtyPacket;
+import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
@@ -65,7 +65,7 @@ public class StorageBoxMountedMenu extends AbstractContainerMenu {
         for (int i = 0; i < this.slotCount; i++) {
             this.addSlot(new Slot(container, index, index * Util.SLOT_SIZE, 0) {
                 @Override
-                public boolean mayPlace(ItemStack stack) {
+                public boolean mayPlace(@NotNull ItemStack stack) {
                     return filterTest(stack);
                 }
 

@@ -8,7 +8,6 @@ import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -18,7 +17,7 @@ import java.util.UUID;
 @Mixin(ItemEntity.class)
 public abstract class ItemEntityMixin {
 
-    // Never Despawn Back Pack
+    // Never Despawn Backpack
     @Inject(method = "<init>(Lnet/minecraft/world/level/Level;DDDLnet/minecraft/world/item/ItemStack;)V", at = @At("RETURN"))
     private void fxnt$init(CallbackInfo info) {
         ItemEntity itemEntity = (ItemEntity) (Object) this;
@@ -31,12 +30,9 @@ public abstract class ItemEntityMixin {
     private int pickupDelay;
     @Shadow
     private @Nullable UUID target;
-    @Unique
-    private final boolean doMixin = true;
 
     @Inject(method = "playerTouch", at = @At(value = "HEAD"), cancellable = true)
     private void fxnt$onPlayerPickUpItem(Player player, CallbackInfo ci) {
-        if (!doMixin) return;
         ItemEntity itemEntity = (ItemEntity) (Object) this;
         if (player == null || player.isSpectator() || player.level().isClientSide || !player.isAlive() || player.isSleeping() || player.isDeadOrDying())
             return;

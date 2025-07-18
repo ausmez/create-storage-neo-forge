@@ -1,21 +1,15 @@
 {
-  "replace": false,
   "values": [
     "fxntstorage:backpack_magnet_upgrade",
-    "fxntstorage:backpack_magnet_upgrade_deactivated",
     "fxntstorage:backpack_pickblock_upgrade",
-    "fxntstorage:backpack_pickblock_upgrade_deactivated",
     "fxntstorage:backpack_itempickup_upgrade",
-    "fxntstorage:backpack_itempickup_upgrade_deactivated",
     "fxntstorage:backpack_flight_upgrade",
-    "fxntstorage:backpack_flight_upgrade_deactivated",
     "fxntstorage:backpack_refill_upgrade",
-    "fxntstorage:backpack_refill_upgrade_deactivated",
     "fxntstorage:backpack_feeder_upgrade",
-    "fxntstorage:backpack_feeder_upgrade_deactivated",
     "fxntstorage:backpack_toolswap_upgrade",
-    "fxntstorage:backpack_toolswap_upgrade_deactivated",
     "fxntstorage:backpack_falldamage_upgrade",
-    "fxntstorage:backpack_falldamage_upgrade_deactivated"
+    "fxntstorage:backpack_oremining_upgrade",
+    "fxntstorage:backpack_torchdeployer_upgrade",
+    "#fxntstorage:backpack_upgrade_deactivated"
   ]
 }

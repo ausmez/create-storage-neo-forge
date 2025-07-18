@@ -1,8 +1,8 @@
 package net.fxnt.fxntstorage.network;
 
 import net.fxnt.fxntstorage.init.ModNetwork;
-import net.fxnt.fxntstorage.network.backpack.client.SyncContainerPacket;
-import net.fxnt.fxntstorage.network.backpack.client.SyncSlotCountPacket;
+import net.fxnt.fxntstorage.network.packet.SyncContainerPacket;
+import net.fxnt.fxntstorage.network.packet.SyncSlotCountPacket;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;

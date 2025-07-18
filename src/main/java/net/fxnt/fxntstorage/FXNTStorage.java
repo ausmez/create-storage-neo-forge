@@ -9,10 +9,13 @@ import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackAirOverlay;
 import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedScreen;
 import net.fxnt.fxntstorage.init.*;
+import net.fxnt.fxntstorage.passer.PasserEntityRenderer;
 import net.fxnt.fxntstorage.ponder.CsPonderPlugin;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxScreen;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedScreen;
 import net.fxnt.fxntstorage.util.KeybindHandler;
@@ -49,7 +52,6 @@ public class FXNTStorage {
     public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MOD_ID);
 
     public static boolean curiosLoaded;
-    public static boolean invSorterLoaded;
 
     public FXNTStorage(final FMLJavaModLoadingContext context) {
         context.registerConfig(ModConfig.Type.CLIENT, ConfigManager.ClientConfig.CLIENT_SPEC);
@@ -72,7 +74,6 @@ public class FXNTStorage {
         modEventBus.addListener(FXNTStorage::onCommonSetup);
 
         curiosLoaded = ModList.get().isLoaded(ModCompats.CURIOS);
-        invSorterLoaded = ModList.get().isLoaded(ModCompats.INVENTORY_SORTER);
     }
 
     private static void onCommonSetup(final FMLCommonSetupEvent event) {
@@ -93,7 +94,7 @@ public class FXNTStorage {
         public static void onConfigReload(final ModConfigEvent.Reloading event) {
             if (Objects.equals(event.getConfig().getModId(), MOD_ID) && event.getConfig().getType().equals(ModConfig.Type.CLIENT)) {
                 if (Minecraft.getInstance().getConnection() != null) {
-                    BackpackNetworkHelper.sendClientSettings();
+                    BackpackNetworkHelper.sendClientSettings(Minecraft.getInstance().player);
                 }
             }
         }
@@ -107,7 +108,6 @@ public class FXNTStorage {
             MenuScreens.register(ModMenuTypes.BACKPACK_ITEM_MENU.get(), BackpackScreen::new);
             MenuScreens.register(ModMenuTypes.BACKPACK_BLOCK_MENU.get(), BackpackScreen::new);
 
-            event.enqueueWork(ModNetwork::registerClientPackets);
             PonderIndex.addPlugin(new CsPonderPlugin());
         }
 
@@ -126,10 +126,18 @@ public class FXNTStorage {
         }
 
         @SubscribeEvent
+        public static void registerEntityRenderer(EntityRenderersEvent.RegisterRenderers event) {
+            event.registerBlockEntityRenderer(ModBlockEntities.STORAGE_BOX_ENTITY.get(), StorageBoxEntityRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), SimpleStorageBoxEntityRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.SMART_PASSER_ENTITY.get(), PasserEntityRenderer::new);
+        }
+
+        @SubscribeEvent
         public static void onKeyRegister(RegisterKeyMappingsEvent event) {
             event.register(KeybindHandler.TOGGLE_BACKPACK_KEY);
             event.register(KeybindHandler.TOGGLE_JETPACK_HOVER_KEY);
             event.register(KeybindHandler.CLEAR_BACKPACK_SHAPE_CACHE);
+            event.register(KeybindHandler.OREMINE_ANY_BLOCK);
         }
 
         @SubscribeEvent

@@ -1,22 +1,30 @@
-This is a Neo/Forge port of FoxyNoTail's [Create: Storage](https://www.curseforge.com/minecraft/mc-mods/create-storage) addon from his second Create YouTube series, with some minor
+This is a Neo/Forge port of FoxyNoTail's [Create: Storage](https://www.curseforge.com/minecraft/mc-mods/create-storage)
+addon from his second Create YouTube series, with some minor
 tweaks and enhancements.
 
 Check the CHANGELOG for the list of changes.
 
 ---
 
-This mod features a handful of Storage Boxes, each with different sized inventories as well as a handful of new upgradable backpacks.
+This mod features a handful of Storage Boxes, each with different sized inventories as well as a handful of new
+upgradable backpacks.
 
 ![create_storage_2.png](.github/images/create_storage_2.png)
 
 ---
+
 # Storage Boxes
 
 ### Description
-**Storage Boxes** and **Simple Storage Boxes** are containers designed for compact, filterable item storage. Each **Storage Box** variant offers different storage capacities and visual styles, whereas the **Simple Storage Boxes** offer large single item storage with high capacity upgrades available.
-Designed to integrate seamlessly into mechanical and logistical systems within the Create Mod, they provide a clean and functional way to manage large amounts of items.
+
+**Storage Boxes** and **Simple Storage Boxes** are containers designed for compact, filterable item storage. Each *
+*Storage Box** variant offers different storage capacities and visual styles, whereas the **Simple Storage Boxes** offer
+large single item storage with high capacity upgrades available.
+Designed to integrate seamlessly into mechanical and logistical systems within the Create Mod, they provide a clean and
+functional way to manage large amounts of items.
 
 ## Storage Box
+
 - Cardboard, Industrial/Weathered Iron, Andesite, Copper, Brass, and Hardened variants available
 - Each has a Create filter slot to filter which items can be inserted or extracted from
 - Features a display on the front of each box showing item counts and how full the storage is
@@ -33,6 +41,7 @@ Designed to integrate seamlessly into mechanical and logistical systems within t
 ![storage_box_hardened.png](.github/images/storage_box_hardened.png)
 
 ## Simple Storage Box
+
 - Common wood variants (all have same attributes)
 - Stores up to 2048 items by default (one item type only)
 - GUI can be opened by interacting with an empty hand while sneaking
@@ -67,13 +76,19 @@ Designed to integrate seamlessly into mechanical and logistical systems within t
 # Simple Storage Network
 
 ### Description
-Links multiple **Simple Storage Boxes** together into a single network, allowing players and automation to access and manage all stored items from a central (or multiple) point.
-Simple storage networks are formed by connecting **Simple Storage Boxes** to a **Storage Controller** using **Storage Trim** blocks, which act as conduits.
-Once connected, the **Storage Controller** aggregates all items from the attached boxes, enabling insertion and extraction through a single interface.
 
-Additional components, like the **Storage Interface**, can be used to interact with the network through automation (hoppers, chutes, funnels, etc.)
+Links multiple **Simple Storage Boxes** together into a single network, allowing players and automation to access and
+manage all stored items from a central (or multiple) point.
+Simple storage networks are formed by connecting **Simple Storage Boxes** to a **Storage Controller** using **Storage
+Trim** blocks, which act as conduits.
+Once connected, the **Storage Controller** aggregates all items from the attached boxes, enabling insertion and
+extraction through a single interface.
+
+Additional components, like the **Storage Interface**, can be used to interact with the network through automation (
+hoppers, chutes, funnels, etc.)
 
 ## Storage Trim
+
 - Connects Simple Storage Boxes with **Storage Controller** and **Storage Interface** blocks
 - Connected textures matching the Simple Storage Box variants
 
@@ -92,6 +107,7 @@ Additional components, like the **Storage Interface**, can be used to interact w
 ![casing_warped.png](.github/images/casing_warped.png)
 
 ## Storage Controller
+
 - Serves as the central input/output hub for a storage network
 - Connects to **Simple Storage Boxes** using **Storage Trim**
 - Indicator light illuminates once linked to at least one **Simple Storage Box**
@@ -101,6 +117,7 @@ Additional components, like the **Storage Interface**, can be used to interact w
 ![storage_controller_connected.png](.github/images/storage_controller_connected.png)
 
 ## Storage Interface
+
 - Similar to the **Storage Controller** except:
   - Cannot be used directly by players for inserting or extracting items
   - Does not initiate or form a storage network on its own (requires a **Storage Controller**)
@@ -113,6 +130,7 @@ Additional components, like the **Storage Interface**, can be used to interact w
 # Backpacks
 
 ### Description
+
 Backpacks are wearable storage items that come in several material variants—each offering different storage capacities
 and upgrade slots. Designed to integrate seamlessly with automation systems, backpacks feature multiple compartments,
 including a main inventory for bulk items, a tool compartment for valuable gear, and dedicated upgrade slots. With
@@ -136,27 +154,34 @@ beyond basic item storage, making them versatile companions for adventuring, bui
 ![backpack_hardened.png](.github/images/backpack_hardened.png)
 
 ## Backpack Upgrades
-| Item                                                                | Name                    | Description                                                                                                                        |
-|---------------------------------------------------------------------|-------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| ![backpack_upgrade_magnet.png](.github/images/backpack_upgrade_magnet.png)         | **Magnet Upgrade**      | Pulls items into the backpack's main storage compartment from up to 5 blocks away                                                  |
-| ![backpack_upgrade_itempickup.png](.github/images/backpack_upgrade_itempickup.png) | **Item Pickup Upgrade** | Transfers items directly into backpack's main storage instead of player inventory                                                  | 
-| ![backpack_upgrade_pickblock.png](.github/images/backpack_upgrade_pickblock.png)   | **Pick Block Upgrade** | Pick block items directly from your backpack                                                                                       |
-| ![backpack_upgrade_refill.png](.github/images/backpack_upgrade_refill.png)         | **Refill Upgrade** | Refills the player's main/off-hand item from the backpack if they are available                                                    |
-| ![backpack_upgrade_toolswap.png](.github/images/backpack_upgrade_toolswap.png)     | **Tool Swap Upgrade** | Swaps out any tool held in the player's main hand for the best available tool or weapon when mining a block or attacking an entity |
-| ![backpack_upgrade_feeder.png](.github/images/backpack_upgrade_feeder.png)         | **Feeder Upgrade** | Automatically feeds the player food from the backpack when the player is hungry enough to eat                                      |
-| ![backpack_upgrade_flight.png](.github/images/backpack_upgrade_flight.png)         | **Flight Upgrade** | Turns any Backpack into a jetpack with hovering abilities (uses Create backtanks for fuel).                                        |
-| ![backpack_upgrade_falling.png](.github/images/backpack_upgrade_falling.png)       | **Fall Damage Upgrade** | Prevents the player from taking fall damage while wearing the backpack                                                             |
+
+| Item                                                                                     | Name                       | Description                                                                                                                        |
+|------------------------------------------------------------------------------------------|----------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| ![backpack_upgrade_magnet.png](.github/images/backpack_upgrade_magnet.png)               | **Magnet Upgrade**         | Pulls items into the backpack's main storage compartment from up to 5 blocks away                                                  |
+| ![backpack_upgrade_itempickup.png](.github/images/backpack_upgrade_itempickup.png)       | **Item Pickup Upgrade**    | Transfers items directly into backpack's main storage instead of player inventory                                                  | 
+| ![backpack_upgrade_pickblock.png](.github/images/backpack_upgrade_pickblock.png)         | **Pick Block Upgrade**     | Pick block items directly from your backpack                                                                                       |
+| ![backpack_upgrade_refill.png](.github/images/backpack_upgrade_refill.png)               | **Refill Upgrade**         | Refills the player's main/off-hand item from the backpack if they are available                                                    |
+| ![backpack_upgrade_toolswap.png](.github/images/backpack_upgrade_toolswap.png)           | **Tool Swap Upgrade**      | Swaps out any tool held in the player's main hand for the best available tool or weapon when mining a block or attacking an entity |
+| ![backpack_upgrade_feeder.png](.github/images/backpack_upgrade_feeder.png)               | **Feeder Upgrade**         | Automatically feeds the player food from the backpack when the player is hungry enough to eat                                      |
+| ![backpack_upgrade_flight.png](.github/images/backpack_upgrade_flight.png)               | **Flight Upgrade**         | Turns any Backpack into a jetpack with hovering abilities (uses Create backtanks for fuel)                                         |
+| ![backpack_upgrade_falling.png](.github/images/backpack_upgrade_falling.png)             | **Fall Damage Upgrade**    | Prevents the player from taking fall damage while wearing the backpack                                                             |
+| ![backpack_upgrade_oremining.png](.github/images/backpack_upgrade_oremining.png)         | **Ore Mining Upgrade**     | Mines entire clusters of matching ore blocks, dropping the loot near the player                                                    |
+| ![backpack_upgrade_torchdeployer.png](.github/images/backpack_upgrade_torchdeployer.png) | **Torch Deployer Upgrade** | Automatically places a torch from the backpack when the surrounding light level is low                                           |
 
 ---
 
 # Passer Blocks
 
 ### Description
-Passer Blocks are utility blocks that are used to transfer items between adjacent containers. They operate in a similar way
-to hoppers, moving one item at a time, however they do not have any internal inventory. Smart Passer blocks expand on the
+
+Passer Blocks are utility blocks that are used to transfer items between adjacent containers. They operate in a similar
+way
+to hoppers, moving one item at a time, however they do not have any internal inventory. Smart Passer blocks expand on
+the
 Passer by enabling items to be filtered and transferring up to 64 items at once.
 
 ## Basic Passer
+
 - Moves items directly between containers, including vanilla storage blocks
 - Transfers items in the direction it faces (can be rotated with a Create Wrench)
 - Moves one item at a time, similar to a hopper
@@ -165,6 +190,7 @@ Passer by enabling items to be filtered and transferring up to 64 items at once.
 ![passer_block.png](.github/images/passer_block.png)
 
 ## Smart Passer
+
 - Inherits all features of the Basic Passer
 - Supports item filtering using a Create filter
 - Transfer amount is configurable via the value panel (click and hold the filter slot to adjust)

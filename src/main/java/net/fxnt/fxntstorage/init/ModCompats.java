@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.init;
 
+import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.compat.CarryOnCompat;
 import net.fxnt.fxntstorage.compat.InventorySorterCompat;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -7,7 +8,7 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 
-@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = FXNTStorage.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModCompats {
     public static final String CURIOS = "curios";
     public static final String CARRY_ON = "carryon";

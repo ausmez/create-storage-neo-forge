@@ -1,11 +1,9 @@
 package net.fxnt.fxntstorage.init;
 
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.network.*;
-import net.fxnt.fxntstorage.network.backpack.client.ClientboundSetCarriedPacket;
-import net.fxnt.fxntstorage.network.backpack.client.SyncContainerPacket;
-import net.fxnt.fxntstorage.network.backpack.client.SyncSlotCountPacket;
-import net.fxnt.fxntstorage.network.backpack.client.VisualJetpackAirPacket;
+import net.fxnt.fxntstorage.network.handler.ClientPayloadHandler;
+import net.fxnt.fxntstorage.network.handler.ServerPayloadHandler;
+import net.fxnt.fxntstorage.network.packet.*;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -30,19 +28,23 @@ public class ModNetwork {
     private static int pkt = 0;
 
     public static void registerCommonPackets() {
-        registerMessage(ClientboundSetCarriedPacket.class, ClientboundSetCarriedPacket::encode, ClientboundSetCarriedPacket::decode, ClientboundSetCarriedPacket::handle);
-        registerMessage(ServerboundPacket.class, ServerboundPacket::encoder, ServerboundPacket::decoder, ServerboundPacket::handler);
-        registerMessage(SetMountedStorageDirtyPacket.class, SetMountedStorageDirtyPacket::encode, SetMountedStorageDirtyPacket::decode, SetMountedStorageDirtyPacket::handle);
-        registerMessage(SetSortOrderPacket.class, SetSortOrderPacket::encode, SetSortOrderPacket::decode, SetSortOrderPacket::handle);
-        registerMessage(SyncContainerPacket.class, SyncContainerPacket::encode, SyncContainerPacket::decode, SyncContainerPacket::handle);
-        registerMessage(SyncMountedStoragePacket.class, SyncMountedStoragePacket::encode, SyncMountedStoragePacket::decode, SyncMountedStoragePacket::handle);
-        registerMessage(SyncSlotCountPacket.class, SyncSlotCountPacket::encode, SyncSlotCountPacket::decode, SyncSlotCountPacket::handle);
-        registerMessage(VisualJetpackAirPacket.class, VisualJetpackAirPacket::encode, VisualJetpackAirPacket::decode, VisualJetpackAirPacket::handle);
-        registerMessage(SyncNBTDataPacket.class, SyncNBTDataPacket::encode, SyncNBTDataPacket::decode, SyncNBTDataPacket::handle);
-    }
+        // ClientboundPacket
+        registerMessage(SetCarriedPacket.class, SetCarriedPacket::encode, SetCarriedPacket::decode, ClientPayloadHandler::handleSetCarriedPacket);
+        registerMessage(SyncContainerPacket.class, SyncContainerPacket::encode, SyncContainerPacket::decode, ClientPayloadHandler::handleSyncContainerPacket);
+        registerMessage(SyncSlotCountPacket.class, SyncSlotCountPacket::encode, SyncSlotCountPacket::decode, ClientPayloadHandler::handleSyncSlotCountPacket);
+        registerMessage(VisualJetpackAirPacket.class, VisualJetpackAirPacket::encode, VisualJetpackAirPacket::decode, ClientPayloadHandler::handleVisualJetpackAirPacket);
+        registerMessage(SyncMountedStoragePacket.class, SyncMountedStoragePacket::encode, SyncMountedStoragePacket::decode, ClientPayloadHandler::handleSyncMountedStoragePacket);
+        registerMessage(SyncNBTDataPacket.class, SyncNBTDataPacket::encode, SyncNBTDataPacket::decode, ClientPayloadHandler::handleSyncNBTDataPacket);
 
-    public static void registerClientPackets() {
-        // NOOP
+        // ServerboundPacket
+        registerMessage(KeyPressedPacket.class, KeyPressedPacket::encode, KeyPressedPacket::decode, ServerPayloadHandler::handleKeyPressedPacket);
+        registerMessage(PickBlockUpgradePacket.class, PickBlockUpgradePacket::encode, PickBlockUpgradePacket::decode, ServerPayloadHandler::handlePickBlockUpgradePacket);
+        registerMessage(PlayerInputPacket.class, PlayerInputPacket::encode, PlayerInputPacket::decode, ServerPayloadHandler::handlePlayerInputPacket);
+        registerMessage(SetMountedStorageDirtyPacket.class, SetMountedStorageDirtyPacket::encode, SetMountedStorageDirtyPacket::decode, ServerPayloadHandler::handleSetMountedStorageDirtyPacket);
+        registerMessage(SetSortOrderPacket.class, SetSortOrderPacket::encode, SetSortOrderPacket::decode, ServerPayloadHandler::handleSetSortOrderPacket);
+        registerMessage(SortInventoryPacket.class, SortInventoryPacket::encode, SortInventoryPacket::decode, ServerPayloadHandler::handleSortInventoryPacket);
+        registerMessage(SyncClientSettingsPacket.class, SyncClientSettingsPacket::encode, SyncClientSettingsPacket::decode, ServerPayloadHandler::handleSyncClientSettingsPacket);
+        registerMessage(TransferRecipePacket.class, TransferRecipePacket::encode, TransferRecipePacket::decode, ServerPayloadHandler::handleTransferRecipePacket);
     }
 
     public static <T> void sendToServer(T message) {

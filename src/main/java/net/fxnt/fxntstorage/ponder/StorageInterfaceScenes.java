@@ -45,6 +45,11 @@ public class StorageInterfaceScenes {
         ItemStack diamond = new ItemStack(Items.DIAMOND);
         ItemStack emerald = new ItemStack(Items.EMERALD);
 
+        scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, s -> {
+            s.setFilter(diamond);
+            s.getItemHandler().setStackInSlot(0, diamond.copyWithCount(64));
+        });
+
         scene.world().showSection(focus, Direction.DOWN);
         scene.idle(15);
 
@@ -55,7 +60,8 @@ public class StorageInterfaceScenes {
         scene.world().showSection(trim, Direction.NORTH);
         scene.world().showSection(util.select().position(controller), Direction.DOWN);
         scene.idle(20);
-        scene.world().modifyBlock(controller, (s) -> ModBlocks.STORAGE_CONTROLLER.get().defaultBlockState().setValue(CONNECTED, true), false);
+        scene.world().modifyBlock(controller, (s) -> ModBlocks.STORAGE_CONTROLLER.get().defaultBlockState()
+                .setValue(CONNECTED, true), false);
         scene.idle(20);
         scene.overlay().showOutline(PonderPalette.GREEN, "iface", util.select().position(iface), 35);
         scene.idle(45);

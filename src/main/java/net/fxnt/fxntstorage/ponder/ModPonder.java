@@ -15,7 +15,6 @@ import net.minecraftforge.fml.ModList;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-
 public class ModPonder {
     public static final ResourceLocation CREATE_STORAGE = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "storage");
 
@@ -26,8 +25,8 @@ public class ModPonder {
             helper.registerTag(CREATE_STORAGE)
                     .addToIndex()
                     .item(ModBlocks.SIMPLE_STORAGE_BOX.get(), true, false)
-                    .title("Create Storage")
-                    .description("Items and components related to Create Storage")
+                    .title("Create: Storage")
+                    .description("Items and components related to Create: Storage")
                     .register();
 
             PonderTagRegistrationHelper<RegistryEntry<?>> HELPER = helper.withKeyFunction(RegistryEntry::getId);

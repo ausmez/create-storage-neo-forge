@@ -64,79 +64,11 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     public static final int MAX_CAPACITY_UPGRADES = 9;
     public static final int BASE_SLOT_COUNT = 3;
 
-    public int slotCount = BASE_SLOT_COUNT + 1 + MAX_CAPACITY_UPGRADES; // 2 + RemainderSlot + Void Upgrade Slot + Capacity Upgrade Slots
+    public int SLOT_COUNT = BASE_SLOT_COUNT + 1 + MAX_CAPACITY_UPGRADES; // 2 + RemainderSlot + Void Upgrade Slot + Capacity Upgrade Slots
     public ItemStack filterItem = ItemStack.EMPTY;
     public boolean isPlayerInteraction = false;
 
-    private final ItemStackHandler itemHandler = new ItemStackHandler(slotCount) {
-        @Override
-        protected void onContentsChanged(int slot) {
-            super.onContentsChanged(slot);
-            SimpleStorageBoxEntity.this.setChanged();
-        }
-
-        @Override
-        public CompoundTag serializeNBT() {
-            ListTag nbtTagList = new ListTag();
-            for (int i = 0; i < stacks.size(); i++) {
-                if (!stacks.get(i).isEmpty()) {
-                    CompoundTag itemTag = new CompoundTag();
-                    itemTag.putInt("Slot", i);
-                    itemTag.putInt("ActualCount", stacks.get(i).getCount());
-                    stacks.get(i).save(itemTag);
-                    nbtTagList.add(itemTag);
-                }
-            }
-            CompoundTag nbt = new CompoundTag();
-            nbt.put("Items", nbtTagList);
-            nbt.putInt("Size", stacks.size());
-            return nbt;
-        }
-
-        @Override
-        public void deserializeNBT(CompoundTag nbt) {
-            setSize(nbt.contains("Size", Tag.TAG_INT) ? nbt.getInt("Size") : stacks.size());
-            ListTag tagList = nbt.getList("Items", Tag.TAG_COMPOUND);
-            for (int i = 0; i < tagList.size(); i++) {
-                CompoundTag itemTags = tagList.getCompound(i);
-                int slot = itemTags.getInt("Slot");
-                ItemStack slotStack = ItemStack.of(itemTags);
-                if (itemTags.contains("ActualCount", Tag.TAG_INT)) {
-                    slotStack.setCount(itemTags.getInt("ActualCount"));
-                }
-                stacks.set(slot, ItemStack.of(itemTags));
-            }
-            onLoad();
-        }
-
-        @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            if (isPlayerInteraction || slot <= 1)
-                return super.extractItem(slot, amount, simulate);
-            return ItemStack.EMPTY;
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            if (slot > 2 && stack.is(ModTags.Items.STORAGE_BOX_UPGRADE)) return true;
-            if (filterTest(stack)) {
-                if (isPlayerInteraction)
-                    return true;
-                if (slot > 1 && !voidUpgrade)
-                    return false;
-                if (voidUpgrade)
-                    return true;
-                return !(getPercent() == 100);
-            }
-            return false;
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            if (slot == 0) return maxItemCapacity;
-            return super.getSlotLimit(slot);
-        }
-    };
+    private final ItemStackHandler itemHandler = createItemHandler();
     private LazyOptional<IItemHandlerModifiable> lazyItemHandler = LazyOptional.empty();
 
     public SimpleStorageBoxEntity(BlockEntityType<?> type, BlockPos position, BlockState state) {
@@ -155,6 +87,78 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     public void invalidateCaps() {
         super.invalidateCaps();
         this.lazyItemHandler.invalidate();
+    }
+
+    private @NotNull ItemStackHandler createItemHandler() {
+        return new ItemStackHandler(SLOT_COUNT) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                super.onContentsChanged(slot);
+                SimpleStorageBoxEntity.this.setChanged();
+            }
+
+            @Override
+            public CompoundTag serializeNBT() {
+                ListTag nbtTagList = new ListTag();
+                for (int i = 0; i < stacks.size(); i++) {
+                    if (!stacks.get(i).isEmpty()) {
+                        CompoundTag itemTag = new CompoundTag();
+                        itemTag.putInt("Slot", i);
+                        itemTag.putInt("ActualCount", stacks.get(i).getCount());
+                        stacks.get(i).save(itemTag);
+                        nbtTagList.add(itemTag);
+                    }
+                }
+                CompoundTag nbt = new CompoundTag();
+                nbt.put("Items", nbtTagList);
+                nbt.putInt("Size", stacks.size());
+                return nbt;
+            }
+
+            @Override
+            public void deserializeNBT(CompoundTag nbt) {
+                setSize(nbt.contains("Size", Tag.TAG_INT) ? nbt.getInt("Size") : stacks.size());
+                ListTag tagList = nbt.getList("Items", Tag.TAG_COMPOUND);
+                for (int i = 0; i < tagList.size(); i++) {
+                    CompoundTag itemTags = tagList.getCompound(i);
+                    int slot = itemTags.getInt("Slot");
+                    ItemStack slotStack = ItemStack.of(itemTags);
+                    if (itemTags.contains("ActualCount", Tag.TAG_INT)) {
+                        slotStack.setCount(itemTags.getInt("ActualCount"));
+                    }
+                    stacks.set(slot, ItemStack.of(itemTags));
+                }
+                onLoad();
+            }
+
+            @Override
+            public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                if (isPlayerInteraction || slot <= 1)
+                    return super.extractItem(slot, amount, simulate);
+                return ItemStack.EMPTY;
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                if (slot > 2 && stack.is(ModTags.Items.STORAGE_BOX_UPGRADE)) return true;
+                if (filterTest(stack)) {
+                    if (isPlayerInteraction)
+                        return true;
+                    if (slot > 1 && !voidUpgrade)
+                        return false;
+                    if (voidUpgrade)
+                        return true;
+                    return !(getPercent() == 100);
+                }
+                return false;
+            }
+
+            @Override
+            public int getSlotLimit(int slot) {
+                if (slot == 0) return maxItemCapacity;
+                return super.getSlotLimit(slot);
+            }
+        };
     }
 
     public ItemStackHandler getItemHandler() {
@@ -508,15 +512,14 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     }
 
     @Override
-    public boolean canPlaceItem(int pIndex, ItemStack pStack) {
+    public boolean canPlaceItem(int pIndex, @NotNull ItemStack pStack) {
         // Used by StorageNetwork
         if (!this.filterTest(pStack)) return false;
         if (this.hasVoidUpgrade()) return true;
 
         int freeSpace = this.getMaxItemCapacity() - this.getStoredAmount();
-        int amountToPlace = pStack.getCount();
 
-        return freeSpace >= amountToPlace;
+        return freeSpace > 0;
     }
 
     public void removeFilter() {

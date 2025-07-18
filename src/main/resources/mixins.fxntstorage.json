@@ -5,13 +5,13 @@
   "refmap": "mixins.fxntstorage.refmap.json",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "ItemEntityMixin",
-    "PlayerInventoryMixin"
-  ],
-  "client": [
-    "GuiGraphicsMixin"
+    "EMIVanillaPluginMixin",
+    "ItemEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "client": [
+    "REIDefaultClientPluginMixin"
+  ]
 }

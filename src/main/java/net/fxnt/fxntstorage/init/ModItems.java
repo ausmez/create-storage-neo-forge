@@ -106,6 +106,27 @@ public class ModItems {
             .properties(properties -> properties.stacksTo(1))
             .register();
 
+    public static final ItemEntry<UpgradeItem> BACKPACK_OREMINING_UPGRADE = REGISTRATE
+            .item("backpack_oremining_upgrade", properties -> new UpgradeItem(properties, Util.OREMINING_UPGRADE))
+            .properties(properties -> properties.stacksTo(1))
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_OREMINING_UPGRADE_DEACTIVATED = REGISTRATE
+            .item("backpack_oremining_upgrade_deactivated", properties -> new UpgradeItem(properties, Util.OREMINING_UPGRADE_DEACTIVATED))
+            .properties(properties -> properties.stacksTo(1))
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_TORCHDEPLOYER_UPGRADE = REGISTRATE
+            .item("backpack_torchdeployer_upgrade", properties -> new UpgradeItem(properties, Util.TORCHDEPLOYER_UPGRADE))
+            .properties(properties -> properties.stacksTo(1))
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_TORCHDEPLOYER_UPGRADE_DEACTIVATED = REGISTRATE
+            .item("backpack_torchdeployer_upgrade_deactivated", properties -> new UpgradeItem(properties, Util.TORCHDEPLOYER_UPGRADE_DEACTIVATED))
+            .properties(properties -> properties.stacksTo(1))
+            .register();
+
+
     public static void register() {
     }
 }

@@ -4,7 +4,7 @@ import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.fxnt.fxntstorage.init.ModNetwork;
-import net.fxnt.fxntstorage.network.SetMountedStorageDirtyPacket;
+import net.fxnt.fxntstorage.network.packet.SetMountedStorageDirtyPacket;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -20,7 +20,6 @@ import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
@@ -64,7 +63,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
         // Add Void slot
         this.addSlot(new Slot(container, VOID_UPGRADE_SLOT, 8, 20) {
             @Override
-            public boolean mayPlace(@NotNull ItemStack stack) {
+            public boolean mayPlace(ItemStack stack) {
                 if (this.hasItem()) return false;
                 return stack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
             }
@@ -82,7 +81,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
             int x = 8;
             this.addSlot(new Slot(container, slot, x + (Util.SLOT_SIZE * i), y) {
                 @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
+                public boolean mayPlace(ItemStack stack) {
                     if (this.hasItem()) return false;
                     return stack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get());
                 }
@@ -93,7 +92,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
                 }
 
                 @Override
-                public int getMaxStackSize(@NotNull ItemStack stack) {
+                public int getMaxStackSize(ItemStack pStack) {
                     return 1;
                 }
 

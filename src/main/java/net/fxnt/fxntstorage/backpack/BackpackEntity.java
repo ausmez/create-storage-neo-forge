@@ -4,11 +4,10 @@ import io.netty.buffer.Unpooled;
 import net.fxnt.fxntstorage.backpack.main.BackpackBlockMenu;
 import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.BackpackAsBlockUpgradeHandler;
-import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
-import net.fxnt.fxntstorage.network.ServerboundPacket;
+import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
@@ -43,6 +42,9 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+@ParametersAreNonnullByDefault
 public class BackpackEntity extends BlockEntity implements IBackpackContainer, MenuProvider, Nameable {
     private int slotCount;
 
@@ -89,7 +91,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
             }
 
             @Override
-            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            public boolean isItemValid(int slot, ItemStack stack) {
                 if (filterTest(stack))
                     return false;
                 if (isPlayerInteraction)
@@ -142,7 +144,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     }
 
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+    public @NotNull <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) return lazyItemHandler.cast();
         return super.getCapability(cap, side);
     }
@@ -167,7 +169,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         return this.upgrades;
     }
 
-    public void setCustomName(@NotNull Component hoverName) {
+    public void setCustomName(Component hoverName) {
         this.customName = hoverName;
     }
 
@@ -200,7 +202,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     }
 
     @Override
-    public void load(@NotNull CompoundTag tag) {
+    public void load(CompoundTag tag) {
         super.load(tag);
 //        itemHandler.deserializeNBT(tag.getCompound("Items"));
         if (tag.contains("Items")) {
@@ -234,7 +236,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
 
     // Serialize the BlockEntity
     @Override
-    public void saveAdditional(@NotNull CompoundTag tag) {
+    public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("Items", itemHandler.serializeNBT());
 
@@ -291,7 +293,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     }
 
     @Override
-    public void handleUpdateTag(@NotNull CompoundTag tag) {
+    public void handleUpdateTag(CompoundTag tag) {
         super.handleUpdateTag(tag);
         this.load(tag);
     }
@@ -307,36 +309,34 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         return false;
     }
 
-    public static boolean filterTest(@NotNull ItemStack stack) {
+    public static boolean filterTest(ItemStack stack) {
         // Test to see if we're allowing this item into the backpack
         return stack.getItem() instanceof BackpackItem;
     }
 
     public void serverTick(Level level) {
-        if (level != null) {
-            if (!level.isClientSide) {
-                // Need to run moveItems() every updateClientStorageData
-                moveItems();
+        if (!level.isClientSide) {
+            // Need to run moveItems() every updateClientStorageData
+            moveItems();
 
-                this.lastTick++;
-                int updateEveryXTicks = 30;
-                if (this.lastTick >= updateEveryXTicks) {
-                    this.lastTick = 0;
-                    this.doTick = true;
-                }
-                if (!this.doTick) return;
-
-                if (!this.initializedBlock) {
-                    level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), BackpackBlock.UPDATE_ALL);
-                    this.initializedBlock = true;
-                }
-
-                if (this.upgrades.contains(Util.MAGNET_UPGRADE)) {
-                    BackpackAsBlockUpgradeHandler upgradeHandler = new BackpackAsBlockUpgradeHandler(this);
-                    upgradeHandler.applyMagnetUpgrade();
-                }
-                this.doTick = false;
+            this.lastTick++;
+            int updateEveryXTicks = 30;
+            if (this.lastTick >= updateEveryXTicks) {
+                this.lastTick = 0;
+                this.doTick = true;
             }
+            if (!this.doTick) return;
+
+            if (!this.initializedBlock) {
+                level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), BackpackBlock.UPDATE_ALL);
+                this.initializedBlock = true;
+            }
+
+            if (this.upgrades.contains(Util.MAGNET_UPGRADE)) {
+                BackpackAsBlockUpgradeHandler upgradeHandler = new BackpackAsBlockUpgradeHandler(this);
+                upgradeHandler.applyMagnetUpgrade();
+            }
+            this.doTick = false;
         }
     }
 
@@ -369,7 +369,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         }
     }
 
-    private void doMove(int mergeSlotId, @NotNull ItemStack mergeStack, ItemStack ghostStack) {
+    private void doMove(int mergeSlotId, ItemStack mergeStack, ItemStack ghostStack) {
         if (mergeStack.isEmpty()) {
             // Add item to empty slot
             this.itemHandler.setStackInSlot(mergeSlotId, ghostStack.copy());
@@ -425,7 +425,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     public void setSortOrder(SortOrder order) {
         sortOrder = order;
         if (this.level != null && this.level.isClientSide)
-            ModNetwork.sendToServer(new ServerboundPacket(BackpackNetworkHelper.SET_SORT_ORDER, new FriendlyByteBuf(Unpooled.buffer()).writeEnum(order)));
+            ModNetwork.sendToServer(new SetSortOrderPacket(sortOrder));
         setChanged();
     }
 

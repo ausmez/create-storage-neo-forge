@@ -71,7 +71,7 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level pLevel, @NotNull BlockState pState, @NotNull BlockEntityType<T> blockEntityType) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> blockEntityType) {
         if (this.isSmart) {
             return createTickerHelper(blockEntityType, ModBlockEntities.SMART_PASSER_ENTITY.get(), (type, world, pos, entity) -> entity.serverTick(type, world));
         } else {
@@ -80,7 +80,7 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    public void neighborChanged(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull Block pNeighborBlock, @NotNull BlockPos pNeighborPos, boolean pMovedByPiston) {
+    public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pNeighborBlock, BlockPos pNeighborPos, boolean pMovedByPiston) {
         super.neighborChanged(pState, pLevel, pPos, pNeighborBlock, pNeighborPos, pMovedByPiston);
         if (!pLevel.isClientSide && this.isSmart) {
             if (!pLevel.getBlockTicks().willTickThisTick(pPos, this)) {
@@ -91,7 +91,7 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    public void tick(BlockState pState, ServerLevel pLevel, @NotNull BlockPos pPos, @NotNull RandomSource pRandom) {
+    public void tick(BlockState pState, ServerLevel pLevel, BlockPos pPos, RandomSource pRandom) {
         boolean previouslyPowered = pState.getValue(POWERED);
         if (previouslyPowered != pLevel.hasNeighborSignal(pPos)) {
             pLevel.setBlock(pPos, pState.cycle(POWERED), Block.UPDATE_CLIENTS);
@@ -100,24 +100,24 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    public @NotNull RenderShape getRenderShape(@NotNull BlockState pState) {
+    public RenderShape getRenderShape(BlockState pState) {
         return RenderShape.MODEL;
     }
 
     @Override
-    public @NotNull VoxelShape getShape(BlockState pState, @NotNull BlockGetter pLevel, @NotNull BlockPos pPos, @NotNull CollisionContext pContext) {
+    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         Direction direction = pState.getValue(FACING);
         return PasserShapeCache.getShape(direction);
     }
 
     @Override
-    public @NotNull VoxelShape getCollisionShape(BlockState pState, @NotNull BlockGetter pLevel, @NotNull BlockPos pPos, @NotNull CollisionContext pContext) {
+    public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         Direction direction = pState.getValue(FACING);
         return PasserShapeCache.getShape(direction);
     }
 
     @Override
-    public @NotNull VoxelShape getInteractionShape(BlockState pState, @NotNull BlockGetter pLevel, @NotNull BlockPos pPos) {
+    public VoxelShape getInteractionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
         Direction direction = pState.getValue(FACING);
         return PasserShapeCache.getShape(direction);
     }

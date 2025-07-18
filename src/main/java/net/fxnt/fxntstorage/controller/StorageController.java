@@ -37,14 +37,14 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
+    public @Nullable BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         BlockEntityType<?> type = ModBlockEntities.STORAGE_CONTROLLER_ENTITY.get();
         return new StorageControllerEntity(type, pPos, pState);
     }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> blockEntityType) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
         return createTickerHelper(blockEntityType, ModBlockEntities.STORAGE_CONTROLLER_ENTITY.get(), (type, world, pos, entity) -> {
             if (entity instanceof StorageControllerEntity) {
                 entity.serverTick(type, world);
@@ -54,7 +54,7 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
 
     @Override
     @SuppressWarnings("deprecation")
-    public @NotNull InteractionResult use(@NotNull BlockState blockState, @NotNull Level level, @NotNull BlockPos blockPos, Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+    public @NotNull InteractionResult use(BlockState blockState, Level level, BlockPos blockPos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (player.isSpectator() || level.isClientSide) return InteractionResult.SUCCESS;
         if (hand == InteractionHand.OFF_HAND) return InteractionResult.SUCCESS;
         if (!hitFront(blockState, hit)) return InteractionResult.PASS;
@@ -73,7 +73,8 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
+    @SuppressWarnings("deprecation")
+    public @NotNull RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 

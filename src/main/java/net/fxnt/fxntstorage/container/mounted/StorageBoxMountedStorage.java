@@ -15,7 +15,7 @@ import net.fxnt.fxntstorage.container.StorageBoxEntity;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.init.ModNetwork;
-import net.fxnt.fxntstorage.network.SyncMountedStoragePacket;
+import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;

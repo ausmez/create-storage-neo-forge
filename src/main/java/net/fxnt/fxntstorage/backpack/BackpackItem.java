@@ -37,21 +37,23 @@ import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.CuriosCapability;
 import top.theillusivec4.curios.api.type.capability.ICurio;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+@ParametersAreNonnullByDefault
 public class BackpackItem extends BlockItem {
     private final Block block;
 
-    public BackpackItem(Block pBlock, @NotNull Properties pProperties) {
+    public BackpackItem(Block pBlock, Properties pProperties) {
         super(pBlock, pProperties.stacksTo(1).fireResistant());
         this.block = pBlock;
     }
 
     @Override
-    protected boolean updateCustomBlockEntityTag(@NotNull BlockPos pPos, @NotNull Level pLevel, @Nullable Player pPlayer, @NotNull ItemStack pStack, @NotNull BlockState pState) {
+    protected boolean updateCustomBlockEntityTag(BlockPos pPos, Level pLevel, @Nullable Player pPlayer, ItemStack pStack, BlockState pState) {
         return super.updateCustomBlockEntityTag(pPos, pLevel, pPlayer, pStack, pState);
     }
 
@@ -62,7 +64,7 @@ public class BackpackItem extends BlockItem {
                 final LazyOptional<ICurio> curio = LazyOptional.of(() -> new CuriosCompat(stack));
 
                 @Override
-                public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+                public @NotNull <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
                     return CuriosCapability.ITEM.orEmpty(cap, curio);
                 }
             };
@@ -86,7 +88,7 @@ public class BackpackItem extends BlockItem {
     }
 
     @Override
-    public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level world, @NotNull Player player, @NotNull InteractionHand hand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
         if (!world.isClientSide && player instanceof ServerPlayer serverPlayer) {
@@ -107,7 +109,7 @@ public class BackpackItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltipComponents, @NotNull TooltipFlag isAdvanced) {
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents, TooltipFlag isAdvanced) {
         super.appendHoverText(stack, level, tooltipComponents, isAdvanced);
 
         final Component CTRL_TO_VIEW_CONTENTS = Component.translatable("tooltip.fxntstorage.holdForContents", (Screen.hasControlDown()) ? "§fCtrl" : "§7Ctrl").withStyle(ChatFormatting.DARK_GRAY);
@@ -144,7 +146,7 @@ public class BackpackItem extends BlockItem {
     }
 
     @Override
-    public @NotNull Optional<TooltipComponent> getTooltipImage(@NotNull ItemStack pStack) {
+    public @NotNull Optional<TooltipComponent> getTooltipImage(ItemStack pStack) {
         if (Screen.hasControlDown() && !Screen.hasShiftDown()) {
             return Optional.of(new BackpackTooltip(pStack));
         }

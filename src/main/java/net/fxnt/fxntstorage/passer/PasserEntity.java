@@ -12,10 +12,11 @@ import net.minecraftforge.items.IItemHandler;
 import static net.fxnt.fxntstorage.passer.PasserBlock.FACING;
 
 public class PasserEntity extends BlockEntity {
-    public int lastTick = 0;
-    public boolean doTick = false;
-    public int updateEveryXTicks = 10;
+    private int lastTick = 0;
+    private boolean doTick = false;
     private Direction facing;
+
+    private static final int UPDATE_EVERY_X_TICKS = 10;
 
     public PasserEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
@@ -23,10 +24,10 @@ public class PasserEntity extends BlockEntity {
     }
 
     public void serverTick(Level level, BlockPos blockPos) {
-        if (level != null && !level.isClientSide) {
+        if (!level.isClientSide) {
 
             lastTick++;
-            if (lastTick >= updateEveryXTicks) {
+            if (lastTick >= UPDATE_EVERY_X_TICKS) {
                 lastTick = 0;
                 doTick = true;
             }
@@ -47,7 +48,7 @@ public class PasserEntity extends BlockEntity {
             long amount = 1;
             boolean fixedAmount = false;
 
-            PasserHelper.passItems(level, srcContainer, dstContainer, this.facing, amount, fixedAmount, filterItem); // Set to limit set by filter
+            PasserHelper.passItems(level, srcContainer, dstContainer, amount, fixedAmount, filterItem); // Set to limit set by filter
         }
     }
 

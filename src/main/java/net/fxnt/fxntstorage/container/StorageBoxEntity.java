@@ -7,13 +7,12 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
 import com.simibubi.create.foundation.utility.CreateLang;
 import io.netty.buffer.Unpooled;
-import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.container.util.StorageBoxFilteringBox;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.init.ModTags;
-import net.fxnt.fxntstorage.network.ServerboundPacket;
+import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -40,7 +39,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -81,12 +79,12 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
             }
 
             @Override
-            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                return filterTest(level, stack);
+            public boolean isItemValid(int slot, ItemStack stack) {
+                return level != null && filterTest(level, stack);
             }
 
             @Override
-            public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
                 // Void mode check - might be a slight delay between this check and percentageUsed being updated
                 ItemStack amount = super.insertItem(slot, stack, simulate);
                 if (percentageUsed == 100 && voidUpgrade) {
@@ -96,14 +94,14 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
             }
 
             @Override
-            public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            public ItemStack extractItem(int slot, int amount, boolean simulate) {
                 return super.extractItem(slot, amount, simulate);
             }
         };
     }
 
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+    public <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
         return ForgeCapabilities.ITEM_HANDLER.orEmpty(cap, lazyItemHandler);
     }
 
@@ -128,7 +126,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     @Override
-    public void addBehaviours(@NotNull List<BlockEntityBehaviour> behaviours) {
+    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         filtering = new FilteringBehaviour(this, new StorageBoxFilteringBox());
         behaviours.add(filtering);
     }
@@ -148,7 +146,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     @Override
-    public @Nullable Component getCustomName() {
+    public Component getCustomName() {
         return this.customName;
     }
 
@@ -157,7 +155,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     @Override
-    public @NotNull Component getDisplayName() {
+    public Component getDisplayName() {
         return hasCustomName() ? getCustomName() : getBlockState().getBlock().getName();
     }
 
@@ -168,13 +166,13 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     public void setSortOrder(SortOrder order) {
         this.sortOrder = order;
         if (this.level != null && this.level.isClientSide)
-            ModNetwork.sendToServer(new ServerboundPacket(BackpackNetworkHelper.SET_SORT_ORDER, new FriendlyByteBuf(Unpooled.buffer()).writeEnum(order)));
+            ModNetwork.sendToServer(new SetSortOrderPacket(sortOrder));
         setChanged();
     }
 
-    @NotNull
+
     @Override
-    public AbstractContainerMenu createMenu(int pContainerId, @NotNull Inventory pPlayerInventory, @NotNull Player pPlayer) {
+    public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
         FriendlyByteBuf extraData = new FriendlyByteBuf(Unpooled.buffer());
         extraData.writeBlockPos(this.worldPosition);
         return new StorageBoxMenu(pContainerId, pPlayerInventory, extraData);
@@ -217,7 +215,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     public int getContainerSize() {
-        return slotCount;
+        return itemHandler.getSlots();
     }
 
     @Override
@@ -226,29 +224,29 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     @Override
-    public @NotNull ItemStack getItem(int pSlot) {
+    public ItemStack getItem(int pSlot) {
         return itemHandler.getStackInSlot(pSlot);
     }
 
     @Override
-    public @NotNull ItemStack removeItem(int pSlot, int pAmount) {
+    public ItemStack removeItem(int pSlot, int pAmount) {
         itemHandler.extractItem(pSlot, pAmount, false);
         return itemHandler.getStackInSlot(pSlot);
     }
 
     @Override
-    public @NotNull ItemStack removeItemNoUpdate(int pSlot) {
+    public ItemStack removeItemNoUpdate(int pSlot) {
         itemHandler.insertItem(pSlot, ItemStack.EMPTY, false);
         return itemHandler.getStackInSlot(pSlot);
     }
 
     @Override
-    public void setItem(int pSlot, @NotNull ItemStack pStack) {
+    public void setItem(int pSlot, ItemStack pStack) {
         itemHandler.setStackInSlot(pSlot, pStack);
     }
 
     @Override
-    public boolean stillValid(@NotNull Player pPlayer) {
+    public boolean stillValid(Player pPlayer) {
         return true;
     }
 
@@ -266,7 +264,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
     public int calculateStoredAmount() {
         int storedAmount = 0;
-        for (int i = 0; i < slotCount; i++) {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
             storedAmount += itemHandler.getStackInSlot(i).getCount();
         }
         return storedAmount;
@@ -275,7 +273,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     private int calculateMaxValue() {
         int totalSpace = 0;
         int maxItemStackSize = this.getMaxStackSize();
-        for (int i = 0; i < slotCount; ++i) {
+        for (int i = 0; i < itemHandler.getSlots(); ++i) {
             if (!itemHandler.getStackInSlot(i).isEmpty()) {
                 maxItemStackSize = itemHandler.getStackInSlot(i).getMaxStackSize();
             }
@@ -286,7 +284,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
     private int calculateCurrentValue() {
         int usedSpace = 0;
-        for (int i = 0; i < slotCount; ++i) {
+        for (int i = 0; i < itemHandler.getSlots(); ++i) {
             usedSpace += itemHandler.getStackInSlot(i).getCount();
         }
         return usedSpace;
@@ -296,7 +294,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         float percentageUsed = 0;
         int totalSpace = 0;
         int usedSpace = 0;
-        for (int i = 0; i < slotCount; i++) {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
             int amountInSlot = itemHandler.getStackInSlot(i).getCount();
             int maxItemStackSize = this.getMaxStackSize();
             if (!itemHandler.getStackInSlot(i).isEmpty()) {
@@ -312,7 +310,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     @Override
-    public @NotNull CompoundTag getUpdateTag() {
+    public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         tag.put("Items", itemHandler.serializeNBT());
         tag.putString("SortOrder", sortOrder.name());
@@ -320,7 +318,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     @Override
-    public void handleUpdateTag(@NotNull CompoundTag tag) {
+    public void handleUpdateTag(CompoundTag tag) {
         super.handleUpdateTag(tag);
         itemHandler.deserializeNBT(tag.getCompound("Items"));
         if (tag.contains("SortOrder", Tag.TAG_STRING)) {
@@ -328,13 +326,8 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         }
     }
 
-    @Override
-    public boolean canPlaceItem(int pIndex, @NotNull ItemStack pStack) {
-        return filterTest(level, pStack);
-    }
-
     public void tick(Level pLevel, BlockPos pPos, BlockState pState) {
-        if (pLevel != null && !pLevel.isClientSide) {
+        if (!pLevel.isClientSide) {
 
             if (lastTick++ >= updateEveryXTicks) {
                 lastTick = 0;
@@ -397,7 +390,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     // Transferring Items
-    public void transferToStorage(@NotNull BlockState pState, Level pLevel, @NotNull Player pPlayer, @NotNull Boolean transferAll) {
+    public void transferToStorage(BlockState pState, Level pLevel, Player pPlayer, Boolean transferAll) {
         // Get the item in the players main hand and check the hand is NOT empty and the item matches the filter (if one applied)
         ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
         boolean isVoidEnabled = pState.getValue(VOID_UPGRADE);
@@ -443,7 +436,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         this.setChanged();
     }
 
-    public void transferFromStorage(@NotNull Player pPlayer) {
+    public void transferFromStorage(Player pPlayer) {
         ItemStack filterItem = filtering.getFilter();
 
         for (int i = 0; i < itemHandler.getSlots(); i++) {
@@ -464,8 +457,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         this.setChanged();
     }
 
-    public boolean filterTest(Level level, @NotNull ItemStack stack) {
-        // Prevent a StorageBox being placed in a StorageBox #TheDreamIsReal
+    public boolean filterTest(Level level, ItemStack stack) {
         if (stack.is(ModTags.Items.STORAGE_BOX_ITEM)) {
             return false;
         }

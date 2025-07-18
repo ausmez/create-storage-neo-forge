@@ -1,6 +1,8 @@
 package net.fxnt.fxntstorage.passer;
 
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
+import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
+import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -10,25 +12,35 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.items.wrapper.EmptyHandler;
 import org.jetbrains.annotations.Nullable;
 
 public class PasserHelper {
 
     @Nullable
     public static IItemHandler getStorage(Level level, BlockPos blockPos, Direction facing, boolean isSourceContainer) {
-        BlockPos containerPos = isSourceContainer ? blockPos.relative(facing.getOpposite()) : blockPos.relative(facing);
+        BlockPos containerPos = isSourceContainer
+                ? blockPos.relative(facing.getOpposite())
+                : blockPos.relative(facing);
+
         BlockEntity blockEntity = level.getBlockEntity(containerPos);
         if (blockEntity != null) {
+            if (blockEntity instanceof PackagerBlockEntity pbe) {
+                if (pbe.animationTicks > 0 || pbe.getAvailableItems().isEmpty()) // A little hacky, but it works
+                    return null;
+            }
+            if (blockEntity instanceof PackagePortBlockEntity) return null;
+
             LazyOptional<IItemHandler> itemHandlerOpt = blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, facing);
 
             if (itemHandlerOpt.isPresent()) {
-                return itemHandlerOpt.orElse(null);
+                return itemHandlerOpt.orElse(new EmptyHandler());
             }
         }
         return null;
     }
 
-    public static void passItems(Level level, IItemHandler srcHandler, IItemHandler dstHandler, Direction facing, long amount, boolean fixedAmount, ItemStack filterItem) {
+    public static void passItems(Level level, IItemHandler srcHandler, IItemHandler dstHandler, long amount, boolean fixedAmount, ItemStack filterItem) {
         if (!(srcHandler instanceof IItemHandlerModifiable srcModifiable) || !(dstHandler instanceof IItemHandlerModifiable dstModifiable))
             return;
 

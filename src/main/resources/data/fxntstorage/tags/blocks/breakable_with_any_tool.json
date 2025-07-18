@@ -15,6 +15,10 @@
     "minecraft:cactus",
     "minecraft:ochre_froglight",
     "minecraft:verdant_froglight",
-    "minecraft:pearlescent_froglight"
+    "minecraft:pearlescent_froglight",
+    "minecraft:glowstone",
+    "minecraft:redstone_lamp",
+    "minecraft:sea_lantern",
+    "minecraft:dragon_egg"
   ]
 }

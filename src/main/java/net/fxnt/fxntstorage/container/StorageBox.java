@@ -1,7 +1,6 @@
 package net.fxnt.fxntstorage.container;
 
 import com.simibubi.create.AllTags;
-import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
@@ -20,7 +19,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
@@ -41,7 +39,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>, IWrenchable {
+@SuppressWarnings("deprecation")
+public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity> {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
     public static final BooleanProperty VOID_UPGRADE = BooleanProperty.create("void_upgrade");
@@ -64,7 +63,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public @NotNull RenderShape getRenderShape(@NotNull BlockState pState) {
+    public RenderShape getRenderShape(BlockState pState) {
         return RenderShape.MODEL;
     }
 
@@ -79,7 +78,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
+    public @Nullable BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         BlockEntityType<?> type = ModBlockEntities.STORAGE_BOX_ENTITY.get();
         StorageBoxEntity blockEntity = new StorageBoxEntity(type, pPos, pState);
         blockEntity.initializeEntity(slotCount);
@@ -87,13 +86,13 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level pLevel, @NotNull BlockState pState, @NotNull BlockEntityType<T> pBlockEntityType) {
+    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
         return createTickerHelper(pBlockEntityType, ModBlockEntities.STORAGE_BOX_ENTITY.get(),
                 (pLevel1, pPos, pState1, pBlockEntity) -> pBlockEntity.tick(pLevel1, pPos, pState1));
     }
 
     @Override
-    public void setPlacedBy(@NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
+    public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
         if (blockEntity instanceof StorageBoxEntity be) {
             if (pStack.hasCustomHoverName()) {
@@ -116,7 +115,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public boolean hasAnalogOutputSignal(@NotNull BlockState pState) {
+    public boolean hasAnalogOutputSignal(BlockState pState) {
         return true;
     }
 
@@ -126,7 +125,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public @NotNull InteractionResult use(@NotNull BlockState pState, Level pLevel, @NotNull BlockPos pPos, @NotNull Player pPlayer, @NotNull InteractionHand pHand, @NotNull BlockHitResult pHit) {
+    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pHand == InteractionHand.OFF_HAND) return InteractionResult.SUCCESS;
             if (!hitFront(pState, pHit)) return InteractionResult.PASS;
@@ -179,7 +178,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public void attack(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull Player pPlayer) {
+    public void attack(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer) {
         BlockHitResult hit = rayTraceEyes(pLevel, pPlayer, pPos);
         if (hit.getType() != HitResult.Type.BLOCK || !hit.getBlockPos().equals(pPos) || !hitFront(pState, hit)) {
             return;
@@ -222,7 +221,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public @NotNull BlockState mirror(BlockState pState, Mirror pMirror) {
+    public BlockState mirror(BlockState pState, Mirror pMirror) {
         return pState.rotate(pMirror.getRotation(pState.getValue(FACING)));
     }
 
@@ -233,7 +232,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public int getAnalogOutputSignal(@NotNull BlockState pState, Level pLevel, @NotNull BlockPos pPos) {
+    public int getAnalogOutputSignal(BlockState pState, Level pLevel, BlockPos pPos) {
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
         if (blockEntity instanceof StorageBoxEntity entity) {
             float percentFull = entity.calculatePercentageUsed() / 100;
@@ -242,8 +241,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         return 0;
     }
 
-    @NotNull
-    public static BlockHitResult rayTraceEyes(@NotNull Level level, @NotNull Player player, @NotNull BlockPos blockPos) {
+    public static BlockHitResult rayTraceEyes(Level level, Player player, BlockPos blockPos) {
         Vec3 eyePos = player.getEyePosition(1);
         Vec3 lookVector = player.getViewVector(1);
         Vec3 endPos = eyePos.add(lookVector.scale(eyePos.distanceTo(Vec3.atCenterOf(blockPos)) + 1));
@@ -251,8 +249,4 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         return level.clip(context);
     }
 
-    @Override
-    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
-        return InteractionResult.SUCCESS;
-    }
 }

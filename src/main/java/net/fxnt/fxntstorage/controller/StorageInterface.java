@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("deprecation")
 public class StorageInterface extends BaseEntityBlock implements EntityBlock, IWrenchable {
 
     public StorageInterface(Properties pProperties) {
@@ -24,19 +25,19 @@ public class StorageInterface extends BaseEntityBlock implements EntityBlock, IW
 
     @Override
     @Nullable
-    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         BlockEntityType<?> type = ModBlockEntities.STORAGE_INTERFACE_ENTITY.get();
         return new StorageInterfaceEntity(type, pos, state);
     }
 
     @Override
-    public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
+    public @NotNull RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> blockEntityType) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
         return level.isClientSide ? null : createTickerHelper(blockEntityType, ModBlockEntities.STORAGE_INTERFACE_ENTITY.get(), (type, world, pos, entity) -> {
             if (entity instanceof StorageInterfaceEntity) {
                 entity.serverTick(type);

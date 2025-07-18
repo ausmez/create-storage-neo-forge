@@ -17,7 +17,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
 public class SimpleStorageBoxMountedScreen extends AbstractContainerScreen<SimpleStorageBoxMountedMenu> {
@@ -25,7 +24,7 @@ public class SimpleStorageBoxMountedScreen extends AbstractContainerScreen<Simpl
     private final int guiTextureWidth = 176;
     private final int guiTextureHeight = 176;
 
-    public static @NotNull SimpleStorageBoxMountedScreen createScreen(SimpleStorageBoxMountedMenu menu, Inventory playerInventory, Component title) {
+    public static SimpleStorageBoxMountedScreen createScreen(SimpleStorageBoxMountedMenu menu, Inventory playerInventory, Component title) {
         return new SimpleStorageBoxMountedScreen(menu, playerInventory, title);
     }
 
@@ -36,7 +35,7 @@ public class SimpleStorageBoxMountedScreen extends AbstractContainerScreen<Simpl
     }
 
     @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         this.renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, delta);
         renderFilterItem(graphics, leftPos + 30, topPos + 20);
@@ -116,29 +115,5 @@ public class SimpleStorageBoxMountedScreen extends AbstractContainerScreen<Simpl
 
         poseStack.popPose();
     }
-
-//    @Override
-//    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-//        if (isInsideFakeSlot(mouseX, mouseY)) {
-//            minecraft.gameMode.handleInventoryMouseClick(
-//                    menu.containerId,
-//                    0,
-//                    button,
-//                    ClickType.PICKUP,
-//                    minecraft.player
-//            );
-//            return true;
-//        }
-//        return super.mouseClicked(mouseX, mouseY, button);
-//    }
-//
-//    private boolean isInsideFakeSlot(double mouseX, double mouseY) {
-//        int slotX = leftPos + 30;
-//        int slotY = topPos + 20;
-//        int size = 32;
-//
-//        return mouseX >= slotX && mouseX < slotX + size
-//                && mouseY >= slotY && mouseY < slotY + size;
-//    }
 
 }

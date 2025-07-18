@@ -49,7 +49,9 @@ public class ModTabs {
                 ModItems.BACKPACK_REFILL_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_FEEDER_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_TOOLSWAP_UPGRADE_DEACTIVATED.asItem(),
-                ModItems.BACKPACK_FALLDAMAGE_UPGRADE_DEACTIVATED.asItem()
+                ModItems.BACKPACK_FALLDAMAGE_UPGRADE_DEACTIVATED.asItem(),
+                ModItems.BACKPACK_OREMINING_UPGRADE_DEACTIVATED.asItem(),
+                ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE_DEACTIVATED.asItem()
         );
 
         private static Predicate<Item> exclusionPredicate() {

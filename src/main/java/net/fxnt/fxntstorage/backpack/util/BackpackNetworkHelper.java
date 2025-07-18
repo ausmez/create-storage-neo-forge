@@ -1,15 +1,17 @@
 package net.fxnt.fxntstorage.backpack.util;
 
-import io.netty.buffer.Unpooled;
-import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.init.ModNetwork;
-import net.fxnt.fxntstorage.network.ServerboundPacket;
+import net.fxnt.fxntstorage.network.packet.PickBlockUpgradePacket;
+import net.fxnt.fxntstorage.network.packet.SortInventoryPacket;
+import net.fxnt.fxntstorage.network.packet.SyncClientSettingsPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -17,70 +19,67 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class BackpackNetworkHelper {
-    public static final ResourceLocation BACKPACK_KEY_OPEN_CLOSE = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "backpack_key_open_close");
-    public static final ResourceLocation BACKPACK_MENU_CTRL_DOWN = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "backpack_menu_ctrl_down");
-    public static final ResourceLocation BACKPACK_MENU_CTRL_UP = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "backpack_menu_ctrl_up");
-    public static final ResourceLocation JETPACK_FLY = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "jetpack_fly");
-    public static final ResourceLocation PLAYER_INPUT = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "player_input");
-    public static final ResourceLocation SORT_BACKPACK_INVENTORY = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "sort_backpack_inventory");
-    public static final ResourceLocation SYNC_CLIENT_SETTINGS = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "sync_client_settings");
-    public static final ResourceLocation TOGGLE_HOVER = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "toggle_jetpack_hover");
-    public static final ResourceLocation UPGRADE_PICK_BLOCK = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "upgrade_pick_block");
-    public static final ResourceLocation SET_SORT_ORDER = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "set_sort_order");
-
-    private static final FriendlyByteBuf data = new FriendlyByteBuf(Unpooled.buffer());
-
-    public static void sendCtrlKeyDown() {
-        ModNetwork.sendToServer(new ServerboundPacket(BACKPACK_MENU_CTRL_DOWN, data));
-    }
-
-    public static void sendCtrlKeyUp() {
-        ModNetwork.sendToServer(new ServerboundPacket(BACKPACK_MENU_CTRL_UP, data));
-    }
 
     public static void sortBackpack(int pSlotId, SortOrder pSortOrder) {
-        if (pSlotId < Util.ITEM_SLOT_END_RANGE) {
-            data.writeInt(Util.ITEM_SLOT_START_RANGE).writeInt(Util.ITEM_SLOT_END_RANGE); // BackpackSlots
-            data.writeEnum(pSortOrder);
+        int slotStart;
+        int slotEnd;
+
+        if (pSlotId < Util.ITEM_SLOT_END_RANGE) { // BackpackSlots
+            slotStart = Util.ITEM_SLOT_START_RANGE;
+            slotEnd = Util.ITEM_SLOT_END_RANGE;
         } else if (pSlotId < Util.TOOL_SLOT_END_RANGE) {
             // TODO: Sort tools into tool slots followed by standard items?
-            data.writeInt(Util.TOOL_SLOT_START_RANGE + 5).writeInt(Util.TOOL_SLOT_END_RANGE); // ToolSlots
-            data.writeEnum(pSortOrder);
+            slotStart = Util.TOOL_SLOT_START_RANGE + 5;
+            slotEnd = Util.TOOL_SLOT_END_RANGE;
         } else if (pSlotId < Util.UPGRADE_SLOT_END_RANGE) {
-            return; // We don't sort upgrade slots
+            return; // Don't sort upgrade slots
         } else if (pSlotId < Util.UPGRADE_SLOT_END_RANGE + 27) {
-            data.writeInt(Util.UPGRADE_SLOT_END_RANGE).writeInt(Util.UPGRADE_SLOT_END_RANGE + 27); // PlayerSlots
-            data.writeEnum(pSortOrder);
+            slotStart = Util.UPGRADE_SLOT_END_RANGE;
+            slotEnd = Util.UPGRADE_SLOT_END_RANGE + 27;
         } else {
-            data.writeInt(Util.UPGRADE_SLOT_END_RANGE + 27).writeInt(Util.UPGRADE_SLOT_END_RANGE + 36); // Hot bar
-            data.writeEnum(pSortOrder);
+            slotStart = Util.UPGRADE_SLOT_END_RANGE + 27;
+            slotEnd = Util.UPGRADE_SLOT_END_RANGE + 36;
         }
 
-        ModNetwork.sendToServer(new ServerboundPacket(SORT_BACKPACK_INVENTORY, data));
+        ModNetwork.sendToServer(new SortInventoryPacket(Util.INV_TYPE_BACKPACK, slotStart, slotEnd, pSortOrder));
     }
 
-    public static void sendClientSettings() {
-        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-
+    public static void sendClientSettings(Player player) {
         List<? extends String> prefersSilkTouchList = ConfigManager.ClientConfig.TOOLSWAP_PREFERS_SILK_TOUCH_LIST.get();
-        boolean prefersSilkTouch = ConfigManager.ClientConfig.TOOLSWAP_PREFER_SILK_TOUCH.get();
+        boolean preferSilkTouch = ConfigManager.ClientConfig.TOOLSWAP_PREFER_SILK_TOUCH.get();
         boolean ignoreFanProcessing = ConfigManager.ClientConfig.MAGNET_IGNORE_FAN_PROCESSING.get();
         boolean displayFeederMessage = ConfigManager.ClientConfig.DISPLAY_FEEDER_MESSAGE.get();
+        boolean allowChorusFruit = ConfigManager.ClientConfig.ALLOW_CHORUS_FRUIT.get();
+        int torchDeployerCooldown = ConfigManager.ClientConfig.TORCH_DEPLOYER_COOLDOWN.get();
+        int torchDeployerLightLevel = ConfigManager.ClientConfig.TORCH_DEPLOYER_LIGHT_LEVEL.get();
+        boolean jetpackHoverBobbing = ConfigManager.ClientConfig.JETPACK_HOVER_BOBBING.get();
+        ConfigManager.ClientConfig.TorchDeployerLightSource torchDeployerLightSource = ConfigManager.ClientConfig.TORCH_DEPLOYER_LIGHT_SOURCE.get();
 
-        buf.writeInt(prefersSilkTouchList.size());
-        for (String blockId : prefersSilkTouchList) {
-            buf.writeUtf(blockId);
+        CompoundTag playerData = player.getPersistentData();
+        CompoundTag fxntSettingsTag = Util.getOrCreateSubTag(playerData, ConfigManager.FXNTSTORAGE_SETTINGS_TAG);
+        fxntSettingsTag.putBoolean("JetpackHoverBobbing", jetpackHoverBobbing);
+
+        ListTag listTag = new ListTag();
+        for (String entry : prefersSilkTouchList) {
+            listTag.add(StringTag.valueOf(entry));
         }
-        buf.writeBoolean(prefersSilkTouch);
-        buf.writeBoolean(ignoreFanProcessing);
-        buf.writeBoolean(displayFeederMessage);
 
-        ModNetwork.sendToServer(new ServerboundPacket(BackpackNetworkHelper.SYNC_CLIENT_SETTINGS, buf));
+        CompoundTag settings = new CompoundTag();
+        settings.put("prefersSilkTouchList", listTag);
+        settings.putBoolean("preferSilkTouch", preferSilkTouch);
+        settings.putBoolean("ignoreFanProcessing", ignoreFanProcessing);
+        settings.putBoolean("displayFeederMessage", displayFeederMessage);
+        settings.putBoolean("allowChorusFruit", allowChorusFruit);
+        settings.putInt("torchDeployerCooldown", torchDeployerCooldown);
+        settings.putInt("torchDeployerLightLevel", torchDeployerLightLevel);
+        settings.putString("torchDeployerLightSource", torchDeployerLightSource.name());
+        settings.putBoolean("jetpackHoverBobbing", jetpackHoverBobbing);
+
+        ModNetwork.sendToServer(new SyncClientSettingsPacket(settings));
     }
 
     public static void doPickBlock(ItemStack stack) {
-        data.writeItem(stack);
-        ModNetwork.sendToServer(new ServerboundPacket(UPGRADE_PICK_BLOCK, data));
+        ModNetwork.sendToServer(new PickBlockUpgradePacket(stack));
     }
 
     public static void writeItemStack(@NotNull ItemStack stack, FriendlyByteBuf buf) {

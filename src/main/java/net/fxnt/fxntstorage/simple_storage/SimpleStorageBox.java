@@ -1,7 +1,6 @@
 package net.fxnt.fxntstorage.simple_storage;
 
 import com.simibubi.create.AllTags;
-import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
@@ -17,7 +16,6 @@ import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
@@ -38,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
+public class SimpleStorageBox extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
     public static final BooleanProperty COPY_NBT = BooleanProperty.create("copy_nbt");
@@ -220,8 +218,4 @@ public class SimpleStorageBox extends BaseEntityBlock implements IWrenchable {
         return state.getValue(FACING);
     }
 
-    @Override
-    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
-        return InteractionResult.SUCCESS;
-    }
 }

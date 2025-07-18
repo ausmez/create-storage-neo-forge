@@ -25,7 +25,7 @@ public class SimpleStorageBoxMovementBehaviour implements MovementBehaviour {
         }
     }
 
-    private SimpleStorageBoxMountedStorage getMountedStorage(MovementContext context) {
+    private @Nullable SimpleStorageBoxMountedStorage getMountedStorage(MovementContext context) {
         AbstractContraptionEntity entity = context.contraption.entity;
         MountedItemStorage storage = entity.getContraption().getStorage().getAllItemStorages().get(context.localPos);
 

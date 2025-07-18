@@ -4,10 +4,10 @@ import com.simibubi.create.AllItems;
 import com.simibubi.create.content.logistics.funnel.FunnelBlockEntity;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
+import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
-import net.createmod.catnip.math.Pointing;
 import net.fxnt.fxntstorage.container.StorageBoxEntity;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlocks;
@@ -33,13 +33,15 @@ public class StorageBoxScenes {
         scene.idle(5);
         scene.world().showSection(util.select().layersFrom(1), Direction.DOWN);
 
-        BlockPos iron = util.grid().at(3, 1, 2);
-        BlockPos andesite = util.grid().at(2, 1, 2);
-        BlockPos copper = util.grid().at(1, 1, 2);
-        BlockPos brass = util.grid().at(3, 2, 2);
-        BlockPos hardened = util.grid().at(1, 2, 2);
+        BlockPos cardboard = util.grid().at(3, 1, 1);
+        BlockPos iron = util.grid().at(2, 1, 1);
+        BlockPos weathered = util.grid().at(1, 1, 1);
+        BlockPos andesite = util.grid().at(3, 2, 2);
+        BlockPos copper = util.grid().at(2, 2, 2);
+        BlockPos brass = util.grid().at(1, 2, 2);
+        BlockPos hardened = util.grid().at(2, 3, 3);
 
-        List<BlockPos> blockPosList = Arrays.asList(iron, andesite, copper, brass, hardened);
+        List<BlockPos> blockPosList = Arrays.asList(cardboard, iron, weathered, andesite, copper, brass, hardened);
 
         scene.overlay().showText(80).text("");
         scene.idle(90);
@@ -50,7 +52,7 @@ public class StorageBoxScenes {
             } else {
                 scene.overlay().showText(30).text("").placeNearTarget().pointAt(util.vector().blockSurface(blockPos, Direction.NORTH).add(0, 0.1, 0));
             }
-            scene.idle(55);
+            scene.idle(40);
         }
 
         scene.markAsFinished();
@@ -104,7 +106,7 @@ public class StorageBoxScenes {
         scene.world().setKineticSpeed(util.select().everywhere(), 32.0F);
         scene.world().setKineticSpeed(largeCog, -16.0F);
 
-        for (int i = 0; i < 14; ++i) {
+        for (int i = 0; i < 14; i++) {
             int finalI = i;
             scene.idle(4);
             switch (i) {
@@ -230,6 +232,7 @@ public class StorageBoxScenes {
         }
         scene.world().modifyBlock(storageBox, (s) -> ModBlocks.STORAGE_BOX.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY), false);
         scene.world().modifyBlockEntity(storageBox, StorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, ItemStack.EMPTY));
+        scene.idle(40);
 
         scene.markAsFinished();
     }

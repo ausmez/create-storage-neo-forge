@@ -4,8 +4,10 @@ import com.simibubi.create.foundation.item.TooltipHelper;
 import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -13,26 +15,23 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import static net.fxnt.fxntstorage.util.KeybindHandler.TOGGLE_JETPACK_HOVER_KEY;
 
+@MethodsReturnNonnullByDefault
+@ParametersAreNonnullByDefault
 public class UpgradeItem extends Item {
     public final String name;
 
     public UpgradeItem(Properties pProperties, String name) {
         super(pProperties);
         this.name = name;
-    }
-
-    @Override
-    public @NotNull String getDescriptionId() {
-        return this.getOrCreateDescriptionId();
     }
 
     public String getUpgradeName() {
@@ -42,7 +41,7 @@ public class UpgradeItem extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
+    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pLevel, pTooltipComponents, pIsAdvanced);
         switch (name) {
             case Util.MAGNET_UPGRADE_DEACTIVATED:
@@ -53,6 +52,8 @@ public class UpgradeItem extends Item {
             case Util.FEEDER_UPGRADE_DEACTIVATED:
             case Util.TOOLSWAP_UPGRADE_DEACTIVATED:
             case Util.FALLDAMAGE_UPGRADE_DEACTIVATED:
+            case Util.OREMINING_UPGRADE_DEACTIVATED:
+            case Util.TORCHDEPLOYER_UPGRADE_DEACTIVATED:
                 pTooltipComponents.add(Component.translatable("tooltip.fxntstorage.upgrade_deactivated").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD));
             case Util.MAGNET_UPGRADE:
             case Util.PICKBLOCK_UPGRADE:
@@ -61,6 +62,8 @@ public class UpgradeItem extends Item {
             case Util.FEEDER_UPGRADE:
             case Util.TOOLSWAP_UPGRADE:
             case Util.FALLDAMAGE_UPGRADE:
+            case Util.OREMINING_UPGRADE:
+            case Util.TORCHDEPLOYER_UPGRADE:
             case Util.STORAGE_BOX_VOID_UPGRADE:
             case Util.STORAGE_BOX_CAPACITY_UPGRADE:
                 addUpgradeDetails(pTooltipComponents);
@@ -94,6 +97,10 @@ public class UpgradeItem extends Item {
                 placeholder = ConfigManager.CommonConfig.BACKPACK_MAGNET_RANGE.get().toString();
                 text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".exclusion"), FontHelper.Palette.STANDARD_CREATE));
                 text.add(Component.empty());
+            }
+
+            if (Objects.equals(name.replaceAll("_deactivated$", ""), Util.OREMINING_UPGRADE)) {
+                placeholder = KeybindHandler.OREMINE_ANY_BLOCK.getKey().getDisplayName().getString();
             }
 
             // Add up to 9 conditions/behaviours

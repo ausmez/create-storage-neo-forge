@@ -9,7 +9,7 @@ import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.init.ModNetwork;
-import net.fxnt.fxntstorage.network.backpack.client.VisualJetpackAirPacket;
+import net.fxnt.fxntstorage.network.packet.VisualJetpackAirPacket;
 import net.fxnt.fxntstorage.util.ParticleHelper;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
@@ -25,7 +25,6 @@ import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -63,6 +62,7 @@ public class JetpackHandler {
 
     public void execute() {
         if (player != null) {
+            boolean isClientSide = player.level().isClientSide();
 
             jetPackFuelRemaining = (float) calculateJetPackFuel(player);
 
@@ -85,9 +85,11 @@ public class JetpackHandler {
                 }
 
                 updateJetpackMovement();
-                depleteJetPackFuel();
-                if (BackpackHelper.isWearingBackpack(player, true)) {
-                    ParticleHelper.jetPackParticles(player);
+                if (!isClientSide) {
+                    depleteJetPackFuel();
+                    if (BackpackHelper.isWearingBackpack(player, true)) {
+                        ParticleHelper.jetPackParticles(player);
+                    }
                 }
 
                 if (player.onGround() && isHovering) {
@@ -95,8 +97,9 @@ public class JetpackHandler {
                 }
 
                 if (player.onGround() && !hasJumpedFromGround) {
-                    ServerPlayer sp = (ServerPlayer) player;
-                    sp.playNotifySound(AllSoundEvents.STEAM.getMainEvent(), SoundSource.PLAYERS, 0.1f, 1.0f);
+                    if (!isClientSide) {
+                        player.playNotifySound(AllSoundEvents.STEAM.getMainEvent(), SoundSource.PLAYERS, 0.1f, 1.0f);
+                    }
                     hasJumpedFromGround = true;
                 }
 
@@ -117,9 +120,11 @@ public class JetpackHandler {
                     }
 
                     updateJetpackMovement();
-                    depleteJetPackFuel();
-                    if (BackpackHelper.isWearingBackpack(player, true)) {
-                        ParticleHelper.jetPackParticles(player);
+                    if (!isClientSide) {
+                        depleteJetPackFuel();
+                        if (BackpackHelper.isWearingBackpack(player, true)) {
+                            ParticleHelper.jetPackParticles(player);
+                        }
                     }
 
                 } else {
@@ -133,6 +138,8 @@ public class JetpackHandler {
     }
 
     public void fadeOutVisualAirOverlay() {
+        if (player.level().isClientSide()) return;
+
         if (player.onGround() && !airGaugeCleared) {
             if (airGaugeLastCleared == 0) airGaugeLastCleared = System.currentTimeMillis();
 
@@ -194,7 +201,8 @@ public class JetpackHandler {
     }
 
     private void displayHoverMessage(boolean isStarting) {
-        boolean isElytraBoost = player.getItemBySlot(EquipmentSlot.CHEST).getItem().equals(Items.ELYTRA) && player.isFallFlying() && ConfigManager.CommonConfig.ELYTRA_BOOST_ENABLED.get();
+        boolean isElytraBoost = player.getItemBySlot(EquipmentSlot.CHEST).getItem().equals(Items.ELYTRA)
+                && player.isFallFlying() && ConfigManager.CommonConfig.ELYTRA_BOOST_ENABLED.get();
         String messageKey = isStarting
                 ? (isElytraBoost ? "item.fxntstorage.jetpack.elytra_boost_enabled" : "item.fxntstorage.jetpack.hover_enabled")
                 : (isElytraBoost ? "item.fxntstorage.jetpack.elytra_boost_disabled" : "item.fxntstorage.jetpack.hover_disabled");
@@ -262,8 +270,10 @@ public class JetpackHandler {
             player.setDeltaMovement(horizontalVelocity.x, verticalSpeed, horizontalVelocity.z);
         }
 
-        ServerPlayer sp = (ServerPlayer) player;
-        sp.connection.send(new ClientboundSetEntityMotionPacket(player));
+        if (!player.level().isClientSide) {
+            ServerPlayer sp = (ServerPlayer) player;
+            sp.connection.send(new ClientboundSetEntityMotionPacket(player));
+        }
     }
 
     private Vec3 applyMovementPhysics(@NotNull Vec3 currentVelocity, @NotNull Vec3 direction, double acceleration, double maxSpeed) {
@@ -281,11 +291,11 @@ public class JetpackHandler {
     }
 
     private double calculateHorizontalSpeed() {
-        double baseFlySpeedBoost = 0.375; //0.25
+        double baseFlySpeedBoost = 0.375;
         double defaultPlayerSneakSpeed = 0.08;
         double defaultPlayerWaterSpeed = 0.08;
-        double defaultPlayerSprintSpeed = 0.21;
-        double defaultPlayerWalkSpeed = 0.10; // 0.17
+        double defaultPlayerSprintSpeed = 0.13;
+        double defaultPlayerWalkSpeed = 0.10;
         double baseHoverSpeedBoost = 0.25;
 
         // Get relevant speed multipliers
@@ -337,19 +347,23 @@ public class JetpackHandler {
     }
 
     private double calculateVerticalHoveringSpeed(double targetHeight) {
+        boolean bobbingEnabled = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)
+                .getBoolean("JetpackHoverBobbing");
         double currentHeight = player.getY();
         double heightDifference = targetHeight - currentHeight;
 
-        long timeInMillis = System.currentTimeMillis();
-        double bobbingFrequency = (player.isInWater()) ? 0.3 / 2 : 0.3; // Lower the frequency to slow down the bobbing
-        double bobbingAmplitude = 0.2; // The amplitude of the bobbing effect
-        double cycleDuration = 8000;  // Duration of one full cycle in milliseconds
-        double bobbing = Math.sin(2 * Math.PI * bobbingFrequency * (timeInMillis % cycleDuration) / 200);
-        bobbing = bobbingAmplitude * bobbing;
+        double bobbing = 0;
+        if (bobbingEnabled) {
+            double bobbingFrequency = player.isInWater() ? 0.15 : 0.3;
+            double bobbingAmplitude = 0.2;
+            double cycleDuration = 8000;
+            long timeInMillis = System.currentTimeMillis();
+            bobbing = Math.sin(2 * Math.PI * bobbingFrequency * (timeInMillis % cycleDuration) / 200);
+            bobbing *= bobbingAmplitude;
+        }
 
-        // Basic PID controller for height adjustment
-        double P = 0.5; // Proportional gain
-        double D = 0.1; // Damping factor to avoid overshooting
+        double P = 0.5;
+        double D = 0.1;
 
         return P * heightDifference + D * (heightDifference - bobbing);
     }
@@ -374,6 +388,8 @@ public class JetpackHandler {
     }
 
     private void doDepleteJetPackFuel(Player player) {
+        if (player.level().isClientSide()) return;
+
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         Level world = player.level();
         long currRuntime = world.getGameTime();
@@ -473,7 +489,7 @@ public class JetpackHandler {
         }
     }
 
-    public static void flyingOnKeyPress(Entity player) {
+    public static void flyingOnKeyPress(ServerPlayer player) {
         if (player != null) {
             if (new BackpackOnBackUpgradeHandler((Player) player).hasUpgrade(Util.FLIGHT_UPGRADE)) {
                 player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackFlying", true);
@@ -481,7 +497,7 @@ public class JetpackHandler {
         }
     }
 
-    public static void flyingOnKeyRelease(Entity player) {
+    public static void flyingOnKeyRelease(ServerPlayer player) {
         if (player != null) {
             player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackFlying", false);
         }

@@ -13,7 +13,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
@@ -23,7 +24,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     public final Player player;
 
     public SimpleStorageBoxMenu(int containerId, Inventory inventory, FriendlyByteBuf buf) {
-        this(containerId, inventory, inventory.player.level().getBlockEntity(buf.readBlockPos()));
+        this(containerId, inventory, Objects.requireNonNull(inventory.player.level().getBlockEntity(buf.readBlockPos())));
     }
 
     public SimpleStorageBoxMenu(int containerId, Inventory inventory, BlockEntity entity) {
@@ -36,10 +37,8 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     }
 
     public void initSlots() {
-
         // Add Fake Main slot (Non-intractable)
         // Just render. Don't add slot
-
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(itemHandler -> {
             // Add Void slot
             this.addSlot(new SimpleStorageBoxVoidSlot(itemHandler, SimpleStorageBoxEntity.VOID_UPGRADE_SLOT, 8, 20));
@@ -70,12 +69,13 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(@NotNull Player player) {
+    public boolean stillValid(Player player) {
         return this.container.stillValid(player);
     }
 
+
     @Override
-    public void removed(@NotNull Player player) {
+    public void removed(Player pPlayer) {
         super.removed(player);
         container.stopOpen(player);
     }
@@ -85,11 +85,11 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public void clicked(int slotId, int button, @NotNull ClickType clickType, @NotNull Player player) {
+    public void clicked(int pSlotId, int pButton, ClickType pClickType, Player pPlayer) {
         blockEntity.setPlayerInteraction(true);
         int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
-        if (slotId >= 0 && slotId < playerStartSlot) {
-            ItemStack itemStack = slots.get(slotId).getItem();
+        if (pSlotId >= 0 && pSlotId < playerStartSlot) {
+            ItemStack itemStack = slots.get(pSlotId).getItem();
             if (itemStack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
                 // Calculate new capacity
                 int upgrades = blockEntity.getCapacityUpgrades();
@@ -110,13 +110,12 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                 }
             }
         }
-        super.clicked(slotId, button, clickType, player);
+        super.clicked(pSlotId, pButton, pClickType, player);
         blockEntity.setPlayerInteraction(false);
     }
 
-    @NotNull
     @Override
-    public ItemStack quickMoveStack(@NotNull Player player, int index) {
+    public ItemStack quickMoveStack(Player player, int index) {
 
         ItemStack slotStack = slots.get(index).getItem();
 
@@ -173,7 +172,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean canTakeItemForPickAll(@NotNull ItemStack stack, Slot slot) {
+    public boolean canTakeItemForPickAll(ItemStack stack, Slot slot) {
         int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
         if (slot.index < playerStartSlot) {
             return false;

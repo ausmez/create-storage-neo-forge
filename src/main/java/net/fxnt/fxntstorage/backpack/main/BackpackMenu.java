@@ -11,7 +11,7 @@ import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
 import net.fxnt.fxntstorage.network.HighStackCountSync;
-import net.fxnt.fxntstorage.network.backpack.client.ClientboundSetCarriedPacket;
+import net.fxnt.fxntstorage.network.packet.SetCarriedPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
@@ -34,8 +34,10 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.*;
 
+@ParametersAreNonnullByDefault
 public class BackpackMenu extends AbstractContainerMenu {
     public IBackpackContainer container;
 
@@ -66,7 +68,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         // Add Container Slots
         int index = 0;
         for (int i = 0; i < ITEM_SLOT_COUNT; i++) {
-            this.addSlot(new BackpackSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
+            addSlot(new BackpackSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack pStack) {
                     if ((pStack.getItem() instanceof BackpackItem)) return false;
@@ -94,7 +96,7 @@ public class BackpackMenu extends AbstractContainerMenu {
 
         // Add Tool Slots
         for (int i = 0; i < TOOL_SLOT_COUNT; i++) {
-            this.addSlot(new ToolSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
+            addSlot(new ToolSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack pStack) {
                     if ((pStack.getItem() instanceof BackpackItem)) return false;
@@ -122,7 +124,7 @@ public class BackpackMenu extends AbstractContainerMenu {
 
         // Add Upgrade Slots
         for (int i = 0; i < UPGRADE_SLOT_COUNT; i++) {
-            this.addSlot(new UpgradeSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
+            addSlot(new UpgradeSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack pStack) {
                     if (pStack.is(ModTags.Items.BACKPACK_UPGRADE)) {
@@ -148,14 +150,14 @@ public class BackpackMenu extends AbstractContainerMenu {
         int xOffset = 61;
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 9; x++) {
-                this.addSlot(new Slot(playerInventory, y * 9 + x + 9, xOffset + Util.SLOT_SIZE * x, yOffset + y * Util.SLOT_SIZE));
+                addSlot(new Slot(playerInventory, y * 9 + x + 9, xOffset + Util.SLOT_SIZE * x, yOffset + y * Util.SLOT_SIZE));
             }
         }
 
         // Add Hot bar Slots
         yOffset += (Util.SLOT_SIZE * 3) + 4;
         for (int i = 0; i < 9; i++) {
-            this.addSlot(new Slot(playerInventory, i, xOffset + i * Util.SLOT_SIZE, yOffset));
+            addSlot(new Slot(playerInventory, i, xOffset + i * Util.SLOT_SIZE, yOffset));
         }
 
     }
@@ -226,13 +228,12 @@ public class BackpackMenu extends AbstractContainerMenu {
         }
 
         if (pSlotId >= Util.UPGRADE_SLOT_START_RANGE && pSlotId < Util.UPGRADE_SLOT_END_RANGE) {
-            if (!player.level().isClientSide) {
-                toggleUpgrade(pSlotId, ctrlKeyDown); // Only need to run this on the SERVER
-            }
-            if (ctrlKeyDown) return; // If we are on the SERVER and ctrl key is down, return
+            toggleUpgrade(pSlotId, ctrlKeyDown);
             if (player.level().isClientSide) {
                 if (InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), InputConstants.KEY_LCONTROL))
                     return;
+            } else {
+                if (ctrlKeyDown) return;
             }
         }
 
@@ -264,16 +265,26 @@ public class BackpackMenu extends AbstractContainerMenu {
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
         Slot slot = slots.get(index);
+        if (!slot.hasItem())
+            return ItemStack.EMPTY;
+
         ItemStack slotItem = slot.getItem();
 
         // If item is an upgrade item, put it into upgrade slot (Only from player inventory)
-        if (isUpgradeItem(slotItem) && index > Util.UPGRADE_SLOT_END_RANGE) {
-            // Are there any free upgrade slots
-            for (int i = Util.UPGRADE_SLOT_START_RANGE; i < Util.UPGRADE_SLOT_END_RANGE; i++) {
-                if (slots.get(i).getItem().isEmpty()) {
-                    slots.get(i).safeInsert(slotItem);
-                    return ItemStack.EMPTY;
+        if (isUpgradeItem(slotItem)) {
+            if (player instanceof ServerPlayer serverPlayer)
+                ModNetwork.sendToPlayer(serverPlayer, new SetCarriedPacket(ItemStack.EMPTY));
+
+            if (index > Util.UPGRADE_SLOT_END_RANGE) {
+                // Are there any free upgrade slots
+                for (int i = Util.UPGRADE_SLOT_START_RANGE; i < Util.UPGRADE_SLOT_END_RANGE; i++) {
+                    if (slots.get(i).getItem().isEmpty()) {
+                        slots.get(i).safeInsert(slotItem);
+                        return ItemStack.EMPTY;
+                    }
                 }
+            } else {
+                toggleUpgrade(index, false);
             }
         }
 
@@ -366,10 +377,8 @@ public class BackpackMenu extends AbstractContainerMenu {
                 Slot slot = slots.get(i);
                 ItemStack slotStack = slot.getItem();
                 if (!slotStack.isEmpty() && ItemStack.isSameItemSameTags(newStack, slotStack)) {
-                    // Check if the slot is an UpgradeSlot and adjust the logic accordingly
                     if (slot instanceof UpgradeSlot && slotStack.getCount() >= 1) {
-                        // Prevent any further stacking if it's an UpgradeSlot with an item already
-                        break; // Break the loop to prevent combining items
+                        break;
                     }
 
                     int totalCount = slotStack.getCount() + newStack.getCount();
@@ -414,7 +423,7 @@ public class BackpackMenu extends AbstractContainerMenu {
 
                 if (slotStack.isEmpty() && slot.mayPlace(newStack)) {
 
-                    int maxPutSize = (fromContainer) ? Math.min(newStack.getMaxStackSize(), this.container.getStackMultiplier() * newStack.getMaxStackSize()) : Math.max(newStack.getMaxStackSize(), this.container.getStackMultiplier() * newStack.getMaxStackSize());
+                    int maxPutSize = (fromContainer) ? Math.min(newStack.getMaxStackSize(), container.getStackMultiplier() * newStack.getMaxStackSize()) : Math.max(newStack.getMaxStackSize(), container.getStackMultiplier() * newStack.getMaxStackSize());
                     int availableSpace = maxPutSize - slotStack.getCount();
                     //if (newStack.getCount() > availableSpace) {
 
@@ -450,7 +459,7 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     public void toggleUpgrade(int slotId, boolean ctrlKeyDown) {
-        ItemStackHandler itemStackHandler = this.container.getItemHandler();
+        ItemStackHandler itemStackHandler = container.getItemHandler();
 
         ItemStack itemStack = itemStackHandler.getStackInSlot(slotId);
         if (itemStack.isEmpty()) {
@@ -480,7 +489,8 @@ public class BackpackMenu extends AbstractContainerMenu {
                 if (itemName.contains("_deactivated")) {
                     ItemStack stack = getActivatedItem(baseItemName);
                     itemStackHandler.setStackInSlot(slotId, stack);
-                    ModNetwork.sendToPlayer((ServerPlayer) player, new ClientboundSetCarriedPacket(stack));
+                    if (player instanceof ServerPlayer serverPlayer)
+                        ModNetwork.sendToPlayer(serverPlayer, new SetCarriedPacket(stack));
                 }
             }
         }
@@ -497,6 +507,8 @@ public class BackpackMenu extends AbstractContainerMenu {
             case "feeder" -> new ItemStack(ModItems.BACKPACK_FEEDER_UPGRADE.get());
             case "toolswap" -> new ItemStack(ModItems.BACKPACK_TOOLSWAP_UPGRADE.get());
             case "falldamage" -> new ItemStack(ModItems.BACKPACK_FALLDAMAGE_UPGRADE.get());
+            case "oremining" -> new ItemStack(ModItems.BACKPACK_OREMINING_UPGRADE.get());
+            case "torchdeployer" -> new ItemStack(ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE.get());
             default -> ItemStack.EMPTY;
         };
     }
@@ -511,6 +523,8 @@ public class BackpackMenu extends AbstractContainerMenu {
             case "feeder" -> new ItemStack(ModItems.BACKPACK_FEEDER_UPGRADE_DEACTIVATED.get());
             case "toolswap" -> new ItemStack(ModItems.BACKPACK_TOOLSWAP_UPGRADE_DEACTIVATED.get());
             case "falldamage" -> new ItemStack(ModItems.BACKPACK_FALLDAMAGE_UPGRADE_DEACTIVATED.get());
+            case "oremining" -> new ItemStack(ModItems.BACKPACK_OREMINING_UPGRADE_DEACTIVATED.get());
+            case "torchdeployer" -> new ItemStack(ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE_DEACTIVATED.get());
             default -> ItemStack.EMPTY;
         };
     }

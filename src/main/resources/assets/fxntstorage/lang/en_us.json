@@ -108,6 +108,10 @@
   "item.fxntstorage.backpack_toolswap_upgrade_deactivated": "Backpack Tool Swap Upgrade",
   "item.fxntstorage.backpack_falldamage_upgrade": "Backpack Fall Damage Upgrade",
   "item.fxntstorage.backpack_falldamage_upgrade_deactivated": "Backpack Fall Damage Upgrade",
+  "item.fxntstorage.backpack_oremining_upgrade": "Backpack Ore Mining Upgrade",
+  "item.fxntstorage.backpack_oremining_upgrade_deactivated": "Backpack Ore Mining Upgrade",
+  "item.fxntstorage.backpack_torchdeployer_upgrade": "Backpack Torch Deployer Upgrade",
+  "item.fxntstorage.backpack_torchdeployer_upgrade_deactivated": "Backpack Torch Deployer Upgrade",
 
   "item.fxntstorage.backpack_feeder_upgrade.message": "Feeder upgrade just fed you %s!",
 
@@ -180,6 +184,14 @@
   "tooltip.fxntstorage.backpack_falldamage_upgrade.summary": "Prevents the player taking _fall damage_ while wearing the backpack.",
   "tooltip.fxntstorage.backpack_falldamage_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
 
+  "tooltip.fxntstorage.backpack_oremining_upgrade.summary": "Mines entire clusters of _matching_ ore blocks. Drops appear near the _original_ block.",
+  "tooltip.fxntstorage.backpack_oremining_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
+  "tooltip.fxntstorage.backpack_oremining_upgrade.condition1": "When holding modifier key",
+  "tooltip.fxntstorage.backpack_oremining_upgrade.behaviour1": "Mine _any_ connected blocks that match the one being mined (up to 64).",
+
+  "tooltip.fxntstorage.backpack_torchdeployer_upgrade.summary": "Automatically places a _torch_ from the backpack when the surrounding light level is low.",
+  "tooltip.fxntstorage.backpack_torchdeployer_upgrade.subtext": "Upgrade activates only when backpack is worn on back or chest.",
+
   "tooltip.fxntstorage.storage_box_void_upgrade.summary": "Once a _Simple Storage Box_ is full, additional items inserted will be _voided_.",
   "tooltip.fxntstorage.storage_box_void_upgrade.subtext": "Only usable on Simple Storage Boxes",
   "tooltip.fxntstorage.storage_box_capacity_upgrade.summary": "_Doubles_ the storage capacity of a _Simple Storage Box_.",
@@ -198,13 +210,14 @@
 
   "fxntstorage.storage_box_void_upgrade_exists": "This storage box already contains a void upgrade",
   "fxntstorage.storage_box_capacity_upgrade_max": "This storage box has reached maximum capacity",
-  "fxntstorage.shape_cache.cleared": "Create Storage: Shape Cache Cleared",
+  "fxntstorage.shape_cache.cleared": "Create: Storage Shape Cache Cleared",
 
-  "key.fxntstorage.category": "Create Storage",
+  "key.fxntstorage.category": "Create: Storage",
   "key.fxntstorage.toggle_backpack": "Open/Close Backpack (while wearing)",
   "key.fxntstorage.toggle_jetpack_hover": "Toggle Flight Upgrade Hover Mode",
   "key.fxntstorage.clear_backpack_shape_cache": "Clear Backpack Shape Cache",
-  "key.fxntstorage.sort_inventory": "Sort Backpack Inventory",
+  "key.fxntstorage.fly_jetpack": "Fly Jetpack",
+  "key.fxntstorage.oremine_any_block": "Ore Mine Any Block (when held)",
 
   "item.fxntstorage.jetpack.fuel_low": "Jetpack fuel is low",
   "item.fxntstorage.jetpack.fuel_depleted": "Jetpack fuel is depleted!",
@@ -213,8 +226,8 @@
   "item.fxntstorage.jetpack.elytra_boost_enabled": "Elytra Boost Enabled",
   "item.fxntstorage.jetpack.elytra_boost_disabled": "Elytra Boost Disabled",
 
-  "fxntstorage.ponder.tag.storage": "Create Storage",
-  "fxntstorage.ponder.tag.storage.description": "Items and components related to Create Storage",
+  "fxntstorage.ponder.tag.storage": "Create: Storage",
+  "fxntstorage.ponder.tag.storage.description": "Items and components related to Create: Storage",
 
   "fxntstorage.ponder.storage_box_intro.header": "Storage Boxes",
   "fxntstorage.ponder.storage_box_intro.text_1": "Storage Boxes come in seven variants, each capable of holding large quantities of items",

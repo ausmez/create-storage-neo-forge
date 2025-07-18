@@ -113,13 +113,19 @@ dependencies {
 
     // Compile against the Curios API artifact
     compileOnly(fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}:api"))
-    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
-    // EMI API
-    compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}:api")
+
+    // JEI
+    implementation fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+    // EMI
+    implementation fg.deobf("dev.emi:emi-forge:${emi_version}")
+    // REI
+    compileOnly fg.deobf("curse.maven:roughly-enough-items-310111:5846923")
+//    runtimeOnly fg.deobf("curse.maven:architectury-api-419699:5137938")
+//    runtimeOnly fg.deobf("curse.maven:cloth-config-348521:5729105")
+
     // Vanilla Backport
-    compileOnly fg.deobf("curse.maven:vanillabackport-417430:6430157")
+    implementation fg.deobf("curse.maven:vanillabackport-417430:6680081")
+    runtimeOnly fg.deobf("curse.maven:platform-997634:6673724")
 
     // Other mods to include at runtime during development/testing
     runtimeOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}")
@@ -129,12 +135,10 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
     runtimeOnly fg.deobf("curse.maven:catalogue-459701:4766090")
     runtimeOnly fg.deobf("curse.maven:mouse-tweaks-60089:5338457")
-    runtimeOnly fg.deobf("curse.maven:vanillabackport-417430:6430157")
-    runtimeOnly fg.deobf("curse.maven:platform-997634:6385223")
-
-    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
-//    runtimeOnly fg.deobf("dev.emi:emi-forge:${emi_version}")
-//    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}") // Needed for Mechanical Crafting recipes
+    runtimeOnly fg.deobf("curse.maven:inventory-sorter-240633:5979609")
+    runtimeOnly fg.deobf("curse.maven:xaeros-world-map-317780:6538337")
+    runtimeOnly fg.deobf("curse.maven:xaeros-minimap-263420:6515024")
+    runtimeOnly fg.deobf("curse.maven:appleskin-248787:4770828")
 }
 
 mixin {

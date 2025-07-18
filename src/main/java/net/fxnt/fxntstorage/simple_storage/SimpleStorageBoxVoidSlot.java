@@ -4,7 +4,6 @@ import net.fxnt.fxntstorage.init.ModItems;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import org.jetbrains.annotations.NotNull;
 
 public class SimpleStorageBoxVoidSlot extends SlotItemHandler {
 
@@ -13,7 +12,7 @@ public class SimpleStorageBoxVoidSlot extends SlotItemHandler {
     }
 
     @Override
-    public boolean mayPlace(@NotNull ItemStack stack) {
+    public boolean mayPlace(ItemStack stack) {
         if (this.hasItem()) return false;
         return stack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
     }

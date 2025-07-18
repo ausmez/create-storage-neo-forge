@@ -23,7 +23,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -36,7 +35,7 @@ public class StorageBoxMenu extends AbstractContainerMenu {
     private final FilteringBehaviour filtering;
 
     public StorageBoxMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
-        this(containerId, playerInventory, playerInventory.player.level().getBlockEntity(extraData.readBlockPos()));
+        this(containerId, playerInventory, Objects.requireNonNull(playerInventory.player.level().getBlockEntity(extraData.readBlockPos())));
     }
 
     public Container getInventory() {
@@ -54,14 +53,7 @@ public class StorageBoxMenu extends AbstractContainerMenu {
         checkContainerSize(container, this.slotCount);
 
         initSlots();
-        filtering = getFiltering(blockEntity);
-    }
-
-    public FilteringBehaviour getFiltering(BlockEntity blockEntity) {
-        if (blockEntity instanceof StorageBoxEntity) {
-            return ((StorageBoxEntity) blockEntity).getFilter();
-        }
-        return null;
+        filtering = blockEntity.getFilter();
     }
 
     public void initSlots() {
@@ -95,13 +87,17 @@ public class StorageBoxMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(@NotNull Player pPlayer) {
+    public boolean stillValid(Player pPlayer) {
         return this.container.stillValid(pPlayer);
     }
 
-    public SortOrder getSortOrder() { return blockEntity.getSortOrder(); }
+    public SortOrder getSortOrder() {
+        return blockEntity.getSortOrder();
+    }
 
-    public void setSortOrder(SortOrder order) { blockEntity.setSortOrder(order); }
+    public void setSortOrder(SortOrder order) {
+        blockEntity.setSortOrder(order);
+    }
 
     public int getSlotsSize() {
         return slots.size();
@@ -124,9 +120,8 @@ public class StorageBoxMenu extends AbstractContainerMenu {
         return FilterItemStack.of(filterItem).test(player.level(), stack);
     }
 
-    @NotNull
     @Override
-    public ItemStack quickMoveStack(@NotNull Player player, int pIndex) {
+    public ItemStack quickMoveStack(Player player, int pIndex) {
         Slot srcSlot = slots.get(pIndex);
         if (!srcSlot.hasItem()) return ItemStack.EMPTY;
 
