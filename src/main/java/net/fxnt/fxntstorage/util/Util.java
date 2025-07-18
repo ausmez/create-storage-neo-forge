@@ -2,6 +2,8 @@ package net.fxnt.fxntstorage.util;
 
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.Item;
 
 import java.util.Objects;
@@ -44,6 +46,10 @@ public class Util {
     public static final String TOOLSWAP_UPGRADE_DEACTIVATED = "backpack_toolswap_upgrade_deactivated";
     public static final String FALLDAMAGE_UPGRADE = "backpack_falldamage_upgrade";
     public static final String FALLDAMAGE_UPGRADE_DEACTIVATED = "backpack_falldamage_upgrade_deactivated";
+    public static final String OREMINING_UPGRADE = "backpack_oremining_upgrade";
+    public static final String OREMINING_UPGRADE_DEACTIVATED = "backpack_oremining_upgrade_deactivated";
+    public static final String TORCHDEPLOYER_UPGRADE = "backpack_torchdeployer_upgrade";
+    public static final String TORCHDEPLOYER_UPGRADE_DEACTIVATED = "backpack_torchdeployer_upgrade_deactivated";
 
     public static final byte BACKPACK_ON_BACK = 1;
     public static final byte BACKPACK_IN_HAND = 2;
@@ -62,16 +68,17 @@ public class Util {
     public static final int CONTAINER_HEADER_HEIGHT = 17;
 
     // Keybind Bytes
-    public static final byte OPEN_BACKPACK = 0;
-    public static final byte CLOSE_BACKPACK = -1;
-    public static final byte TOGGLE_HOVER = 1;
+    public static final byte JETPACK_KEY_PRESS = 0;
+    public static final byte JETPACK_KEY_RELEASE = 1;
+    public static final byte OPEN_BACKPACK = 2;
+    public static final byte CLOSE_BACKPACK = 3;
+    public static final byte BACKPACK_MENU_CTRL = 4;
+    public static final byte TOGGLE_HOVER = 5;
+    public static final byte MINE_ALL_BLOCKS = 6;
 
     // Inventory sorting
     public static final byte INV_TYPE_BACKPACK = 0;
     public static final byte INV_TYPE_STORAGE_BOX = 1;
-
-    public static byte JETPACK_KEY_PRESS = 1;
-    public static byte JETPACK_KEY_RELEASE = 0;
 
     public static String formatNumber(int number) {
         if (number < 10_000) return String.valueOf(number);
@@ -95,6 +102,13 @@ public class Util {
             ItemWithComponent that = (ItemWithComponent) obj;
             return item == that.item && Objects.equals(patch, that.patch);
         }
+    }
+
+    public static CompoundTag getOrCreateSubTag(CompoundTag root, String key) {
+        if (!root.contains(key, Tag.TAG_COMPOUND)) {
+            root.put(key, new CompoundTag());
+        }
+        return root.getCompound(key);
     }
 
 }

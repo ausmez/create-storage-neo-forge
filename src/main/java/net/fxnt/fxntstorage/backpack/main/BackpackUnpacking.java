@@ -83,7 +83,7 @@ public enum BackpackUnpacking implements UnpackingHandler {
                         ItemStack vs = virtualStacks[i];
                         if (!vs.isEmpty()) continue;
 
-                        // Initialize empty slot for this item
+                        // Initialize empty slot for item
                         virtualStacks[i] = insertStack.copy();
                         virtualStacks[i].setCount(0);
                         remaining[i] = stackMultiplier * insertStack.getMaxStackSize();
@@ -97,7 +97,7 @@ public enum BackpackUnpacking implements UnpackingHandler {
                         }
                     }
 
-                    // Could not insert this item fully
+                    // Could not insert item fully
                     return false;
                 }
 

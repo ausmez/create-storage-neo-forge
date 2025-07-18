@@ -5,13 +5,14 @@
   "refmap": "mixins.fxntstorage.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "EMIVanillaPluginMixin",
     "ItemEntityMixin",
     "ItemStackMixin"
   ],
-  "client": [
-    "GuiGraphicsMixin"
-  ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "client": [
+    "REIDefaultClientPluginMixin"
+  ]
 }

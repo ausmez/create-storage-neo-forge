@@ -3,7 +3,6 @@ package net.fxnt.fxntstorage.controller;
 import com.mojang.serialization.MapCodec;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionResult;
@@ -25,10 +24,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
 public class StorageController extends BaseEntityBlock implements IWrenchable {
     public static final MapCodec<StorageController> CODEC = simpleCodec(StorageController::new);
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -42,19 +37,19 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
+    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 
     @Override
-    public @Nullable BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
+    public @Nullable BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         BlockEntityType<?> type = ModBlockEntities.STORAGE_CONTROLLER_ENTITY.get();
         return new StorageControllerEntity(type, pPos, pState);
     }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> blockEntityType) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
         return createTickerHelper(blockEntityType, ModBlockEntities.STORAGE_CONTROLLER_ENTITY.get(), (type, world, pos, entity) -> {
             if (entity instanceof StorageControllerEntity) {
                 entity.serverTick(type, world);
@@ -63,7 +58,7 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (player.isSpectator() || level.isClientSide) return InteractionResult.SUCCESS;
         if (!hitFront(state, hitResult)) return InteractionResult.PASS;
 
@@ -81,7 +76,7 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    public @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
+    public @NotNull RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 

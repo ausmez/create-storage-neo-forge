@@ -41,8 +41,10 @@ import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.List;
 
+@ParametersAreNonnullByDefault
 public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements ThresholdSwitchObservable {
     public BlockPos pos;
     public int tick = 0;
@@ -257,7 +259,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         saveAdditional(tag, registries);
         return tag;
@@ -530,13 +532,12 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         if (this.hasVoidUpgrade()) return true;
 
         int freeSpace = this.getMaxItemCapacity() - this.getStoredAmount();
-        int amountToPlace = stack.getCount();
 
-        return freeSpace >= amountToPlace;
+        return freeSpace > 0;
     }
 
     @Override
-    protected NonNullList<ItemStack> getItems() {
+    protected @NotNull NonNullList<ItemStack> getItems() {
         NonNullList<ItemStack> itemList = NonNullList.create();
 
         for (int i = 0; i < this.itemHandler.getSlots(); ++i) {

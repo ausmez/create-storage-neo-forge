@@ -106,7 +106,7 @@ public class StorageBoxScenes {
         scene.world().setKineticSpeed(util.select().everywhere(), 32.0F);
         scene.world().setKineticSpeed(largeCog, -16.0F);
 
-        for (int i = 0; i < 14; ++i) {
+        for (int i = 0; i < 14; i++) {
             int finalI = i;
             scene.idle(4);
             switch (i) {

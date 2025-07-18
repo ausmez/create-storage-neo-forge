@@ -31,8 +31,7 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
     private final ItemStackHandler itemHandler = new ItemStackHandler(CONTAINER_SIZE);
     private final NonNullList<String> upgrades = NonNullList.create();
 
-    private ItemStackHandler cachedHandler;
-    private SortOrder sortOrder;
+    private SortOrder sortOrder = SortOrder.COUNT;
 
     public BackpackContainer(ItemStack itemStack, @Nullable Player player) {
         this.player = player;
@@ -40,15 +39,12 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
 
         if (itemStack.getItem() instanceof BackpackItem backpackItem &&
                 backpackItem.getBlock() instanceof BackpackBlock backpackBlock) {
-            this.stackMultiplier = backpackBlock.getStackMultiplier();
+            stackMultiplier = backpackBlock.getStackMultiplier();
         }
         loadItemsFromStack(itemStack);
     }
 
     public ItemStackHandler getItemHandler() {
-//        if (cachedHandler == null) {
-//            cachedHandler = itemHandler;
-//        }
         return itemHandler;
     }
 
@@ -66,41 +62,41 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
         }
 
         if (itemStack.getComponents().has(ModDataComponents.BACKPACK_UPGRADES)) {
-            this.upgrades.clear();
+            upgrades.clear();
             List<String> upgradeList = itemStack.getComponents().get(ModDataComponents.BACKPACK_UPGRADES);
 
             if (upgradeList != null) {
-                this.upgrades.clear();
-                this.upgrades.addAll(upgradeList);
+                upgrades.clear();
+                upgrades.addAll(upgradeList);
             }
         }
 
-        this.stackMultiplier = Optional.ofNullable(
+        stackMultiplier = Optional.ofNullable(
                 itemStack.getComponents().get(ModDataComponents.BACKPACK_STACK_MULTIPLIER)
-        ).orElse(2);
+        ).orElse(((BackpackBlock) ((BackpackItem) itemStack.getItem()).getBlock()).getStackMultiplier());
 
-        this.sortOrder = Optional.ofNullable(
+        sortOrder = Optional.ofNullable(
                 itemStack.getComponents().get(ModDataComponents.INVENTORY_SORT_ORDER)
         ).orElse(SortOrder.COUNT);
     }
 
     public void saveItemsToStack() {
-        this.stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(this.getItems()));
-        this.stack.set(ModDataComponents.BACKPACK_UPGRADES, this.upgrades);
-        this.stack.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, this.stackMultiplier);
-        this.stack.set(ModDataComponents.INVENTORY_SORT_ORDER, this.sortOrder);
+        this.stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(getItems()));
+        this.stack.set(ModDataComponents.BACKPACK_UPGRADES, upgrades);
+        this.stack.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, stackMultiplier);
+        this.stack.set(ModDataComponents.INVENTORY_SORT_ORDER, sortOrder);
     }
 
     public List<ItemStack> getItems() {
         List<ItemStack> itemList = new ArrayList<>();
-        for (int i = 0; i < this.itemHandler.getSlots(); ++i) {
-            itemList.add(this.itemHandler.getStackInSlot(i));
+        for (int i = 0; i < itemHandler.getSlots(); ++i) {
+            itemList.add(itemHandler.getStackInSlot(i));
         }
         return itemList;
     }
 
     public NonNullList<String> getUpgrades() {
-        return this.upgrades;
+        return upgrades;
     }
 
     @Override
@@ -111,39 +107,39 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
     @Override
     public void setSortOrder(SortOrder sortOrder) {
         this.sortOrder = sortOrder;
-        if (this.player.level().isClientSide)
+        if (player.level().isClientSide)
             PacketDistributor.sendToServer(new SetSortOrderPacket(sortOrder));
         setDataChanged();
     }
 
     @Override
     public int getSlots() {
-        return this.itemHandler.getSlots();
+        return itemHandler.getSlots();
     }
 
     @Override
     public @NotNull ItemStack getStackInSlot(int i) {
-        return this.itemHandler.getStackInSlot(i);
+        return itemHandler.getStackInSlot(i);
     }
 
     @Override
     public void setStackInSlot(int i, @NotNull ItemStack itemStack) {
-        this.itemHandler.setStackInSlot(i, itemStack);
+        itemHandler.setStackInSlot(i, itemStack);
     }
 
     @Override
     public @NotNull ItemStack insertItem(int i, @NotNull ItemStack itemStack, boolean b) {
-        return this.itemHandler.insertItem(i, itemStack, b);
+        return itemHandler.insertItem(i, itemStack, b);
     }
 
     @Override
     public @NotNull ItemStack extractItem(int i, int i1, boolean b) {
-        return this.itemHandler.extractItem(i, i1, b);
+        return itemHandler.extractItem(i, i1, b);
     }
 
     @Override
     public int getSlotLimit(int i) {
-        return this.itemHandler.getSlotLimit(i);
+        return itemHandler.getSlotLimit(i);
     }
 
     @Override
@@ -153,7 +149,7 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
 
     @Override
     public int getStackMultiplier() {
-        return this.stackMultiplier;
+        return stackMultiplier;
     }
 
     @Override
@@ -163,44 +159,45 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
 
     @Override
     public void setDataChanged() {
-        if (this.player == null || this.player.level().isClientSide) return;
-        this.setChanged();
+        if (player == null || player.level().isClientSide) return;
+        setChanged();
     }
 
     public void refreshUpgrades() {
-        this.upgrades.clear();
+        upgrades.clear();
         int UPGRADE_SLOT_START_INDEX = BackpackBlock.ITEM_SLOT_COUNT + BackpackBlock.TOOL_SLOT_COUNT;
         int UPGRADE_SLOT_END_INDEX = UPGRADE_SLOT_START_INDEX + BackpackBlock.UPGRADE_SLOT_COUNT;
 
         for (int i = UPGRADE_SLOT_START_INDEX; i < UPGRADE_SLOT_END_INDEX; i++) {
-            ItemStack itemStack = this.itemHandler.getStackInSlot(i);
+            ItemStack itemStack = itemHandler.getStackInSlot(i);
             if (itemStack.getItem() instanceof UpgradeItem upgradeItem) {
                 String upgradeName = upgradeItem.getUpgradeName();
-                if (!this.upgrades.contains(upgradeName)) {
-                    this.upgrades.add(upgradeName);
+                if (!upgrades.contains(upgradeName)) {
+                    upgrades.add(upgradeName);
                 }
             }
         }
     }
 
     public void setChanged() {
-        if (this.player == null || this.player.level().isClientSide) return;
+        if (player == null || player.level().isClientSide) return;
 
-        var cap = this.stack.getCapability(Capabilities.ItemHandler.ITEM);
+        var cap = stack.getCapability(Capabilities.ItemHandler.ITEM);
         if (cap != null) {
 
             NonNullList<ItemStack> oldInventory = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
             NonNullList<ItemStack> newInventory = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
 
-            SortOrder oldSort = this.stack.get(ModDataComponents.INVENTORY_SORT_ORDER);
-            SortOrder newSort = this.sortOrder;
+            SortOrder oldSort = stack.get(ModDataComponents.INVENTORY_SORT_ORDER);
+            SortOrder newSort = (sortOrder != null) ? sortOrder : SortOrder.COUNT;
+            sortOrder = newSort;
 
             for (int i = 0; i < cap.getSlots(); ++i) {
                 oldInventory.set(i, cap.getStackInSlot(i));
             }
 
-            for (int j = 0; j < this.itemHandler.getSlots(); ++j) {
-                newInventory.set(j, this.itemHandler.getStackInSlot(j));
+            for (int j = 0; j < itemHandler.getSlots(); ++j) {
+                newInventory.set(j, itemHandler.getStackInSlot(j));
             }
 
             if (!newInventory.equals(oldInventory) || !newSort.equals(oldSort)) {

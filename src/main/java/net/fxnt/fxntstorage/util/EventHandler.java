@@ -4,8 +4,10 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
+import net.fxnt.fxntstorage.backpack.upgrade.TorchDeployerManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,6 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.Tags;
@@ -22,10 +25,14 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
-@EventBusSubscriber(modid = FXNTStorage.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+import java.util.Objects;
+
+@EventBusSubscriber(modid = FXNTStorage.MOD_ID)
 public class EventHandler {
     private static int slowTick = 0;
     private static int mediumTick = 0;
@@ -65,20 +72,13 @@ public class EventHandler {
 
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Pre event) {
-//        FXNTStorage.LOGGER.debug("x={}, y={}, z={}", event.getEntity().getDeltaMovement().x, event.getEntity().getDeltaMovement().y, event.getEntity().getDeltaMovement().z);
-
-        boolean hasFlightUpgrade;
-
         Player player = event.getEntity();
 
-        if (player.level().isClientSide || player.isSpectator() || !player.isAlive() || player.isSleeping() || player.isDeadOrDying())
-            return;
+        if (!BackpackHelper.isWearingBackpack(player)) return;
+        BackpackOnBackUpgradeHandler handler = new BackpackOnBackUpgradeHandler(player);
 
-        // vvv SERVER-SIDE vvv //
-        hasFlightUpgrade = new BackpackOnBackUpgradeHandler(player).hasUpgrade(Util.FLIGHT_UPGRADE);
         JetpackHandler jetpackHandler = JetpackManager.getJetpackHandler(player);
-
-        if (hasFlightUpgrade) {
+        if (handler.hasUpgrade(Util.FLIGHT_UPGRADE)) {
             jetpackHandler.execute();
         } else {
             // Account for deactivating flight upgrade while hovering
@@ -86,20 +86,32 @@ public class EventHandler {
             jetpackHandler.fadeOutVisualAirOverlay();
         }
 
-        /* ServerPlayerTickMixin */
-        if (!BackpackHelper.isWearingBackpack(player)) return;
+        if (player.level().isClientSide || player.isSpectator() || !player.isAlive() || player.isSleeping() || player.isDeadOrDying())
+            return;
 
-        ++mediumTick;
-        ++slowTick;
+        /* Torch Deployer Upgrade */
+        if (handler.hasUpgrade(Util.TORCHDEPLOYER_UPGRADE)) handler.applyTorchDeployerUpgrade(player);
+
+        mediumTick++;
+        slowTick++;
         if (mediumTick >= mediumTicks) {
-            BackpackOnBackUpgradeHandler handler = new BackpackOnBackUpgradeHandler(player);
             handler.applyRefillUpgrade();
             handler.applyFeederUpgrade();
             mediumTick = 0;
         }
         if (slowTick >= slowTicks) {
-            new BackpackOnBackUpgradeHandler(player).applyMagnetUpgrade();
+            handler.applyMagnetUpgrade();
             slowTick = 0;
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        CompoundTag oldData = event.getOriginal().getPersistentData();
+        CompoundTag newData = event.getEntity().getPersistentData();
+
+        if (oldData.contains(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)) {
+            newData.put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, Objects.requireNonNull(oldData.get(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)));
         }
     }
 
@@ -120,7 +132,6 @@ public class EventHandler {
     @SubscribeEvent
     public static void onServerJoin(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            FXNTStorage.LOGGER.debug("Adding player {} to the JetpackManager", event.getEntity().getUUID());
             JetpackManager.onPlayerJoin(player);
             if (player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).isEmpty()) {
                 player.getPersistentData().put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, new CompoundTag());
@@ -131,8 +142,38 @@ public class EventHandler {
     @SubscribeEvent
     public static void onServerLeave(EntityLeaveLevelEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            FXNTStorage.LOGGER.debug("Removing player {} from the JetpackManager", event.getEntity().getUUID());
             JetpackManager.onPlayerLeave(player);
+            TorchDeployerManager.onPlayerLeave(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        Player player = event.getPlayer();
+        Level level = player.level();
+
+        if (level.isClientSide && player.isCreative()) return;
+
+        BackpackOnBackUpgradeHandler handler = new BackpackOnBackUpgradeHandler(player);
+
+        // Torch Deployer Cooldown
+        if (event.getState().is(Blocks.TORCH) && handler.hasUpgrade(Util.TORCHDEPLOYER_UPGRADE)) {
+            TorchDeployerManager.resetCooldown(player);
+        }
+
+        // Ore Mining
+        if (!handler.hasUpgrade(Util.OREMINING_UPGRADE)) return;
+
+        ItemStack tool = player.getMainHandItem();
+        if (tool.isCorrectToolForDrops(event.getState()) || event.getState().is(ModTags.Blocks.BREAKABLE_WITH_ANY_TOOL)) {
+            if (ConfigManager.CommonConfig.OREMINE_ORES_ONLY.get() && !event.getState().is(ModTags.Blocks.ORE_MINING_BLOCK)) {
+                return;
+            }
+
+            boolean mineAllBlocks = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getBoolean("MineAllBlocks");
+
+            handler.applyOreMiningUpgrade(level, event.getPos(), player, mineAllBlocks, 64);
+            event.setCanceled(true);
         }
     }
 

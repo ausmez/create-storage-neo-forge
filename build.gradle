@@ -15,6 +15,8 @@ repositories {
     maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" } // ForgeConfigAPIPort
     maven { url = "https://maven.blamejared.com/" } // JEI
     maven { url = "https://maven.terraformersmc.com/" } // EMI
+    maven { url = "https://maven.shedaniel.me/" } // REI
+    maven { url = "https://maven.architectury.dev/" }
     maven { url = "https://maven.theillusivec4.top/" } // Curios
     maven {
         url = "https://www.cursemaven.com"
@@ -107,36 +109,39 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
     implementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
-    implementation("net.createmod.ponder:Ponder-NeoForge-${minecraft_version}:${ponder_version}")
-    compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
-    runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
-    implementation("com.tterrag.registrate:Registrate:${registrate_version}")
+    implementation "net.createmod.ponder:Ponder-NeoForge-${minecraft_version}:${ponder_version}"
+    compileOnly "dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}"
+    runtimeOnly "dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}"
+    implementation "com.tterrag.registrate:Registrate:${registrate_version}"
 
     // Compile against the Curios API artifact
-    compileOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}:api")
-    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
-    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-    runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
-    // EMI API
-    compileOnly("dev.emi:emi-neoforge:${emi_version}:api")
-//    runtimeOnly("dev.emi:emi-neoforge:${emi_version}")
-    compileOnly "curse.maven:vanillabackport-417430:6430146"
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
+
+    // JEI
+    implementation "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    // EMI
+    implementation "dev.emi:emi-neoforge:${emi_version}"
+    // REI
+    compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
+//    runtimeOnly "curse.maven:architectury-api-419699:5786327"
+//    runtimeOnly "curse.maven:cloth-config-348521:5729127"
+
+    // Vanilla Backport
+    implementation "curse.maven:vanillabackport-417430:${vanillabackport_id}"
+    runtimeOnly "curse.maven:platform-997634:${platform_id}"
 
     // Other mods to include at runtime during development/testing
-    runtimeOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}")
-    runtimeOnly("curse.maven:jade-324717:${jade_id}")
-    runtimeOnly("curse.maven:jade-addons-583345:${jadeaddon_id}")
-    runtimeOnly("curse.maven:carry-on-274259:5649344")
-    runtimeOnly("curse.maven:configured-457570:5873783")
-    runtimeOnly("curse.maven:catalogue-459701:5893750")
+    runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+    runtimeOnly "curse.maven:jade-324717:${jade_id}"
+    runtimeOnly "curse.maven:jade-addons-583345:${jadeaddon_id}"
+    runtimeOnly "curse.maven:carry-on-274259:5649344"
+    runtimeOnly "curse.maven:configured-457570:5873783"
+    runtimeOnly "curse.maven:catalogue-459701:5893750"
     runtimeOnly "curse.maven:mouse-tweaks-60089:5637846"
-    runtimeOnly "curse.maven:vanillabackport-417430:6430146"
-    runtimeOnly "curse.maven:platform-997634:6491784"
-
-//    runtimeOnly "curse.maven:sodium-394468:6382651"
-//    runtimeOnly "curse.maven:dynamiclights-reforged-551736:6044477"
-//    runtimeOnly "curse.maven:magnesium-extras-558905:6394141"
-//    runtimeOnly "curse.maven:irisshaders-455508:6213632"
+    runtimeOnly "curse.maven:inventory-sorter-240633:6235889"
+    runtimeOnly "curse.maven:xaeros-world-map-317780:6538359"
+    runtimeOnly "curse.maven:xaeros-minimap-263420:6515043"
+    runtimeOnly "curse.maven:appleskin-248787:6616291"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
@@ -151,6 +156,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
                              mod_version            : mod_version,
                              mod_authors            : mod_authors,
                              mod_description        : mod_description,
+                             mod_url                : mod_url,
                              mod_icon               : mod_icon]
     inputs.properties replaceProperties
     expand replaceProperties

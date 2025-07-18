@@ -16,7 +16,7 @@ public record SetCarriedPacket(ItemStack stack) implements CustomPacketPayload {
     }
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SetCarriedPacket> STREAM_CODEC = StreamCodec.composite(
-            ItemStack.STREAM_CODEC, SetCarriedPacket::stack,
+            ItemStack.OPTIONAL_STREAM_CODEC, SetCarriedPacket::stack,
             SetCarriedPacket::new
     );
 

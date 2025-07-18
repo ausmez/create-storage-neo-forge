@@ -38,7 +38,6 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -57,7 +56,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     public boolean initialized = false;
     private boolean dirty = false;
 
-    private ItemStack filterItem = null;
+    private ItemStack filterItem = ItemStack.EMPTY;
 
     protected SimpleStorageBoxMountedStorage(MountedItemStorageType<?> type, ItemStackHandler handler) {
         super(type, handler);
@@ -173,7 +172,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         );
     }
 
-    public static @NotNull SimpleStorageBoxMountedStorage fromStorage(SimpleStorageBoxEntity simpleStorageBox) {
+    public static SimpleStorageBoxMountedStorage fromStorage(SimpleStorageBoxEntity simpleStorageBox) {
         return new SimpleStorageBoxMountedStorage(copyToItemStackHandler(simpleStorageBox.getItemHandler()));
     }
 
@@ -195,7 +194,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     @Override
-    public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+    public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
         if (slot != 1 && slot != 2) {
             return stack;
         } else if (stack.isEmpty()) {
@@ -238,14 +237,14 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     @Override
-    public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+    public ItemStack extractItem(int slot, int amount, boolean simulate) {
         ItemStack stack = super.extractItem(slot, amount, simulate);
         markDirty();
         return stack;
     }
 
     @Override
-    public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+    public boolean isItemValid(int slot, ItemStack stack) {
         if (!storageFilters.isEmpty() && storageFilters.contains(stack.getItem()) && filterItem.isEmpty())
             return false;
 
@@ -313,14 +312,13 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         int amount = wrapped.getStackInSlot(0).getCount() + wrapped.getStackInSlot(1).getCount();
         int maxCapacity = getMaxItemCapacity();
         boolean voidUpgrade = !wrapped.getStackInSlot(VOID_UPGRADE_SLOT).isEmpty();
-//        if (filterItem.isEmpty() && amount > 0) {
-            CompoundTag filterTag = new CompoundTag();
-            filterTag.putString("id", BuiltInRegistries.ITEM.getKey(this.wrapped.getStackInSlot(0).getItem()).toString());
-            filterTag.putByte("Count", (byte) 1);
 
-            filterItem = ItemStack.parseOptional(context.contraption.entity.level().registryAccess(), filterTag);
-            context.blockEntityData.put("FilterItem", filterTag);
-//        }
+        CompoundTag filterTag = new CompoundTag();
+        filterTag.putString("id", BuiltInRegistries.ITEM.getKey(this.wrapped.getStackInSlot(0).getItem()).toString());
+        filterTag.putByte("Count", (byte) 1);
+
+        filterItem = ItemStack.parseOptional(context.contraption.entity.level().registryAccess(), filterTag);
+        context.blockEntityData.put("FilterItem", filterTag);
 
         EnumProperties.StorageUsed fillLevel = calculateFillLevel();
 

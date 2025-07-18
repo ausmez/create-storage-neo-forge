@@ -17,11 +17,12 @@ import static net.fxnt.fxntstorage.passer.PasserBlock.FACING;
 import static net.fxnt.fxntstorage.passer.PasserBlock.POWERED;
 
 public class PasserSmartEntity extends SmartBlockEntity {
-    public int lastTick = 0;
-    public boolean doTick = false;
-    public int updateEveryXTicks = 10;
+    private int lastTick = 0;
+    private boolean doTick = false;
     private Direction facing;
-    public FilteringBehaviour filtering;
+    private FilteringBehaviour filtering;
+
+    private static final int UPDATE_EVERY_X_TICKS = 10;
 
     public PasserSmartEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -41,7 +42,7 @@ public class PasserSmartEntity extends SmartBlockEntity {
         if (blockState.hasProperty(POWERED) && blockState.getValue(POWERED)) return;
 
         lastTick++;
-        if (lastTick >= updateEveryXTicks) {
+        if (lastTick >= UPDATE_EVERY_X_TICKS) {
             lastTick = 0;
             doTick = true;
         }

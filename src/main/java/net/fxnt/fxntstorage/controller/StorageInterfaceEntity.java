@@ -1,10 +1,7 @@
 package net.fxnt.fxntstorage.controller;
 
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.container.util.ImplementedContainer;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -16,15 +13,13 @@ import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.wrapper.EmptyItemHandler;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
 
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
-public class StorageInterfaceEntity extends BaseContainerBlockEntity implements ImplementedContainer {
+public class StorageInterfaceEntity extends BaseContainerBlockEntity {
     public int tick = 0;
     public StorageControllerEntity controller = null;
 
@@ -41,46 +36,54 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity implements 
 
     private boolean checkController() {
         // Check controller still exists
-        if (this.controller != null) {
-            BlockEntity controllerCheck = Objects.requireNonNull(this.getLevel()).getBlockEntity(this.controller.getBlockPos());
-            if (controllerCheck != null) {
-                return controllerCheck.getBlockState().equals(this.controller.getBlockState());
-            }
+        if (controller != null) {
+            BlockEntity controllerCheck = Objects.requireNonNull(this.getLevel()).getBlockEntity(controller.getBlockPos());
+            return controllerCheck == controller;
         }
         return false;
     }
 
     public void forgetController() {
-        this.controller = null;
+        controller = null;
     }
 
     public void serverTick(Level level) {
         if (level.isClientSide) return;
 
-        if (this.tick >= ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) {
-            this.tick = 0;
-            if (this.controller != null && !checkController()) {
+        if (tick >= ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) {
+            tick = 0;
+            if (controller != null && !checkController()) {
                 forgetController();
             }
         }
-        this.tick++;
+        tick++;
+    }
+
+    public IItemHandlerModifiable getItemHandler() {
+        return controller != null ? controller.getItemHandler() : new EmptyItemHandler();
     }
 
     @Override
-    public NonNullList<ItemStack> getItems() {
-        if (this.controller == null) return NonNullList.create();
-        return this.controller.storageNetwork.items;
+    protected @NotNull NonNullList<ItemStack> getItems() {
+        IItemHandlerModifiable handler = getItemHandler();
+        NonNullList<ItemStack> list = NonNullList.withSize(handler.getSlots(), ItemStack.EMPTY);
+        for (int i = 0; i < handler.getSlots(); i++) {
+            list.set(i, handler.getStackInSlot(i));
+        }
+        return list;
     }
 
     @Override
     protected void setItems(NonNullList<ItemStack> nonNullList) {
-
+        IItemHandlerModifiable handler = getItemHandler();
+        for (int i = 0; i < handler.getSlots() && i < nonNullList.size(); i++) {
+            handler.setStackInSlot(i, nonNullList.get(i));
+        }
     }
 
     @Override
     public int getContainerSize() {
-        if (this.controller == null) return 0;
-        return this.controller.storageNetwork.items.size();
+        return getItemHandler().getSlots();
     }
 
     @Override
@@ -90,73 +93,48 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity implements 
 
     @Override
     public boolean isEmpty() {
-        if (this.controller == null) return true;
-        int totalAmount = 0;
-        for (ItemStack itemStack : this.controller.storageNetwork.items) {
-            totalAmount += itemStack.getCount();
+        IItemHandlerModifiable handler = getItemHandler();
+        for (int i = 0; i < handler.getSlots(); i++) {
+            if (!handler.getStackInSlot(i).isEmpty()) {
+                return false;
+            }
         }
-        return totalAmount <= 0;
+        return true;
     }
 
     @Override
-    public boolean stillValid(@NotNull Player player) {
+    public boolean stillValid(Player player) {
         return false;
     }
 
     @Override
-    public int @NotNull [] getSlotsForFace(Direction side) {
-        if (this.controller == null) return new int[]{};
-        return this.controller.getSlotsForFace(side);
-    }
-
-    @Override
     public @NotNull ItemStack getItem(int slot) {
-        if (this.controller == null) return ItemStack.EMPTY;
-        return this.controller.storageNetwork.items.get(slot);
+        return getItemHandler().getStackInSlot(slot);
     }
 
     @Override
-    public boolean canPlaceItem(int slot, @NotNull ItemStack itemStack) {
-        if (this.controller == null) return false;
-        return this.controller.canPlaceItem(slot, itemStack);
+    public boolean canPlaceItem(int slot, ItemStack itemStack) {
+        return controller != null && controller.canPlaceItem(slot, itemStack);
     }
 
     @Override
-    public boolean canPlaceItemThroughFace(int slot, ItemStack itemStack, @Nullable Direction direction) {
-        return canPlaceItem(slot, itemStack);
-    }
-
-    @Override
-    public boolean canTakeItemThroughFace(int slot, ItemStack itemStack, Direction direction) {
-        if (this.controller == null) return false;
-        return this.controller.canTakeItemThroughFace(slot, itemStack, direction);
-    }
-
-    @Override
-    public void setItem(int slot, @NotNull ItemStack itemStack) {
-        if (this.controller == null) return;
-        this.controller.storageNetwork.setItem(slot, itemStack);
+    public void setItem(int slot, ItemStack itemStack) {
+        getItemHandler().setStackInSlot(slot, itemStack);
     }
 
     @Override
     public @NotNull ItemStack removeItem(int slot, int amount) {
-        if (this.controller == null) return ItemStack.EMPTY;
-        return this.controller.storageNetwork.removeItem(slot, amount);
+        return getItemHandler().extractItem(slot, amount, false);
     }
 
     @Override
     public @NotNull ItemStack removeItemNoUpdate(int slot) {
-        if (this.controller == null) return ItemStack.EMPTY;
-        return this.controller.storageNetwork.removeItemNoUpdate(slot);
+        return getItemHandler().extractItem(slot, Integer.MAX_VALUE, false);
     }
 
     @Override
-    public void clearContent() {
-    }
-
-    @Override
-    protected Component getDefaultName() {
-        return getBlockState().getBlock().getName();
+    protected @NotNull Component getDefaultName() {
+        return Component.empty();
     }
 
     @Override

@@ -20,7 +20,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
 public class SimpleStorageBoxScreen extends AbstractContainerScreen<SimpleStorageBoxMenu> {
@@ -28,7 +27,7 @@ public class SimpleStorageBoxScreen extends AbstractContainerScreen<SimpleStorag
     private final int guiTextureWidth = 176;
     private final int guiTextureHeight = 176;
 
-    public static @NotNull SimpleStorageBoxScreen createScreen(SimpleStorageBoxMenu menu, Inventory playerInventory, Component title) {
+    public static SimpleStorageBoxScreen createScreen(SimpleStorageBoxMenu menu, Inventory playerInventory, Component title) {
         return new SimpleStorageBoxScreen(menu, playerInventory, title);
     }
 
@@ -39,7 +38,7 @@ public class SimpleStorageBoxScreen extends AbstractContainerScreen<SimpleStorag
     }
 
     @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         this.renderBackground(graphics, mouseX, mouseY, delta);
         super.render(graphics, mouseX, mouseY, delta);
         renderFilterItem(graphics, leftPos + 30, topPos + 20);

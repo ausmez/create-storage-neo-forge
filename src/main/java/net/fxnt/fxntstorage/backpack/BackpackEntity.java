@@ -42,9 +42,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 
+@ParametersAreNonnullByDefault
 public class BackpackEntity extends BlockEntity implements IBackpackContainer, MenuProvider, Nameable {
     private int slotCount;
 
@@ -90,7 +92,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
             }
 
             @Override
-            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            public boolean isItemValid(int slot, ItemStack stack) {
                 if (filterTest(stack))
                     return false;
                 if (isPlayerInteraction)
@@ -120,7 +122,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         return this.upgrades;
     }
 
-    public void setCustomName(@NotNull Component hoverName) {
+    public void setCustomName(Component hoverName) {
         this.customName = hoverName;
     }
 
@@ -264,7 +266,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         tag.put("Items", itemHandler.serializeNBT(registries));
         tag.putString("SortOrder", sortOrder.name());
@@ -290,7 +292,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         return false;
     }
 
-    public static boolean filterTest(@NotNull ItemStack stack) {
+    public static boolean filterTest(ItemStack stack) {
         // Test to see if we're allowing this item into the backpack
         return stack.getItem() instanceof BackpackItem;
     }
@@ -350,7 +352,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         }
     }
 
-    private void doMove(int mergeSlotId, @NotNull ItemStack mergeStack, ItemStack ghostStack) {
+    private void doMove(int mergeSlotId, ItemStack mergeStack, ItemStack ghostStack) {
         if (mergeStack.isEmpty()) {
             // Add item to empty slot
             this.itemHandler.setStackInSlot(mergeSlotId, ghostStack.copy());

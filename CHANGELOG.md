@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.1.0 - 2025-07-18
+## New Features
+- **Backpack Upgrades:**
+  - **Ore Mining Upgrade** - Mine an entire cluster of ore at once. Hold the modifier keybind to mine any connected blocks (up to 64) of the same type (configurable).
+  - **Torch Deployer Upgrade** - Load up your backpack with Torches and never stumble in the dark again! Automatically places a torch from the backpack if the local light level is too low (configurable).
+  
+## Changes
+- **Jetpack Upgrade:** Added configuration option to enable/disable the bobbing effect when hovering.
+- **Recipe Viewers:** Better integration with JEI/EMI/REI.
+  - Crafting recipes can now pull items direct from the equipped backpack as well as player inventory.
+- **Storage Network Rewrite:** Significant internal refactor to improve compatibility with other mods. (#6)
+  - New configuration setting allows control over whether empty Simple Storage Boxes can accept new items when part of a Storage Network.
+
+## Bug Fixes
+- Added missing blocks to #breakable_with_any_tool tag.
+- Fixed missing recipes for Cardboard and Weathered Iron Storage Boxes. [Forge]
+- Fixed Packager not respecting void mode on Cardboard and Weathered Iron boxes.
+- Fixed Pale Oak Simple Storage Box not functioning correctly with Packagers.
+- Fixed Storage Box and Simple Storage Box tooltip numbers incorrectly rendering when Backpack screen open.
+- Fixed Backpack stack multiplier incorrectly being applied before placing as a block in the world. (#4) [NeoForge]
+- Fixed crash when quick moving a deactivated Backpack upgrade to the player inventory. [NeoForge]
+- Fixed duplication bug when unequipping disabled Backpack upgrades. [Forge]
+- Fixed desynchronization issue when using Jetpack upgrade with high network latency. (#5)
+- Fixed Storage Box not sorting when mounted to a contraption. [Forge]
+- Fixed game crash when connecting a Passer to a vanilla chest. (#7) [NeoForge]
+- Fixed duplication bug when using a Passer with a Packager to extract packages.
+- Various other minor bug fixes and general code cleanup.
+
+---
 ## 1.0.4 — 2025-06-15
 ## Bug Fixes
 - Fixed game crash when game window resized while Backpack screen is open. (#3) [Forge]

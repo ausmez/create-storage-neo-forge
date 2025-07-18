@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.network.handler;
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.util.BackpackClientHelper;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.network.packet.*;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
@@ -115,7 +116,7 @@ public class ClientPayloadHandler {
                         if (oldState.getBlock() instanceof SimpleStorageBox) { // SimpleStorageBox
                             CompoundTag tag = blockInfo.nbt().getCompound("FilterItem");
                             if ("minecraft:air".equals(tag.getString("id"))) {
-                                newNbt.put("FilterItem", nbt.getCompound("FilterItem") /*packet.filter().save(client.level.registryAccess())*/);
+                                newNbt.put("FilterItem", nbt.getCompound("FilterItem"));
                             }
                             newState = oldState.setValue(SimpleStorageBox.STORAGE_USED, packet.fillLevel());
                         } else { // StorageBox
@@ -130,6 +131,18 @@ public class ClientPayloadHandler {
                         contraptionEntity.getContraption().deferInvalidate = true;
                     }
 
+                }
+            });
+        });
+    }
+
+    public void handleSyncItemStackPacket(final SyncItemStackPacket packet, final IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Minecraft client = Minecraft.getInstance();
+            client.execute(() -> {
+                if (client.player != null) {
+                    ItemStack backpack = BackpackClientHelper.getEquippedBackpackStack(client.player);
+                    backpack.applyComponents(packet.dataMap());
                 }
             });
         });

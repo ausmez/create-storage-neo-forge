@@ -18,6 +18,7 @@ public class ModTags {
         public static final TagKey<Block> STORAGE_BOX = blockTag("storage_box");
         public static final TagKey<Block> STORAGE_NETWORK_BLOCK = blockTag("storage_network_block");
         public static final TagKey<Block> STORAGE_TRIM = blockTag("storage_trim");
+        public static final TagKey<Block> ORE_MINING_BLOCK = blockTag("ore_mining_block");
 
         private static TagKey<Block> blockTag(String name) {
             return BlockTags.create(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, name));
@@ -29,6 +30,7 @@ public class ModTags {
 
         public static final TagKey<Item> BACKPACK_ITEM = itemTag("backpack");
         public static final TagKey<Item> BACKPACK_UPGRADE = itemTag("backpack_upgrade");
+        public static final TagKey<Item> BACKPACK_UPGRADE_DEACTIVATED = itemTag("backpack_upgrade_deactivated");
         public static final TagKey<Item> STORAGE_BOX_ITEM = itemTag("storage_box");
         public static final TagKey<Item> STORAGE_BOX_UPGRADE = itemTag("storage_box_upgrade");
 

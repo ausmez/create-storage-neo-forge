@@ -1,0 +1,139 @@
+package net.fxnt.fxntstorage.compat.rei;
+
+import me.shedaniel.rei.api.client.registry.transfer.simple.SimpleTransferHandler;
+import me.shedaniel.rei.api.common.display.Display;
+import me.shedaniel.rei.api.common.entry.EntryIngredient;
+import me.shedaniel.rei.api.common.entry.EntryStack;
+import me.shedaniel.rei.api.common.entry.InputIngredient;
+import me.shedaniel.rei.api.common.transfer.info.stack.SlotAccessor;
+import me.shedaniel.rei.plugin.common.BuiltinPlugin;
+import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.network.packet.TransferRecipePacket;
+import net.fxnt.fxntstorage.util.Util;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.StonecutterMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.item.crafting.StonecutterRecipe;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.items.SlotItemHandler;
+import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.*;
+import java.util.stream.IntStream;
+
+import static me.shedaniel.rei.impl.client.transfer.SimpleTransferHandlerImpl.hasItemsIndexed;
+
+@SuppressWarnings("UnstableApiUsage")
+public class REIStonecuttingTransferHandler implements SimpleTransferHandler {
+
+    @Override
+    public ApplicabilityResult checkApplicable(Context context) {
+        return ((context.getMenu() instanceof StonecutterMenu) && context.getDisplay().getCategoryIdentifier() == BuiltinPlugin.STONE_CUTTING) && context.getContainerScreen() != null
+                ? ApplicabilityResult.createApplicable()
+                : ApplicabilityResult.createNotApplicable();
+    }
+
+    @Override
+    public Iterable<SlotAccessor> getInputSlots(Context context) {
+        return IntStream.range(0, 1).mapToObj(id -> SlotAccessor.fromSlot(context.getMenu().getSlot(id))).toList();
+    }
+
+    @Override
+    public Iterable<SlotAccessor> getInventorySlots(Context context) {
+        LocalPlayer player = context.getMinecraft().player;
+        Inventory inventory = player.getInventory();
+
+        List<SlotAccessor> slotAccessors = new ArrayList<>();
+
+        // Add player inventory
+        slotAccessors.addAll(
+                IntStream.range(0, inventory.items.size())
+                        .mapToObj(index -> SlotAccessor.fromPlayerInventory(player, index))
+                        .toList()
+        );
+
+        // Add backpack inventory
+        ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+
+        if (!backpack.isEmpty()) {
+            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
+
+            slotAccessors.addAll(
+                    IntStream.range(Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE)
+                            .mapToObj(index -> new SlotItemHandler(itemHandler, index, 0, 0))
+                            .map(SlotAccessor::fromSlot)
+                            .toList()
+            );
+        }
+
+        return slotAccessors;
+    }
+
+    @Override
+    public Result handle(Context context) {
+        List<InputIngredient<ItemStack>> missing = hasItemsIndexed(context, getInventorySlots(context), getInputsIndexed(context));
+
+        if (missing.isEmpty()) {
+            if (!context.isActuallyCrafting()) {
+                return Result.createSuccessful();
+            } else {
+                AbstractContainerScreen<?> containerScreen = context.getContainerScreen();
+                context.getMinecraft().setScreen(containerScreen);
+
+                Display display = context.getDisplay();
+                if (display.getDisplayLocation().isEmpty()) return Result.createNotApplicable();
+
+                List<EntryIngredient> stacks = context.getDisplay().getInputEntries();
+                List<Integer> recipeList = new ArrayList<>();
+                for (int i = 0; i < stacks.size(); i++) {
+                    if (!stacks.get(i).isEmpty())
+                        recipeList.add(i + 1);
+                }
+
+                PacketDistributor.sendToServer(new TransferRecipePacket(display.getDisplayLocation().get(), recipeList, context.isStackedCrafting(), 0));
+
+                // Select correct recipe in StonecutterMenu
+                Minecraft mc = Minecraft.getInstance();
+
+                Set<RecipeHolder<StonecutterRecipe>> allMatching = new HashSet<>();
+
+                for (EntryStack<?> entry : stacks.getFirst()) {
+                    Object value = entry.getValue();
+                    if (value instanceof ItemStack stack && !stack.isEmpty()) {
+                        SingleRecipeInput inv = new SingleRecipeInput(stack);
+                        List<RecipeHolder<StonecutterRecipe>> matches = mc.level.getRecipeManager()
+                                .getRecipesFor(RecipeType.STONECUTTING, inv, mc.level);
+                        allMatching.addAll(matches);
+                    }
+                }
+
+                List<RecipeHolder<StonecutterRecipe>> sorted = allMatching.stream()
+                        .sorted(Comparator.comparing(holder ->
+                                holder.value().getResultItem(mc.level.registryAccess()).getItem().getDescriptionId()))
+                        .toList();
+
+                ResourceLocation targetId = display.getDisplayLocation().get();
+                for (int i = 0; i < sorted.size(); i++) {
+                    if (sorted.get(i).id().equals(targetId)) {
+                        mc.gameMode.handleInventoryButtonClick(mc.player.containerMenu.containerId, i);
+                        break;
+                    }
+                }
+
+                return Result.createSuccessful();
+            }
+        }
+
+        return Result.createNotApplicable();
+    }
+}

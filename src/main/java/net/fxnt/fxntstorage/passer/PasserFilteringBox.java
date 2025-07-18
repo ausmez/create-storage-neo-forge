@@ -54,7 +54,6 @@ public class PasserFilteringBox extends ValueBoxTransform.Sided {
                 case EAST, WEST -> location;
             };
         };
-
     }
 
     @Override

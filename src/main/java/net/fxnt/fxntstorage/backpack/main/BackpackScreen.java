@@ -2,8 +2,9 @@ package net.fxnt.fxntstorage.backpack.main;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
+import net.fxnt.fxntstorage.network.packet.KeyPressedPacket;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
@@ -13,46 +14,56 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 import static net.fxnt.fxntstorage.util.KeybindHandler.TOGGLE_BACKPACK_KEY;
 
+@ParametersAreNonnullByDefault
 public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
+    private static final int CONTAINER_COLUMNS = 12;
+    private static final int TOOL_SLOT_COLUMNS = 12;
+    private static final int TOOL_SLOT_ROWS = 2;
+    private static final int UPGRADE_SLOT_COLUMNS = 1;
+    private static final int UPGRADE_SLOT_ROWS = 6;
+
     private final int itemSlots = menu.ITEM_SLOT_COUNT;
     private final int toolSlots = menu.TOOL_SLOT_COUNT;
     private final int totalSlots = menu.TOTAL_SLOT_COUNT;
-    private final int containerColumns = 12;
+    private final int totalRows = (int) Math.ceil((double) itemSlots / CONTAINER_COLUMNS);
+
     private int containerRows = 5;
-    private final int totalRows = (int) Math.ceil((double) itemSlots / containerColumns);
-    private final int toolSlotColumns = 12;
-    private final int toolSlotRows = 2;
-    private final int upgradeSlotColumns = 1;
-    private final int upgradeSlotRows = 6;
-    private final int containerSlotsMinX = 29;
-    private final int containerSlotsMaxX = containerSlotsMinX + (Util.SLOT_SIZE * containerColumns);
-    private final int containerSlotsMinZ = 17;
+
+    private static final int containerSlotsMinX = 29;
+    private static final int containerSlotsMaxX = containerSlotsMinX + (Util.SLOT_SIZE * CONTAINER_COLUMNS);
+    private static final int containerSlotsMinZ = 17;
+
     private int containerSlotsMaxZ = containerSlotsMinX + (Util.SLOT_SIZE * containerRows);
     private int containerSlotsHeight = containerSlotsMaxZ - containerSlotsMinZ;
-    private final int scrollBarMinX = containerSlotsMaxX + 4;
-    private final int scrollBarMaxX = scrollBarMinX + 14;
-    private final int scrollBarMinZ = containerSlotsMinZ;
+    private static final int scrollBarMinX = containerSlotsMaxX + 4;
+    private static final int scrollBarMaxX = scrollBarMinX + 14;
+    private static final int scrollBarMinZ = containerSlotsMinZ;
     private int scrollBarMaxZ = containerSlotsMaxZ;
-    private final int upgradeSlotsMinX = 7;
-    private final int upgradeSlotsMinZ = containerSlotsMinZ;
+
+    private static final int upgradeSlotsMinX = 7;
+    private static final int upgradeSlotsMinZ = containerSlotsMinZ;
     private final int toolSlotsMinX = containerSlotsMinX;
     private int toolSlotsMinZ = containerSlotsMaxZ + 4;
-    private int toolSlotsMaxZ = toolSlotsMinZ + (Util.SLOT_SIZE * toolSlotRows);
-
+    private int toolSlotsMaxZ = toolSlotsMinZ + (Util.SLOT_SIZE * TOOL_SLOT_ROWS);
     private final int inventorySlotsMinX = 60;
     private final int inventorySlotsMaxX = inventorySlotsMinX + (Util.SLOT_SIZE * 9);
     private int inventorySlotsMinZ = toolSlotsMaxZ + 15;
@@ -60,31 +71,35 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     private final int hotbarSlotsMinX = inventorySlotsMinX;
     private int hotbarSlotsMinZ = inventorySlotsMaxZ + 4;
     private int hotbarSlotsMaxZ = hotbarSlotsMinZ + Util.SLOT_SIZE;
-    private final int scrollThumbMinX = 270;
-    private final int scrollThumbMaxX = scrollThumbMinX + 12;
-    private final int scrollThumbMinZ = 0;
-    private final int scrollThumbMaxZ = 15;
+
+    private static final int scrollThumbMinX = 270;
+    private static final int scrollThumbMaxX = scrollThumbMinX + 12;
+    private static final int scrollThumbMinZ = 0;
+    private static final int scrollThumbMaxZ = 15;
+    private static final int scrollThumbWidth = scrollThumbMaxX - scrollThumbMinX;
+    private static final int scrollThumbHeight = scrollThumbMaxZ - scrollThumbMinZ;
+
+    private boolean isDragging;
     private int scrollThumbY = 0;
     private int topVisibleRow, scrollYOffset;
-    private final int scrollThumbWidth = scrollThumbMaxX - scrollThumbMinX;
-    private final int scrollThumbHeight = scrollThumbMaxZ - scrollThumbMinZ;
-    private boolean isDragging;
     private int inventoryTextOffset = 11;
 
     private int containerExclusionZoneMinX, containerExclusionZoneMaxX, containerExclusionZoneMinZ, containerExclusionZoneMaxZ, containerExclusionZoneWidth, containerExclusionZoneHeight;
     private int inventoryExclusionZoneMinX, inventoryExclusionZoneMaxX, inventoryExclusionZoneMinZ, inventoryExclusionZoneMaxZ, inventoryExclusionZoneWidth, inventoryExclusionZoneHeight;
-    private final ResourceLocation guiTexture4 = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/gui/container/backpack_screen_4.png");
-    private final ResourceLocation guiTexture7 = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/gui/container/backpack_screen_7.png");
-    private final ResourceLocation guiTexture9 = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/gui/container/backpack_screen_9.png");
-    private final int guiTexture4Height = 225;
-    private final int guiTexture4Rows = 4;
-    private final int guiTexture7Height = 281;
-    private final int guiTexture7Rows = 7;
-    private final int guiTexture9Height = 317;
-    private final int guiTexture9Rows = 9;
-    private ResourceLocation guiTexture = guiTexture4;
-    private int textureHeight = guiTexture4Height;
-    private final int textureWidth = 282;
+
+    private static final ResourceLocation GUI_TEXTURE_4 = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/gui/container/backpack_screen_4.png");
+    private static final ResourceLocation GUI_TEXTURE_7 = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/gui/container/backpack_screen_7.png");
+    private static final ResourceLocation GUI_TEXTURE_9 = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/gui/container/backpack_screen_9.png");
+    private static final int GUI_TEXTURE_4_HEIGHT = 225;
+    private static final int GUI_TEXTURE_4_ROWS = 4;
+    private static final int GUI_TEXTURE_7_HEIGHT = 281;
+    private static final int GUI_TEXTURE_7_ROWS = 7;
+    private static final int GUI_TEXTURE_9_HEIGHT = 317;
+    private static final int GUI_TEXTURE_9_ROWS = 9;
+    private static final int TEXTURE_WIDTH = 282;
+
+    private ResourceLocation guiTexture = GUI_TEXTURE_4;
+    private int textureHeight = GUI_TEXTURE_4_HEIGHT;
 
     private SortOrder currentSortOrder;
 
@@ -106,31 +121,31 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         // If screen height too small, then provide smaller screen layout (fewer rows)
         width = winWidth;
         height = winHeight;
-        imageWidth = textureWidth - scrollThumbWidth;
-        if (winHeight >= guiTexture9Height) {
-            guiTexture = guiTexture9;
-            textureHeight = guiTexture9Height;
-            containerRows = guiTexture9Rows;
-        } else if (winHeight >= guiTexture7Height) {
-            guiTexture = guiTexture7;
-            textureHeight = guiTexture7Height;
-            containerRows = guiTexture7Rows;
+        imageWidth = TEXTURE_WIDTH - scrollThumbWidth;
+        if (winHeight >= GUI_TEXTURE_9_HEIGHT) {
+            guiTexture = GUI_TEXTURE_9;
+            textureHeight = GUI_TEXTURE_9_HEIGHT;
+            containerRows = GUI_TEXTURE_9_ROWS;
+        } else if (winHeight >= GUI_TEXTURE_7_HEIGHT) {
+            guiTexture = GUI_TEXTURE_7;
+            textureHeight = GUI_TEXTURE_7_HEIGHT;
+            containerRows = GUI_TEXTURE_7_ROWS;
         } else {
-            guiTexture = guiTexture4;
-            textureHeight = guiTexture4Height;
-            containerRows = guiTexture4Rows;
+            guiTexture = GUI_TEXTURE_4;
+            textureHeight = GUI_TEXTURE_4_HEIGHT;
+            containerRows = GUI_TEXTURE_4_ROWS;
         }
         imageHeight = textureHeight;
         containerSlotsMaxZ = containerSlotsMinZ + (Util.SLOT_SIZE * containerRows);
         scrollBarMaxZ = containerSlotsMaxZ;
         containerSlotsHeight = containerSlotsMaxZ - containerSlotsMinX;
 
-        if (guiTexture == guiTexture4) {
+        if (guiTexture == GUI_TEXTURE_4) {
             toolSlotsMinZ = containerSlotsMaxZ + 2;
         } else {
             toolSlotsMinZ = containerSlotsMaxZ + 4;
         }
-        toolSlotsMaxZ = toolSlotsMinZ + (Util.SLOT_SIZE * toolSlotRows);
+        toolSlotsMaxZ = toolSlotsMinZ + (Util.SLOT_SIZE * TOOL_SLOT_ROWS);
         inventorySlotsMinZ = toolSlotsMaxZ + 15;
         inventorySlotsMaxZ = inventorySlotsMinZ + (Util.SLOT_SIZE * 3);
         hotbarSlotsMinZ = inventorySlotsMaxZ + 4;
@@ -141,7 +156,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
         containerExclusionZoneMinX = leftPos;
         containerExclusionZoneMinZ = topPos;
-        containerExclusionZoneWidth = textureWidth - scrollThumbWidth;
+        containerExclusionZoneWidth = TEXTURE_WIDTH - scrollThumbWidth;
         containerExclusionZoneHeight = toolSlotsMaxZ + 12;
 
         containerExclusionZoneMaxX = containerExclusionZoneMinX + containerExclusionZoneWidth;
@@ -182,7 +197,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             int yOffset = containerSlotsMinZ + (y * Util.SLOT_SIZE) + 1;
             int scrollSlotYOffset = y >= containerRows ? -2000 : yOffset;
 
-            for (int x = 0; x < containerColumns; x++) {
+            for (int x = 0; x < CONTAINER_COLUMNS; x++) {
                 int xOffset = containerSlotsMinX + (x * Util.SLOT_SIZE) + 1;
                 Slot slot = menu.getSlot(index);
                 slot.x = xOffset;
@@ -192,9 +207,9 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             }
         }
 
-        for (int y = 0; y < toolSlotRows; y++) {
+        for (int y = 0; y < TOOL_SLOT_ROWS; y++) {
             int yOffset = toolSlotsMinZ + (y * Util.SLOT_SIZE) + 1;
-            for (int x = 0; x < toolSlotColumns; x++) {
+            for (int x = 0; x < TOOL_SLOT_COLUMNS; x++) {
                 int xOffset = toolSlotsMinX + (x * Util.SLOT_SIZE) + 1;
                 Slot slot = menu.getSlot(index);
                 slot.x = xOffset;
@@ -204,9 +219,9 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             }
         }
 
-        for (int y = 0; y < upgradeSlotRows; y++) {
+        for (int y = 0; y < UPGRADE_SLOT_ROWS; y++) {
             int yOffset = upgradeSlotsMinZ + (y * Util.SLOT_SIZE) + 1;
-            for (int x = 0; x < upgradeSlotColumns; x++) {
+            for (int x = 0; x < UPGRADE_SLOT_COLUMNS; x++) {
                 int xOffset = upgradeSlotsMinX + (x * Util.SLOT_SIZE) + 1;
                 Slot slot = menu.getSlot(index);
                 slot.x = xOffset;
@@ -248,15 +263,15 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     @Override
     protected void renderBg(GuiGraphics graphics, float delta, int mouseX, int mouseY) {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        graphics.blit(guiTexture, leftPos, topPos, 0, 0, imageWidth, imageHeight, textureWidth, textureHeight);
+        graphics.blit(guiTexture, leftPos, topPos, 0, 0, imageWidth, imageHeight, TEXTURE_WIDTH, textureHeight);
 
         // Render the scrollbar thumb as either "enabled" if scrolling is required, or "disabled" if not
         int thumbYOffset = (isScrollbarRequired()) ? 0 : 15;
-        graphics.blit(guiTexture, leftPos + scrollBarMinX + 1, getScrollThumbY(), scrollThumbMinX, scrollThumbMinZ + thumbYOffset, scrollThumbWidth, scrollThumbHeight, textureWidth, textureHeight);
+        graphics.blit(guiTexture, leftPos + scrollBarMinX + 1, getScrollThumbY(), scrollThumbMinX, scrollThumbMinZ + thumbYOffset, scrollThumbWidth, scrollThumbHeight, TEXTURE_WIDTH, textureHeight);
     }
 
     private boolean isScrollbarRequired() {
-        return containerRows < guiTexture9Rows;
+        return containerRows < GUI_TEXTURE_9_ROWS;
     }
 
     @Override
@@ -317,11 +332,11 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         int yOffsetBase = containerSlotsMinZ + 1;
 
         // Determine the number of slots to update
-        int numSlotsToUpdate = containerColumns * containerRows;
+        int numSlotsToUpdate = CONTAINER_COLUMNS * containerRows;
 
         // Calculate starting indexes for slots
-        int oldStartIndex = oldTopRow * containerColumns;
-        int newStartIndex = newTopRow * containerColumns;
+        int oldStartIndex = oldTopRow * CONTAINER_COLUMNS;
+        int newStartIndex = newTopRow * CONTAINER_COLUMNS;
 
         // Clear old visible range
         for (int index = oldStartIndex; index < oldStartIndex + numSlotsToUpdate; index++) {
@@ -337,7 +352,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
         // Apply new y-offset to the new range of slots
         for (int index = newStartIndex; index < newRangeEnd; index++) {
-            int row = (index / containerColumns) - newTopRow;  // Calculate row relative to the new top row
+            int row = (index / CONTAINER_COLUMNS) - newTopRow;  // Calculate row relative to the new top row
             // Calculate the y-offset for each slot
             menu.slots.get(index).y = yOffsetBase + row * Util.SLOT_SIZE;
         }
@@ -363,7 +378,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
     public final boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL) {
-            BackpackNetworkHelper.sendCtrlKeyDown();
+            PacketDistributor.sendToServer(new KeyPressedPacket(Util.BACKPACK_MENU_CTRL, true));
         }
         if (this.handleKeyPress(keyCode, scanCode, modifiers)) {
             return true;
@@ -374,7 +389,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL) {
-            BackpackNetworkHelper.sendCtrlKeyUp();
+            PacketDistributor.sendToServer(new KeyPressedPacket(Util.BACKPACK_MENU_CTRL, false));
         }
         return super.keyReleased(keyCode, scanCode, modifiers);
     }
@@ -466,6 +481,45 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
                 new Rect2i(containerExclusionZoneMinX, containerExclusionZoneMinZ, containerExclusionZoneWidth, containerExclusionZoneHeight),
                 new Rect2i(inventoryExclusionZoneMinX, inventoryExclusionZoneMinZ, inventoryExclusionZoneWidth, inventoryExclusionZoneHeight)
         );
+    }
+
+    @Override
+    protected void renderSlotContents(GuiGraphics guiGraphics, ItemStack itemstack, Slot slot, @Nullable String countString) {
+        int x = slot.x;
+        int y = slot.y;
+        int s = slot.x + slot.y * this.imageWidth;
+        if (slot.isFake()) {
+            guiGraphics.renderFakeItem(itemstack, x, y, s);
+        } else {
+            guiGraphics.renderItem(itemstack, x, y, s);
+        }
+
+        if (!itemstack.isEmpty()) {
+            if (itemstack.getCount() != 1) {
+                String countText = String.valueOf(itemstack.getCount());
+
+                PoseStack poseStack = guiGraphics.pose();
+                poseStack.pushPose();
+                poseStack.translate(0.0D, 0.0D, 200.0F);
+                float scale = Math.min(1.0F, 16.0F / font.width(countText));
+                if (scale < 1.0F) {
+                    poseStack.scale(scale, scale, 1.0F);
+                }
+                guiGraphics.drawString(font, countText, (x + 19 - 2 - (font.width(countText) * scale)) / scale, (y + 6 + 3 + (1 / (scale * scale) - 1)) / scale, 16777215, true);
+                poseStack.popPose();
+            }
+
+            // Render item status bar
+            if (itemstack.isBarVisible()) {
+                int l = itemstack.getBarWidth();
+                int i = itemstack.getBarColor();
+                int j = x + 2;
+                int k = y + 13;
+                guiGraphics.fill(RenderType.guiOverlay(), j, k, j + 13, k + 2, -16777216);
+                guiGraphics.fill(RenderType.guiOverlay(), j, k, j + l, k + 1, i | -16777216);
+            }
+
+        }
     }
 
 }

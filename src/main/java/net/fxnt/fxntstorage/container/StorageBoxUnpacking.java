@@ -16,7 +16,7 @@ import java.util.List;
 
 import static net.fxnt.fxntstorage.container.StorageBox.VOID_UPGRADE;
 
-@SuppressWarnings("all")
+@SuppressWarnings("UnstableApiUsage")
 public enum StorageBoxUnpacking implements UnpackingHandler {
     INSTANCE;
 

@@ -2,11 +2,15 @@ package net.fxnt.fxntstorage.network.handler;
 
 import com.simibubi.create.api.contraption.storage.item.MountedItemStorage;
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
+import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHandler;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
@@ -15,13 +19,31 @@ import net.fxnt.fxntstorage.network.packet.*;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedStorage;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.*;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.level.Level;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
@@ -32,43 +54,32 @@ public class ServerPayloadHandler {
         return INSTANCE;
     }
 
-    public void handleBackpackHotkeyPacket(final BackpackHotkeyPacket packet, final IPayloadContext context) {
+    public void handleKeyPressedPacket(final KeyPressedPacket packet, final IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
-            byte key = packet.hotKey();
 
-            if (key == Util.OPEN_BACKPACK)
-                BackpackHandler.openBackpackFromInventory(player, Util.BACKPACK_ON_BACK);
-            if (key == Util.CLOSE_BACKPACK && player.containerMenu instanceof BackpackMenu)
-                player.closeContainer();
-            if (key == Util.TOGGLE_HOVER) {
-                JetpackHandler jetpackHandler = JetpackManager.getJetpackHandler(player);
-                if (jetpackHandler.calculateJetPackFuel(player) > 0) {
-                    jetpackHandler.toggleHover();
+            switch (packet.hotKey()) {
+                case Util.JETPACK_KEY_PRESS -> JetpackHandler.flyingOnKeyPress(player);
+                case Util.JETPACK_KEY_RELEASE -> JetpackHandler.flyingOnKeyRelease(player);
+                case Util.OPEN_BACKPACK ->BackpackHandler.openBackpackFromInventory(player, Util.BACKPACK_ON_BACK);
+                case Util.CLOSE_BACKPACK -> {
+                    if (player.containerMenu instanceof BackpackMenu) player.closeContainer();
                 }
+                case Util.BACKPACK_MENU_CTRL -> {
+                    if (player.containerMenu instanceof BackpackMenu backpackMenu) {
+                        backpackMenu.ctrlKeyDown = packet.pressed();
+                    }
+                }
+                case Util.TOGGLE_HOVER -> {
+                    JetpackHandler jetpackHandler = JetpackManager.getJetpackHandler(player);
+                    if (jetpackHandler.calculateJetPackFuel(player) > 0) {
+                        jetpackHandler.toggleHover();
+                    }
+                }
+                case Util.MINE_ALL_BLOCKS -> player.getPersistentData()
+                        .getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)
+                        .putBoolean("MineAllBlocks", packet.pressed());
             }
-        });
-    }
-
-    public void handleBackpackMenuCtrlPacket(final BackpackMenuCtrlPacket packet, final IPayloadContext context) {
-        context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
-            boolean ctrlKeyDown = packet.ctrlKeyDown();
-
-            if (player.containerMenu instanceof BackpackMenu backpackMenu)
-                backpackMenu.ctrlKeyDown = ctrlKeyDown;
-        });
-    }
-
-    public void handleJetpackFlyPacket(final JetpackFlyPacket packet, final IPayloadContext context) {
-        context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
-            byte type = packet.keyPress();
-
-            if (type == Util.JETPACK_KEY_PRESS)
-                JetpackHandler.flyingOnKeyPress(player);
-            if (type == Util.JETPACK_KEY_RELEASE)
-                JetpackHandler.flyingOnKeyRelease(player);
         });
     }
 
@@ -89,17 +100,19 @@ public class ServerPayloadHandler {
     public void handleSortInventoryPacket(final SortInventoryPacket packet, final IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
+
             // Backpack sorting
-            if (packet.invType() == Util.INV_TYPE_BACKPACK && player.containerMenu instanceof BackpackMenu menu) {
+            if (packet.invType() == Util.INV_TYPE_BACKPACK && player.containerMenu instanceof BackpackMenu menu)
                 menu.sortBackpackItems(packet.slotStart(), packet.slotEnd(), packet.sortOrder());
-            }
-            // StorageBox sorting
-            if (packet.invType() == Util.INV_TYPE_STORAGE_BOX && player.containerMenu instanceof StorageBoxMenu menu) {
-                menu.sortStorageItems(packet.slotStart(), packet.slotEnd(), packet.sortOrder());
-            }
-            // StorageBoxMounted sorting
-            if (packet.invType() == Util.INV_TYPE_STORAGE_BOX && player.containerMenu instanceof StorageBoxMountedMenu menu) {
-                menu.sortStorageItems(packet.slotStart(), packet.slotEnd(), packet.sortOrder());
+
+            if (packet.invType() == Util.INV_TYPE_STORAGE_BOX) {
+                // StorageBox sorting
+                if (player.containerMenu instanceof StorageBoxMenu menu)
+                    menu.sortStorageItems(packet.slotStart(), packet.slotEnd(), packet.sortOrder());
+
+                // StorageBoxMounted sorting
+                if (player.containerMenu instanceof StorageBoxMountedMenu menu)
+                    menu.sortStorageItems(packet.slotStart(), packet.slotEnd(), packet.sortOrder());
             }
         });
     }
@@ -107,15 +120,21 @@ public class ServerPayloadHandler {
     public void handleSyncClientSettingsPacket(final SyncClientSettingsPacket packet, final IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (ServerPlayer) context.player();
+            CompoundTag settings = packet.settings();
 
+            ListTag listTag = settings.getList("prefersSilkTouchList", Tag.TAG_STRING);
             ListTag prefersSilkTouchList = new ListTag();
-            for (int i = 0; i < packet.prefersSilkTouchList().size(); i++) {
-                prefersSilkTouchList.add(StringTag.valueOf(packet.prefersSilkTouchList().get(i)));
-            }
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("DisplayFeederMessage", packet.displayFeederMessage());
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("IgnoreFanProcessing", packet.ignoreFanProcessing());
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("PreferSilkTouch", packet.preferSilkTouch());
+            prefersSilkTouchList.addAll(listTag);
+
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("AllowChorusFruit", settings.getBoolean("allowChorusFruit"));
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("DisplayFeederMessage", settings.getBoolean("displayFeederMessage"));
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("IgnoreFanProcessing", settings.getBoolean("ignoreFanProcessing"));
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("PreferSilkTouch", settings.getBoolean("preferSilkTouch"));
             player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).put("PrefersSilkTouchList", prefersSilkTouchList);
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putInt("TorchDeployerCooldown", settings.getInt("torchDeployerCooldown"));
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putInt("TorchDeployerLightLevel", settings.getInt("torchDeployerLightLevel"));
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putString("TorchDeployerLightSource", settings.getString("torchDeployerLightSource"));
+            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackHoverBobbing", settings.getBoolean("jetpackHoverBobbing"));
         });
     }
 
@@ -153,4 +172,180 @@ public class ServerPayloadHandler {
             }
         });
     }
+
+    public void handleTransferRecipePacket(TransferRecipePacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer player = (ServerPlayer) context.player();
+
+            Level level = player.level();
+            Optional<RecipeHolder<?>> optional = level.getRecipeManager().byKey(packet.recipeId());
+            if (optional.isEmpty()) {
+                FXNTStorage.LOGGER.warn("Recipe not found: {}", packet.recipeId());
+                return;
+            }
+
+            Recipe<?> recipe = optional.get().value();
+            Inventory playerInv = player.getInventory();
+
+            IItemHandlerModifiable itemHandler = null;
+            IBackpackContainer container = null;
+            ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+
+            if (!backpack.isEmpty()) {
+                container = new BackpackContainer(backpack, player);
+                itemHandler = container.getItemHandler();
+            }
+
+            List<Slot> inputSlots;
+            if (player.containerMenu instanceof CraftingMenu openMenu) {
+                inputSlots = openMenu.slots.subList(1, 10);
+            } else if (player.containerMenu instanceof StonecutterMenu openMenu) {
+                inputSlots = openMenu.slots.subList(0, 1);
+            } else {
+                return;
+            }
+
+            for (Slot slot : inputSlots) {
+                if (!slot.mayPickup(player)) continue;
+                if (slot.hasItem()) {
+                    ItemStack stack = slot.remove(slot.getItem().getCount());
+                    if (!playerInv.add(stack)) {
+                        player.drop(stack, false);
+                    }
+                }
+            }
+
+            List<Ingredient> ingredients = recipe.getIngredients().stream().filter(ingredient -> !ingredient.isEmpty()).toList();
+            List<Integer> recipeMap = packet.recipeList();
+
+            int maxCraftable = 1;
+            if (packet.maxTransfer()) {
+                maxCraftable = getMaxCraftableItems(ingredients, playerInv, itemHandler);
+                if (!FMLEnvironment.production)
+                    player.displayClientMessage(Component.literal("§a" + maxCraftable + "§r maximum craftable"), false);
+            }
+
+            int ingredientIndex = 0;
+            for (Integer entry : recipeMap) {
+                int craftingSlotIndex = entry - 1;
+
+                if (craftingSlotIndex < 0 || craftingSlotIndex > inputSlots.size()) {
+                    return; // invalid data
+                }
+
+                Ingredient ingredient = ingredients.get(ingredientIndex);
+                if (ingredient.isEmpty()) {
+                    ingredientIndex++;
+                    continue;
+                }
+
+                ItemStack collected = ItemStack.EMPTY;
+                int remaining = maxCraftable;
+
+                // Try player inventory
+                for (int j = 0; j < playerInv.getContainerSize(); j++) {
+                    ItemStack stack = playerInv.getItem(j);
+                    if (!stack.isEmpty() && ingredient.test(stack)) {
+                        int extractAmount = Math.min(stack.getCount(), remaining);
+                        ItemStack extracted = stack.split(extractAmount);
+
+                        if (collected.isEmpty()) {
+                            collected = extracted.copy();
+                        } else {
+                            collected.grow(extracted.getCount());
+                        }
+
+                        playerInv.setItem(j, stack);
+                        remaining -= extracted.getCount();
+
+                        if (remaining <= 0) break;
+                    }
+                }
+
+                // Try backpack
+                if (remaining > 0 && itemHandler != null) {
+                    for (int j = 0; j < Util.ITEM_SLOT_END_RANGE; j++) {
+                        ItemStack stack = itemHandler.getStackInSlot(j);
+                        if (!stack.isEmpty() && ingredient.test(stack)) {
+                            int extractAmount = Math.min(stack.getCount(), remaining);
+                            ItemStack extracted = stack.split(extractAmount);
+
+                            if (collected.isEmpty()) {
+                                collected = extracted.copy();
+                            } else {
+                                collected.grow(extracted.getCount());
+                            }
+
+                            itemHandler.setStackInSlot(j, stack);
+                            remaining -= extracted.getCount();
+
+                            if (remaining <= 0) break;
+                        }
+                    }
+                }
+
+                if (collected.isEmpty() || collected.getCount() < maxCraftable) {
+                    return; // missing item(s)
+                }
+
+                inputSlots.get(craftingSlotIndex).setByPlayer(collected);
+                ingredientIndex++;
+            }
+
+            AbstractContainerMenu handler = player.containerMenu;
+            Slot output = handler.getSlot(0); // Should always be the Result slot of the crafting table
+            if (packet.action() == 1) {
+                handler.clicked(output.getContainerSlot(), 0, ClickType.PICKUP, player);
+            } else if (packet.action() == 2) {
+                handler.clicked(output.getContainerSlot(), 0, ClickType.QUICK_MOVE, player);
+            }
+
+            player.containerMenu.broadcastChanges();
+            if (container != null) container.setDataChanged();
+            if (itemHandler != null) {
+                PacketDistributor.sendToPlayer(player, new SyncItemStackPacket(backpack.getComponents()));
+            }
+
+        });
+    }
+
+    private int getMaxCraftableItems(List<Ingredient> ingredients, Inventory inventory, @Nullable IItemHandler backpack) {
+        int maxCrafts = 64;
+        Map<Ingredient, Integer> ingredientCounts = new HashMap<>();
+        for (Ingredient ingredient : ingredients) {
+            if (!ingredient.isEmpty()) {
+                ingredientCounts.merge(ingredient, 1, Integer::sum);
+            }
+        }
+
+        for (Map.Entry<Ingredient, Integer> entry : ingredientCounts.entrySet()) {
+            Ingredient ingredient = entry.getKey();
+            int requiredPerCraft = entry.getValue();
+            int available = 0;
+
+            for (int i = 0; i < inventory.getContainerSize(); i++) {
+                ItemStack stack = inventory.getItem(i);
+                if (!stack.isEmpty() && ingredient.test(stack)) {
+                    available += stack.getCount();
+                }
+            }
+
+            if (backpack != null) {
+                for (int i = 0; i < backpack.getSlots(); i++) {
+                    ItemStack stack = backpack.getStackInSlot(i);
+                    if (!stack.isEmpty() && ingredient.test(stack)) {
+                        available += stack.getCount();
+                    }
+                }
+            }
+
+            maxCrafts = Math.min(maxCrafts, available / requiredPerCraft);
+            if (maxCrafts == 0) {
+                break;
+            }
+        }
+
+        return maxCrafts;
+    }
+
 }

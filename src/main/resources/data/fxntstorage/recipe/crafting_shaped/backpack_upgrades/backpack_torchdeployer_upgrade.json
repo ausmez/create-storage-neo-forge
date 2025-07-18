@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "R": {
+      "item": "create:redstone_link"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "X": {
+      "item": "minecraft:torch"
+    },
+    "C": {
+      "item": "create:cogwheel"
+    }
+  },
+  "pattern": [
+    " R ",
+    "IBI",
+    "CXC"
+  ],
+  "result": {
+    "id": "fxntstorage:backpack_torchdeployer_upgrade"
+  },
+  "show_notification": true
+}

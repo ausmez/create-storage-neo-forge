@@ -35,12 +35,11 @@ public class SimpleStorageBoxScenes {
         scene.showBasePlate();
         scene.idle(5);
 
-        boolean vanillaBackport = ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT);
         List<Selection> storageBoxes;
         Selection supportBlocks1, supportBlocks2;
         BlockState state1, state2, state3;
 
-        if (vanillaBackport) {
+        if (ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT)) {
             storageBoxes = Arrays.asList(
                     util.select().position(4, 1, 1), util.select().position(3, 1, 1),
                     util.select().position(2, 1, 1), util.select().position(1, 1, 1),
@@ -48,8 +47,8 @@ public class SimpleStorageBoxScenes {
                     util.select().position(2, 2, 2), util.select().position(1, 2, 2), util.select().position(0, 2, 2),
                     util.select().position(3, 3, 3), util.select().position(1, 3, 3)
             );
-            supportBlocks1 = util.select().fromTo(4,1,2,0,1,2);
-            supportBlocks2 = util.select().fromTo(3,1,3,1,2,3);
+            supportBlocks1 = util.select().fromTo(4, 1, 2, 0, 1, 2);
+            supportBlocks2 = util.select().fromTo(3, 1, 3, 1, 2, 3);
             state1 = ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
             state2 = ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
             state3 = ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
@@ -62,8 +61,8 @@ public class SimpleStorageBoxScenes {
                     util.select().position(3, 3, 3), util.select().position(2, 3, 3),
                     util.select().position(1, 3, 3)
             );
-            supportBlocks1 = util.select().fromTo(3,1,2,1,1,2);
-            supportBlocks2 = util.select().fromTo(3,1,3,1,2,3);
+            supportBlocks1 = util.select().fromTo(3, 1, 2, 1, 1, 2);
+            supportBlocks2 = util.select().fromTo(3, 1, 3, 1, 2, 3);
             state1 = ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
             state2 = ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
             state3 = ModBlocks.SIMPLE_STORAGE_BOX_WARPED.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL);
@@ -77,7 +76,7 @@ public class SimpleStorageBoxScenes {
                 scene.world().showSection(supportBlocks1, Direction.NORTH);
                 scene.world().showSection(supportBlocks2, Direction.NORTH);
             }
-            ++counter;
+            counter++;
         }
 
         scene.overlay().showText(60).text("Simple Storage Boxes are available in common wood types").attachKeyFrame();

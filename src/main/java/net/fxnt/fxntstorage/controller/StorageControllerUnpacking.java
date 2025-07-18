@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.controller;
 
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
+import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.storage_network.StorageNetwork;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
@@ -20,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("all")
+@SuppressWarnings("UnstableApiUsage")
 public enum StorageControllerUnpacking implements UnpackingHandler {
     INSTANCE;
 
@@ -95,10 +96,12 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
                         }
                     }
 
-                    if (!storageFound && !emptyBoxes.isEmpty()) {
-                        ItemStorage box = emptyBoxes.remove(0);
-                        if (box.voidUpgrade() || itemStack.getCount() <= box.maxCapacity()) {
-                            storageFound = true;
+                    if (ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_FILL_EMPTY.get()) {
+                        if (!storageFound && !emptyBoxes.isEmpty()) {
+                            ItemStorage box = emptyBoxes.removeFirst();
+                            if (box.voidUpgrade() || itemStack.getCount() <= box.maxCapacity()) {
+                                storageFound = true;
+                            }
                         }
                     }
 

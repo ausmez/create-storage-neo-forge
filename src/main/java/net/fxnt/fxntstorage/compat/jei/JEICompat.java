@@ -1,9 +1,13 @@
-package net.fxnt.fxntstorage.compat;
+package net.fxnt.fxntstorage.compat.jei;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
+import mezz.jei.api.helpers.IStackHelper;
+import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
+import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
@@ -33,6 +37,7 @@ public class JEICompat implements IModPlugin {
                 return screen.getExclusionZones();
             }
         });
+
         registration.addGuiContainerHandler(BackpackScreen.class, new IGuiContainerHandler<>() {
             @NotNull
             @Override
@@ -41,4 +46,14 @@ public class JEICompat implements IModPlugin {
             }
         });
     }
+
+    @Override
+    public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
+        IRecipeTransferHandlerHelper transferHelper = registration.getTransferHelper();
+        IStackHelper stackHelper = registration.getJeiHelpers().getStackHelper();
+
+        registration.addRecipeTransferHandler(new JEICraftingTransferHandler(transferHelper, stackHelper), RecipeTypes.CRAFTING);
+        registration.addRecipeTransferHandler(new JEIStonecuttingTransferHandler(transferHelper, stackHelper), RecipeTypes.STONECUTTING);
+    }
+
 }

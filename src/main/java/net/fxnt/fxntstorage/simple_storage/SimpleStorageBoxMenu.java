@@ -75,7 +75,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public void removed(@NotNull Player player) {
+    public void removed(Player player) {
         super.removed(player);
         container.stopOpen(player);
     }
@@ -85,7 +85,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public void clicked(int slotId, int button, @NotNull ClickType clickType, @NotNull Player player) {
+    public void clicked(int slotId, int button, ClickType clickType, Player player) {
         this.blockEntity.setPlayerInteraction(true);
         int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
         if (slotId >= 0 && slotId < playerStartSlot) {

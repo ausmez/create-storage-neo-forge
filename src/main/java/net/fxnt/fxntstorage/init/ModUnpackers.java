@@ -1,40 +1,68 @@
 package net.fxnt.fxntstorage.init;
 
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
+import com.tterrag.registrate.util.entry.BlockEntry;
 import net.fxnt.fxntstorage.backpack.main.BackpackUnpacking;
 import net.fxnt.fxntstorage.container.StorageBoxUnpacking;
 import net.fxnt.fxntstorage.controller.StorageControllerUnpacking;
 import net.fxnt.fxntstorage.controller.StorageInterfaceUnpacking;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxUnpacking;
+import net.minecraft.world.level.block.Block;
+import net.neoforged.fml.ModList;
 
-@SuppressWarnings("all")
+@SuppressWarnings("UnstableApiUsage")
 public class ModUnpackers {
     public static void registerHandlers() {
-        UnpackingHandler.REGISTRY.register(ModBlocks.STORAGE_BOX.get(), StorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.ANDESITE_STORAGE_BOX.get(), StorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.COPPER_STORAGE_BOX.get(), StorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.BRASS_STORAGE_BOX.get(), StorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.HARDENED_STORAGE_BOX.get(), StorageBoxUnpacking.INSTANCE);
+        // Storage Boxes
+        register(StorageBoxUnpacking.INSTANCE,
+                ModBlocks.CARDBOARD_STORAGE_BOX,
+                ModBlocks.STORAGE_BOX,
+                ModBlocks.WEATHERED_STORAGE_BOX,
+                ModBlocks.ANDESITE_STORAGE_BOX,
+                ModBlocks.COPPER_STORAGE_BOX,
+                ModBlocks.BRASS_STORAGE_BOX,
+                ModBlocks.HARDENED_STORAGE_BOX
+        );
 
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_JUNGLE.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_ACACIA.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_CHERRY.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON.get(), SimpleStorageBoxUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.SIMPLE_STORAGE_BOX_WARPED.get(), SimpleStorageBoxUnpacking.INSTANCE);
+        // Simple Storage Boxes
+        register(SimpleStorageBoxUnpacking.INSTANCE,
+                ModBlocks.SIMPLE_STORAGE_BOX,
+                ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE,
+                ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
+                ModBlocks.SIMPLE_STORAGE_BOX_JUNGLE,
+                ModBlocks.SIMPLE_STORAGE_BOX_ACACIA,
+                ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK,
+                ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE,
+                ModBlocks.SIMPLE_STORAGE_BOX_CHERRY,
+                ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO,
+                ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON,
+                ModBlocks.SIMPLE_STORAGE_BOX_WARPED
+        );
 
-        UnpackingHandler.REGISTRY.register(ModBlocks.STORAGE_CONTROLLER.get(), StorageControllerUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.STORAGE_INTERFACE.get(), StorageInterfaceUnpacking.INSTANCE);
+        // Pale Oak if Vanilla Backport mod installed
+        if (ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT)) {
+            register(SimpleStorageBoxUnpacking.INSTANCE, ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK);
+        }
 
-        UnpackingHandler.REGISTRY.register(ModBlocks.BACKPACK.get(), BackpackUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.ANDESITE_BACKPACK.get(), BackpackUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.COPPER_BACKPACK.get(), BackpackUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.BRASS_BACKPACK.get(), BackpackUnpacking.INSTANCE);
-        UnpackingHandler.REGISTRY.register(ModBlocks.HARDENED_BACKPACK.get(), BackpackUnpacking.INSTANCE);
+        // Storage Controller & Interface
+        register(StorageControllerUnpacking.INSTANCE, ModBlocks.STORAGE_CONTROLLER);
+        register(StorageInterfaceUnpacking.INSTANCE, ModBlocks.STORAGE_INTERFACE);
+
+        // Backpacks
+        register(BackpackUnpacking.INSTANCE,
+                ModBlocks.BACKPACK,
+                ModBlocks.ANDESITE_BACKPACK,
+                ModBlocks.COPPER_BACKPACK,
+                ModBlocks.BRASS_BACKPACK,
+                ModBlocks.HARDENED_BACKPACK
+        );
     }
+
+    @SafeVarargs
+    private static void register(UnpackingHandler handler, BlockEntry<? extends Block>... blocks) {
+        for (BlockEntry<? extends Block> block : blocks) {
+            UnpackingHandler.REGISTRY.register(block.get(), handler);
+        }
+    }
+
 }

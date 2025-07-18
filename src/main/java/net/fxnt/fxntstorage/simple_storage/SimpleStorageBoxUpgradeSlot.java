@@ -4,7 +4,6 @@ import net.fxnt.fxntstorage.init.ModItems;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
-import org.jetbrains.annotations.NotNull;
 
 public class SimpleStorageBoxUpgradeSlot extends SlotItemHandler {
 
@@ -13,7 +12,7 @@ public class SimpleStorageBoxUpgradeSlot extends SlotItemHandler {
     }
 
     @Override
-    public boolean mayPlace(@NotNull ItemStack stack) {
+    public boolean mayPlace(ItemStack stack) {
         if (this.hasItem()) return false;
         return stack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get());
     }
@@ -24,7 +23,7 @@ public class SimpleStorageBoxUpgradeSlot extends SlotItemHandler {
     }
 
     @Override
-    public int getMaxStackSize(@NotNull ItemStack stack) {
+    public int getMaxStackSize(ItemStack stack) {
         return 1;
     }
 }

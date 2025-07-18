@@ -1,6 +1,8 @@
 package net.fxnt.fxntstorage.passer;
 
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
+import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
+import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -15,10 +17,19 @@ public class PasserHelper {
 
     @Nullable
     public static IItemHandler getStorage(Level level, BlockPos blockPos, Direction facing, boolean isSourceContainer) {
-        BlockPos containerPos = isSourceContainer ? blockPos.relative(facing.getOpposite()) : blockPos.relative(facing);
+        BlockPos containerPos = isSourceContainer
+                ? blockPos.relative(facing.getOpposite())
+                : blockPos.relative(facing);
+
         BlockEntity blockEntity = level.getBlockEntity(containerPos);
-        if (blockEntity != null && blockEntity.getLevel() != null) {
-            return (blockEntity.getLevel()).getCapability(Capabilities.ItemHandler.BLOCK, blockPos, null, blockEntity, facing);
+        if (blockEntity != null) {
+            if (blockEntity instanceof PackagerBlockEntity pbe) {
+                if (pbe.animationTicks > 0 || pbe.getAvailableItems().isEmpty()) // A little hacky, but it works
+                    return null;
+            }
+            if (blockEntity instanceof PackagePortBlockEntity) return null;
+
+            return level.getCapability(Capabilities.ItemHandler.BLOCK, containerPos, blockEntity.getBlockState(), blockEntity, facing);
         }
         return null;
     }

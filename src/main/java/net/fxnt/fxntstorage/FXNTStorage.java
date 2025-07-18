@@ -44,9 +44,10 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.items.wrapper.InvWrapper;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +63,6 @@ public class FXNTStorage {
             .defaultCreativeTab((ResourceKey<CreativeModeTab>) null);
 
     public static boolean curiosLoaded;
-    public static boolean invSorterLoaded;
 
     public FXNTStorage(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.CLIENT, ConfigManager.ClientConfig.CLIENT_SPEC);
@@ -70,6 +70,9 @@ public class FXNTStorage {
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(FXNTStorage::registerTooltipComponent);
+            if (!ModList.get().isLoaded(ModCompats.CONFIGURED)) {
+                modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+            }
         }
 
         modEventBus.addListener(this::onCommonSetup);
@@ -86,7 +89,6 @@ public class FXNTStorage {
         REGISTRATE.registerEventListeners(modEventBus);
 
         curiosLoaded = ModList.get().isLoaded(ModCompats.CURIOS);
-        invSorterLoaded = ModList.get().isLoaded(ModCompats.INVENTORY_SORTER);
 
         if (curiosLoaded) loadCuriosCompat(modEventBus);
     }
@@ -108,8 +110,8 @@ public class FXNTStorage {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_BOX_ENTITY.get(), (e, d) -> e.getItemHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (e, d) -> e.getItemHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BACKPACK_ENTITY.get(), (e, d) -> e.getItemHandler());
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_CONTROLLER_ENTITY.get(), (e, d) -> new InvWrapper(e));
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_INTERFACE_ENTITY.get(), (e, d) -> new InvWrapper(e));
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_CONTROLLER_ENTITY.get(), (e, d) -> e.getItemHandler());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_INTERFACE_ENTITY.get(), (e, d) -> e.getItemHandler());
         event.registerItem(Capabilities.ItemHandler.ITEM,
                 (itemStack, context) -> new BackpackContainer(itemStack, null).getItemHandler(),
                 ModBlocks.BACKPACK.get(),
@@ -120,7 +122,7 @@ public class FXNTStorage {
         );
     }
 
-    @EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+    @EventBusSubscriber(modid = MOD_ID)
     public static class ModEvents {
         @SubscribeEvent
         public static void register(RegisterEvent event) {
@@ -128,14 +130,14 @@ public class FXNTStorage {
         }
     }
 
-    @EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    @EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)
     public static class ClientModEvents {
 
         @SubscribeEvent
         public static void onConfigReload(final ModConfigEvent.Reloading event) {
             if (Objects.equals(event.getConfig().getModId(), MOD_ID) && event.getConfig().getType().equals(ModConfig.Type.CLIENT)) {
                 if (Minecraft.getInstance().getConnection() != null) {
-                    BackpackNetworkHelper.sendClientSettings();
+                    BackpackNetworkHelper.sendClientSettings(Minecraft.getInstance().player);
                 }
             }
         }
@@ -181,6 +183,7 @@ public class FXNTStorage {
             event.register(KeybindHandler.TOGGLE_BACKPACK_KEY);
             event.register(KeybindHandler.TOGGLE_JETPACK_HOVER_KEY);
             event.register(KeybindHandler.CLEAR_BACKPACK_SHAPE_CACHE);
+            event.register(KeybindHandler.OREMINE_ANY_BLOCK);
         }
 
         @SubscribeEvent

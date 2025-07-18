@@ -63,7 +63,7 @@ public class StorageBoxMountedMenu extends AbstractContainerMenu {
         for (int i = 0; i < this.slotCount; i++) {
             this.addSlot(new Slot(container, index, index * Util.SLOT_SIZE, 0) {
                 @Override
-                public boolean mayPlace(ItemStack stack) {
+                public boolean mayPlace(@NotNull ItemStack stack) {
                     return filterTest(stack);
                 }
 

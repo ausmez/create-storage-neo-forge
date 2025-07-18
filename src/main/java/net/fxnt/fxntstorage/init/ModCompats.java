@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.init;
 
+import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.compat.CarryOnCompat;
 import net.fxnt.fxntstorage.compat.InventorySorterCompat;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -7,10 +8,11 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = FXNTStorage.MOD_ID)
 public class ModCompats {
     public static final String CURIOS = "curios";
     public static final String CARRY_ON = "carryon";
+    public static final String CONFIGURED = "configured";
     public static final String INVENTORY_SORTER = "inventorysorter";
     public static final String VANILLA_BACKPORT = "vanillabackport";
 

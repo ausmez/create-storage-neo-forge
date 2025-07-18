@@ -12,10 +12,11 @@ import net.neoforged.neoforge.items.IItemHandler;
 import static net.fxnt.fxntstorage.passer.PasserBlock.FACING;
 
 public class PasserEntity extends BlockEntity {
-    public int lastTick = 0;
-    public boolean doTick = false;
-    public int updateEveryXTicks = 10;
+    private int lastTick = 0;
+    private boolean doTick = false;
     private Direction facing;
+
+    private static final int UPDATE_EVERY_X_TICKS = 10;
 
     public PasserEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
@@ -26,7 +27,7 @@ public class PasserEntity extends BlockEntity {
         if (!level.isClientSide) {
 
             lastTick++;
-            if (lastTick >= updateEveryXTicks) {
+            if (lastTick >= UPDATE_EVERY_X_TICKS) {
                 lastTick = 0;
                 doTick = true;
             }

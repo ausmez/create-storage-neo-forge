@@ -25,8 +25,8 @@ public class ModPonder {
             helper.registerTag(CREATE_STORAGE)
                     .addToIndex()
                     .item(ModBlocks.SIMPLE_STORAGE_BOX.get(), true, false)
-                    .title("Create Storage")
-                    .description("Items and components related to Create Storage")
+                    .title("Create: Storage")
+                    .description("Items and components related to Create: Storage")
                     .register();
 
             PonderTagRegistrationHelper<RegistryEntry<?, ?>> HELPER = helper.withKeyFunction(RegistryEntry::getId);

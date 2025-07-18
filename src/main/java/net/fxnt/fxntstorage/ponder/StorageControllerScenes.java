@@ -63,7 +63,6 @@ public class StorageControllerScenes {
         scene.world().modifyBlock(util.grid().at(3, 3, 2), (s) -> ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
         scene.idle(60);
 
-        // TODO: flesh this out
         scene.overlay().showText(35).text("Or via automation using funnels, chutes, hoppers or passers").placeNearTarget().pointAt(util.vector().blockSurface(controller, Direction.NORTH));
 
         scene.overlay().showControls(util.vector().blockSurface(controller, Direction.NORTH), Pointing.RIGHT, 25).withItem(diamond);
@@ -121,7 +120,7 @@ public class StorageControllerScenes {
         scene.overlay().showOutline(PonderPalette.GREEN, "trimoutline", util.select().fromTo(4, 1, 2, 0, 1, 2), 45);
         scene.overlay().showOutline(PonderPalette.GREEN, "leftboxoutline", util.select().position(leftBox), 45);
         scene.overlay().showOutline(PonderPalette.GREEN, "rightboxoutline", util.select().position(rightBox), 45);
-        scene.idle(30);
+        scene.idle(45);
 
         scene.markAsFinished();
     }
