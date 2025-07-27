@@ -84,9 +84,8 @@ public class SimpleStorageBox extends BaseEntityBlock {
 
     @Override
     public @NotNull InteractionResult use(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, Player pPlayer, @NotNull InteractionHand pHand, @NotNull BlockHitResult pHit) {
-        if (pPlayer.isSpectator() || pLevel.isClientSide || pHand == InteractionHand.OFF_HAND)
-            return InteractionResult.SUCCESS;
-        if (!hitFront(pState, pHit)) return InteractionResult.PASS;
+        if (pPlayer.isSpectator() || pHand == InteractionHand.OFF_HAND || !hitFront(pState, pHit)) return InteractionResult.PASS;
+        if (pLevel.isClientSide) return InteractionResult.SUCCESS;
 
         BlockEntity entity = pLevel.getBlockEntity(pPos);
         if (entity instanceof SimpleStorageBoxEntity simpleStorageBoxEntity) {
@@ -129,7 +128,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
             simpleStorageBoxEntity.setChanged();
 
         }
-        return InteractionResult.sidedSuccess(pLevel.isClientSide());
+        return InteractionResult.PASS;
     }
 
     @Override

@@ -126,9 +126,9 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (!pLevel.isClientSide()) {
-            if (pHand == InteractionHand.OFF_HAND) return InteractionResult.SUCCESS;
-            if (!hitFront(pState, pHit)) return InteractionResult.PASS;
+        if (pPlayer.isSpectator() || pHand == InteractionHand.OFF_HAND || !hitFront(pState, pHit))
+            return InteractionResult.PASS;
+        if (pLevel.isClientSide) return InteractionResult.SUCCESS;
 
             /*
                 Single-click: insert 1 stack from main hand
@@ -138,42 +138,41 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                 Double-click: insert every item in player inventory matching filter if hand is EMPTY
                 Double-click (sneaking): <nothing>
              */
-            BlockEntity entity = pLevel.getBlockEntity(pPos);
+        BlockEntity entity = pLevel.getBlockEntity(pPos);
 
-            if (entity instanceof StorageBoxEntity) {
-                ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
+        if (entity instanceof StorageBoxEntity) {
+            ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
 
-                final int INTERACTION_COOLDOWN = 10; // measured in ticks
-                if (pLevel.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && pPlayer.getUUID().equals(lastClickUUID)) {
-                    // Double Right-click
-                    if (itemInHand.isEmpty()) {
-                        ((StorageBoxEntity) entity).transferToStorage(pState, pLevel, pPlayer, true);
-                    }
-                } else {
-                    // Single Right-Click
-                    if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
-                        // Right-Click with Create Wrench in hand will toggle void mode
-                        ((StorageBoxEntity) entity).toggleVoidUpgrade();
-                        return InteractionResult.SUCCESS;
-                    }
-
-                    if (pPlayer.isShiftKeyDown()) {
-                        // Single Right-click while sneaking will open container GUI screen
-                        NetworkHooks.openScreen(((ServerPlayer) pPlayer), (MenuProvider) entity, pPos);
-                        return InteractionResult.CONSUME;
-                    }
-
-                    if (!itemInHand.isEmpty()) {
-                        // Current item in player hand will be inserted into container
-                        ((StorageBoxEntity) entity).transferToStorage(pState, pLevel, pPlayer, false);
-                    }
+            final int INTERACTION_COOLDOWN = 10; // measured in ticks
+            if (pLevel.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && pPlayer.getUUID().equals(lastClickUUID)) {
+                // Double Right-click
+                if (itemInHand.isEmpty()) {
+                    ((StorageBoxEntity) entity).transferToStorage(pState, pLevel, pPlayer, true);
+                }
+            } else {
+                // Single Right-Click
+                if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
+                    // Right-Click with Create Wrench in hand will toggle void mode
+                    ((StorageBoxEntity) entity).toggleVoidUpgrade();
+                    return InteractionResult.SUCCESS;
                 }
 
-                lastClickTime = pLevel.getGameTime();
-                lastClickUUID = pPlayer.getUUID();
+                if (pPlayer.isShiftKeyDown()) {
+                    // Single Right-click while sneaking will open container GUI screen
+                    NetworkHooks.openScreen(((ServerPlayer) pPlayer), (MenuProvider) entity, pPos);
+                    return InteractionResult.CONSUME;
+                }
+
+                if (!itemInHand.isEmpty()) {
+                    // Current item in player hand will be inserted into container
+                    ((StorageBoxEntity) entity).transferToStorage(pState, pLevel, pPlayer, false);
+                }
             }
 
+            lastClickTime = pLevel.getGameTime();
+            lastClickUUID = pPlayer.getUUID();
         }
+
         return InteractionResult.sidedSuccess(pLevel.isClientSide());
     }
 

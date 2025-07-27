@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.1.1 - 2025-07-27
+## Bug Fixes
+
+- Fixed issue where the Backpack Flight upgrade would behave erratically after player respawn following a death.
+- Fixed game crash when a packager attempts to unpack items into a disconnected Storage Interface. (#8) - Thanks @mbegenau
+- Fixed issue where Passer blocks were not transferring items into or out of vanilla composters.
+- Fixed issue where quick-moving tools from the first player inventory slot would incorrectly place them into item storage.
+- Resolved missing item tags when quick-moving items into the backpack tool storage. [NeoForge]
+- Fixed right-click behaviour on backpack slots; now moves either half the max stack size or half the slot count, whichever is smaller.
+- Fixed issue where mining a Shulker Box with Ore Mining Upgrade enabled would cause it to lose its contents.
+- Fixed an issue where block placement sounds would not play when placing blocks on any side of Storage Boxes, Simple Storage Boxes, or Storage Controllers.
+- Fixed game crash when using the Backpack Pickblock Upgrade on a Metal Girder Encased Shaft. [NeoForge]
+
+---
+
 ## 1.1.0 - 2025-07-18
 ## New Features
 - **Backpack Upgrades:**

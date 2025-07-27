@@ -38,6 +38,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -377,11 +378,14 @@ public class BackpackOnBackUpgradeHandler {
             BlockState state = level.getBlockState(pos);
             if (level.isEmptyBlock(pos)) continue;
 
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+
             LootParams.Builder lootParams = new LootParams.Builder((ServerLevel) level)
                     .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
                     .withParameter(LootContextParams.TOOL, tool)
                     .withParameter(LootContextParams.BLOCK_STATE, state)
-                    .withOptionalParameter(LootContextParams.THIS_ENTITY, player);
+                    .withOptionalParameter(LootContextParams.THIS_ENTITY, player)
+                    .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity);
 
             List<ItemStack> blockDrops = state.getDrops(lootParams);
             drops.addAll(blockDrops);

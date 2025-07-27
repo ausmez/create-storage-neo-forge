@@ -239,7 +239,67 @@ public class BackpackMenu extends AbstractContainerMenu {
 
         // This variable is a hack to differentiate between automation and player interaction for extractItem/insertItem
         container.setPlayerInteraction(true);
-        super.clicked(pSlotId, pButton, pClickType, player);
+        if (pClickType == ClickType.PICKUP && pButton == 1 || pClickType == ClickType.QUICK_MOVE && pButton == 0) {
+            // Override right-click Pickup and left-click Quick Move behavior to handle large stack sizes
+            ClickAction clickaction = pButton == 0 ? ClickAction.PRIMARY : ClickAction.SECONDARY;
+            if (pSlotId == -999) {
+                if (!getCarried().isEmpty()) {
+                    player.drop(getCarried().split(1), true);
+                }
+            } else if (pClickType == ClickType.QUICK_MOVE) {
+                if (pSlotId < 0) return;
+
+                Slot slot = slots.get(pSlotId);
+                if (!slot.mayPickup(player)) return;
+
+                for (ItemStack stack = quickMoveStack(player, pSlotId); !stack.isEmpty() && ItemStack.isSameItem(slot.getItem(), stack); stack = ItemStack.EMPTY) {
+                }
+            } else {
+                if (pSlotId < 0) return;
+
+                Slot slot = slots.get(pSlotId);
+                ItemStack slotItem = slot.getItem();
+                ItemStack carried = getCarried();
+                player.updateTutorialInventoryAction(carried, slot.getItem(), clickaction);
+
+                if (!super.tryItemClickBehaviourOverride(player, clickaction, slot, slotItem, carried)) {
+                    if (slotItem.isEmpty()) {
+                        if (!carried.isEmpty()) {
+                            setCarried(slot.safeInsert(carried, 1));
+                        }
+                    } else if (slot.mayPickup(player)) {
+                        if (carried.isEmpty()) {
+                            Optional<ItemStack> tryRemove = slot.tryRemove(
+                                    slotItem.getCount() > slotItem.getMaxStackSize()
+                                            ? (slotItem.getMaxStackSize() + 1) / 2
+                                            : (slotItem.getCount() + 1) / 2
+                                    , Integer.MAX_VALUE, player);
+                            tryRemove.ifPresent((stack) -> {
+                                setCarried(stack);
+                                slot.onTake(player, stack);
+                            });
+                        } else if (slot.mayPlace(carried)) {
+                            if (ItemStack.isSameItemSameTags(slotItem, carried)) {
+                                setCarried(slot.safeInsert(carried, 1));
+                            } else if (carried.getCount() <= slot.getMaxStackSize(carried)) {
+                                setCarried(slotItem);
+                                slot.setByPlayer(carried);
+                            }
+                        } else if (ItemStack.isSameItemSameTags(slotItem, carried)) {
+                            Optional<ItemStack> tryRemove = slot.tryRemove(slotItem.getCount(), carried.getMaxStackSize() - carried.getCount(), player);
+                            tryRemove.ifPresent((stack) -> {
+                                carried.grow(stack.getCount());
+                                slot.onTake(player, stack);
+                            });
+                        }
+                    }
+                }
+
+                slot.setChanged();
+            }
+        } else {
+            super.clicked(pSlotId, pButton, pClickType, player);
+        }
         container.setPlayerInteraction(false);
     }
 
@@ -249,9 +309,7 @@ public class BackpackMenu extends AbstractContainerMenu {
 
     private boolean isToolItem(@NotNull ItemStack itemStack) {
         // Items that, when shift-clicked, get transferred into tool storage area
-        return itemStack.is(ItemTags.TOOLS)
-                || itemStack.is(Tags.Items.TOOLS)
-                || itemStack.canPerformAction(ToolActions.SWORD_SWEEP)
+        return itemStack.is(Tags.Items.TOOLS)
                 || itemStack.canPerformAction(ToolActions.SHEARS_HARVEST)
                 || itemStack.is(Items.BRUSH)
                 || itemStack.is(Items.WARPED_FUNGUS_ON_A_STICK)
@@ -290,7 +348,7 @@ public class BackpackMenu extends AbstractContainerMenu {
 
         // If item is a tool item, put it into a tool slot (Only from player inventory)
         // WRENCH / SHEARS / BOWS / FISHING RODS / SHIELDS / BRUSH / * ON A STICK
-        if (isToolItem(slotItem) && index > Util.UPGRADE_SLOT_END_RANGE) {
+        if (isToolItem(slotItem) && index >= Util.UPGRADE_SLOT_END_RANGE) {
             // Create a mapping between tool tags and the corresponding tool slot index offset
             Map<TagKey<Item>, Integer> toolSlotMap = Map.of(
                     ItemTags.SWORDS, 0,
