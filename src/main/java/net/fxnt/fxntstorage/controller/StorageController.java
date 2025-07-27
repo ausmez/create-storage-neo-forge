@@ -59,18 +59,17 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
 
     @Override
     protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (player.isSpectator() || level.isClientSide) return InteractionResult.SUCCESS;
-        if (!hitFront(state, hitResult)) return InteractionResult.PASS;
+        if (player.isSpectator() || level.isClientSide || !hitFront(state, hitResult)) return InteractionResult.PASS;
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof StorageControllerEntity storageControllerEntity) {
             // Transfer items from player to controller
             storageControllerEntity.transferItemsFromPlayer(player);
         }
-        return InteractionResult.SUCCESS;
+        return InteractionResult.PASS;
     }
 
-    private boolean hitFront(BlockState blockState, BlockHitResult hit) {
+    public boolean hitFront(BlockState blockState, BlockHitResult hit) {
         Direction side = hit.getDirection();
         return blockState.getValue(FACING) == side;
     }

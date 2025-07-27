@@ -81,7 +81,11 @@ public class ClientEventHandler {
             BlockState state = player.level().getBlockState(blockPos);
             ItemStack stack = state.getCloneItemStack(hitResult, player.level(), blockPos, player);
 
-            BackpackNetworkHelper.doPickBlock(stack);
+            if (!stack.isEmpty()) {
+                BackpackNetworkHelper.doPickBlock(stack);
+            } else {
+                FXNTStorage.LOGGER.debug("No valid clone item for block: {}", state.getBlock());
+            }
         }
 
     }

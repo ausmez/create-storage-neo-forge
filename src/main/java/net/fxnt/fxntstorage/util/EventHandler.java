@@ -7,17 +7,23 @@ import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.backpack.upgrade.TorchDeployerManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.controller.StorageController;
+import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.Tags;
@@ -38,6 +44,31 @@ public class EventHandler {
     private static int mediumTick = 0;
     private static final int slowTicks = 30;
     private static final int mediumTicks = 15;
+
+    @SubscribeEvent
+    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        Player player = event.getEntity();
+        Level level = event.getLevel();
+        BlockPos pos = event.getPos();
+        BlockState state = level.getBlockState(pos);
+        Block block = state.getBlock();
+
+        // Storage Controller
+        if (block instanceof StorageController controller) {
+            if (!controller.hitFront(state, event.getHitVec())) return;
+
+            BlockEntity be = level.getBlockEntity(pos);
+            if (!(be instanceof StorageControllerEntity controllerEntity)) return;
+
+            if (state.getValue(StorageController.CONNECTED)) {
+                if (!level.isClientSide) {
+                    controllerEntity.transferItemsFromPlayer(player);
+                }
+                event.setCanceled(true);
+                event.setCancellationResult(InteractionResult.SUCCESS);
+            }
+        }
+    }
 
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
@@ -113,6 +144,9 @@ public class EventHandler {
         if (oldData.contains(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)) {
             newData.put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, Objects.requireNonNull(oldData.get(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)));
         }
+
+        JetpackManager.onPlayerLeave(event.getEntity());
+        JetpackManager.onPlayerJoin(event.getEntity());
     }
 
     @SubscribeEvent

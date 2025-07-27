@@ -18,7 +18,7 @@ public class JetpackManager {
     }
 
     // Called when a player joins the server
-    public static void onPlayerJoin(Player player) {
+    public static void onPlayerJoin(@NotNull Player player) {
         getJetpackHandler(player);
     }
 

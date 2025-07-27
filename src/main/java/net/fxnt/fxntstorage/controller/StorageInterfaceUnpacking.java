@@ -33,9 +33,13 @@ public enum StorageInterfaceUnpacking implements UnpackingHandler {
         } else {
             StorageInterfaceEntity storageInterfaceEntity = ((StorageInterfaceEntity) targetBE);
 
+            if (storageInterfaceEntity.controller == null || storageInterfaceEntity.controller.storageNetwork == null)
+                return false;
+            final StorageNetwork storageNetwork = storageInterfaceEntity.controller.storageNetwork;
+
             if (!simulate) {
                 for (ItemStack itemStack : items) {
-                    storageInterfaceEntity.controller.storageNetwork.insertItems(itemStack);
+                    storageNetwork.insertItems(itemStack);
                 }
 
                 return true;
@@ -43,7 +47,7 @@ public enum StorageInterfaceUnpacking implements UnpackingHandler {
                 List<ItemStorage> emptyBoxes = new ArrayList<>();
                 Map<Item, List<ItemStorage>> storageBoxes = new HashMap<>();
 
-                for (StorageNetwork.StorageNetworkItem item : storageInterfaceEntity.controller.storageNetwork.boxes) {
+                for (StorageNetwork.StorageNetworkItem item : storageNetwork.boxes) {
                     Item filterItem = item.simpleStorageBoxEntity.filterItem.getItem();
                     ItemStorage storage = new ItemStorage(
                             item.simpleStorageBoxEntity.getMaxItemCapacity(),
@@ -114,6 +118,7 @@ public enum StorageInterfaceUnpacking implements UnpackingHandler {
         }
     }
 
-    private record ItemStorage(int maxCapacity, int storedAmount, boolean voidUpgrade) {}
+    private record ItemStorage(int maxCapacity, int storedAmount, boolean voidUpgrade) {
+    }
 
 }

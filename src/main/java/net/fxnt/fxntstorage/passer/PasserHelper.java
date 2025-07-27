@@ -7,10 +7,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.Nullable;
 
 public class PasserHelper {
@@ -22,6 +23,8 @@ public class PasserHelper {
                 : blockPos.relative(facing);
 
         BlockEntity blockEntity = level.getBlockEntity(containerPos);
+        BlockState blockState = level.getBlockState(containerPos);
+
         if (blockEntity != null) {
             if (blockEntity instanceof PackagerBlockEntity pbe) {
                 if (pbe.animationTicks > 0 || pbe.getAvailableItems().isEmpty()) // A little hacky, but it works
@@ -29,17 +32,16 @@ public class PasserHelper {
             }
             if (blockEntity instanceof PackagePortBlockEntity) return null;
 
-            return level.getCapability(Capabilities.ItemHandler.BLOCK, containerPos, blockEntity.getBlockState(), blockEntity, facing);
+            return level.getCapability(Capabilities.ItemHandler.BLOCK, containerPos, blockState, blockEntity, facing);
+        } else if (blockState.is(Blocks.COMPOSTER)) { // Not a BE
+            return level.getCapability(Capabilities.ItemHandler.BLOCK, containerPos, blockState, null, isSourceContainer ? facing : facing.getOpposite());
         }
         return null;
     }
 
     public static void passItems(Level level, IItemHandler srcHandler, IItemHandler dstHandler, long amount, boolean fixedAmount, ItemStack filterItem) {
-        if (!(srcHandler instanceof IItemHandlerModifiable srcModifiable) || !(dstHandler instanceof IItemHandlerModifiable dstModifiable))
-            return;
-
-        for (int srcSlot = 0; srcSlot < srcModifiable.getSlots(); srcSlot++) {
-            ItemStack srcStack = srcModifiable.getStackInSlot(srcSlot);
+        for (int srcSlot = 0; srcSlot < srcHandler.getSlots(); srcSlot++) {
+            ItemStack srcStack = srcHandler.getStackInSlot(srcSlot);
 
             if (srcStack.isEmpty()) continue;
 
@@ -59,13 +61,13 @@ public class PasserHelper {
             ItemStack remaining;
             boolean doExtract = false;
 
-            for (dstSlot = 0; dstSlot < dstModifiable.getSlots(); dstSlot++) {
-                ItemStack dstStack = dstModifiable.getStackInSlot(dstSlot);
+            for (dstSlot = 0; dstSlot < dstHandler.getSlots(); dstSlot++) {
+                ItemStack dstStack = dstHandler.getStackInSlot(dstSlot);
 
                 // Check if the destination slot is compatible
                 if (dstStack.isEmpty() || ItemStack.isSameItemSameComponents(dstStack, stackToMove)) {
 
-                    remaining = dstModifiable.insertItem(dstSlot, stackToMove, true);
+                    remaining = dstHandler.insertItem(dstSlot, stackToMove, true);
 
                     // Calculate the actual inserted amount
                     int actualInsertAmount = stackToMove.getCount() - remaining.getCount();
@@ -82,14 +84,14 @@ public class PasserHelper {
                             ItemStack toMove = stackToMove.copy();
                             toMove.setCount(actualInsertAmount);
 
-                            remaining = dstModifiable.insertItem(dstSlot, toMove, false);
-                            ItemStack extracted = srcModifiable.extractItem(srcSlot, actualInsertAmount, false);
+                            remaining = dstHandler.insertItem(dstSlot, toMove, false);
+                            ItemStack extracted = srcHandler.extractItem(srcSlot, actualInsertAmount, false);
 
                             // Check if we actually extracted the items
                             if (extracted.getCount() != actualInsertAmount) {
                                 // Rollback the insertion if extraction was unsuccessful
-                                dstModifiable.insertItem(dstSlot, remaining, false); // Rollback insertion
-                                srcModifiable.insertItem(srcSlot, extracted, false); // Rollback extraction
+                                dstHandler.insertItem(dstSlot, remaining, false); // Rollback insertion
+                                srcHandler.insertItem(srcSlot, extracted, false); // Rollback extraction
                             }
                             return; // Success
                         }

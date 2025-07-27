@@ -151,8 +151,9 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (!level.isClientSide()) {
-            if (!hitFront(state, hitResult)) return InteractionResult.PASS;
+        if (player.isSpectator() || !hitFront(state, hitResult))
+            return InteractionResult.PASS;
+        if (level.isClientSide) return InteractionResult.SUCCESS;
 
             /*
                 Single-click: insert 1 stack from main hand
@@ -162,42 +163,41 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                 Double-click: insert every item in player inventory matching filter if hand is EMPTY
                 Double-click (sneaking): <nothing>
              */
-            BlockEntity entity = level.getBlockEntity(pos);
+        BlockEntity entity = level.getBlockEntity(pos);
 
-            if (entity instanceof StorageBoxEntity storageBoxEntity) {
-                ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (entity instanceof StorageBoxEntity storageBoxEntity) {
+            ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
 
-                final int INTERACTION_COOLDOWN = 10; // measured in ticks
-                if (level.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && player.getUUID().equals(lastClickUUID)) {
-                    // Double Right-click
-                    if (itemInHand.isEmpty()) {
-                        storageBoxEntity.transferToStorage(state, level, player, true);
-                    }
-                } else {
-                    // Single Right-Click
-                    if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
-                        // Right-Click with Create Wrench in hand will toggle void mode
-                        storageBoxEntity.toggleVoidUpgrade();
-                        return InteractionResult.SUCCESS;
-                    }
-
-                    if (player.isShiftKeyDown()) {
-                        // Single Right-click while sneaking will open container GUI screen
-                        player.openMenu(storageBoxEntity, pos);
-                        return InteractionResult.CONSUME;
-                    }
-
-                    if (!itemInHand.isEmpty()) {
-                        // Current item in player hand will be inserted into container
-                        storageBoxEntity.transferToStorage(state, level, player, false);
-                    }
+            final int INTERACTION_COOLDOWN = 10; // measured in ticks
+            if (level.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && player.getUUID().equals(lastClickUUID)) {
+                // Double Right-click
+                if (itemInHand.isEmpty()) {
+                    storageBoxEntity.transferToStorage(state, level, player, true);
+                }
+            } else {
+                // Single Right-Click
+                if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
+                    // Right-Click with Create Wrench in hand will toggle void mode
+                    storageBoxEntity.toggleVoidUpgrade();
+                    return InteractionResult.SUCCESS;
                 }
 
-                lastClickTime = level.getGameTime();
-                lastClickUUID = player.getUUID();
+                if (player.isShiftKeyDown()) {
+                    // Single Right-click while sneaking will open container GUI screen
+                    player.openMenu(storageBoxEntity, pos);
+                    return InteractionResult.CONSUME;
+                }
+
+                if (!itemInHand.isEmpty()) {
+                    // Current item in player hand will be inserted into container
+                    storageBoxEntity.transferToStorage(state, level, player, false);
+                }
             }
 
+            lastClickTime = level.getGameTime();
+            lastClickUUID = player.getUUID();
         }
+
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
