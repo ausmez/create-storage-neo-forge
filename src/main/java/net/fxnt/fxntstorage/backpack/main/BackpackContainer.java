@@ -28,6 +28,9 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BackpackContainer implements IBackpackContainer, ICapabilityProvider, IItemHandlerModifiable {
     private final int CONTAINER_SIZE = BackpackBlock.getSlotCount();
     private final Player player;
@@ -126,6 +129,14 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
         return tag;
     }
 
+    public List<ItemStack> getItems() {
+        List<ItemStack> itemList = new ArrayList<>();
+        for (int i = 0; i < itemHandler.getSlots(); ++i) {
+            itemList.add(itemHandler.getStackInSlot(i));
+        }
+        return itemList;
+    }
+
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction direction) {
         return ForgeCapabilities.ITEM_HANDLER.orEmpty(capability, lazyItemHandler);
@@ -221,7 +232,7 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
     }
 
     public void setChanged() {
-        if (player.level().isClientSide()) return;
+        if (player.level().isClientSide) return;
 
         NonNullList<ItemStack> oldItemStacks = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
         NonNullList<ItemStack> newItemStacks = NonNullList.withSize(CONTAINER_SIZE, ItemStack.EMPTY);
@@ -257,7 +268,7 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
             newItemStacks.set(i, itemHandler.getStackInSlot(i));
         }
 
-        SortOrder oldSort = (blockEntityTag.contains("SortOrder")) ? SortOrder.valueOf(blockEntityTag.getString("SortOrder")) : SortOrder.COUNT;
+        SortOrder oldSort = (blockEntityTag != null && blockEntityTag.contains("SortOrder")) ? SortOrder.valueOf(blockEntityTag.getString("SortOrder")) : SortOrder.COUNT;
         SortOrder newSort = (sortOrder != null) ? sortOrder : SortOrder.COUNT;
         sortOrder = newSort;
 

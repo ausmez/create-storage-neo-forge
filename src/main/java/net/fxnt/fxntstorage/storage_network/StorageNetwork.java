@@ -5,6 +5,7 @@ import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -15,22 +16,24 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
 public class StorageNetwork {
-    public final StorageControllerEntity controller;
+    private final StorageControllerEntity controller;
     @Nullable
-    public Level level;
-    public BlockPos controllerPos;
+    private Level level;
+    private BlockPos controllerPos;
     private final int searchRange = ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_RANGE.get();
-    public int blankSlot = -1;
-    public Set<BlockPos> components = new HashSet<>();
+    private Set<BlockPos> components = new HashSet<>();
     public NonNullList<StorageNetworkItem> boxes = NonNullList.create();
-    public int networkVersion = 0;
-    private int tick = 0;
+    private int networkVersion = 0;
+    private int tickCount = 0;
 
     private final IItemHandlerModifiable itemHandler = new NetworkItemHandler();
 
@@ -44,20 +47,11 @@ public class StorageNetwork {
 
     public void tick() {
         checkBoxes(); // Check if boxes removed every tick
-        moveNewItems(); // Move items from blank stack into a matching / empty box
-        if (tick >= ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) {
-            refreshStorageNetwork();
-            tick = 0;
-        }
-        tick++;
-    }
 
-    private void moveNewItems() {
-        ItemStack blankStack = itemHandler.getStackInSlot(blankSlot);
-        if (!blankStack.isEmpty()) {
-            this.insertItems(blankStack);
-            blankStack.setCount(0);
-        }
+        if (tickCount++ < ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) return;
+        tickCount = 0;
+
+        refreshStorageNetwork();
     }
 
     private void refreshStorageNetwork() {
@@ -152,9 +146,6 @@ public class StorageNetwork {
                 interfaceEntity.setController(this.controller);
             }
         }
-
-        // Add Blank Slot to void items
-        this.blankSlot = boxes.size() * 2;
     }
 
     public void insertItems(ItemStack itemStack) {
@@ -187,19 +178,13 @@ public class StorageNetwork {
     }
 
     public boolean canPlaceItem(int slot, ItemStack itemStack) {
-        if (slot == blankSlot) return boxes.stream().anyMatch(box -> box.simpleStorageBoxEntity.hasVoidUpgrade());
-        int boxIndex = slot / 2;
-        int boxSlot = slot % 2;
-        if (boxIndex >= boxes.size()) return false;
-        return boxes.get(boxIndex).simpleStorageBoxEntity.canPlaceItem(boxSlot, itemStack);
+        if (slot >= boxes.size()) return false;
+        return boxes.get(slot).simpleStorageBoxEntity.canPlaceItem(0, itemStack);
     }
 
     public boolean canTakeItem(int slot, ItemStack itemStack) {
-        if (slot == blankSlot) return false;
-        int boxIndex = slot / 2;
-        int boxSlot = slot % 2;
-        if (boxIndex >= boxes.size()) return false;
-        return boxes.get(boxIndex).simpleStorageBoxEntity.canTakeItem(boxes.get(boxIndex).simpleStorageBoxEntity, boxSlot, itemStack);
+        if (slot >= boxes.size()) return false;
+        return boxes.get(slot).simpleStorageBoxEntity.canTakeItem(boxes.get(slot).simpleStorageBoxEntity, 0, itemStack);
     }
 
     public static class StorageNetworkItem {
@@ -215,18 +200,13 @@ public class StorageNetwork {
     private class NetworkItemHandler implements IItemHandlerModifiable {
         @Override
         public int getSlots() {
-            return boxes.size() * 2 + 1; // 2 slots per box + 1 blank
+            return boxes.size();
         }
 
         @Override
         public ItemStack getStackInSlot(int slot) {
-            if (slot == blankSlot) return ItemStack.EMPTY;
-
-            int boxIndex = slot / 2;
-            int boxSlot = slot % 2;
-            if (boxIndex >= boxes.size()) return ItemStack.EMPTY;
-
-            return boxes.get(boxIndex).simpleStorageBoxEntity.getItem(boxSlot);
+            if (slot > boxes.size()) return ItemStack.EMPTY;
+            return boxes.get(slot).simpleStorageBoxEntity.getItem(0);
         }
 
         @Override
@@ -236,11 +216,10 @@ public class StorageNetwork {
 
             ItemStack remaining = itemStack.copy();
 
-            int boxIndex = slot / 2;
-            int boxSlot = slot % 2;
-            if (boxIndex >= boxes.size()) return itemStack;
+            int boxSlot = 0;
+            if (slot >= boxes.size()) return itemStack;
 
-            SimpleStorageBoxEntity targetBox = boxes.get(boxIndex).simpleStorageBoxEntity;
+            SimpleStorageBoxEntity targetBox = boxes.get(slot).simpleStorageBoxEntity;
             ItemStack current = targetBox.getItem(boxSlot);
 
             if (!ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_FILL_EMPTY.get()) {
@@ -275,7 +254,7 @@ public class StorageNetwork {
 
                 remaining.shrink(toInsert);
             } else if (ItemStack.isSameItemSameTags(current, remaining)) {
-                int space = Math.min(available, targetBox.getMaxStackSize() - current.getCount());
+                int space = Math.min(available, targetBox.maxItemCapacity - current.getCount());
                 int toInsert = Math.min(space, remaining.getCount());
 
                 if (toInsert > 0) {
@@ -292,13 +271,10 @@ public class StorageNetwork {
 
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            if (slot == blankSlot) return ItemStack.EMPTY;
+            int boxSlot = 0;
+            if (slot >= boxes.size()) return ItemStack.EMPTY;
 
-            int boxIndex = slot / 2;
-            int boxSlot = slot % 2;
-            if (boxIndex >= boxes.size()) return ItemStack.EMPTY;
-
-            SimpleStorageBoxEntity box = boxes.get(boxIndex).simpleStorageBoxEntity;
+            SimpleStorageBoxEntity box = boxes.get(slot).simpleStorageBoxEntity;
             ItemStack current = box.getItem(boxSlot);
             if (current.isEmpty()) return ItemStack.EMPTY;
             if (!canTakeItem(slot, current)) return ItemStack.EMPTY;
@@ -319,8 +295,9 @@ public class StorageNetwork {
 
         @Override
         public int getSlotLimit(int slot) {
-            if (slot == 0) return boxes.get(0).simpleStorageBoxEntity.maxItemCapacity;
-            return Math.min(64, getStackInSlot(slot).getMaxStackSize());
+            if (slot <= boxes.size())
+                return boxes.get(slot).simpleStorageBoxEntity.maxItemCapacity;
+            return 0;
         }
 
         @Override
@@ -330,13 +307,8 @@ public class StorageNetwork {
 
         @Override
         public void setStackInSlot(int slot, ItemStack stack) {
-            if (slot == blankSlot) return;
-
-            int boxIndex = slot / 2;
-            int boxSlot = slot % 2;
-            if (boxIndex >= boxes.size()) return;
-
-            boxes.get(boxIndex).simpleStorageBoxEntity.setItem(boxSlot, stack);
+            if (slot >= boxes.size()) return;
+            boxes.get(slot).simpleStorageBoxEntity.setItem(0, stack);
         }
     }
 

@@ -17,8 +17,7 @@ upgradable backpacks.
 
 ### Description
 
-**Storage Boxes** and **Simple Storage Boxes** are containers designed for compact, filterable item storage. Each *
-*Storage Box** variant offers different storage capacities and visual styles, whereas the **Simple Storage Boxes** offer
+**Storage Boxes** and **Simple Storage Boxes** are containers designed for compact, filterable item storage. Each **Storage Box** variant offers different storage capacities and visual styles, whereas the **Simple Storage Boxes** offer
 large single item storage with high capacity upgrades available.
 Designed to integrate seamlessly into mechanical and logistical systems within the Create Mod, they provide a clean and
 functional way to manage large amounts of items.

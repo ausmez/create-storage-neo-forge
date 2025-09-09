@@ -99,11 +99,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                     if (!blockEntity.filterItem.isEmpty()) {
                         stackSize = blockEntity.filterItem.getMaxStackSize();
                     }
-                    int capacityCheck = BASE_CAPACITY;
-                    for (int i = 0; i < upgrades - 1; i++) {
-                        capacityCheck *= 2;
-                    }
-                    capacityCheck = capacityCheck * stackSize;
+                    int capacityCheck = (BASE_CAPACITY << upgrades - 1) * stackSize;
                     if (capacityCheck < storedAmount) {
                         return;
                     }
@@ -119,8 +115,8 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
 
         ItemStack slotStack = slots.get(index).getItem();
 
-        // As not adding container slots, void upgrade (container slot 3) is actually index 0 as it's the first added
-        // So upgrade slot 1 (container slot 4) is index 1;
+        // As not adding container slots, void upgrade (container slot 1) is actually index 0 as it's the first added
+        // So upgrade slot 1 (container slot 2) is index 1;
         // First player slot is maxUpgradeSlots (9) + voidSlot = 10
         int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
 
@@ -179,4 +175,5 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
         }
         return super.canTakeItemForPickAll(stack, slot);
     }
+
 }

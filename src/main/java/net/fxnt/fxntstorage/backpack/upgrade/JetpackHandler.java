@@ -9,28 +9,32 @@ import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.init.ModNetwork;
+import net.fxnt.fxntstorage.network.packet.JetpackFuelSyncPacket;
 import net.fxnt.fxntstorage.network.packet.VisualJetpackAirPacket;
 import net.fxnt.fxntstorage.util.ParticleHelper;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
@@ -40,139 +44,242 @@ import java.util.List;
 import java.util.Objects;
 
 public class JetpackHandler {
+    private static final int MAX_ALLOWED_HEIGHT = 32;
+    private static final double GRAVITY = -0.44;
+    private static final long FUEL_SYNC_INTERVAL = 1000; // 1 sec
+    private static final long MAX_INTERPOLATION_TIME = 200; // 200ms
+    private static final int MAX_MISSED_PACKETS = 5;
+
     private final Player player;
-    public boolean isHovering = false;
-    public double hoverHeight = 0;
+    private double hoverHeight = 0;
     private float jetPackFuelRemaining;
     private long lastRuntime = 0;
-
-    private static final int maxAllowedHeight = 28;
-    private static final double gravity = -0.44; //-1.7;
-
     private long airGaugeLastCleared = 0;
     private boolean airGaugeCleared = false;
-
-    private boolean hasJumpedFromGround = false;
     private boolean isJumping = false;
+    private boolean isHovering = false;
+    private float forward = 0f;
+    private float left = 0f;
+    private boolean playedSoundThisJump = false;
 
+    private float predictedFuelRemaining;
+    private long lastFuelSync = 0;
+    private Vec3 lastValidVelocity = Vec3.ZERO;
+    private long lastServerUpdate = 0;
+
+    private long lastPacketTime = 0;
+    private int missedPackets = 0;
 
     public JetpackHandler(Player player) {
         this.player = player;
     }
 
     public void execute() {
-        if (player != null) {
-            boolean isClientSide = player.level().isClientSide();
+        if (player == null) return;
 
-            jetPackFuelRemaining = (float) calculateJetPackFuel(player);
+        if (player.level().isClientSide) {
+            executeClient();
+        } else {
+            executeServer();
+        }
+    }
 
-            if (player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getBoolean("JetpackFlying")) { // Space bar has been pressed
-                isJumping = true;
+    private void executeClient() {
+        updatePredictedFuel();
 
-                // If we are here, the player IS JUMPING!
-                if (jetPackFuelRemaining <= 0) {
+        if (isJumping) {
+            if (predictedFuelRemaining <= 0) {
+                endHovering(false);
+                return;
+            }
+
+            player.setNoGravity(true);
+            player.resetFallDistance();
+
+            if (player.isShiftKeyDown()) {
+                startHovering(true);
+            } else if (isHovering) {
+                endHovering(true);
+            }
+
+            updateClientMovementWithInterpolation();
+
+            if (player.onGround() && isHovering) {
+                endHovering(true);
+            }
+
+            if (!player.isInWater() && !player.isInLava()) {
+                handleThrustSound();
+            }
+
+        } else {
+            playedSoundThisJump = !player.onGround();
+
+            if (isHovering) {
+                if (player.onGround()) {
+                    endHovering(true);
+                }
+
+                if (predictedFuelRemaining <= 0) {
                     endHovering(false);
                     return;
                 }
 
-                player.setNoGravity(true);
-                player.resetFallDistance();
-
-                if (player.isShiftKeyDown()) {
-                    startHovering(true);
-                } else if (isHovering) {
-                    endHovering(true);
-                }
-
-                updateJetpackMovement();
-                if (!isClientSide) {
-                    depleteJetPackFuel();
-                    if (BackpackHelper.isWearingBackpack(player, true)) {
-                        ParticleHelper.jetPackParticles(player);
-                    }
-                }
-
-                if (player.onGround() && isHovering) {
-                    deactivateHovering();
-                }
-
-                if (player.onGround() && !hasJumpedFromGround) {
-                    if (!isClientSide) {
-                        player.playNotifySound(AllSoundEvents.STEAM.getMainEvent(), SoundSource.PLAYERS, 0.1f, 1.0f);
-                    }
-                    hasJumpedFromGround = true;
-                }
-
-                if (!player.onGround()) {
-                    hasJumpedFromGround = false;
-                }
-
-            } else { // Space bar has been released
-                isJumping = false;
-
-                if (isHovering) {
-
-                    if (player.onGround()) endHovering(true);
-
-                    if (jetPackFuelRemaining <= 0) {
-                        endHovering(false);
-                        return;
-                    }
-
-                    updateJetpackMovement();
-                    if (!isClientSide) {
-                        depleteJetPackFuel();
-                        if (BackpackHelper.isWearingBackpack(player, true)) {
-                            ParticleHelper.jetPackParticles(player);
-                        }
-                    }
-
-                } else {
-                    player.setNoGravity(false);
-
-                    // If player is on the ground and air gauge hasn't been cleared, start a timer
-                    fadeOutVisualAirOverlay();
-                }
+                updateClientMovementWithInterpolation();
+            } else {
+                player.setNoGravity(false);
+                fadeOutVisualAirOverlay();
             }
+        }
+    }
+
+    private void executeServer() {
+        jetPackFuelRemaining = (float) calculateJetPackFuel(player);
+
+        if (isJumping || isHovering && jetPackFuelRemaining > 0) {
+            depleteJetPackFuel(player);
+            validatePlayerMovement();
+
+            if (player.tickCount % 5 == 0) {
+                validateAndCorrectPosition();
+            }
+
+            if (BackpackHelper.isWearingBackpack(player, true)) {
+                ParticleHelper.jetPackParticles(player);
+            }
+        } else {
+            if (isHovering && jetPackFuelRemaining <= 0) {
+                endHovering(false);
+            }
+        }
+
+        syncFuelToClient();
+    }
+
+    private void updatePredictedFuel() {
+        long currentTime = player.level().getGameTime();
+
+        if (lastFuelSync == 0 || currentTime - lastFuelSync > FUEL_SYNC_INTERVAL * 2) {
+            // Haven't received fuel update in a while, use last known value
+            predictedFuelRemaining = jetPackFuelRemaining;
+        } else if (isJumping) {
+            // Predict fuel consumption based on time since last sync
+            long timeSinceSync = currentTime - lastFuelSync;
+            float estimatedConsumption = (float) (timeSinceSync / 1000.0); // 1 sec
+            predictedFuelRemaining = Math.max(jetPackFuelRemaining - estimatedConsumption, 0);
+        }
+    }
+
+    public void onFuelSync(float serverFuel, long serverTime) {
+        this.jetPackFuelRemaining = serverFuel;
+        this.predictedFuelRemaining = serverFuel;
+        this.lastFuelSync = player.level().getGameTime();
+
+        // Calculate latency
+        long clientTime = player.level().getGameTime();
+        long estimatedLatency = Math.max(0, clientTime - serverTime);
+
+        // Adjust prediction based on latency
+        if (isJumping && estimatedLatency > 0) {
+            float latencyConsumption = estimatedLatency / 1000.0f;
+            this.predictedFuelRemaining = Math.max(serverFuel - latencyConsumption, 0);
+        }
+
+        // Reset packet loss counter
+        missedPackets = 0;
+        lastPacketTime = clientTime;
+    }
+
+    private void validatePlayerMovement() {
+        Vec3 velocity = player.getDeltaMovement();
+
+        double maxHorizontalSpeed = 2.0;
+        double maxVerticalSpeed = 1.0;
+
+        boolean needsCorrection = false;
+        double newX = velocity.x;
+        double newY = velocity.y;
+        double newZ = velocity.z;
+
+        // Check horizontal speed
+        double horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        if (horizontalSpeed > maxHorizontalSpeed) {
+            double scale = maxHorizontalSpeed / horizontalSpeed;
+            newX *= scale;
+            newZ *= scale;
+            needsCorrection = true;
+        }
+
+        // Check vertical speed
+        if (Math.abs(velocity.y) > maxVerticalSpeed) {
+            newY = Math.copySign(maxVerticalSpeed, velocity.y);
+            needsCorrection = true;
+        }
+
+        if (needsCorrection) {
+            player.setDeltaMovement(newX, newY, newZ);
+        }
+    }
+
+    private void validateAndCorrectPosition() {
+        double distanceToGround = getDistanceToGround(player);
+        if (distanceToGround > MAX_ALLOWED_HEIGHT + 5) { // 5 block buffer
+            Vec3 velocity = player.getDeltaMovement();
+            player.setDeltaMovement(velocity.x, Math.min(velocity.y, -0.1), velocity.z); // Gradually pull player down
+        }
+    }
+
+    private void handleThrustSound() {
+        if (player.onGround()) {
+            playedSoundThisJump = false;
+        } else if (!playedSoundThisJump) {
+            if (player.level().isClientSide) {
+                player.level().playLocalSound(player.getX(), player.getY(), player.getZ(),
+                        AllSoundEvents.STEAM.getMainEvent(), SoundSource.PLAYERS, 0.1f, 1.0f, false);
+            }
+            playedSoundThisJump = true;
         }
     }
 
     public void fadeOutVisualAirOverlay() {
-        if (player.level().isClientSide()) return;
-
         if (player.onGround() && !airGaugeCleared) {
-            if (airGaugeLastCleared == 0) airGaugeLastCleared = System.currentTimeMillis();
-
-            long currentTime = System.currentTimeMillis();
+            if (airGaugeLastCleared == 0) {
+                airGaugeLastCleared = player.level().getGameTime();
+            }
+            long currentTime = player.level().getGameTime();
             if (currentTime - airGaugeLastCleared >= 1250) {
-                // Send network packet to clear the air gauge, after ~1.25 secs
-                ModNetwork.sendToPlayer((ServerPlayer) player, new VisualJetpackAirPacket(-1));
+                if (!player.level().isClientSide) {
+                    // Send network packet to clear the air gauge, after ~1.25 secs
+                    ModNetwork.sendToPlayer((ServerPlayer) player, new VisualJetpackAirPacket(-1));
+                }
                 airGaugeCleared = true;
             }
-        } else {
+        } else if (!player.onGround() || !isJumping && !isHovering) {
             airGaugeLastCleared = 0;
         }
     }
 
-    private static int getDistanceToGround(@NotNull Player player) {
-        BlockPos blockPos = player.blockPosition();
-        int y = player.getBlockY();
-        int distance = 0;
+    private static double getDistanceToGround(@NotNull Player player) {
+        Vec3 start = player.position();
+        Vec3 end = start.add(0, -player.getBlockY() - 256, 0);
 
-        for (int i = y; i >= -64; i--) {
-            BlockPos pos = blockPos.atY(i);
-            if (!player.level().getBlockState(pos).isAir()) {
-                break; // Stop when a non-air block is encountered
-            }
-            distance++;
+        BlockHitResult hitResult = player.level().clip(new ClipContext(
+                start,
+                end,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.ANY,
+                player
+        ));
+
+        if (hitResult.getType() == HitResult.Type.BLOCK) {
+            return start.y - hitResult.getLocation().y;
         }
-        return distance;
+        return (ConfigManager.CommonConfig.JETPACK_ALLOW_VOID_FLIGHT.get()) ? -1 : Double.MAX_VALUE;
     }
 
     public void toggleHover() {
         if (player.onGround()) {
             endHovering(false);
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackHover", false);
             return;
         }
         if (!isHovering) {
@@ -181,11 +288,6 @@ public class JetpackHandler {
             player.setNoGravity(false);
             endHovering(true);
         }
-        player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackHover", isHovering);
-    }
-
-    public void deactivateHovering() {
-        endHovering(true);
     }
 
     public void startHovering(boolean announce) {
@@ -210,70 +312,135 @@ public class JetpackHandler {
         player.displayClientMessage(Component.translatable(messageKey), true);
     }
 
-    public void updateJetpackMovement() {
+    private void updateClientMovementWithInterpolation() {
+        long currentTime = player.level().getGameTime();
+        if (lastPacketTime > 0 && currentTime - lastPacketTime > 100) { // 100ms threshold
+            missedPackets++;
+        }
+
+        // Calculate base movement
+        Vec3 calculatedVelocity = calculateMovementVelocity();
+
+        // Apply interpolation if we have recent server data
+        if (shouldUseInterpolation()) {
+            calculatedVelocity = applyVelocityInterpolation(calculatedVelocity);
+        }
+
+        applyVelocityToPlayer(calculatedVelocity);
+    }
+
+    private boolean shouldUseInterpolation() {
+        long timeSinceServerUpdate = player.level().getGameTime() - lastServerUpdate;
+        return timeSinceServerUpdate < MAX_INTERPOLATION_TIME &&
+                missedPackets < MAX_MISSED_PACKETS &&
+                !lastValidVelocity.equals(Vec3.ZERO);
+    }
+
+    private Vec3 applyVelocityInterpolation(Vec3 calculatedVelocity) {
+        long currentTime = player.level().getGameTime();
+        long timeSinceUpdate = currentTime - lastServerUpdate;
+
+        if (timeSinceUpdate < MAX_INTERPOLATION_TIME) {
+            float interpolationAlpha = Math.min(1.0f, timeSinceUpdate / (float) MAX_INTERPOLATION_TIME);
+
+            Vec3 interpolatedVelocity = lastValidVelocity.lerp(calculatedVelocity, interpolationAlpha);
+
+            // Add some smoothing for sudden changes
+            double velocityDifference = calculatedVelocity.distanceTo(lastValidVelocity);
+            if (velocityDifference > 0.5) { // Large change, apply gradual transition
+                float smoothingFactor = Math.min(0.3f, 1.0f / (missedPackets + 1));
+                return lastValidVelocity.lerp(calculatedVelocity, smoothingFactor);
+            }
+
+            return interpolatedVelocity;
+        }
+
+        return calculatedVelocity;
+    }
+
+    private Vec3 calculateMovementVelocity() {
         Vec3 lookVec = player.getLookAngle();
         Vec3 flatLookDirection = new Vec3(lookVec.x, 0, lookVec.z);
-
-        if (flatLookDirection.lengthSqr() < 1.0E-6) {
-            float yaw = player.getYRot() * ((float) Math.PI / 180F);
-            flatLookDirection = new Vec3(-Math.sin(yaw), 0, Math.cos(yaw));
-        }
-        flatLookDirection = flatLookDirection.normalize();
-
         Vec3 strafeDirection = flatLookDirection.cross(new Vec3(0, 1, 0)).normalize();
 
-        double forward = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getFloat("JetpackForward");
-        double strafe = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getFloat("JetpackLeft");
-
         double forwardWeight = isHovering ? 1.0 : 1.5;
-        double strafeWeight = isHovering ? 0.4 : 0.6;
-        Vec3 movementDirection = flatLookDirection.scale(forward * forwardWeight).add(strafeDirection.scale(strafe * strafeWeight));
+        double leftWeight = isHovering ? 0.2 : 0.6;
+        Vec3 movementDirection = flatLookDirection.scale(forward * forwardWeight).add(strafeDirection.scale(left * leftWeight));
 
-        // Apply acceleration and max speed
-        double acceleration = isHovering ? 0.05 : 0.25;
-
+        double acceleration = isHovering ? 0.005 : 0.25;
         double horizontalSpeed = calculateHorizontalSpeed();
         Vec3 horizontalVelocity = applyMovementPhysics(player.getDeltaMovement(), movementDirection.normalize(), acceleration, horizontalSpeed);
 
-        double flySpeed = calculateVerticalSpeed();
-        double verticalHoverSpeed = isHovering ? calculateVerticalHoveringSpeed(hoverHeight) : 0;
-        double verticalSpeed = player.getDeltaMovement().y;
-
-        int distanceToGround = getDistanceToGround(player);
-
-        if ((jetPackFuelRemaining < 10.0f || distanceToGround > maxAllowedHeight) && isJumping) {
-            // Prevent player going up (Slow fall speed)
-            verticalSpeed = lerp(verticalSpeed, gravity / 10, 0.5);
-        } else if (isHovering && Math.abs(verticalSpeed) > 0.1) {
-            // Slow to Hover Speed (0)
-            verticalSpeed = lerp(verticalSpeed, verticalHoverSpeed, 0.5);
-        } else if (isHovering) {
-            player.resetFallDistance();
-            verticalSpeed = verticalHoverSpeed;
+        double verticalSpeed;
+        if (isHovering) {
+            verticalSpeed = calculateVerticalHoveringSpeed(hoverHeight);
         } else {
-            // Normal Flight
-            verticalSpeed = flySpeed;
+            verticalSpeed = calculateVerticalSpeed();
         }
 
-        // Apply the new movement velocity to the player
-        if (player.isSwimming() && isJumping) {
-            player.setDeltaMovement(new Vec3(player.getDeltaMovement().x() + player.getLookAngle().x * 0.08, player.getDeltaMovement().y() + player.getLookAngle().y * 0.08, player.getDeltaMovement().z() + player.getLookAngle().z * 0.08));
-        } else if (player.isFallFlying() && ConfigManager.CommonConfig.ELYTRA_BOOST_ENABLED.get()) {
-            // Elytra boost
-            if (Math.abs(player.getDeltaMovement().x) < 1.0)
-                player.setDeltaMovement(player.getDeltaMovement().x + player.getLookAngle().x * 0.04, player.getDeltaMovement().y, player.getDeltaMovement().z);
-            if (Math.abs(player.getDeltaMovement().y) < 1.5)
-                player.setDeltaMovement(player.getDeltaMovement().x, player.getDeltaMovement().y + player.getLookAngle().y * 0.1, player.getDeltaMovement().z);
-            if (Math.abs(player.getDeltaMovement().z) < 1.0)
-                player.setDeltaMovement(player.getDeltaMovement().x, player.getDeltaMovement().y, player.getDeltaMovement().z + player.getLookAngle().z * 0.04);
-        } else {
-            player.setDeltaMovement(horizontalVelocity.x, verticalSpeed, horizontalVelocity.z);
+        return new Vec3(horizontalVelocity.x, verticalSpeed, horizontalVelocity.z);
+    }
+
+    private void applyVelocityToPlayer(Vec3 velocity) {
+        float fuelToCheck = player.level().isClientSide ? predictedFuelRemaining : jetPackFuelRemaining;
+        double distanceToGround = getDistanceToGround(player);
+
+        if ((fuelToCheck < 10.0f || distanceToGround > MAX_ALLOWED_HEIGHT) && isJumping) {
+            velocity = new Vec3(velocity.x, Mth.lerp(velocity.y, GRAVITY / 10, 0.5), velocity.z);
         }
 
+        // Store last valid velocity for interpolation
         if (!player.level().isClientSide) {
-            ServerPlayer sp = (ServerPlayer) player;
-            sp.connection.send(new ClientboundSetEntityMotionPacket(player));
+            lastValidVelocity = velocity;
+            lastServerUpdate = player.level().getGameTime();
         }
+
+        // Apply to player
+        if (player.isSwimming() && isJumping) {
+            Vec3 lookDirection = player.getLookAngle();
+            Vec3 deltaMovement = player.getDeltaMovement();
+            player.setDeltaMovement(
+                    deltaMovement.x + lookDirection.x * 0.08,
+                    deltaMovement.y + lookDirection.y * 0.08,
+                    deltaMovement.z + lookDirection.z * 0.08
+            );
+        } else if (player.isFallFlying() && ConfigManager.CommonConfig.ELYTRA_BOOST_ENABLED.get()) {
+            applyElytraBoost();
+        } else {
+            player.setDeltaMovement(velocity);
+        }
+    }
+
+    private void applyElytraBoost() {
+        double deltaX = player.getDeltaMovement().x;
+        double deltaY = player.getDeltaMovement().y;
+        double deltaZ = player.getDeltaMovement().z;
+
+        if (Math.abs(deltaX) < 1.0)
+            player.setDeltaMovement(deltaX + player.getLookAngle().x * 0.04, deltaY, deltaZ);
+        if (Math.abs(deltaY) < 1.5)
+            player.setDeltaMovement(deltaX, deltaY + player.getLookAngle().y * 0.1, deltaZ);
+        if (Math.abs(deltaZ) < 1.0)
+            player.setDeltaMovement(deltaX, deltaY, deltaZ + player.getLookAngle().z * 0.04);
+    }
+
+    private void syncFuelToClient() {
+        if (player.tickCount % 20 != 0) return; // Every second
+
+        ServerPlayer serverPlayer = (ServerPlayer) player;
+        int totalAir = (int) jetPackFuelRemaining;
+
+        // Send visual air packet
+        if (!player.onGround()) {
+            ModNetwork.sendToPlayer(serverPlayer, new VisualJetpackAirPacket(totalAir));
+            airGaugeCleared = false;
+        } else {
+            fadeOutVisualAirOverlay();
+        }
+
+        // Send fuel sync packet
+        long serverTime = player.level().getGameTime();
+        ModNetwork.sendToPlayer(serverPlayer, new JetpackFuelSyncPacket(jetPackFuelRemaining, serverTime));
     }
 
     private Vec3 applyMovementPhysics(@NotNull Vec3 currentVelocity, @NotNull Vec3 direction, double acceleration, double maxSpeed) {
@@ -319,76 +486,60 @@ public class JetpackHandler {
         double horizontalSpeed = baseSpeed + baseFlySpeedBoost + (mobEffectSpeedMultiplier / 10);
 
         if (isHovering) {
-            horizontalSpeed = baseSpeed + baseHoverSpeedBoost + enchantedSpeedMultiplier + (mobEffectSpeedMultiplier / 10);
+            horizontalSpeed = (baseSpeed + baseHoverSpeedBoost) * (1.0 + enchantedSpeedMultiplier) + (mobEffectSpeedMultiplier / 10);
         }
 
         return horizontalSpeed;
     }
 
     private double calculateVerticalSpeed() {
-        double thrust = 0.42;
-
         double currentVerticalSpeed = player.getDeltaMovement().y;
         double dampingFactor = (currentVerticalSpeed < 0 && !isJumping) ? 0.05 : 0.15;
 
-        // Define the target vertical speed based on player status
-        double verticalTarget = gravity;
+        double verticalTarget = GRAVITY;
 
         if (isJumping) {
-            verticalTarget = thrust;  // Thrust value for upward movement when jumping
-        } else if (player.isSwimming()) {
-            verticalTarget = 0;  // No vertical movement while swimming
+            verticalTarget = 0.42;  // Thrust value for upward movement when jumping
         } else if (player.isInWater()) {
-            verticalTarget = gravity / 16;  // Custom gravity in water
+            verticalTarget = GRAVITY / 16;  // Custom gravity in water
+        } else if (player.isSwimming()) {
+            return 0;  // No vertical adjustments while swimming
         }
 
-        // Apply damping to the vertical speed
-        return (player.isSwimming()) ? 0 : currentVerticalSpeed * (1 - dampingFactor) + verticalTarget * dampingFactor;
+        return currentVerticalSpeed * (1 - dampingFactor) + verticalTarget * dampingFactor;
     }
 
     private double calculateVerticalHoveringSpeed(double targetHeight) {
         boolean bobbingEnabled = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)
                 .getBoolean("JetpackHoverBobbing");
-        double currentHeight = player.getY();
-        double heightDifference = targetHeight - currentHeight;
+        double currentY = player.getY();
+        double yDifference = targetHeight - currentY;
 
-        double bobbing = 0;
-        if (bobbingEnabled) {
-            double bobbingFrequency = player.isInWater() ? 0.15 : 0.3;
-            double bobbingAmplitude = 0.2;
-            double cycleDuration = 8000;
-            long timeInMillis = System.currentTimeMillis();
-            bobbing = Math.sin(2 * Math.PI * bobbingFrequency * (timeInMillis % cycleDuration) / 200);
-            bobbing *= bobbingAmplitude;
+        double adjustmentForce = yDifference * 0.3;
+        double newYVelocity = player.getDeltaMovement().y * 0.8 + adjustmentForce;
+
+        if (bobbingEnabled && player.level().isClientSide()) {
+            float time = player.level().getGameTime() + Minecraft.getInstance().getPartialTick();
+            double period = 20.0; // ~ 1 second
+            double angle = (time % period) / period * (2 * Math.PI);
+            double bob = Math.sin(angle) * 0.008;
+            newYVelocity += bob;
         }
 
-        double P = 0.5;
-        double D = 0.1;
-
-        return P * heightDifference + D * (heightDifference - bobbing);
+        return Mth.clamp(newYVelocity, -0.2, 0.2);
     }
 
-    private double lerp(double start, double end, double factor) {
-        return start + factor * (end - start);
-    }
-
-    public static double calculateJetPackFuel(Player player) {
-        // Check if backpack is equipped, no backpack == no flight upgrade
+    public double calculateJetPackFuel(Player player) {
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
-        if (backpack.isEmpty()) return 0.0;
+        if (backpack.isEmpty()) return 0.0; // No backpack == No flight upgrade
 
         List<ItemStack> backtanks = getBacktanksFromPlayer(player, backpack);
 
-        return Math.round(backtanks.stream().map(BacktankUtil::getAir).reduce(0f, Float::sum));
+        return backtanks.stream().map(BacktankUtil::getAir).reduce(0f, Float::sum);
     }
 
-    public void depleteJetPackFuel() {
-        if (player.isCreative()) return;
-        doDepleteJetPackFuel(player);
-    }
-
-    private void doDepleteJetPackFuel(Player player) {
-        if (player.level().isClientSide()) return;
+    private void depleteJetPackFuel(Player player) {
+        if (player.level().isClientSide || player.isCreative()) return;
 
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         Level world = player.level();
@@ -437,7 +588,7 @@ public class JetpackHandler {
         }
     }
 
-    private static List<ItemStack> getBacktanksFromPlayer(Player player, ItemStack backpack) {
+    private List<ItemStack> getBacktanksFromPlayer(Player player, ItemStack backpack) {
         List<ItemStack> backtanks = new ArrayList<>();
 
         // Check chest item
@@ -482,24 +633,37 @@ public class JetpackHandler {
         sp.connection.send(new ClientboundSetTitleTextPacket(CommonComponents.EMPTY));
     }
 
-    public static void processPlayerInputPacket(ServerPlayer player, float forward, float left) {
-        if (player != null) {
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putFloat("JetpackForward", forward);
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putFloat("JetpackLeft", left);
+    public void processPlayerInputPacket(float forward, float left) {
+        this.forward = forward;
+        this.left = left;
+    }
+
+    public void processPlayerFlyingPacket(boolean flying, boolean hovering) {
+        this.isJumping = flying;
+        this.isHovering = hovering;
+    }
+
+    public void flyingOnKeyPress() {
+        if (new BackpackOnBackUpgradeHandler(player).hasUpgrade(Util.FLIGHT_UPGRADE)) {
+            this.isJumping = true;
         }
     }
 
-    public static void flyingOnKeyPress(ServerPlayer player) {
-        if (player != null) {
-            if (new BackpackOnBackUpgradeHandler((Player) player).hasUpgrade(Util.FLIGHT_UPGRADE)) {
-                player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackFlying", true);
-            }
-        }
+    public void flyingOnKeyRelease() {
+        this.isJumping = false;
     }
 
-    public static void flyingOnKeyRelease(ServerPlayer player) {
-        if (player != null) {
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackFlying", false);
-        }
+    public void resetState() {
+        isJumping = false;
+        isHovering = false;
+        hoverHeight = 0;
+        playedSoundThisJump = false;
+        lastRuntime = 0;
+        airGaugeLastCleared = 0;
+        airGaugeCleared = false;
+        lastValidVelocity = Vec3.ZERO;
+        predictedFuelRemaining = 0;
+        lastFuelSync = 0;
     }
+
 }

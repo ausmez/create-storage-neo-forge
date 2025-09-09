@@ -10,7 +10,9 @@ import net.minecraft.world.phys.Vec3;
 public class ParticleHelper {
     public static void jetPackParticles(Player player) {
         LevelAccessor world = player.level();
-        ParticleOptions particleType = (player.isInWater()) ? ParticleTypes.BUBBLE_COLUMN_UP : ParticleTypes.CLOUD;
+        ParticleOptions particleType = player.isInWater() ? ParticleTypes.BUBBLE_COLUMN_UP
+                : player.isInLava() ? ParticleTypes.FLAME
+                : ParticleTypes.CLOUD;
 
         Vec3 position = player.position();
         double posX = position.x;
@@ -18,9 +20,9 @@ public class ParticleHelper {
         double posZ = position.z;
 
         // Get the backward direction based on the player's yaw
-        float yawRadians = (float) Math.toRadians(player.yBodyRot);
-        double backwardX = Math.sin(yawRadians) * 0.55; //0.35; // Offset to spawn particles slightly behind the player
-        double backwardZ = -Math.cos(yawRadians) * 0.55; //0.35; // Offset to spawn particles slightly behind the player
+        float yawRadians = (float) Math.toRadians(player.getYRot());
+        double backwardX =  Math.sin(yawRadians) * 0.35; // Offset to spawn particles slightly behind the player
+        double backwardZ = -Math.cos(yawRadians) * 0.35; // Offset to spawn particles slightly behind the player
 
         double finalPosX = posX + backwardX;
         double finalPosZ = posZ + backwardZ;

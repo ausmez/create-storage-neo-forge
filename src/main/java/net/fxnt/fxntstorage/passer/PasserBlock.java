@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 public class PasserBlock extends BaseEntityBlock implements IWrenchable {
     public static final DirectionProperty FACING = DirectionalBlock.FACING;
     public static final BooleanProperty POWERED;
-    public final boolean isSmart;
+    private final boolean isSmart;
 
     static {
         POWERED = BlockStateProperties.POWERED;
@@ -72,11 +72,9 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> blockEntityType) {
-        if (this.isSmart) {
-            return createTickerHelper(blockEntityType, ModBlockEntities.SMART_PASSER_ENTITY.get(), (type, world, pos, entity) -> entity.serverTick(type, world));
-        } else {
-            return createTickerHelper(blockEntityType, ModBlockEntities.PASSER_ENTITY.get(), (type, world, pos, entity) -> entity.serverTick(type, world));
-        }
+        if (this.isSmart)
+            return createTickerHelper(blockEntityType, ModBlockEntities.SMART_PASSER_ENTITY.get(), (type, world, pos, entity) -> entity.tick());
+        return createTickerHelper(blockEntityType, ModBlockEntities.PASSER_ENTITY.get(), (type, world, pos, entity) -> entity.tick());
     }
 
     @Override

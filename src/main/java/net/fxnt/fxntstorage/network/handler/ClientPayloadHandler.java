@@ -4,6 +4,8 @@ import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.main.BackpackItemMenu;
 import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.network.packet.*;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
@@ -15,6 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.network.NetworkEvent;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
@@ -136,6 +139,22 @@ public class ClientPayloadHandler {
                     contraptionEntity.getContraption().getBlocks().put(packet.localPos(), newInfo);
                     contraptionEntity.getContraption().deferInvalidate = true;
                 }
+            }
+        });
+        context.get().setPacketHandled(true);
+    }
+
+    public static void handleJetpackFuelSyncPacket(final JetpackFuelSyncPacket packet, @NonNull Supplier<NetworkEvent.Context> context) {
+        context.get().enqueueWork(() -> {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null) {
+                client.execute(() -> {
+                    JetpackHandler handler = JetpackManager.getJetpackHandler(client.player);
+                    if (handler != null) {
+                        handler.onFuelSync(packet.fuelRemaining(), packet.serverTime());
+                    }
+
+                });
             }
         });
         context.get().setPacketHandled(true);

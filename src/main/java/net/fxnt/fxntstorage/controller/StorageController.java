@@ -71,7 +71,6 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public @NotNull RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }

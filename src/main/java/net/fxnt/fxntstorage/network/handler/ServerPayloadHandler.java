@@ -17,6 +17,7 @@ import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedStorage;
 import net.fxnt.fxntstorage.network.packet.*;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedStorage;
+import net.fxnt.fxntstorage.util.EventHandler;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -27,9 +28,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.*;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.items.IItemHandler;
@@ -51,14 +54,20 @@ public class ServerPayloadHandler {
         return INSTANCE;
     }
 
+    public static void handleCrossbowChargedPacket(CrossbowChargedPacket packet, @NotNull Supplier<NetworkEvent.Context> context) {
+        context.get().enqueueWork(() -> {
+            EventHandler.consumeArrowFromBackpack(context.get().getSender());
+        });
+    }
+
     public static void handleKeyPressedPacket(KeyPressedPacket packet, @NotNull Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> {
             ServerPlayer player = context.get().getSender();
 
             if (player != null) {
                 switch (packet.hotkey()) {
-                    case Util.JETPACK_KEY_PRESS -> JetpackHandler.flyingOnKeyPress(player);
-                    case Util.JETPACK_KEY_RELEASE -> JetpackHandler.flyingOnKeyRelease(player);
+                    case Util.JETPACK_KEY_PRESS -> JetpackManager.getJetpackHandler(player).flyingOnKeyPress();
+                    case Util.JETPACK_KEY_RELEASE -> JetpackManager.getJetpackHandler(player).flyingOnKeyRelease();
                     case Util.OPEN_BACKPACK -> BackpackHandler.openBackpackFromInventory(player, Util.BACKPACK_ON_BACK);
                     case Util.CLOSE_BACKPACK -> {
                         if (player.containerMenu instanceof BackpackMenu) player.closeContainer();
@@ -70,7 +79,7 @@ public class ServerPayloadHandler {
                     }
                     case Util.TOGGLE_HOVER -> {
                         JetpackHandler jetpackHandler = JetpackManager.getJetpackHandler(player);
-                        if (JetpackHandler.calculateJetPackFuel(player) > 0) {
+                        if (jetpackHandler.calculateJetPackFuel(player) > 0) {
                             jetpackHandler.toggleHover();
                         }
                     }
@@ -99,7 +108,7 @@ public class ServerPayloadHandler {
             ServerPlayer player = context.get().getSender();
 
             if (player != null) {
-                JetpackHandler.processPlayerInputPacket(player, packet.forwardImpulse(), packet.leftImpulse());
+                JetpackManager.getJetpackHandler(player).processPlayerInputPacket(packet.forwardImpulse(), packet.leftImpulse());
             }
         });
         context.get().setPacketHandled(true);
@@ -189,6 +198,8 @@ public class ServerPayloadHandler {
                 player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putInt("TorchDeployerLightLevel", settings.getInt("torchDeployerLightLevel"));
                 player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putString("TorchDeployerLightSource", settings.getString("torchDeployerLightSource"));
                 player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackHoverBobbing", settings.getBoolean("jetpackHoverBobbing"));
+                player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("CheckBackpackForProjectiles", settings.getBoolean("checkBackpackForProjectiles"));
+                player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("CheckBackpackForToolboxItems", settings.getBoolean("checkBackpackForToolboxItems"));
             }
         });
         context.get().setPacketHandled(true);
@@ -225,6 +236,8 @@ public class ServerPayloadHandler {
                     inputSlots = openMenu.slots.subList(1, 10);
                 } else if (player.containerMenu instanceof StonecutterMenu openMenu) {
                     inputSlots = openMenu.slots.subList(0, 1);
+                } else if (player.containerMenu instanceof InventoryMenu openMenu) {
+                    inputSlots = openMenu.slots.subList(1, 5);
                 } else {
                     return;
                 }
@@ -250,72 +263,105 @@ public class ServerPayloadHandler {
                         player.displayClientMessage(Component.literal("§a" + maxCraftable + "§r maximum craftable"), false);
                 }
 
-                int ingredientIndex = 0;
-                for (Integer entry : recipeMap) {
-                    int craftingSlotIndex = entry - 1; // slot in the 3×3 grid (0–8)
+                boolean twoByTwo = false;
+                boolean symmetrical = false;
+                if (recipe instanceof ShapedRecipe sr) {
+                    twoByTwo = sr.getHeight() <= 2 && sr.getWidth() <= 2
+                            && player.containerMenu instanceof InventoryMenu;
+                    symmetrical = Util.isSymmetrical(sr.getWidth(), sr.getHeight(), sr.getIngredients());
+                }
 
-                    if (craftingSlotIndex < 0 || craftingSlotIndex >= inputSlots.size()) {
-                        return; // invalid data
-                    }
+                // Calculate centering offset for symmetrical recipes (only for 3x3 crafting)
+                int offsetX = 0;
+                int offsetY = 0;
+                boolean isShaped = recipe instanceof ShapedRecipe;
+                boolean doCenter = false;
+
+                if (!twoByTwo && isShaped && symmetrical) {
+                    ShapedRecipe sr = (ShapedRecipe) recipe;
+                    offsetX = (3 - sr.getWidth()) / 2;
+                    offsetY = (3 - sr.getHeight()) / 2;
+                    doCenter = true;
+                }
+
+                // Loop through each ingredient and place it in the corresponding slot
+                for (int ingredientIndex = 0; ingredientIndex < ingredients.size(); ingredientIndex++) {
+                    if (ingredientIndex >= recipeMap.size()) break;
 
                     Ingredient ingredient = ingredients.get(ingredientIndex);
-                    if (ingredient.isEmpty()) {
-                        ingredientIndex++;
-                        continue;
+                    if (ingredient.isEmpty()) continue;
+
+                    // Base position is always from recipeMap (1-based -> 0-based)
+                    int gridSlotPosition = recipeMap.get(ingredientIndex) - 1;
+
+                    int slotPosition;
+
+                    if (twoByTwo) {
+                        // Map 3x3 indices to 2x2 indices
+                        switch (gridSlotPosition) {
+                            case 0 -> slotPosition = 0;
+                            case 1 -> slotPosition = 1;
+                            case 3 -> slotPosition = 2;
+                            case 4 -> slotPosition = 3;
+                            default -> {
+                                continue;
+                            }
+                        }
+                    } else if (doCenter) {
+                        // Centering for symmetrical shaped recipes on a 3x3 grid.
+                        // Convert from 3x3 coords, apply offset, convert back.
+                        int x = gridSlotPosition % 3;
+                        int y = gridSlotPosition / 3;
+                        x += offsetX;
+                        y += offsetY;
+                        slotPosition = y * 3 + x;
+                    } else {
+                        // Normal (non-symmetrical) 3x3 shaped or shapeless: use the map as-is
+                        slotPosition = gridSlotPosition;
                     }
+
+                    if (slotPosition < 0 || slotPosition >= inputSlots.size()) continue;
 
                     ItemStack collected = ItemStack.EMPTY;
                     int remaining = maxCraftable;
 
-                    // First: Try player inventory
-                    for (int j = 0; j < playerInv.getContainerSize(); j++) {
+                    // Try player inventory
+                    for (int j = 0; j < playerInv.getContainerSize() && remaining > 0; j++) {
                         ItemStack stack = playerInv.getItem(j);
                         if (!stack.isEmpty() && ingredient.test(stack)) {
                             int extractAmount = Math.min(stack.getCount(), remaining);
                             ItemStack extracted = stack.split(extractAmount);
 
-                            if (collected.isEmpty()) {
-                                collected = extracted.copy();
-                            } else {
-                                collected.grow(extracted.getCount());
-                            }
+                            if (collected.isEmpty()) collected = extracted.copy();
+                            else collected.grow(extracted.getCount());
 
                             playerInv.setItem(j, stack);
                             remaining -= extracted.getCount();
-
-                            if (remaining <= 0) break;
                         }
                     }
 
-                    // Then: Try backpack if needed
+                    // Try backpack
                     if (remaining > 0 && itemHandler != null) {
-                        for (int j = 0; j < Util.ITEM_SLOT_END_RANGE; j++) {
+                        for (int j = 0; j < Util.ITEM_SLOT_END_RANGE && remaining > 0; j++) {
                             ItemStack stack = itemHandler.getStackInSlot(j);
                             if (!stack.isEmpty() && ingredient.test(stack)) {
                                 int extractAmount = Math.min(stack.getCount(), remaining);
                                 ItemStack extracted = stack.split(extractAmount);
 
-                                if (collected.isEmpty()) {
-                                    collected = extracted.copy();
-                                } else {
-                                    collected.grow(extracted.getCount());
-                                }
+                                if (collected.isEmpty()) collected = extracted.copy();
+                                else collected.grow(extracted.getCount());
 
                                 itemHandler.setStackInSlot(j, stack);
                                 remaining -= extracted.getCount();
-
-                                if (remaining <= 0) break;
                             }
                         }
                     }
 
-                    // If we still couldn't gather enough
                     if (collected.isEmpty() || collected.getCount() < maxCraftable) {
                         return; // missing item(s)
                     }
 
-                    inputSlots.get(craftingSlotIndex).set(collected);
-                    ingredientIndex++;
+                    inputSlots.get(slotPosition).setByPlayer(collected);
                 }
 
                 AbstractContainerMenu handler = player.containerMenu;
@@ -335,7 +381,6 @@ public class ServerPayloadHandler {
         context.get().setPacketHandled(true);
     }
 
-
     private static int getMaxCraftableItems(List<Ingredient> ingredients, Inventory inventory, @Nullable IItemHandler backpack) {
         int maxCrafts = 64;
         Map<Ingredient, Integer> ingredientCounts = new HashMap<>();
@@ -349,34 +394,45 @@ public class ServerPayloadHandler {
             Ingredient ingredient = entry.getKey();
             int requiredPerCraft = entry.getValue();
             int available = 0;
+            int ingredientMaxStackSize = Item.MAX_STACK_SIZE;
 
-            // Count matching items in player inventory
             for (int i = 0; i < inventory.getContainerSize(); i++) {
                 ItemStack stack = inventory.getItem(i);
                 if (!stack.isEmpty() && ingredient.test(stack)) {
                     available += stack.getCount();
+                    ingredientMaxStackSize = Math.min(ingredientMaxStackSize, stack.getMaxStackSize());
                 }
             }
 
-            // Count matching items in backpack, if present
             if (backpack != null) {
                 for (int i = 0; i < backpack.getSlots(); i++) {
                     ItemStack stack = backpack.getStackInSlot(i);
                     if (!stack.isEmpty() && ingredient.test(stack)) {
                         available += stack.getCount();
+                        ingredientMaxStackSize = Math.min(ingredientMaxStackSize, stack.getMaxStackSize());
                     }
                 }
             }
 
-            // Limit max crafts by this ingredient
-            maxCrafts = Math.min(maxCrafts, available / requiredPerCraft);
+            int craftsForIngredient = Math.min(available / requiredPerCraft, ingredientMaxStackSize);
+            maxCrafts = Math.min(maxCrafts, craftsForIngredient);
             if (maxCrafts == 0) {
-                break; // Early exit if any ingredient is insufficient
+                break;
             }
         }
 
         return maxCrafts;
     }
 
+    public static void handleJetpackFlyingPacket(JetpackFlyingPacket packet, @NotNull Supplier<NetworkEvent.Context> context) {
+        context.get().enqueueWork(() -> {
+            ServerPlayer player = context.get().getSender();
+
+            if (player != null) {
+                JetpackManager.getJetpackHandler(player).processPlayerFlyingPacket(packet.flying(), packet.hovering());
+            }
+        });
+        context.get().setPacketHandled(true);
+    }
 
 }

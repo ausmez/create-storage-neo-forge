@@ -78,7 +78,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
             if (pStack.hasCustomHoverName()) {
                 be.setCustomName(pStack.getHoverName());
             }
-            be.tick = 999;
+            be.forceTick();
         }
     }
 

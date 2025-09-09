@@ -106,7 +106,7 @@ public class BackpackBlock extends BaseEntityBlock {
 
     @Override
     public @NotNull InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (pLevel.isClientSide() || pHand == InteractionHand.OFF_HAND) return InteractionResult.SUCCESS;
+        if (pLevel.isClientSide || pHand == InteractionHand.OFF_HAND) return InteractionResult.SUCCESS;
 
         if (pPlayer.isCrouching() && !BackpackHelper.isWearingBackpack(pPlayer)) {
             // Equip the backpack to the back or chest slot

@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.util;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
@@ -17,7 +18,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -26,6 +26,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
@@ -43,18 +44,12 @@ public class ClientEventHandler {
         float forwardImpulse = movement.y;
         float leftImpulse = movement.x;
 
-        Player player = Minecraft.getInstance().player;
-
-        if (player != null) {
-            CompoundTag playerData = player.getPersistentData();
-            CompoundTag fxntSettingsTag = Util.getOrCreateSubTag(playerData, ConfigManager.FXNTSTORAGE_SETTINGS_TAG);
-
-            fxntSettingsTag.putFloat("Jetpackforward", forwardImpulse);
-            fxntSettingsTag.putFloat("Jetpackleft", -leftImpulse);
-        }
+        Player player = event.getEntity();
 
         if (forwardImpulse != lastforwardImpulse || leftImpulse != lastleftImpulse) {
             ModNetwork.sendToServer(new PlayerInputPacket(forwardImpulse, -leftImpulse));
+            JetpackManager.getJetpackHandler(player).processPlayerInputPacket(forwardImpulse, -leftImpulse);
+
             lastforwardImpulse = forwardImpulse;
             lastleftImpulse = leftImpulse;
         }
@@ -121,8 +116,14 @@ public class ClientEventHandler {
     @SubscribeEvent
     public static void onServerJoin(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof LocalPlayer player) {
-            BackpackNetworkHelper.sendClientSettings(player);
+            ConfigManager.ClientConfig.sendSettings(player);
+            JetpackManager.addPlayer(player);
         }
+    }
+
+    @SubscribeEvent
+    public static void onClientRespawn(ClientPlayerNetworkEvent.Clone event) {
+        JetpackManager.addPlayer(event.getNewPlayer());
     }
 
 }

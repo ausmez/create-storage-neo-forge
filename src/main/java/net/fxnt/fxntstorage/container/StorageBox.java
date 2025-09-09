@@ -104,7 +104,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                 SortOrder order = (blockEntityTag.contains("SortOrder")) ? SortOrder.valueOf(blockEntityTag.getString("SortOrder")) : SortOrder.COUNT;
                 be.setSortOrder(order);
             }
-            be.lastTick = 999;
+            be.forceNextTick();
         }
     }
 
@@ -143,11 +143,11 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         if (entity instanceof StorageBoxEntity) {
             ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
 
-            final int INTERACTION_COOLDOWN = 10; // measured in ticks
+            final int INTERACTION_COOLDOWN = 8; // measured in ticks
             if (pLevel.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && pPlayer.getUUID().equals(lastClickUUID)) {
                 // Double Right-click
                 if (itemInHand.isEmpty()) {
-                    ((StorageBoxEntity) entity).transferToStorage(pState, pLevel, pPlayer, true);
+                    ((StorageBoxEntity) entity).transferToStorage(pState, pPlayer, true);
                 }
             } else {
                 // Single Right-Click
@@ -165,7 +165,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
                 if (!itemInHand.isEmpty()) {
                     // Current item in player hand will be inserted into container
-                    ((StorageBoxEntity) entity).transferToStorage(pState, pLevel, pPlayer, false);
+                    ((StorageBoxEntity) entity).transferToStorage(pState, pPlayer, false);
                 }
             }
 
@@ -173,7 +173,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
             lastClickUUID = pPlayer.getUUID();
         }
 
-        return InteractionResult.sidedSuccess(pLevel.isClientSide());
+        return InteractionResult.sidedSuccess(false);
     }
 
     @Override

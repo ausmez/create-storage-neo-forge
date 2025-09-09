@@ -6,7 +6,12 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "EMIVanillaPluginMixin",
-    "ItemEntityMixin"
+    "ItemEntityMixin",
+    "PlayerMixin",
+    "PotatoCannonItemMixin",
+    "ThresholdSwitchBlockEntity",
+    "ToolboxDisposeAllPacketMixin",
+    "ToolboxDisposeAllPacketMixin$ToolboxBlockEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -29,6 +29,7 @@ public class ModNetwork {
 
     public static void registerCommonPackets() {
         // ClientboundPacket
+        registerMessage(JetpackFuelSyncPacket.class, JetpackFuelSyncPacket::encode, JetpackFuelSyncPacket::decode, ClientPayloadHandler::handleJetpackFuelSyncPacket);
         registerMessage(SetCarriedPacket.class, SetCarriedPacket::encode, SetCarriedPacket::decode, ClientPayloadHandler::handleSetCarriedPacket);
         registerMessage(SyncContainerPacket.class, SyncContainerPacket::encode, SyncContainerPacket::decode, ClientPayloadHandler::handleSyncContainerPacket);
         registerMessage(SyncSlotCountPacket.class, SyncSlotCountPacket::encode, SyncSlotCountPacket::decode, ClientPayloadHandler::handleSyncSlotCountPacket);
@@ -37,6 +38,8 @@ public class ModNetwork {
         registerMessage(SyncNBTDataPacket.class, SyncNBTDataPacket::encode, SyncNBTDataPacket::decode, ClientPayloadHandler::handleSyncNBTDataPacket);
 
         // ServerboundPacket
+        registerMessage(CrossbowChargedPacket.class, CrossbowChargedPacket::encode, CrossbowChargedPacket::decode, ServerPayloadHandler::handleCrossbowChargedPacket);
+        registerMessage(JetpackFlyingPacket.class, JetpackFlyingPacket::encode, JetpackFlyingPacket::decode, ServerPayloadHandler::handleJetpackFlyingPacket);
         registerMessage(KeyPressedPacket.class, KeyPressedPacket::encode, KeyPressedPacket::decode, ServerPayloadHandler::handleKeyPressedPacket);
         registerMessage(PickBlockUpgradePacket.class, PickBlockUpgradePacket::encode, PickBlockUpgradePacket::decode, ServerPayloadHandler::handlePickBlockUpgradePacket);
         registerMessage(PlayerInputPacket.class, PlayerInputPacket::encode, PlayerInputPacket::decode, ServerPayloadHandler::handlePlayerInputPacket);

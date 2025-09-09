@@ -7,7 +7,7 @@ import net.fxnt.fxntstorage.backpack.renderer.BackpackRenderPlayer;
 import net.fxnt.fxntstorage.backpack.tooltip.BackpackClientTooltip;
 import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackAirOverlay;
-import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
+import net.fxnt.fxntstorage.compat.constructionwand.ConstructionWandCompat;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
@@ -74,6 +74,7 @@ public class FXNTStorage {
         modEventBus.addListener(FXNTStorage::onCommonSetup);
 
         curiosLoaded = ModList.get().isLoaded(ModCompats.CURIOS);
+        if (ModList.get().isLoaded(ModCompats.CONSTRUCTION_WAND)) ConstructionWandCompat.init();
     }
 
     private static void onCommonSetup(final FMLCommonSetupEvent event) {
@@ -93,8 +94,8 @@ public class FXNTStorage {
         @SubscribeEvent
         public static void onConfigReload(final ModConfigEvent.Reloading event) {
             if (Objects.equals(event.getConfig().getModId(), MOD_ID) && event.getConfig().getType().equals(ModConfig.Type.CLIENT)) {
-                if (Minecraft.getInstance().getConnection() != null) {
-                    BackpackNetworkHelper.sendClientSettings(Minecraft.getInstance().player);
+                if (Minecraft.getInstance().getConnection() != null && Minecraft.getInstance().player != null) {
+                    ConfigManager.ClientConfig.sendSettings(Minecraft.getInstance().player);
                 }
             }
         }
@@ -118,7 +119,7 @@ public class FXNTStorage {
         }
 
         private static void addPlayerLayer(EntityRenderersEvent.AddLayers event, String skinType) {
-            PlayerRenderer playerRenderer = event.getSkin(skinType);
+            PlayerRenderer playerRenderer = event.getPlayerSkin(skinType);
 
             if (playerRenderer != null) {
                 playerRenderer.addLayer(new BackpackRenderPlayer(playerRenderer));

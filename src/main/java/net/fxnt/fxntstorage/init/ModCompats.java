@@ -12,6 +12,7 @@ import net.minecraftforge.fml.event.lifecycle.InterModEnqueueEvent;
 public class ModCompats {
     public static final String CURIOS = "curios";
     public static final String CARRY_ON = "carryon";
+    public static final String CONSTRUCTION_WAND = "constructionwand";
     public static final String INVENTORY_SORTER = "inventorysorter";
     public static final String VANILLA_BACKPORT = "vanillabackport";
 

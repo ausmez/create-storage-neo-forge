@@ -1,0 +1,89 @@
+name: Bug Report
+description: Report a bug or crash with the mod
+title: "Bug: <short description>"
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!  
+        Please fill out the details below to help troubleshoot the issue.
+
+  - type: textarea
+    id: bug
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: "e.g. Equipped backpack doesn’t open when pressing the keybind."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions on how to reproduce the issue.
+      placeholder: |
+        1. Equip a backpack in the Curios back slot
+        2. Press the backpack keybind
+        3. Backpack doesn't open
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+      placeholder: "e.g. Pressing the keybind should open the equipped backpack."
+    validations:
+      required: true
+
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod Version
+      description: "The version of Create: Storage you are using."
+      placeholder: "e.g. 1.1.2"
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft-version
+    attributes:
+      label: Minecraft Version
+      description: The version of Minecraft you are running.
+      placeholder: "e.g. 1.20.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mod-loader
+    attributes:
+      label: Mod Loader
+      description: Which mod loader are you using?
+      options:
+        - NeoForge
+        - Forge
+      default: 0
+    validations:
+      required: true
+
+  - type: input
+    id: logs
+    attributes:
+      label: Crash Log / Latest Log (if applicable)
+      description: |
+        If your game crashed, please upload the crash log to [mclo.gs](https://mclo.gs/) or [GitHub Gist](https://gist.github.com/) and paste the link here.
+        **Do not paste logs directly into the issue.**
+      placeholder: "https://mclo.gs/your-log-link"
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other details or screenshots that might help.
+      placeholder: "e.g. Happens only after upgrading a backpack from the previous tier."

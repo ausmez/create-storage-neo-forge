@@ -13,6 +13,8 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -29,13 +31,15 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.CuriosCapability;
-import top.theillusivec4.curios.api.type.capability.ICurio;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
@@ -59,17 +63,79 @@ public class BackpackItem extends BlockItem {
 
     @Override
     public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        if (FXNTStorage.curiosLoaded) {
-            return new ICapabilityProvider() {
-                final LazyOptional<ICurio> curio = LazyOptional.of(() -> new CuriosCompat(stack));
+        return new ICapabilityProvider() {
+            // Curios capability
+            final LazyOptional<?> curio = FXNTStorage.curiosLoaded
+                    ? LazyOptional.of(() -> new CuriosCompat(stack))
+                    : LazyOptional.empty();
+
+            // Item Handler capability
+            final ItemStackHandler itemHandler = new ItemStackHandler() {
+                @Override
+                public CompoundTag serializeNBT() {
+                    ListTag nbtTagList = new ListTag();
+                    for (int i = 0; i < stacks.size(); i++) {
+                        if (!stacks.get(i).isEmpty()) {
+                            CompoundTag itemTag = new CompoundTag();
+                            itemTag.putInt("Slot", i);
+                            itemTag.putInt("ActualCount", stacks.get(i).getCount());
+                            stacks.get(i).save(itemTag);
+                            nbtTagList.add(itemTag);
+                        }
+                    }
+
+                    CompoundTag nbt = new CompoundTag();
+                    nbt.put("Items", nbtTagList);
+                    nbt.putInt("Size", stacks.size());
+
+                    stack.getOrCreateTag()
+                            .getCompound("BlockEntityTag")
+                            .put("Items", nbt);
+
+                    return nbt;
+                }
 
                 @Override
-                public @NotNull <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
-                    return CuriosCapability.ITEM.orEmpty(cap, curio);
+                public void deserializeNBT(CompoundTag nbt) {
+                    setSize(nbt.contains("Size", Tag.TAG_INT) ? nbt.getInt("Size") : stacks.size());
+                    ListTag tagList = nbt.getList("Items", Tag.TAG_COMPOUND);
+                    for (int i = 0; i < tagList.size(); i++) {
+                        CompoundTag itemTags = tagList.getCompound(i);
+                        int slot = itemTags.getInt("Slot");
+                        ItemStack slotStack = ItemStack.of(itemTags);
+                        if (itemTags.contains("ActualCount", Tag.TAG_INT)) {
+                            slotStack.setCount(itemTags.getInt("ActualCount"));
+                        }
+                        stacks.set(slot, slotStack);
+                    }
+                    onLoad();
                 }
             };
-        }
-        return null;
+            final LazyOptional<IItemHandler> itemHandlerCap = LazyOptional.of(() -> itemHandler);
+
+            {
+                // Load existing NBT from the ItemStack on init
+                CompoundTag beTag = stack.getOrCreateTag().getCompound("BlockEntityTag");
+                if (beTag.contains("Items", Tag.TAG_COMPOUND)) {
+                    CompoundTag itemsTag = beTag.getCompound("Items");
+
+                    int size = (itemsTag.contains("Size")) ? itemsTag.getInt("Size") : itemsTag.size();
+                    itemHandler.setSize(size);
+                    itemHandler.deserializeNBT(itemsTag);
+                }
+            }
+
+            @Override
+            public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+                if (FXNTStorage.curiosLoaded && cap == CuriosCapability.ITEM)
+                    return curio.cast();
+
+                if (cap == ForgeCapabilities.ITEM_HANDLER)
+                    return itemHandlerCap.cast();
+
+                return LazyOptional.empty();
+            }
+        };
     }
 
     @Override
@@ -77,11 +143,9 @@ public class BackpackItem extends BlockItem {
         if (armorType != EquipmentSlot.CHEST) return false;
         if (FXNTStorage.curiosLoaded) {
             AtomicReference<Boolean> ret = new AtomicReference<>(false);
-            CuriosApi.getCuriosInventory((LivingEntity) entity).ifPresent(curiosItemHandler -> {
-                curiosItemHandler.getStacksHandler("back").ifPresent(stacksHandler -> {
-                    ret.set(stacksHandler.getStacks().getStackInSlot(0).getItem() instanceof BackpackItem);
-                });
-            });
+            CuriosApi.getCuriosInventory((LivingEntity) entity)
+                    .ifPresent(curiosItemHandler -> curiosItemHandler.getStacksHandler("back")
+                            .ifPresent(stacksHandler -> ret.set(stacksHandler.getStacks().getStackInSlot(0).getItem() instanceof BackpackItem)));
             return !ret.get();
         }
         return super.canEquip(stack, armorType, entity);

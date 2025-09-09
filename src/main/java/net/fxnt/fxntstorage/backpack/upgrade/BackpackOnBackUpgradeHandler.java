@@ -57,7 +57,6 @@ public class BackpackOnBackUpgradeHandler {
 
     public Player player;
     private final BackpackHelper helper;
-    private final int magnetUpgradeRange = ConfigManager.CommonConfig.BACKPACK_MAGNET_RANGE.get();
     private final ItemStack itemStack;
 
     public BackpackOnBackUpgradeHandler(Player player) {
@@ -93,7 +92,7 @@ public class BackpackOnBackUpgradeHandler {
         if (this.itemStack.isEmpty() || this.player.level().isClientSide || !hasUpgrade(Util.MAGNET_UPGRADE)) return;
 
         // Define the bounding box around the center position
-        AABB boundingBox = new AABB(this.player.blockPosition()).inflate(magnetUpgradeRange);
+        AABB boundingBox = new AABB(this.player.blockPosition()).inflate(ConfigManager.CommonConfig.BACKPACK_MAGNET_RANGE.get());
 
         // Retrieve all item entities within the range
         List<ItemEntity> nearbyItems = this.player.level().getEntitiesOfClass(ItemEntity.class, boundingBox);
@@ -114,7 +113,8 @@ public class BackpackOnBackUpgradeHandler {
                     }
                 }
 
-                this.helper.itemEntityToBackPack(getContainer(), itemEntity, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE);
+                this.helper.itemEntityToBackpack(getContainer(), itemEntity, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE);
+                player.take(itemEntity, itemEntity.getItem().getCount());
             }
         }
     }
@@ -127,7 +127,7 @@ public class BackpackOnBackUpgradeHandler {
         Item item = itemStack.getItem();
         int i = itemStack.getCount();
         if (pickupDelay == 0 && (target == null || target.equals(player.getUUID())) &&
-                this.helper.itemEntityToBackPack(getContainer(), itemEntity, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE)) {
+                this.helper.itemEntityToBackpack(getContainer(), itemEntity, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE)) {
 
             player.take(itemEntity, i);
             if (itemStack.isEmpty()) {
@@ -394,9 +394,7 @@ public class BackpackOnBackUpgradeHandler {
             state.onDestroyedByPlayer(level, pos, player, true, level.getFluidState(pos));
 
             if (state.getDestroySpeed(level, pos) >= 0.0F) {
-                tool.hurtAndBreak(1, player, p -> {
-                    p.broadcastBreakEvent(EquipmentSlot.MAINHAND);
-                });
+                tool.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(EquipmentSlot.MAINHAND));
                 if (!player.getAbilities().instabuild) {
                     player.causeFoodExhaustion(0.2F);
                 }
@@ -489,7 +487,7 @@ public class BackpackOnBackUpgradeHandler {
         ConfigManager.ClientConfig.TorchDeployerLightSource lightSource;
         try {
             lightSource = ConfigManager.ClientConfig.TorchDeployerLightSource.valueOf(
-                    sourceValue == null || sourceValue.isEmpty() ? "BLOCK_LIGHT" : sourceValue
+                    sourceValue.isEmpty() ? "BLOCK_LIGHT" : sourceValue
             );
         } catch (IllegalArgumentException e) {
             lightSource = ConfigManager.ClientConfig.TorchDeployerLightSource.BLOCK_LIGHT;

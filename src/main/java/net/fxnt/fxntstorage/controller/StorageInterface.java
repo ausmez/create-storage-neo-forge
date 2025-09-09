@@ -1,10 +1,7 @@
 package net.fxnt.fxntstorage.controller;
 
-import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.EntityBlock;
@@ -16,8 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings("deprecation")
-public class StorageInterface extends BaseEntityBlock implements EntityBlock, IWrenchable {
+public class StorageInterface extends BaseEntityBlock implements EntityBlock {
 
     public StorageInterface(Properties pProperties) {
         super(pProperties);
@@ -45,8 +41,4 @@ public class StorageInterface extends BaseEntityBlock implements EntityBlock, IW
         });
     }
 
-    @Override
-    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
-        return InteractionResult.SUCCESS;
-    }
 }
