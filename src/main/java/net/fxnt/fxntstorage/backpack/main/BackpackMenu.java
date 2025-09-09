@@ -23,9 +23,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
@@ -172,7 +170,7 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     private boolean isUniqueUpgrade(IItemHandler itemHandler, Item upgradeItem) {
-        for (int i = Util.UPGRADE_SLOT_START_RANGE; i < Util.UPGRADE_SLOT_END_RANGE; ++i) {
+        for (int i = Util.UPGRADE_SLOT_START_RANGE; i < Util.UPGRADE_SLOT_END_RANGE; i++) {
             if (itemHandler.getStackInSlot(i).getItem() == upgradeItem) {
                 return false;
             }
@@ -300,7 +298,8 @@ public class BackpackMenu extends AbstractContainerMenu {
                 || itemStack.is(Items.CARROT_ON_A_STICK)
                 || itemStack.is(Items.ELYTRA)
                 || itemStack.is(AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.tag)
-                || itemStack.is(AllItems.CARDBOARD_SWORD);
+                || itemStack.is(AllItems.CARDBOARD_SWORD)
+                || itemStack.is(AllItems.POTATO_CANNON);
     }
 
     @Override
@@ -353,7 +352,7 @@ public class BackpackMenu extends AbstractContainerMenu {
             }
 
             // If no specific tool slot was available, search in the general range
-            for (int i = Util.TOOL_SLOT_START_RANGE + 5; i < Util.TOOL_SLOT_END_RANGE; i++) {
+            for (int i = Util.TOOL_SLOT_START_RANGE + toolSlotMap.size(); i < Util.TOOL_SLOT_END_RANGE; i++) {
                 if (slots.get(i).getItem().isEmpty()) {
                     slots.get(i).safeInsert(slotItem);
                     return ItemStack.EMPTY;  // Exit once the tool is placed
@@ -369,20 +368,20 @@ public class BackpackMenu extends AbstractContainerMenu {
                 itemStack = itemStack2.copy();
                 if (index < Util.UPGRADE_SLOT_END_RANGE) {
                     // Move itemStack2 from container to player inventory, stacking items right->left
-                    if (!moveItemStack(itemStack2, Util.UPGRADE_SLOT_END_RANGE, Util.UPGRADE_SLOT_END_RANGE + 36, true, true)) {
+                    if (!moveItemStack(itemStack2, Util.UPGRADE_SLOT_END_RANGE, Util.UPGRADE_SLOT_END_RANGE + 36, true)) {
                         return ItemStack.EMPTY;
                     }
                     // Move itemStack2 from player inventory to container, stacking items left->right
                 } else {
-                    if (moveItemStack(itemStack2, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE, false, false)) {
+                    if (moveItemStack(itemStack2, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE, false)) {
                         return ItemStack.EMPTY;
                     }
                     // Next, try transferring to tool slot range, starting at offset 5
-                    if (moveItemStack(itemStack2, Util.TOOL_SLOT_START_RANGE + 5, Util.TOOL_SLOT_END_RANGE, false, false)) {
+                    if (moveItemStack(itemStack2, Util.TOOL_SLOT_START_RANGE + 5, Util.TOOL_SLOT_END_RANGE, false)) {
                         return ItemStack.EMPTY;
                     }
                     // Finally, try transferring to the main tool slots as a last resort
-                    if (moveItemStack(itemStack2, Util.TOOL_SLOT_START_RANGE, Util.TOOL_SLOT_END_RANGE, false, false)) {
+                    if (moveItemStack(itemStack2, Util.TOOL_SLOT_START_RANGE, Util.TOOL_SLOT_END_RANGE, false)) {
                         return ItemStack.EMPTY;
                     }
                 }
@@ -404,54 +403,47 @@ public class BackpackMenu extends AbstractContainerMenu {
         return ItemStack.EMPTY;
     }
 
-    public boolean moveItemStack(ItemStack newStack, int startIndex, int endIndex, boolean reverseDirection, boolean fromContainer) {
-        boolean bl = false;
+    public boolean moveItemStack(ItemStack newStack, int startIndex, int endIndex, boolean reverseDirection) {
+        boolean flag = false;
         int i = startIndex;
         if (reverseDirection) {
             i = endIndex - 1;
         }
 
-        // From player to container //
-        if ((!fromContainer && !newStack.isDamageableItem() && newStack.getComponentsPatch().isEmpty() && !newStack.isBarVisible())
-                || (fromContainer && newStack.isStackable())) {
-            while (!newStack.isEmpty() && (reverseDirection ? i >= startIndex : i < endIndex)) {
-                Slot slot = slots.get(i);
-                ItemStack slotStack = slot.getItem();
-                if (!slotStack.isEmpty() && ItemStack.isSameItemSameComponents(newStack, slotStack)) {
-                    if (slot instanceof UpgradeSlot && slotStack.getCount() >= 1) {
-                        break;
-                    }
-
-                    int totalCount = slotStack.getCount() + newStack.getCount();
-                    int maxPutSize = (fromContainer || i > Util.ITEM_SLOT_END_RANGE) ? Math.min(newStack.getMaxStackSize(), container.getStackMultiplier() * newStack.getMaxStackSize()) : Math.max(newStack.getMaxStackSize(), container.getStackMultiplier() * newStack.getMaxStackSize());
-                    int availableSpace = maxPutSize - slotStack.getCount();
-
-                    if (availableSpace > 0) {
-
-                        if (totalCount <= maxPutSize) {
-                            newStack.setCount(0);
-                            slotStack.setCount(totalCount);
-                            slot.setChanged();
-                            bl = true;
-                        } else if (availableSpace < newStack.getMaxStackSize()) {
-                            newStack.shrink(availableSpace);
-                            slotStack.setCount(maxPutSize);
-                            slot.setChanged();
-                            bl = true;
-                        }
-
-                    }
+        while (!newStack.isEmpty()) {
+            if (reverseDirection) {
+                if (i < startIndex) {
+                    break;
                 }
+            } else if (i >= endIndex) {
+                break;
+            }
 
-                if (reverseDirection) {
-                    i--;
-                } else {
-                    i++;
+            Slot slot = this.slots.get(i);
+            ItemStack itemstack = slot.getItem();
+            if (!itemstack.isEmpty() && ItemStack.isSameItemSameComponents(newStack, itemstack)) {
+                int j = itemstack.getCount() + newStack.getCount();
+                int k = slot.getMaxStackSize(itemstack);
+                if (j <= k) {
+                    newStack.setCount(0);
+                    itemstack.setCount(j);
+                    slot.setChanged();
+                    flag = true;
+                } else if (itemstack.getCount() < k) {
+                    newStack.shrink(k - itemstack.getCount());
+                    itemstack.setCount(k);
+                    slot.setChanged();
+                    flag = true;
                 }
+            }
+
+            if (reverseDirection) {
+                --i;
+            } else {
+                ++i;
             }
         }
 
-        // From container to player //
         if (!newStack.isEmpty()) {
             if (reverseDirection) {
                 i = endIndex - 1;
@@ -459,44 +451,34 @@ public class BackpackMenu extends AbstractContainerMenu {
                 i = startIndex;
             }
 
-            while (reverseDirection ? i >= startIndex : i < endIndex) {
-                Slot slot = slots.get(i);
-                ItemStack slotStack = slot.getItem();
-
-                if (slotStack.isEmpty() && slot.mayPlace(newStack)) {
-
-                    int maxPutSize = (fromContainer) ? Math.min(newStack.getMaxStackSize(), container.getStackMultiplier() * newStack.getMaxStackSize()) : Math.max(newStack.getMaxStackSize(), container.getStackMultiplier() * newStack.getMaxStackSize());
-                    int availableSpace = maxPutSize - slotStack.getCount();
-
-                    if (fromContainer && !newStack.isStackable()) {
-                        // If item is non-stackable only put 1 in
-                        ItemStack inputStack = newStack.split(1);
-                        slot.setByPlayer(inputStack);
-                    } else {
-                        // From Player (Stack Can Be Any Size)
-                        if (newStack.getCount() > availableSpace) {
-                            ItemStack inputStack = newStack.split(maxPutSize);
-                            slot.setByPlayer(inputStack);
-                        } else {
-                            ItemStack inputStack = newStack.split(newStack.getCount());
-                            slot.setByPlayer(inputStack);
-                        }
+            while (true) {
+                if (reverseDirection) {
+                    if (i < startIndex) {
+                        break;
                     }
+                } else if (i >= endIndex) {
+                    break;
+                }
 
-                    slot.setChanged();
-                    bl = true;
+                Slot slot1 = this.slots.get(i);
+                ItemStack itemstack1 = slot1.getItem();
+                if (itemstack1.isEmpty() && slot1.mayPlace(newStack)) {
+                    int l = slot1.getMaxStackSize(newStack);
+                    slot1.setByPlayer(newStack.split(Math.min(newStack.getCount(), l)));
+                    slot1.setChanged();
+                    flag = true;
                     break;
                 }
 
                 if (reverseDirection) {
-                    i--;
+                    --i;
                 } else {
-                    i++;
+                    ++i;
                 }
             }
         }
 
-        return bl;
+        return flag;
     }
 
     public void toggleUpgrade(int slotId, boolean ctrlKeyDown) {
@@ -600,6 +582,7 @@ public class BackpackMenu extends AbstractContainerMenu {
             case SortOrder.NAME:
                 sortedItems.sort(Comparator
                         .comparing((Map.Entry<Util.ItemWithComponent, Integer> entry) -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())  // Sort by item name (ascending)
+                        .thenComparing(entry -> entry.getKey().getCustomName()) // Then by custom name
                         .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));  // Then sort by count (descending)
                 break;
             default:
@@ -611,9 +594,39 @@ public class BackpackMenu extends AbstractContainerMenu {
         }
 
         NonNullList<ItemStack> compactedList = NonNullList.withSize(endIndex - startIndex, ItemStack.EMPTY);
-        int idx = 0;
 
-        // Rebuild the item stack list based on sorted entries
+        // Special handling for tool slots
+        if (startIndex == Util.TOOL_SLOT_START_RANGE && endIndex == Util.TOOL_SLOT_END_RANGE) {
+            List<Class<? extends TieredItem>> toolOrder =
+                    List.of(SwordItem.class, PickaxeItem.class, AxeItem.class, ShovelItem.class, HoeItem.class);
+
+            for (int t = 0; t < toolOrder.size(); t++) {
+                Class<? extends TieredItem> toolClass = toolOrder.get(t);
+
+                Map.Entry<Util.ItemWithComponent, Integer> best = sortedItems.stream()
+                        .filter(e -> toolClass.isInstance(e.getKey().item()))
+                        .max(Comparator.comparingInt(e -> getVanillaTierIndex(new ItemStack(e.getKey().item()))))
+                        .orElse(null);
+
+                if (best != null) {
+                    Util.ItemWithComponent key = best.getKey();
+                    DataComponentPatch patch = key.patch();
+
+                    ItemStack stack = new ItemStack(key.item(), 1);
+                    if (!patch.isEmpty()) stack.applyComponents(patch);
+                    compactedList.set(t, stack);
+
+                    int remaining = best.getValue() - 1;
+                    sortedItems.remove(best);
+                    if (remaining > 0) {
+                        sortedItems.add(Map.entry(key, remaining)); // put leftovers back
+                    }
+                }
+            }
+        }
+
+        // Fill general slots starting after reserved
+        int idx = (startIndex == Util.TOOL_SLOT_START_RANGE ? 5 : 0);
         for (Map.Entry<Util.ItemWithComponent, Integer> entry : sortedItems) {
             Util.ItemWithComponent key = entry.getKey();
             Item item = key.item();
@@ -621,30 +634,62 @@ public class BackpackMenu extends AbstractContainerMenu {
             int totalCount = entry.getValue();
 
             ItemStack tempStack = new ItemStack(item, 1);
-            int maxStackSize = (endIndex == Util.ITEM_SLOT_END_RANGE) ? stackMultiplier * tempStack.getMaxStackSize() : tempStack.getMaxStackSize();
+            int maxStackSize = (endIndex == Util.ITEM_SLOT_END_RANGE)
+                    ? stackMultiplier * tempStack.getMaxStackSize()
+                    : tempStack.getMaxStackSize();
 
-            while (totalCount > 0) {
+            while (totalCount > 0 && idx < compactedList.size()) {
                 int stackSize = Math.min(totalCount, maxStackSize);
                 ItemStack stack = new ItemStack(item, stackSize);
-                if (!patch.isEmpty()) {
-                    stack.applyComponents(patch);
-                }
-                compactedList.set(idx, stack);
+                if (!patch.isEmpty()) stack.applyComponents(patch);
+                compactedList.set(idx++, stack);
                 totalCount -= stackSize;
-                idx++;
+            }
+
+            // fallback: backfill empty reserved slots
+            if (totalCount > 0 && startIndex == Util.TOOL_SLOT_START_RANGE) {
+                for (int t = 0; t < 5 && totalCount > 0; t++) {
+                    if (compactedList.get(t).isEmpty()) {
+                        int stackSize = Math.min(totalCount, maxStackSize);
+                        ItemStack stack = new ItemStack(item, stackSize);
+                        if (!patch.isEmpty()) stack.applyComponents(patch);
+                        compactedList.set(t, stack);
+                        totalCount -= stackSize;
+                    }
+                }
             }
         }
 
-        // Place the sorted items back into the inventory
+        // Place sorted items back
         for (int i = 0; i < compactedList.size(); i++) {
             ItemStack stack = compactedList.get(i);
             Slot slot = player.containerMenu.getSlot(i + startIndex);
             slot.set(stack);
 
             if (startIndex >= Util.UPGRADE_SLOT_END_RANGE) {
-                sp.connection.send(new ClientboundContainerSetSlotPacket(player.containerMenu.containerId, getStateId(), i + startIndex, stack));
+                sp.connection.send(new ClientboundContainerSetSlotPacket(
+                        player.containerMenu.containerId, getStateId(), i + startIndex, stack));
             }
         }
+    }
+
+    public static int getVanillaTierIndex(ItemStack stack) {
+        Item item = stack.getItem();
+
+        if (item instanceof TieredItem tiered) {
+            Tier tier = tiered.getTier();
+
+            return switch (tier) {
+                case Tiers.WOOD -> 0;
+                case Tiers.STONE -> 1;
+                case Tiers.IRON -> 2;
+                case Tiers.GOLD -> 3;
+                case Tiers.DIAMOND -> 4;
+                case Tiers.NETHERITE -> 5;
+                default -> -1;
+            };
+        }
+        return -1;
     }
 
 }

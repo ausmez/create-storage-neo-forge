@@ -7,6 +7,10 @@ import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.protocol.game.ClientboundTakeItemEntityPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -37,10 +41,25 @@ public class BackpackAsBlockUpgradeHandler {
             List<ItemEntity> nearbyItems = level.getEntitiesOfClass(ItemEntity.class, boundingBox);
 
             if (!nearbyItems.isEmpty()) {
+                ArmorStand stand = EntityType.ARMOR_STAND.create(level);
+
                 for (ItemEntity itemEntity : nearbyItems) {
                     if (itemEntity.getItem().getItem() instanceof BackpackItem) continue;
-                    new BackpackHelper().itemEntityToBackPack(this.container, itemEntity, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE);
+                    new BackpackHelper().itemEntityToBackpack(this.container, itemEntity, Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE);
+
+                    if (stand != null) {
+                        stand.setPos(pos.getX() + 0.5, pos.getY() - 0.75, pos.getZ() + 0.5);
+                        stand.noPhysics = true;
+                        stand.setInvisible(true);
+                        level.addFreshEntity(stand);
+
+                        ((ServerLevel) level).getChunkSource().broadcast(
+                                itemEntity,
+                                new ClientboundTakeItemEntityPacket(itemEntity.getId(), stand.getId(), itemEntity.getItem().getCount())
+                        );
+                    }
                 }
+                if (stand != null) stand.discard();
             }
         }
     }

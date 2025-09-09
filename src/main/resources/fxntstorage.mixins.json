@@ -7,7 +7,13 @@
   "mixins": [
     "EMIVanillaPluginMixin",
     "ItemEntityMixin",
-    "ItemStackMixin"
+    "ItemStackMixin",
+    "NeoForgeValueMixin",
+    "PlayerMixin",
+    "PotatoCannonItemMixin",
+    "ThresholdSwitchBlockEntity",
+    "ToolboxDisposeAllPacketMixin",
+    "ToolboxDisposeAllPacketMixin$ToolboxBlockEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

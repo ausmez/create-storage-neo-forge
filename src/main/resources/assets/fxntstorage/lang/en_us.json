@@ -324,6 +324,7 @@
   "fxntstorage.configuration.simpleStorageNetworkRange": "Simple Storage Network Range",
   "fxntstorage.configuration.simpleStorageNetworkUpdateTime": "Simple Storage Network Update Time",
   "fxntstorage.configuration.backpack": "Backpack",
+  "fxntstorage.configuration.backpack.tooltip": "Configuration options for the Backpack",
   "fxntstorage.configuration.magnet_upgrade": "Magnet Upgrade",
   "fxntstorage.configuration.backpackMagnetRange": "Backpack Magnet Range",
   "fxntstorage.configuration.ore_mining_upgrade": "Ore Mining Upgrade",
@@ -331,7 +332,7 @@
   "fxntstorage.configuration.keepBackpackOnDeath": "Keep Backpack On Death",
   "fxntstorage.configuration.elytraBoostEnabled": "Elytra Boost Enabled",
   "fxntstorage.configuration.elytraBoostMultiplier": "Elytra Boost Multiplier",
-
+  "fxntstorage.configuration.jetpackMiningPenalty": "Mining Speed Penalty",
   "fxntstorage.configuration.feeder_upgrade": "Feeder Upgrade",
   "fxntstorage.configuration.displayFeederMessage": "Display Feeder Message",
   "fxntstorage.configuration.allowChorusFruit": "Allow Chorus Fruit",
@@ -345,5 +346,16 @@
   "fxntstorage.configuration.torch_deployer_upgrade": "Torch Deployer Upgrade",
   "fxntstorage.configuration.torchDeployerLightLevel": "Torch Deployer Light Level",
   "fxntstorage.configuration.torchDeployerCooldown": "Torch Deployer Cooldown",
-  "fxntstorage.configuration.torchDeployerLightSource": "Torch Deployer Light Source"
+  "fxntstorage.configuration.torchDeployerLightSource": "Torch Deployer Light Source",
+  "fxntstorage.configuration.checkBackpackForProjectiles": "Check Backpack for Projectiles",
+  "fxntstorage.configuration.checkBackpackForToolboxItems": "Check Backpack for Toolbox Items",
+  "fxntstorage.configuration.ore_mining_upgrade.tooltip": "Configuration options for the Backpack Ore Mining Upgrade",
+  "fxntstorage.configuration.magnet_upgrade.tooltip": "Configuration options for the Backpack Magnet Upgrade",
+  "fxntstorage.configuration.storage_box.tooltip": "Configuration options for the Storage Box",
+  "fxntstorage.configuration.storage_network.tooltip": "Configuration options for the Storage Network",
+  "fxntstorage.configuration.torch_deployer_upgrade.tooltip": "Configuration options for the Backpack Torch Deployer Upgrade",
+  "fxntstorage.configuration.feeder_upgrade.tooltip": "Configuration options for the Backpack Feeder Upgrade",
+  "fxntstorage.configuration.tool_swap_upgrade.tooltip": "Configuration options for the Backpack Tool Swap Upgrade",
+  "fxntstorage.configuration.jetpack_upgrade.tooltip": "Configuration options for the Backpack Flight Upgrade",
+  "fxntstorage.configuration.invalidBlock": "Not a valid block"
 }

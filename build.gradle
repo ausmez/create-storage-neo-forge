@@ -130,12 +130,15 @@ dependencies {
     implementation "curse.maven:vanillabackport-417430:${vanillabackport_id}"
     runtimeOnly "curse.maven:platform-997634:${platform_id}"
 
+    // Construction Stick
+    compileOnly "curse.maven:construction-sticks-1156098:6828918"
+
     // Other mods to include at runtime during development/testing
     runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
     runtimeOnly "curse.maven:jade-324717:${jade_id}"
     runtimeOnly "curse.maven:jade-addons-583345:${jadeaddon_id}"
     runtimeOnly "curse.maven:carry-on-274259:5649344"
-    runtimeOnly "curse.maven:configured-457570:5873783"
+    implementation "curse.maven:configured-457570:5873783"
     runtimeOnly "curse.maven:catalogue-459701:5893750"
     runtimeOnly "curse.maven:mouse-tweaks-60089:5637846"
     runtimeOnly "curse.maven:inventory-sorter-240633:6235889"

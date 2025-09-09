@@ -1,0 +1,101 @@
+package net.fxnt.fxntstorage.util;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import com.simibubi.create.content.kinetics.simpleRelays.AbstractSimpleShaftBlock;
+import net.fxnt.fxntstorage.init.ModItems;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FenceBlock;
+
+public class RendererHelper {
+    public static final int MAX_DISTANCE = 10;
+    public static final int DEFAULT_LIGHT = 250;
+    public static final float[] SIDE_ROT_Y = {0f, 0f, (float) (Math.PI), 0f, (float) (3f * Math.PI / 2f), (float) (Math.PI / 2f)};
+
+    public static void renderLine(String text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int color) {
+        Font font = Minecraft.getInstance().font;
+        float zOffset = 15.05f;
+
+        poseStack.pushPose();
+        poseStack.translate(0.5f, yOffset / 16f, zOffset / 16f);
+        poseStack.scale(1 / 64f, -1 / 64f, 1f);
+
+        float x = -font.width(text) / 2f;
+
+        font.drawInBatch(text, x, 0, color, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, 250);
+        poseStack.popPose();
+    }
+
+    public static void renderItem(ItemRenderer itemRenderer, ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, boolean voidUpgrade) {
+        Level level = Minecraft.getInstance().level;
+        poseStack.pushPose();
+        poseStack.translate(0.5f, 0.175f, 15.05f / 16f);
+        poseStack.mulPose(Axis.YP.rotationDegrees(180));
+
+        BakedModel model = itemRenderer.getModel(stack, null, null, 0);
+        boolean flatItem = !model.isGui3d();
+
+        float scale = (flatItem ? 0.25f : 0.50f) + 0.01f;
+        float zOffset = (flatItem ? -.025f : .068f) + customZOffset(stack.getItem());
+
+        poseStack.scale(scale, scale, scale);
+        poseStack.translate(0, 0, zOffset);
+
+        itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, DEFAULT_LIGHT, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
+        poseStack.popPose();
+
+        if (voidUpgrade) {
+            poseStack.pushPose();
+            poseStack.translate(0.5f, 0.5f, 15.05f / 16f);
+            poseStack.mulPose(Axis.YP.rotationDegrees(180));
+            poseStack.translate(-0.3f, -0.2f, 0f);
+
+            scale = 0.25f + (1 / 64f);
+            poseStack.scale(scale, scale, scale);
+
+            ItemStack icon = new ItemStack(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
+            itemRenderer.renderStatic(icon, ItemDisplayContext.FIXED, DEFAULT_LIGHT, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
+
+            poseStack.popPose();
+        }
+    }
+
+    public static int getColorForDistance(double distance) {
+        final int START = 255;
+        final int END = 50;
+
+        double clamped = Math.min(distance, MAX_DISTANCE);
+        double factor = clamped / MAX_DISTANCE;
+
+        int val = (int) (START + (END - START) * factor);
+
+        return (val << 16) | (val << 8) | val;
+    }
+
+    private static float customZOffset(Item item) {
+        if (item instanceof BlockItem blockItem) {
+            Block block = blockItem.getBlock();
+            if (block instanceof AbstractSimpleShaftBlock
+                    || block instanceof FenceBlock
+                    || block.defaultBlockState().is(BlockTags.BUTTONS)
+                    || block == Blocks.END_ROD) {
+                return -0.1f;
+            }
+        }
+        return 0f;
+    }
+
+}

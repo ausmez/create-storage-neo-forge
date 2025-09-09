@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 public class StorageInterfaceEntity extends BaseContainerBlockEntity {
-    public int tick = 0;
+    private int tickCount = 0;
     public StorageControllerEntity controller = null;
 
     public StorageInterfaceEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
@@ -30,6 +30,7 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity {
     public void setController(StorageControllerEntity controller) {
         // Check if already has controller to prevent switching networks constantly
         if (!checkController()) {
+            if (level != null) level.invalidateCapabilities(this.getBlockPos());
             this.controller = controller;
         }
     }
@@ -50,13 +51,12 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity {
     public void serverTick(Level level) {
         if (level.isClientSide) return;
 
-        if (tick >= ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) {
-            tick = 0;
-            if (controller != null && !checkController()) {
-                forgetController();
-            }
+        if (tickCount++ < ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) return;
+        tickCount = 0;
+
+        if (controller != null && !checkController()) {
+            forgetController();
         }
-        tick++;
     }
 
     public IItemHandlerModifiable getItemHandler() {
@@ -138,8 +138,18 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity {
     }
 
     @Override
-    protected AbstractContainerMenu createMenu(int i, Inventory inventory) {
-        return null;
+    protected @NotNull AbstractContainerMenu createMenu(int i, Inventory inventory) {
+        return new AbstractContainerMenu(null, i) {
+            @Override
+            public @NotNull ItemStack quickMoveStack(Player pPlayer, int pIndex) {
+                return ItemStack.EMPTY;
+            }
+
+            @Override
+            public boolean stillValid(Player pPlayer) {
+                return false;
+            }
+        };
     }
 
 }

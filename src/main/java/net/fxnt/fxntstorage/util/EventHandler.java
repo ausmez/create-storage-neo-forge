@@ -1,6 +1,8 @@
 package net.fxnt.fxntstorage.util;
 
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
@@ -10,6 +12,7 @@ import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.init.ModTags;
+import net.fxnt.fxntstorage.network.packet.CrossbowChargedPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,7 +21,9 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -27,16 +32,24 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
+import net.neoforged.neoforge.event.entity.player.ArrowLooseEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Predicate;
 
 @EventBusSubscriber(modid = FXNTStorage.MOD_ID)
 public class EventHandler {
@@ -73,7 +86,7 @@ public class EventHandler {
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
         Player player = event.getEntity();
-        if (player.isCreative() || player.level().isClientSide() || !event.getAction().equals(PlayerInteractEvent.LeftClickBlock.Action.START))
+        if (player.isCreative() || player.level().isClientSide || !event.getAction().equals(PlayerInteractEvent.LeftClickBlock.Action.START))
             return;
 
         Level world = event.getLevel();
@@ -138,6 +151,8 @@ public class EventHandler {
 
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
+        if (!event.isWasDeath()) return;
+
         CompoundTag oldData = event.getOriginal().getPersistentData();
         CompoundTag newData = event.getEntity().getPersistentData();
 
@@ -145,8 +160,7 @@ public class EventHandler {
             newData.put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, Objects.requireNonNull(oldData.get(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)));
         }
 
-        JetpackManager.onPlayerLeave(event.getEntity());
-        JetpackManager.onPlayerJoin(event.getEntity());
+        JetpackManager.addPlayer(event.getEntity());
     }
 
     @SubscribeEvent
@@ -164,9 +178,9 @@ public class EventHandler {
     }
 
     @SubscribeEvent
-    public static void onServerJoin(EntityJoinLevelEvent event) {
+    public static void onServerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            JetpackManager.onPlayerJoin(player);
+            JetpackManager.addPlayer(player);
             if (player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).isEmpty()) {
                 player.getPersistentData().put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, new CompoundTag());
             }
@@ -174,10 +188,10 @@ public class EventHandler {
     }
 
     @SubscribeEvent
-    public static void onServerLeave(EntityLeaveLevelEvent event) {
+    public static void onServerLeave(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            JetpackManager.onPlayerLeave(player);
-            TorchDeployerManager.onPlayerLeave(player);
+            JetpackManager.removePlayer(player);
+            TorchDeployerManager.removePlayer(player);
         }
     }
 
@@ -208,6 +222,139 @@ public class EventHandler {
 
             handler.applyOreMiningUpgrade(level, event.getPos(), player, mineAllBlocks, 64);
             event.setCanceled(true);
+        }
+    }
+
+    // Track players who should consume arrows from backpack
+    private static final Set<UUID> playersUsingBackpackArrows = new HashSet<>();
+
+    @SubscribeEvent
+    public static void onProjectileEvent(LivingGetProjectileEvent event) {
+        if (event.getEntity() instanceof Player player
+                && event.getProjectileWeaponItemStack().getItem() instanceof ProjectileWeaponItem weapon) {
+
+            if (!event.getProjectileItemStack().isEmpty()) return;
+
+            // Check Backpack
+            boolean checkBackpack = player.level().isClientSide
+                    ? ConfigManager.ClientConfig.CHECK_BACKPACK_FOR_PROJECTILES.get()
+                    : player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getBoolean("CheckBackpackForProjectiles");
+
+            if (!checkBackpack || !BackpackHelper.isWearingBackpack(player))
+                return;
+
+            ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IItemHandler itemHandler = backpackContainer.getItemHandler();
+
+            ItemStack shootable = event.getProjectileWeaponItemStack();
+            Predicate<ItemStack> predicate = weapon.getAllSupportedProjectiles(shootable);
+
+            // Check if player has arrows in inventory first
+            boolean hasArrowsInInventory = false;
+            for (ItemStack invStack : player.getInventory().items) {
+                if (predicate.test(invStack)) {
+                    hasArrowsInInventory = true;
+                    break;
+                }
+            }
+
+            // Only provide arrows from backpack if no arrows found in inventory
+            if (!hasArrowsInInventory) {
+                for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.TOOL_SLOT_END_RANGE; i++) {
+                    ItemStack stack = itemHandler.getStackInSlot(i);
+
+                    if (predicate.test(stack)) {
+                        event.setProjectileItemStack(stack.copy());
+                        // Mark that this player should consume from backpack when arrow is loosed
+                        if (!player.level().isClientSide)
+                            playersUsingBackpackArrows.add(player.getUUID());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onArrowLoose(ArrowLooseEvent event) {
+        if (event.getEntity().level().isClientSide) return;
+
+        Player player = event.getEntity();
+        UUID playerUUID = player.getUUID();
+
+        if (player.isCreative()) {
+            playersUsingBackpackArrows.remove(playerUUID);
+            return;
+        }
+
+        // Only proceed if this player was marked to use backpack arrows
+        if (!playersUsingBackpackArrows.remove(playerUUID)) return;
+
+        // Check if charge is sufficient
+        if (event.getCharge() < 3) return;
+
+        consumeArrowFromBackpack(player);
+    }
+
+    @SubscribeEvent
+    public static void onCrossbowCharged(LivingEntityUseItemEvent.Stop event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+
+        ItemStack itemStack = event.getItem();
+        if (!(itemStack.getItem() instanceof CrossbowItem)) return;
+
+        // Check if the crossbow is now charged (loaded)
+        if (event.getDuration() >= 0) return;
+
+        UUID playerUUID = player.getUUID();
+
+        // Only proceed if this player was marked to use backpack arrows
+        if (!playersUsingBackpackArrows.remove(playerUUID)) return;
+
+        if (player.isCreative()) return;
+
+        if (player.level().isClientSide) {
+            PacketDistributor.sendToServer(new CrossbowChargedPacket());
+        } else {
+            consumeArrowFromBackpack(player);
+        }
+    }
+
+    public static void consumeArrowFromBackpack(Player player) {
+        if (!BackpackHelper.isWearingBackpack(player)) return;
+
+        ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+        IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+        IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
+
+        ItemStack heldItem = player.getMainHandItem();
+        ProjectileWeaponItem weapon = null;
+
+        if (heldItem.getItem() instanceof ProjectileWeaponItem mainHand) {
+            weapon = mainHand;
+        } else {
+            heldItem = player.getOffhandItem();
+            if (heldItem.getItem() instanceof ProjectileWeaponItem offHand) {
+                weapon = offHand;
+            }
+        }
+
+        // Neither hand has a ProjectileWeaponItem equipped
+        if (weapon == null) return;
+
+        Predicate<ItemStack> predicate = weapon.getAllSupportedProjectiles(heldItem);
+
+        for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.TOOL_SLOT_END_RANGE; i++) {
+            ItemStack stack = itemHandler.getStackInSlot(i);
+
+            if (predicate.test(stack)) {
+                stack.shrink(1);
+                itemHandler.setStackInSlot(i, stack);
+                if (!player.level().isClientSide)
+                    backpackContainer.setDataChanged();
+                break;
+            }
         }
     }
 

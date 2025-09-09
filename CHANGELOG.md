@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.1.2 - 2025-09-09
+## Changes
+- **Backpack Integration**
+  - Bows, Crossbows, and Potato Cannons can now use projectiles (arrows & food) stored in an equipped backpack *(configurable)*.
+  - The Create Toolbox can now check equipped backpack contents when returning items *(configurable)*.
+  - JEI/EMI/REI recipe transfer can now pull ingredients from an equipped backpack when crafting with the 2×2 inventory grid.
+- **Backpack Upgrades**
+  - The Magnet Upgrade now visually pulls items toward the player *(when worn)* or toward the backpack *(when placed in the world)*.
+  - The Flight Upgrade has been completely re-written to improve responsiveness.
+  - The mining penalty while flying with the Flight Upgrade can now be disabled *(configurable)*.
+- **Compatibility**
+  - Added compatibility with the Construction Wand/Sticks mod for Backpacks *(when not worn)*, Storage Boxes, and Simple Storage Boxes (#12).
+- **Item Sorting**: 
+  - Items with a custom name are now sorted after items with the default name.
+
+## Bug Fixes
+- Fixed Storage Box display not updating correctly when used on a contraption.
+- Potato Cannon now moves into item storage of backpack when quick-moved.
+- Quick-moving non-stackable items (potions, enchanted books, music discs) now correctly stacks in backpacks.
+- Fixed Void Upgrade in Simple Storage Boxes incorrectly filling all available slots. (#11)
+- Fixed Chutes and Smart Chutes not transferring items into Storage Controllers and Storage Interfaces after a world reload. [NeoForge]
+- Fixed crash when querying slot limits on a Storage Network. (#13) [NeoForge]
+- Further fixes to the Flight Upgrade to improve desynchronization issues. (#14)
+- Fixed duplication bug when upgrading backpacks of the same tier using recipe viewers’ "max craft" function. (#15)
+- Fixed random crash when Storage Boxes are mounted on contraptions. (#16) — Thanks @MoePus
+- Fixed automation not respecting Storage Box filters.
+- Fixed flight upgrade thrust sound to play correctly when launching from the ground.
+- Fixed particles when using the flight upgrade in lava.
+- Fixed duplication bug when using a Passer Block with a Simple Storage Box. (#17)
+- Fixed crafting grid ingredient placement — now correctly respects symmetrical recipes.
+- Fixed server lag caused by excessive block updates from Storage Boxes. (#18)
+- Fixed internal data structure of Simple Storage Boxes — existing boxes will migrate automatically on first load.
+- Fixed Void Upgrade in Simple Storage Boxes incorrectly stacking above 1 in the void slot.
+- Fixed rendering of text and filter items on Storage and Simple Storage Boxes when mounted on contraptions.
+- Fixed void icon rendering backwards on Simple Storage Boxes.
+- Fixed network protocol error when interacting with Storage Boxes and Simple Storage Boxes in spectator mode.
+- Fixed log spam when interacting with a Simple Storage Box mounted to a contraption with no filter set (#19). [NeoForge]
+- Fixed issue sending server packet from server with a Simple Storage Box mounted to a contraption (#20). [NeoForge] — Thanks @MoePus
+- Various other minor fixes and general code cleanup.
+
+---
 ## 1.1.1 - 2025-07-27
 ## Bug Fixes
 
@@ -14,7 +55,6 @@
 - Fixed game crash when using the Backpack Pickblock Upgrade on a Metal Girder Encased Shaft. [NeoForge]
 
 ---
-
 ## 1.1.0 - 2025-07-18
 ## New Features
 - **Backpack Upgrades:**

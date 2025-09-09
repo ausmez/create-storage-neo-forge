@@ -25,11 +25,12 @@ import java.util.UUID;
 import static net.fxnt.fxntstorage.controller.StorageController.CONNECTED;
 
 public class StorageControllerEntity extends BaseContainerBlockEntity {
-    public int tick = 0;
-    public long lastInteractTime = 0;
-    public UUID lastInteractPlayer = UUID.randomUUID();
-    public byte lastInteractType = -1;
-    public int interactWindow = 600;
+    private static final int INTERACT_WINDOW = 600;
+
+    private int tickCount = 0;
+    private long lastInteractTime = 0;
+    private UUID lastInteractPlayer = UUID.randomUUID();
+    private byte lastInteractType = -1;
     public StorageNetwork storageNetwork;
 
     public StorageControllerEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
@@ -84,10 +85,10 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
             }
         }
 
-        if (tick >= ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) {
-            tick = 0;
+        if (tickCount >= ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) {
+            tickCount = 0;
         }
-        tick++;
+        tickCount++;
     }
 
     @Override
@@ -127,7 +128,7 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
     public void transferItemsFromPlayer(Player player) {
         ItemStack handItem = player.getItemInHand(InteractionHand.MAIN_HAND);
 
-        if (Util.getMillis() < lastInteractTime + interactWindow
+        if (Util.getMillis() < lastInteractTime + INTERACT_WINDOW
                 && player.getUUID().equals(lastInteractPlayer)
                 && lastInteractType == 1
                 && handItem.isEmpty()
@@ -178,7 +179,17 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
 
     @Override
     protected AbstractContainerMenu createMenu(int i, Inventory inventory) {
-        return null;
+        return new AbstractContainerMenu(null, i) {
+            @Override
+            public ItemStack quickMoveStack(Player player, int i) {
+                return ItemStack.EMPTY;
+            }
+
+            @Override
+            public boolean stillValid(Player player) {
+                return false;
+            }
+        };
     }
 
 }

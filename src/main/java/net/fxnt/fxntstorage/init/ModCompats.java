@@ -12,7 +12,7 @@ import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
 public class ModCompats {
     public static final String CURIOS = "curios";
     public static final String CARRY_ON = "carryon";
-    public static final String CONFIGURED = "configured";
+    public static final String CONSTRUCTION_STICK = "constructionstick";
     public static final String INVENTORY_SORTER = "inventorysorter";
     public static final String VANILLA_BACKPORT = "vanillabackport";
 

@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.mixin;
 import dev.emi.emi.VanillaPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import net.fxnt.fxntstorage.compat.emi.EMICraftingRecipeHandler;
+import net.fxnt.fxntstorage.compat.emi.EMIInventoryRecipeHandler;
 import net.fxnt.fxntstorage.compat.emi.EMIStonecuttingRecipeHandler;
 import net.minecraft.world.inventory.MenuType;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +18,7 @@ public class EMIVanillaPluginMixin {
             at = @At(value = "HEAD")
     )
     private void fxnt$injectVanillaCrafting(EmiRegistry registry, CallbackInfo ci) {
+        registry.addRecipeHandler(null, new EMIInventoryRecipeHandler());
         registry.addRecipeHandler(MenuType.CRAFTING, new EMICraftingRecipeHandler());
         registry.addRecipeHandler(MenuType.STONECUTTER, new EMIStonecuttingRecipeHandler());
     }

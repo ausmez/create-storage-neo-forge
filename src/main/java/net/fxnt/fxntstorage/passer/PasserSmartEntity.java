@@ -1,69 +1,53 @@
 package net.fxnt.fxntstorage.passer;
 
-import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
+import com.simibubi.create.foundation.item.ItemHelper;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.items.IItemHandler;
 
 import java.util.List;
 
-import static net.fxnt.fxntstorage.passer.PasserBlock.FACING;
 import static net.fxnt.fxntstorage.passer.PasserBlock.POWERED;
 
-public class PasserSmartEntity extends SmartBlockEntity {
-    private int lastTick = 0;
-    private boolean doTick = false;
-    private Direction facing;
+public class PasserSmartEntity extends PasserEntity {
     private FilteringBehaviour filtering;
-
-    private static final int UPDATE_EVERY_X_TICKS = 10;
 
     public PasserSmartEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
-        this.facing = this.getBlockState().getValue(FACING);
     }
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         behaviours.add(filtering =
-                new FilteringBehaviour(this, new PasserFilteringBox()).showCount());
+                new FilteringBehaviour(this, new PasserFilteringBox()).showCount()
+                        .withCallback($ -> invVersionTracker.reset()));
+        super.addBehaviours(behaviours);
     }
 
-    public void serverTick(Level level, BlockPos blockPos) {
-        if (level.isClientSide) return;
+    @Override
+    protected boolean canAcceptItem(ItemStack stack) {
+        return super.canAcceptItem(stack) && canActivate() && filtering.test(stack);
+    }
 
-        BlockState blockState = this.getBlockState();
-        if (blockState.hasProperty(POWERED) && blockState.getValue(POWERED)) return;
+    @Override
+    protected boolean canActivate() {
+        BlockState blockState = getBlockState();
+        return blockState.hasProperty(POWERED) && !blockState.getValue(POWERED);
+    }
 
-        lastTick++;
-        if (lastTick >= UPDATE_EVERY_X_TICKS) {
-            lastTick = 0;
-            doTick = true;
-        }
-        if (!doTick) return;
-        doTick = false;
+    @Override
+    protected int getExtractionAmount() {
+        return filtering.isCountVisible() && !filtering.anyAmount() ? filtering.getAmount() : 64;
+    }
 
-        this.facing = this.getBlockState().getValue(FACING);
-        IItemHandler srcContainer = PasserHelper.getStorage(level, blockPos, this.facing, true);
-        if (srcContainer == null) {
-            return;
-        }
-        IItemHandler dstContainer = PasserHelper.getStorage(level, blockPos, this.facing, false);
-        if (dstContainer == null) {
-            return;
-        }
-
-        ItemStack filterItem = filtering.getFilter();
-        long amount = filtering.getAmount();
-        boolean fixedAmount = !filtering.upTo;
-
-        PasserHelper.passItems(level, srcContainer, dstContainer, amount, fixedAmount, filterItem); // Set to limit set by filter
+    @Override
+    protected ItemHelper.ExtractionCountMode getExtractionMode() {
+        return filtering.isCountVisible() && !filtering.anyAmount() && !filtering.upTo
+                ? ItemHelper.ExtractionCountMode.EXACTLY
+                : ItemHelper.ExtractionCountMode.UPTO;
     }
 
 }

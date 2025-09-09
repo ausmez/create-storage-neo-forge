@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBox.STORAGE_USED;
+import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.CAPACITY_UPGRADE_SLOT_START;
+import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.SLOT_COUNT;
 
 public class SimpleStorageBoxScenes {
 
@@ -251,7 +253,7 @@ public class SimpleStorageBoxScenes {
         scene.world().modifyBlock(rightBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX.get().defaultBlockState()
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> {
-            for (int i = 4; i < 13; i++) {
+            for (int i = CAPACITY_UPGRADE_SLOT_START; i < SLOT_COUNT; i++) {
                 t.setItem(i, cUpgrade);
             }
             t.setFilter(gold);

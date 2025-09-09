@@ -78,7 +78,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!oldState.is(this)) level.invalidateCapabilities(pos);
-        ((SimpleStorageBoxEntity) Objects.requireNonNull(level.getBlockEntity(pos))).tick = 999;
+        ((SimpleStorageBoxEntity) Objects.requireNonNull(level.getBlockEntity(pos))).forceTick();
     }
 
     @Override
@@ -95,7 +95,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
             if (stack.has(DataComponents.CUSTOM_NAME)) {
                 be.getDisplayName();
             }
-            be.tick = 999;
+            be.forceTick();
         }
     }
 

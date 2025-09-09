@@ -1,7 +1,16 @@
 package net.fxnt.fxntstorage.config;
 
-import com.google.common.collect.ImmutableList;
+import net.fxnt.fxntstorage.network.packet.SyncClientSettingsPacket;
+import net.fxnt.fxntstorage.util.Util;
+import net.minecraft.ResourceLocationException;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
@@ -23,6 +32,8 @@ public class ConfigManager {
         public static ModConfigSpec.BooleanValue ELYTRA_BOOST_ENABLED;
         public static ModConfigSpec.IntValue ELYTRA_BOOST_MULTIPLIER;
         public static ModConfigSpec.BooleanValue OREMINE_ORES_ONLY;
+        public static ModConfigSpec.BooleanValue JETPACK_MINING_PENALTY;
+        public static ModConfigSpec.BooleanValue JETPACK_ALLOW_VOID_FLIGHT;
 
         static {
             // BACKPACK
@@ -37,6 +48,11 @@ public class ConfigManager {
                     .comment("Limits the Ore Mining Upgrade to mine ores only. Disable to allow all blocks (up to 64).")
                     .define("mineOresOnly", true);
             COMMON_BUILDER.pop();
+            COMMON_BUILDER.comment("Flight Upgrade").push("flight_upgrade");
+            JETPACK_ALLOW_VOID_FLIGHT = COMMON_BUILDER
+                    .comment("Allow the use of the flight upgrade over the void in The End dimension.")
+                    .define("jetpackAllowVoidFlight", false);
+            COMMON_BUILDER.pop();
             CURIOS_KEEP_BACKPACK = COMMON_BUILDER
                     .comment("Keep Backpack equipped in Curios slot upon death.")
                     .define("keepBackpackOnDeath", true);
@@ -46,6 +62,9 @@ public class ConfigManager {
             ELYTRA_BOOST_MULTIPLIER = COMMON_BUILDER
                     .comment("Multiplier for Jetpack fuel consumption while Elytra boosting.")
                     .defineInRange("elytraBoostMultiplier", 4, 1, 10);
+            JETPACK_MINING_PENALTY = COMMON_BUILDER
+                    .comment("Apply mining speed penalty when flying with the Jetpack.")
+                    .define("jetpackMiningPenalty", true);
             COMMON_BUILDER.pop();
 
             // STORAGE BOX
@@ -87,6 +106,8 @@ public class ConfigManager {
         public static ModConfigSpec.IntValue TORCH_DEPLOYER_COOLDOWN;
         public static ModConfigSpec.IntValue TORCH_DEPLOYER_LIGHT_LEVEL;
         public static ModConfigSpec.EnumValue<TorchDeployerLightSource> TORCH_DEPLOYER_LIGHT_SOURCE;
+        public static ModConfigSpec.BooleanValue CHECK_BACKPACK_FOR_PROJECTILES;
+        public static ModConfigSpec.BooleanValue CHECK_BACKPACK_FOR_TOOLBOX_ITEMS;
 
         public enum TorchDeployerLightSource {
             BLOCK_LIGHT,
@@ -124,12 +145,12 @@ public class ConfigManager {
                     .define("preferSilkTouch", false);
             TOOLSWAP_PREFERS_SILK_TOUCH_LIST = CLIENT_BUILDER
                     .comment("Blocks in this list will drop the block when broken with a Silk Touch tool.")
-                    .defineListAllowEmpty("prefersSilkTouchList", ImmutableList.of("minecraft:grass_block", "minecraft:mycelium", "minecraft:podzol", "minecraft:clay", "minecraft:gravel", "minecraft:snow",
+                    .defineListAllowEmpty("prefersSilkTouchList", List.of("minecraft:grass_block", "minecraft:mycelium", "minecraft:podzol", "minecraft:clay", "minecraft:gravel", "minecraft:snow",
                                     "minecraft:glowstone", "minecraft:stone", "minecraft:sea_lantern", "minecraft:coal_ore", "minecraft:deepslate_coal_ore", "minecraft:nether_gold_ore", "minecraft:nether_quartz_ore",
                                     "minecraft:gilded_blackstone", "minecraft:iron_ore", "minecraft:deepslate_iron_ore", "minecraft:lapis_ore", "minecraft:deepslate_lapis_ore", "minecraft:gold_ore", "minecraft:deepslate_gold_ore",
                                     "minecraft:emerald_ore", "minecraft:deepslate_emerald_ore", "minecraft:diamond_ore", "minecraft:deepslate_diamond_ore", "minecraft:redstone_ore", "minecraft:deepslate_redstone_ore"),
-                            () -> "",
-                            o -> true);
+                            () -> "minecraft:stone",
+                            ConfigManager::validateBlock);
             CLIENT_BUILDER.pop();
 
             CLIENT_BUILDER.comment("Torch Deployer Upgrade").push("torch_deployer_upgrade");
@@ -144,9 +165,57 @@ public class ConfigManager {
                     .defineEnum("torchDeployerLightSource", TorchDeployerLightSource.BLOCK_LIGHT);
             CLIENT_BUILDER.pop();
 
+            CHECK_BACKPACK_FOR_PROJECTILES = CLIENT_BUILDER
+                    .comment("Ranged weapons can use arrows and other ammo stored in equipped backpack.")
+                    .define("checkBackpackForProjectiles", true);
+            CHECK_BACKPACK_FOR_TOOLBOX_ITEMS = CLIENT_BUILDER
+                    .comment("Toolbox integration, allowing items to be transferred directly from equipped backpack.")
+                    .define("checkBackpackForToolboxItems", true);
+
             CLIENT_SPEC = CLIENT_BUILDER.build();
         }
 
+        public static void sendSettings(Player player) {
+            // Save client settings
+            CompoundTag playerData = player.getPersistentData();
+            CompoundTag fxntSettingsTag = Util.getOrCreateSubTag(playerData, FXNTSTORAGE_SETTINGS_TAG);
+            fxntSettingsTag.putBoolean("JetpackHoverBobbing", JETPACK_HOVER_BOBBING.get()); // Needed for clientside
+
+            // Serialize and send client settings to server
+            ListTag listTag = new ListTag();
+            for (String entry : TOOLSWAP_PREFERS_SILK_TOUCH_LIST.get()) {
+                listTag.add(StringTag.valueOf(entry));
+            }
+
+            CompoundTag settings = new CompoundTag();
+            settings.put("prefersSilkTouchList", listTag);
+            settings.putBoolean("preferSilkTouch", TOOLSWAP_PREFER_SILK_TOUCH.get());
+            settings.putBoolean("ignoreFanProcessing", MAGNET_IGNORE_FAN_PROCESSING.get());
+            settings.putBoolean("displayFeederMessage", DISPLAY_FEEDER_MESSAGE.get());
+            settings.putBoolean("allowChorusFruit", ALLOW_CHORUS_FRUIT.get());
+            settings.putInt("torchDeployerCooldown", TORCH_DEPLOYER_COOLDOWN.get());
+            settings.putInt("torchDeployerLightLevel", TORCH_DEPLOYER_LIGHT_LEVEL.get());
+            settings.putString("torchDeployerLightSource", TORCH_DEPLOYER_LIGHT_SOURCE.get().name());
+            settings.putBoolean("jetpackHoverBobbing", JETPACK_HOVER_BOBBING.get());
+            settings.putBoolean("checkBackpackForProjectiles", CHECK_BACKPACK_FOR_PROJECTILES.get());
+            settings.putBoolean("checkBackpackForToolboxItems", CHECK_BACKPACK_FOR_TOOLBOX_ITEMS.get());
+
+            PacketDistributor.sendToServer(new SyncClientSettingsPacket(settings));
+        }
+
+    }
+
+    private static boolean validateBlock(final Object obj) {
+        if (!(obj instanceof String block) || block.isBlank()) {
+            return false;
+        }
+
+        try {
+            ResourceLocation id = ResourceLocation.parse(block);
+            return BuiltInRegistries.BLOCK.containsKey(id);
+        } catch (ResourceLocationException e) {
+            return false;
+        }
     }
 
 }

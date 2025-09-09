@@ -54,7 +54,7 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
     public boolean initialized = false;
     private boolean dirty = false;
 
-    private FilterItemStack filterItem;
+    private FilterItemStack filterItem = FilterItemStack.empty();
     private boolean voidUpgrade;
     private SortOrder sortOrder;
 
@@ -68,10 +68,12 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
 
     @Override
     public boolean handleInteraction(ServerPlayer player, Contraption contraption, StructureTemplate.StructureBlockInfo info) {
+        if (player.isSpectator()) return false;
+
         ItemStack itemInHand = player.getMainHandItem();
 
         // Right-Click with Create Wrench in hand will toggle void mode
-        if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
+        if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag) && info.nbt() != null) {
             boolean nbtValue = info.nbt().getBoolean("VoidUpgrade");
             voidUpgrade = !nbtValue;
 
@@ -174,8 +176,8 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
     @Override
     public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
         ItemStack stack = super.extractItem(slot, amount, simulate);
-//        if (!stack.isEmpty())
-//            markDirty();
+        if (!stack.isEmpty() && !simulate)
+            markDirty();
         return stack;
     }
 
@@ -301,8 +303,10 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
             for (Map.Entry<BlockPos, MountedItemStorage> entry : c.getStorage().getMountedItems().storages.entrySet()) {
                 if (entry.getValue() instanceof StorageBoxMountedStorage) {
                     StructureTemplate.StructureBlockInfo block = c.getBlocks().get(entry.getKey());
-                    FilterItemStack filterItem = FilterItemStack.of(c.entity.registryAccess(), block.nbt().getCompound("Filter"));
-                    filterSet.add(filterItem);
+                    if (block.nbt() != null) {
+                        FilterItemStack filterItem = FilterItemStack.of(c.entity.registryAccess(), block.nbt().getCompound("Filter"));
+                        filterSet.add(filterItem);
+                    }
                 }
             }
             return filterSet;

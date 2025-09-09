@@ -10,6 +10,7 @@ import com.simibubi.create.content.contraptions.Contraption;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.foundation.codec.CreateCodecs;
 import com.simibubi.create.foundation.utility.CreateLang;
+import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
@@ -18,7 +19,6 @@ import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -68,25 +68,26 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
     @Override
     public boolean handleInteraction(ServerPlayer player, Contraption contraption, StructureTemplate.StructureBlockInfo info) {
+        if (player.isSpectator()) return false;
+
         ItemStack itemInHand = player.getMainHandItem();
 
         if (!itemInHand.isEmpty()) {
-            if (itemInHand.getItem().equals(this.filterItem.getItem()) || this.filterItem.isEmpty()) {
+            if (itemInHand.getItem().equals(filterItem.getItem()) || filterItem.isEmpty()) {
                 if (!itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
-                    ItemStack remain = this.wrapped.insertItem(1, itemInHand, false);
-                    this.moveItems();
+                    ItemStack remain = wrapped.insertItem(0, itemInHand, false);
                     player.setItemInHand(InteractionHand.MAIN_HAND, remain);
                 }
             } else if (itemInHand.is(ModTags.Items.STORAGE_BOX_UPGRADE)) {
                 if (itemInHand.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())) {
                     if (!this.hasVoidUpgrade()) {
-                        this.wrapped.setStackInSlot(VOID_UPGRADE_SLOT, itemInHand.copyWithCount(1));
+                        wrapped.setStackInSlot(VOID_UPGRADE_SLOT, itemInHand.copyWithCount(1));
                         if (!player.isCreative()) {
                             itemInHand.shrink(1);
                             player.getInventory().setChanged();
                         }
                     } else {
-                        ItemStack voidStack = this.wrapped.getStackInSlot(VOID_UPGRADE_SLOT);
+                        ItemStack voidStack = wrapped.getStackInSlot(VOID_UPGRADE_SLOT);
                         int slot = player.getInventory().getSlotWithRemainingSpace(voidStack);
                         if (slot > -1) {
                             player.getInventory().getItem(slot).grow(1);
@@ -100,13 +101,13 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
                                 player.drop(voidStack, false);
                             }
                         }
-                        this.wrapped.setStackInSlot(VOID_UPGRADE_SLOT, ItemStack.EMPTY);
+                        wrapped.setStackInSlot(VOID_UPGRADE_SLOT, ItemStack.EMPTY);
                     }
                 } else if (itemInHand.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
                     boolean canAddUpgrade = false;
                     for (int i = CAPACITY_UPGRADE_SLOT_START; i < CAPACITY_UPGRADE_SLOT_START + MAX_CAPACITY_UPGRADES; i++) {
-                        if (this.wrapped.getStackInSlot(i).isEmpty()) {
-                            this.wrapped.setStackInSlot(i, itemInHand.copyWithCount(1));
+                        if (wrapped.getStackInSlot(i).isEmpty()) {
+                            wrapped.setStackInSlot(i, itemInHand.copyWithCount(1));
                             canAddUpgrade = true;
                             break;
                         }
@@ -139,22 +140,22 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
         OptionalInt id = player.openMenu(
                 this.createMenu(
-                        menuName, this.wrapped, stillValid, onClose, contraption.entity.getId(), localPos, info.nbt()
+                        menuName, wrapped, stillValid, onClose, contraption.entity.getId(), localPos, info.nbt()
                 ), buf -> buf.writeInt(contraption.entity.getId()).writeBlockPos(localPos).writeNbt(info.nbt())
         );
         return id.isPresent();
     }
 
     private boolean hasVoidUpgrade() {
-        return this.wrapped.getStackInSlot(VOID_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_VOID_UPGRADE);
+        return wrapped.getStackInSlot(VOID_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_VOID_UPGRADE);
     }
 
     private int getMaxItemCapacity() {
         int upgradeCount = 0;
 
         for (int i = CAPACITY_UPGRADE_SLOT_START; i < CAPACITY_UPGRADE_SLOT_START + MAX_CAPACITY_UPGRADES; i++) {
-            if (this.wrapped.getStackInSlot(i).is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
-                ++upgradeCount;
+            if (wrapped.getStackInSlot(i).is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
+                upgradeCount++;
             }
         }
 
@@ -179,7 +180,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     @Override
     public void unmount(Level level, BlockState state, BlockPos pos, @Nullable BlockEntity be) {
         if (be instanceof SimpleStorageBoxEntity simpleStorageBox) {
-            simpleStorageBox.applyInventoryToBlock(this.wrapped);
+            simpleStorageBox.applyInventoryToBlock(wrapped, filterItem);
         }
 
         if (level.isClientSide) return;
@@ -195,7 +196,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
     @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-        if (slot != 1 && slot != 2) {
+        if (slot > 0) {
             return stack;
         } else if (stack.isEmpty()) {
             return ItemStack.EMPTY;
@@ -203,9 +204,9 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             return stack;
         } else {
 
-            ItemStack existing = this.wrapped.getStackInSlot(slot);
+            ItemStack existing = wrapped.getStackInSlot(slot);
 
-            int limit = Math.min(getSlotLimit(slot), stack.getMaxStackSize());
+            int limit = getMaxItemCapacity();
 
             if (!existing.isEmpty()) {
                 if (!ItemStack.isSameItemSameComponents(stack, existing)) {
@@ -216,22 +217,23 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             }
 
             if (limit <= 0) {
-                return stack;
+                return (hasVoidUpgrade()) ? ItemStack.EMPTY : stack;
             } else {
                 boolean reachedLimit = stack.getCount() > limit;
                 if (!simulate) {
                     if (existing.isEmpty()) {
-                        this.wrapped.setStackInSlot(slot, reachedLimit ? stack.copyWithCount(limit) : stack);
+                        wrapped.setStackInSlot(slot, reachedLimit ? stack.copyWithCount(limit) : stack);
                     } else {
                         existing.grow(reachedLimit ? limit : stack.getCount());
                     }
                 }
                 if (filterItem.isEmpty()) filterItem = stack.copyWithCount(1);
-                this.moveItems();
 
                 markDirty();
 
-                return reachedLimit ? stack.copyWithCount(stack.getCount() - limit) : ItemStack.EMPTY;
+                if (reachedLimit)
+                    return (hasVoidUpgrade()) ? ItemStack.EMPTY : stack.copyWithCount(stack.getCount() - limit);
+                return ItemStack.EMPTY;
             }
         }
     }
@@ -239,7 +241,8 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
         ItemStack stack = super.extractItem(slot, amount, simulate);
-        markDirty();
+        if (!stack.isEmpty() && !simulate)
+            markDirty();
         return stack;
     }
 
@@ -250,48 +253,15 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
         if (filterTest(stack)) {
             boolean voidUpgrade = hasVoidUpgrade();
-            if (slot > 1 && !voidUpgrade)
-                return false;
-            if (voidUpgrade)
-                return true;
-            return !(getPercent() >= 100);
+            if (slot > 0) return false;
+            if (voidUpgrade) return true;
+            return wrapped.getStackInSlot(0).getCount() < getMaxItemCapacity();
         }
-
         return false;
     }
 
     private float getPercent() {
-        return ((float) (wrapped.getStackInSlot(0).getCount() + wrapped.getStackInSlot(1).getCount()) / getMaxItemCapacity()) * 100;
-    }
-
-    private void moveItems() {
-        ItemStack slot0 = wrapped.getStackInSlot(0);
-        ItemStack slot1 = wrapped.getStackInSlot(1);
-
-        if (getPercent() == 100 && !hasVoidUpgrade()) return;
-
-        // If full & using void upgrade then items go into slot 2 (delete them all!)
-        if (!wrapped.getStackInSlot(2).isEmpty()) {
-            wrapped.setStackInSlot(2, ItemStack.EMPTY);
-        }
-
-        // Incoming items are placed into slot 1
-        // Move items from slot 1 to slot 0 (slot 0 is bulk storage)
-        if (slot1.isEmpty()) return;
-
-        int slot1Amount = slot1.getCount();
-
-        // If no items in slot 0, then add
-        if (slot0.isEmpty()) {
-            wrapped.setStackInSlot(0, slot1.copy());
-            wrapped.setStackInSlot(1, ItemStack.EMPTY);
-        } else {
-            // Always move items from slot 1 to 0 if space available
-            int slot0FreeSpace = getMaxItemCapacity() - filterItem.getMaxStackSize() - slot0.getCount();
-            int amountToMove = Math.min(slot1Amount, slot0FreeSpace);
-            slot0.grow(amountToMove);
-            slot1.shrink(amountToMove);
-        }
+        return ((float) wrapped.getStackInSlot(0).getCount() / getMaxItemCapacity()) * 100;
     }
 
     private boolean filterTest(ItemStack stack) {
@@ -300,7 +270,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
     private EnumProperties.StorageUsed calculateFillLevel() {
         EnumProperties.StorageUsed fillLevel = EnumProperties.StorageUsed.EMPTY;
-        int stored = wrapped.getStackInSlot(0).getCount() + wrapped.getStackInSlot(1).getCount();
+        int stored = wrapped.getStackInSlot(0).getCount();
 
         if (stored >= getMaxItemCapacity()) fillLevel = EnumProperties.StorageUsed.FULL;
         else if (stored > 0) fillLevel = EnumProperties.StorageUsed.HAS_ITEMS;
@@ -309,16 +279,14 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     public void updateClientStorageData(MovementContext context) {
-        int amount = wrapped.getStackInSlot(0).getCount() + wrapped.getStackInSlot(1).getCount();
+        int amount = wrapped.getStackInSlot(0).getCount();
         int maxCapacity = getMaxItemCapacity();
         boolean voidUpgrade = !wrapped.getStackInSlot(VOID_UPGRADE_SLOT).isEmpty();
 
-        CompoundTag filterTag = new CompoundTag();
-        filterTag.putString("id", BuiltInRegistries.ITEM.getKey(this.wrapped.getStackInSlot(0).getItem()).toString());
-        filterTag.putByte("Count", (byte) 1);
-
-        filterItem = ItemStack.parseOptional(context.contraption.entity.level().registryAccess(), filterTag);
-        context.blockEntityData.put("FilterItem", filterTag);
+        if (!wrapped.getStackInSlot(0).isEmpty() && filterItem.isEmpty()) {
+            filterItem = wrapped.getStackInSlot(0).copyWithCount(1);
+        }
+        context.blockEntityData.put("FilterItem", filterItem.saveOptional(context.contraption.entity.level().registryAccess()));
 
         EnumProperties.StorageUsed fillLevel = calculateFillLevel();
 
@@ -338,6 +306,25 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
     public void initBlockEntityData(MovementContext context) {
         if (initialized) return;
+
+        // --- Slot layout migration check (1.1.2)
+        CompoundTag itemsTag = context.blockEntityData.getCompound("Items");
+        int oldSize = itemsTag.getInt("Size");
+
+        if (oldSize != SLOT_COUNT) {
+            FXNTStorage.LOGGER.debug("Migrating slot layout from previous version of Simple Storage Box mounted on contraption {} at {}", context.contraption.entity.getId(), context.localPos);
+
+            ItemStackHandler migratedHandler = migrateSlotItems(wrapped); // Slot layout migration
+            context.blockEntityData.put("Items", migratedHandler.serializeNBT(context.world.registryAccess()));
+
+            for (int i = 0; i < wrapped.getSlots(); i++) {
+                if (i < migratedHandler.getSlots()) {
+                    wrapped.setStackInSlot(i, migratedHandler.getStackInSlot(i));
+                } else {
+                    wrapped.setStackInSlot(i, ItemStack.EMPTY);
+                }
+            }
+        }
 
         filterItem = ItemStack.parseOptional(
                 context.contraption.entity.level().registryAccess(),
@@ -382,6 +369,35 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
     public void markDirty() {
         this.dirty = true;
+    }
+
+    private ItemStackHandler migrateSlotItems(ItemStackHandler oldHandler) {
+        ItemStackHandler newHandler = new ItemStackHandler(SLOT_COUNT);
+        // --- Old Slot0 + Slot1 -> New Slot0
+        ItemStack slot0 = oldHandler.getStackInSlot(0);
+        ItemStack slot1 = oldHandler.getStackInSlot(1);
+
+        if (!slot0.isEmpty() || !slot1.isEmpty()) {
+            ItemStack merged = slot0.copy();
+
+            int totalCount = slot0.getCount() + slot1.getCount();
+            merged.setCount(Math.min(totalCount, getMaxItemCapacity()));
+
+            newHandler.setStackInSlot(0, merged);
+        }
+
+        // --- Old Slot3 -> New Slot1
+        newHandler.setStackInSlot(1, oldHandler.getStackInSlot(3).copy());
+
+        // --- Old Slot4-12 -> New Slot2-10
+        for (int oldSlot = 4; oldSlot <= 12; oldSlot++) {
+            int newSlot = (oldSlot - 4) + 2;
+            if (newSlot < newHandler.getSlots()) {
+                newHandler.setStackInSlot(newSlot, oldHandler.getStackInSlot(oldSlot).copy());
+            }
+        }
+
+        return newHandler;
     }
 
 }

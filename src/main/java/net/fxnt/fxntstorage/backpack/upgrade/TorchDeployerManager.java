@@ -33,7 +33,7 @@ public class TorchDeployerManager {
         lastPlacementTime.put(player.getUUID(), player.level().getGameTime());
     }
 
-    public static void onPlayerLeave(ServerPlayer player) {
+    public static void removePlayer(ServerPlayer player) {
         lastPlacementTime.remove(player.getUUID());
     }
 

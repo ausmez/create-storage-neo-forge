@@ -14,6 +14,7 @@ public class PacketHandler {
         final PayloadRegistrar registrar = event.registrar("1");
 
         // ClientboundPacket
+        registrar.playToClient(JetpackFuelSyncPacket.TYPE, JetpackFuelSyncPacket.STREAM_CODEC, ClientPayloadHandler.getInstance()::handleJetpackFuelSyncPacket);
         registrar.playToClient(SetCarriedPacket.TYPE, SetCarriedPacket.STREAM_CODEC, ClientPayloadHandler.getInstance()::handleSetCarriedPacket);
         registrar.playToClient(SyncContainerPacket.TYPE, SyncContainerPacket.STREAM_CODEC, ClientPayloadHandler.getInstance()::handleSyncContainerPacket);
         registrar.playToClient(SyncDataComponentPacket.TYPE, SyncDataComponentPacket.STREAM_CODEC, ClientPayloadHandler.getInstance()::handleSyncNBTDataPacket);
@@ -23,6 +24,8 @@ public class PacketHandler {
         registrar.playToClient(VisualJetpackAirPacket.TYPE, VisualJetpackAirPacket.STREAM_CODEC, ClientPayloadHandler.getInstance()::handleVisualJetpackAirPacket);
 
         // ServerboundPacket
+        registrar.playToServer(CrossbowChargedPacket.TYPE, CrossbowChargedPacket.STREAM_CODEC, ServerPayloadHandler.getInstance()::handleCrossbowChargedPacket);
+        registrar.playToServer(JetpackFlyingPacket.TYPE, JetpackFlyingPacket.STREAM_CODEC, ServerPayloadHandler.getInstance()::handleJetpackFlyingPacket);
         registrar.playToServer(KeyPressedPacket.TYPE, KeyPressedPacket.STREAM_CODEC, ServerPayloadHandler.getInstance()::handleKeyPressedPacket);
         registrar.playToServer(PickBlockUpgradePacket.TYPE, PickBlockUpgradePacket.STREAM_CODEC, ServerPayloadHandler.getInstance()::handlePickBlockUpgradePacket);
         registrar.playToServer(PlayerInputPacket.TYPE, PlayerInputPacket.STREAM_CODEC, ServerPayloadHandler.getInstance()::handlePlayerInputPacket);

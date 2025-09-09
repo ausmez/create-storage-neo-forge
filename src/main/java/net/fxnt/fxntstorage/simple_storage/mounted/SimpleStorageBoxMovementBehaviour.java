@@ -41,4 +41,9 @@ public class SimpleStorageBoxMovementBehaviour implements MovementBehaviour {
         SimpleStorageBoxEntityRenderer.renderFromContraptionContext(context, matrices, buffer);
     }
 
+    @Override
+    public boolean disableBlockEntityRendering() {
+        return true;
+    }
+
 }

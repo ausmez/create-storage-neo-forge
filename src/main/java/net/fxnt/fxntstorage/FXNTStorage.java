@@ -8,8 +8,8 @@ import net.fxnt.fxntstorage.backpack.renderer.BackpackRenderPlayer;
 import net.fxnt.fxntstorage.backpack.tooltip.BackpackClientTooltip;
 import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackAirOverlay;
-import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.compat.CuriosCompat;
+import net.fxnt.fxntstorage.compat.constructionstick.ConstructionStickCompat;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
@@ -44,8 +44,6 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.event.*;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.registries.RegisterEvent;
@@ -70,9 +68,7 @@ public class FXNTStorage {
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(FXNTStorage::registerTooltipComponent);
-            if (!ModList.get().isLoaded(ModCompats.CONFIGURED)) {
-                modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-            }
+//            modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
 
         modEventBus.addListener(this::onCommonSetup);
@@ -91,6 +87,7 @@ public class FXNTStorage {
         curiosLoaded = ModList.get().isLoaded(ModCompats.CURIOS);
 
         if (curiosLoaded) loadCuriosCompat(modEventBus);
+        if (ModList.get().isLoaded(ModCompats.CONSTRUCTION_STICK)) ConstructionStickCompat.init();
     }
 
     private static void loadCuriosCompat(IEventBus bus) {
@@ -136,8 +133,8 @@ public class FXNTStorage {
         @SubscribeEvent
         public static void onConfigReload(final ModConfigEvent.Reloading event) {
             if (Objects.equals(event.getConfig().getModId(), MOD_ID) && event.getConfig().getType().equals(ModConfig.Type.CLIENT)) {
-                if (Minecraft.getInstance().getConnection() != null) {
-                    BackpackNetworkHelper.sendClientSettings(Minecraft.getInstance().player);
+                if (Minecraft.getInstance().getConnection() != null && Minecraft.getInstance().player != null) {
+                    ConfigManager.ClientConfig.sendSettings(Minecraft.getInstance().player);
                 }
             }
         }

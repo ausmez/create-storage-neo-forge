@@ -86,24 +86,20 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        this.blockEntity.setPlayerInteraction(true);
+        blockEntity.setPlayerInteraction(true);
         int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
         if (slotId >= 0 && slotId < playerStartSlot) {
-            ItemStack itemStack = this.slots.get(slotId).getItem();
+            ItemStack itemStack = slots.get(slotId).getItem();
             if (itemStack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
                 // Calculate new capacity
-                int upgrades = this.blockEntity.getCapacityUpgrades();
+                int upgrades = blockEntity.getCapacityUpgrades();
                 if (upgrades > 0) {
-                    int storedAmount = this.blockEntity.getStoredAmount();
+                    int storedAmount = blockEntity.getStoredAmount();
                     int stackSize = ITEM_STACK_SIZE;
-                    if (!this.blockEntity.filterItem.isEmpty()) {
-                        stackSize = this.blockEntity.filterItem.getMaxStackSize();
+                    if (!blockEntity.filterItem.isEmpty()) {
+                        stackSize = blockEntity.filterItem.getMaxStackSize();
                     }
-                    int capacityCheck = BASE_CAPACITY;
-                    for (int i = 0; i < upgrades - 1; i++) {
-                        capacityCheck *= 2;
-                    }
-                    capacityCheck = capacityCheck * stackSize;
+                    int capacityCheck = (BASE_CAPACITY << upgrades - 1) * stackSize;
                     if (capacityCheck < storedAmount) {
                         return;
                     }
@@ -111,7 +107,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
             }
         }
         super.clicked(slotId, button, clickType, player);
-        this.blockEntity.setPlayerInteraction(false);
+        blockEntity.setPlayerInteraction(false);
     }
 
     @NotNull
@@ -119,8 +115,8 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     public ItemStack quickMoveStack(@NotNull Player player, int index) {
         ItemStack slotStack = this.slots.get(index).getItem();
 
-        // As not adding container slots, void upgrade (container slot 3) is actually index 0 as it's the first added
-        // So upgrade slot 1 (container slot 4) is index 1;
+        // As not adding container slots, void upgrade (container slot 1) is actually index 0 as it's the first added
+        // So upgrade slot 1 (container slot 2) is index 1;
         // First player slot is maxUpgradeSlots (9) + voidSlot = 10
         int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
 
@@ -179,4 +175,5 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
         }
         return super.canTakeItemForPickAll(stack, slot);
     }
+
 }

@@ -174,6 +174,7 @@ public class StorageBoxMenu extends AbstractContainerMenu {
             case SortOrder.NAME:
                 sortedItems.sort(Comparator
                         .comparing((Map.Entry<Util.ItemWithComponent, Integer> entry) -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())  // Sort by item name (ascending)
+                        .thenComparing(entry -> entry.getKey().getCustomName()) // Then by custom name
                         .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));  // Then sort by count (descending)
                 break;
             default:

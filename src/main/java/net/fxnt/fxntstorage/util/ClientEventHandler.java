@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.util;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
@@ -16,7 +17,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -27,6 +27,7 @@ import net.minecraft.world.phys.Vec2;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -34,8 +35,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = FXNTStorage.MOD_ID, value = Dist.CLIENT)
 public class ClientEventHandler {
-    private static double lastforwardImpulse = -99;
-    private static double lastleftImpulse = -99;
+    private static double lastForwardImpulse = -99;
+    private static double lastLeftImpulse = -99;
 
     @SubscribeEvent
     public static void onMovementInputUpdate(MovementInputUpdateEvent event) {
@@ -43,22 +44,15 @@ public class ClientEventHandler {
         float forwardImpulse = movement.y;
         float leftImpulse = movement.x;
 
-        Player player = Minecraft.getInstance().player;
+        Player player = event.getEntity();
 
-        if (player != null) {
-            CompoundTag playerData = player.getPersistentData();
-            CompoundTag fxntSettingsTag = Util.getOrCreateSubTag(playerData, ConfigManager.FXNTSTORAGE_SETTINGS_TAG);
-
-            fxntSettingsTag.putFloat("Jetpackforward", forwardImpulse);
-            fxntSettingsTag.putFloat("Jetpackleft", -leftImpulse);
-        }
-
-        if (forwardImpulse != lastforwardImpulse || leftImpulse != lastleftImpulse) {
+        if (forwardImpulse != lastForwardImpulse || leftImpulse != lastLeftImpulse) {
             PacketDistributor.sendToServer(new PlayerInputPacket(forwardImpulse, -leftImpulse));
-            lastforwardImpulse = forwardImpulse;
-            lastleftImpulse = leftImpulse;
-        }
+            JetpackManager.getJetpackHandler(player).processPlayerInputPacket(forwardImpulse, -leftImpulse);
 
+            lastForwardImpulse = forwardImpulse;
+            lastLeftImpulse = leftImpulse;
+        }
     }
 
     /* PickBlockMixin */
@@ -127,8 +121,14 @@ public class ClientEventHandler {
     @SubscribeEvent
     public static void onServerJoin(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof LocalPlayer player) {
-            BackpackNetworkHelper.sendClientSettings(player);
+            ConfigManager.ClientConfig.sendSettings(player);
+            JetpackManager.addPlayer(player);
         }
+    }
+
+    @SubscribeEvent
+    public static void onClientRespawn(ClientPlayerNetworkEvent.Clone event) {
+        JetpackManager.addPlayer(event.getNewPlayer());
     }
 
 }

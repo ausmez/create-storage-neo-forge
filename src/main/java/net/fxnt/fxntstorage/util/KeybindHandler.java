@@ -8,11 +8,10 @@ import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.cache.BackpackShapeCache;
 import net.fxnt.fxntstorage.cache.PasserShapeCache;
-import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.network.packet.JetpackFlyingPacket;
 import net.fxnt.fxntstorage.network.packet.KeyPressedPacket;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
@@ -73,17 +72,14 @@ public class KeybindHandler {
 
             // === FLY JETPACK KEY ===
             boolean flykeyIsDown = KeybindHandler.FLY_JETPACK.isDown();
+            boolean shiftIsDown = player.isShiftKeyDown();
+
             if (flykeyIsDown != flykeyWasDown) {
-                PacketDistributor.sendToServer(new KeyPressedPacket(flykeyIsDown ? Util.JETPACK_KEY_PRESS : Util.JETPACK_KEY_RELEASE, true));
-
-                CompoundTag playerData = player.getPersistentData();
-                CompoundTag fxntSettings = Util.getOrCreateSubTag(playerData, ConfigManager.FXNTSTORAGE_SETTINGS_TAG);
-
-                fxntSettings.putBoolean("JetpackFlying", flykeyIsDown && new BackpackOnBackUpgradeHandler(player).hasUpgrade(Util.FLIGHT_UPGRADE));
-
-                flykeyWasDown = flykeyIsDown;
+                PacketDistributor.sendToServer(new JetpackFlyingPacket(flykeyIsDown, shiftIsDown));
+                JetpackManager.getJetpackHandler(player).processPlayerFlyingPacket(flykeyIsDown, shiftIsDown);
             }
 
+            flykeyWasDown = flykeyIsDown;
         }
     }
 

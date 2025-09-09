@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.VOID_UPGRADE_SLOT;
+
 public class BackpackTooltip implements TooltipComponent {
     protected List<ItemStack> storage = new ArrayList<>();
     protected List<ItemStack> upgrades = new ArrayList<>();
@@ -65,11 +67,11 @@ public class BackpackTooltip implements TooltipComponent {
 
             if (item instanceof SimpleStorageBoxItem) {
                 ItemStack capUpgrades = new ItemStack(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get()).copyWithCount(0);
-                for (int i = 3; i < contents.size(); ++i) {
+                for (int i = VOID_UPGRADE_SLOT; i < contents.size(); ++i) {
                     if (!contents.get(i).isEmpty()) {
-                        if (i == 3) // Void Upgrade
+                        if (i == VOID_UPGRADE_SLOT) // Void Upgrade
                             this.upgrades.add(contents.get(i));
-                        if (i > 3) // Capacity Upgrades
+                        if (i > VOID_UPGRADE_SLOT) // Capacity Upgrades
                             capUpgrades.grow(1);
                     }
                 }

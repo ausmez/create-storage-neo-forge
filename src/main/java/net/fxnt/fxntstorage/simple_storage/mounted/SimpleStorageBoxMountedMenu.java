@@ -21,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
@@ -33,7 +34,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
     private final BlockPos localPos;
 
     public SimpleStorageBoxMountedMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf buf) {
-        this(containerId, playerInventory, new SimpleContainer(13), buf.readInt(), buf.readBlockPos(), buf.readNbt());
+        this(containerId, playerInventory, new SimpleContainer(SLOT_COUNT), buf.readInt(), buf.readBlockPos(), Objects.requireNonNull(buf.readNbt()));
     }
 
     public SimpleStorageBoxMountedMenu(int containerId, Inventory playerInventory, Container container, int contraptionId, BlockPos localPos, CompoundTag nbt) {
@@ -46,18 +47,39 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
         container.startOpen(playerInventory.player);
 
         this.addDataSlot(new DataSlot() {
-            @Override public int get() { return getStoredAmount(); }
-            @Override public void set(int i) { setStoredAmount(i); }
+            @Override
+            public int get() {
+                return getStoredAmount();
+            }
+
+            @Override
+            public void set(int i) {
+                setStoredAmount(i);
+            }
         });
 
         this.addDataSlot(new DataSlot() {
-            @Override public int get() { return getMaxItemCapacity(); }
-            @Override public void set(int i) { setMaxItemCapacity(i); }
+            @Override
+            public int get() {
+                return getMaxItemCapacity();
+            }
+
+            @Override
+            public void set(int i) {
+                setMaxItemCapacity(i);
+            }
         });
 
         this.addDataSlot(new DataSlot() {
-            @Override public int get() { return getVoidUpgrade() ? 1 : 0; }
-            @Override public void set(int i) { setVoidUpgrade(i); }
+            @Override
+            public int get() {
+                return getVoidUpgrade() ? 1 : 0;
+            }
+
+            @Override
+            public void set(int i) {
+                setVoidUpgrade(i);
+            }
         });
 
         // Add Void slot
@@ -218,7 +240,13 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
     public ItemStack getFilterItem() {
         return ItemStack.parseOptional(
                 this.player.registryAccess(),
-                ((AbstractContraptionEntity) this.player.level().getEntity(contraptionId)).getContraption().getBlocks().get(this.localPos).nbt().getCompound("FilterItem")
+                Objects.requireNonNull(
+                        ((AbstractContraptionEntity) Objects.requireNonNull(this.player.level().getEntity(contraptionId)))
+                                .getContraption()
+                                .getBlocks()
+                                .get(this.localPos)
+                                .nbt()
+                ).getCompound("FilterItem")
         );
     }
 
@@ -226,7 +254,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
         if (player.level().isClientSide) {
             return nbt.getInt("StoredAmount");
         }
-        return container.getItem(0).getCount() + container.getItem(1).getCount();
+        return container.getItem(0).getCount();
     }
 
     public void setStoredAmount(int value) {
@@ -239,7 +267,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
 
         for (int i = CAPACITY_UPGRADE_SLOT_START; i < CAPACITY_UPGRADE_SLOT_START + MAX_CAPACITY_UPGRADES; i++) {
             if (container.getItem(i).is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
-                ++upgradeCount;
+                upgradeCount++;
             }
         }
 
@@ -285,7 +313,9 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
     }
 
     private void setStorageDirty() {
-        PacketDistributor.sendToServer(new SetMountedStorageDirtyPacket(contraptionId, localPos));
+        if (player.level().isClientSide) {
+            PacketDistributor.sendToServer(new SetMountedStorageDirtyPacket(contraptionId, localPos));
+        }
     }
 
 }

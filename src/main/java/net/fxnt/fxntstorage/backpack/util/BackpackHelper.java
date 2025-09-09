@@ -128,7 +128,7 @@ public class BackpackHelper {
         return -1;
     }
 
-    public boolean itemEntityToBackPack(@NotNull IBackpackContainer container, @NotNull ItemEntity itemEntity, int startIndex, int endIndex) {
+    public boolean itemEntityToBackpack(@NotNull IBackpackContainer container, @NotNull ItemEntity itemEntity, int startIndex, int endIndex) {
         ItemStack newStack = itemEntity.getItem();
         final IItemHandlerModifiable itemHandler = container.getItemHandler();
 

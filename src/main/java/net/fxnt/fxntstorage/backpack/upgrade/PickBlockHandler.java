@@ -12,11 +12,11 @@ public class PickBlockHandler {
 
         //FXNTStorage.LOGGER.info("{} Do Pick Block", player.level());
         Inventory inventory = player.getInventory();
-        int matchingBackPackSlot = new BackpackHelper().getItemSlotFromContainer(container, pickedItem.getItem());
+        int matchingBackpackSlot = new BackpackHelper().getItemSlotFromContainer(container, pickedItem.getItem());
 
-        if (matchingBackPackSlot != -1) {
+        if (matchingBackpackSlot != -1) {
 
-            ItemStack backpackStack = container.getItemHandler().getStackInSlot(matchingBackPackSlot);
+            ItemStack backpackStack = container.getItemHandler().getStackInSlot(matchingBackpackSlot);
 
             int hotbarSlot = player.getInventory().selected;
 

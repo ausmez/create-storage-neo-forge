@@ -2,9 +2,11 @@ package net.fxnt.fxntstorage.util;
 
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.Objects;
 
@@ -19,14 +21,14 @@ public class Util {
     public static final int BRASS_STORAGE_BOX_SIZE = 132;    // 11 Rows
     public static final int HARDENED_STORAGE_BOX_SIZE = 156; // 13 Rows
 
-    // BackPack Size
+    // Backpack Size
     public static final int IRON_BACKPACK_STACK_MULTIPLIER = 2;
     public static final int ANDESITE_BACKPACK_STACK_MULTIPLIER = 4;
     public static final int COPPER_BACKPACK_STACK_MULTIPLIER = 8;
     public static final int BRASS_BACKPACK_STACK_MULTIPLIER = 16;
     public static final int HARDENED_BACKPACK_STACK_MULTIPLIER = 32;
 
-    // BackPack Upgrades
+    // Backpack Upgrades
     public static final String BLANK_UPGRADE = "backpack_blank_upgrade";
     public static final String STORAGE_BOX_VOID_UPGRADE = "storage_box_void_upgrade";
     public static final String STORAGE_BOX_CAPACITY_UPGRADE = "storage_box_capacity_upgrade";
@@ -55,7 +57,7 @@ public class Util {
     public static final byte BACKPACK_IN_HAND = 2;
     public static final byte BACKPACK_AS_BLOCK = 3;
 
-    // BackPack Compartment Sizes
+    // Backpack Compartment Sizes
     public static final int ITEM_SLOT_START_RANGE = 0;
     public static final int ITEM_SLOT_END_RANGE = BackpackBlock.getItemSlotCount();
     public static final int TOOL_SLOT_START_RANGE = ITEM_SLOT_END_RANGE;
@@ -101,6 +103,12 @@ public class Util {
             if (obj == null || getClass() != obj.getClass()) return false;
             ItemWithComponent that = (ItemWithComponent) obj;
             return item == that.item && Objects.equals(patch, that.patch);
+        }
+
+        public String getCustomName() {
+            ItemStack stack = new ItemStack(item);
+            stack.applyComponents(patch);
+            return stack.getOrDefault(DataComponents.CUSTOM_NAME, "").toString();
         }
     }
 
