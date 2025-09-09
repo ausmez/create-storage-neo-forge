@@ -119,7 +119,7 @@ public class FXNTStorage {
         }
 
         private static void addPlayerLayer(EntityRenderersEvent.AddLayers event, String skinType) {
-            PlayerRenderer playerRenderer = event.getPlayerSkin(skinType);
+            PlayerRenderer playerRenderer = event.getSkin(skinType);
 
             if (playerRenderer != null) {
                 playerRenderer.addLayer(new BackpackRenderPlayer(playerRenderer));
