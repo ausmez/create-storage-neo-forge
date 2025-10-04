@@ -55,10 +55,17 @@ public class BackpackHelper {
         // If Curios capability is present, check the "back" slot for a BackpackItem
         return curios
                 .map(handler -> handler.getStacksHandler("back"))
-                .flatMap(stacksHandler -> stacksHandler
-                        .map(handler -> handler.getStacks().getStackInSlot(0))
-                        .filter(itemStack -> itemStack.getItem() instanceof BackpackItem)
-                )
+                .flatMap(stacksHandler -> stacksHandler.map(stacks -> {
+                    var stacksInv = stacks.getStacks();
+                    for (int i = 0; i < stacksInv.getSlots(); i++) {
+                        ItemStack stack = stacksInv.getStackInSlot(i);
+                        if (stack.getItem() instanceof BackpackItem) {
+                            return stack;
+                        }
+                    }
+                    return ItemStack.EMPTY;
+                }))
+                .filter(stack -> !stack.isEmpty())
                 .orElseGet(() -> checkChestSlot(player)); // Fallback to chest slot if no backpack found
     }
 
