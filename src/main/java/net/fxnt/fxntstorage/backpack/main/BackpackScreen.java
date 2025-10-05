@@ -25,12 +25,14 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 import static net.fxnt.fxntstorage.util.KeybindHandler.TOGGLE_BACKPACK_KEY;
 
+@ParametersAreNonnullByDefault
 public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     private static final int CONTAINER_COLUMNS = 12;
     private static final int TOOL_SLOT_COLUMNS = 12;
@@ -108,7 +110,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     @Override
-    public void resize(@NotNull Minecraft minecraft, int winWidth, int winHeight) {
+    public void resize(Minecraft minecraft, int winWidth, int winHeight) {
         updateGuiTextureSize(winWidth, winHeight);
         setTopRowAndMoveThumb(topVisibleRow, 0);
         super.resize(minecraft, winWidth, winHeight);
@@ -251,7 +253,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         this.renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, delta);
         this.renderTooltip(graphics, mouseX, mouseY);

@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.3 - 2025-10-05
+## Changes
+- Updated Elytra boost system to allow configurable boost speed multiplier.
+- Moved the following configuration options to the “Flight Upgrade” category *(Note: existing settings will not migrate)*
+    - elytraBoostEnabled, elytraBoostMultiplier, jetpackMiningPenalty
+
+## Bug Fixes
+- Fixed Storage Box not correctly applying filter when using list or attribute filters.
+- Fixed remaining air persisting after landing instead of fading out.
+- Fixed item duplication when Backpack, Storage Box or Simple Storage Box GUI is open and block is destroyed or not in range of player. (#23)
+- Fixed memory leak within `StorageBoxMountedStorage` and `SimpleStorageBoxMountedStorage`. (#24)
+- Fixed player incorrectly taking falling damage when jumping just before landing with an equipped Backpack flight upgrade.
+- Fixed Crafter injecting items into Simple Storage Box upgrade slots. (#25) [NeoForge]
+- Fixed `BackpackHelper` to work correctly when multiple Curios "back" slots are present. (#26) — Thanks @MoePus
+- Fixed potential server lag caused by excessive block updates from Simple Storage Boxes.
+- Fixed an issue where players would rise upward after teleporting while hovering with the Backpack Flight upgrade.
+
+---
 ## 1.1.2 - 2025-09-09
 ## Changes
 - **Backpack Integration**

@@ -5,15 +5,11 @@ import net.fxnt.fxntstorage.storage_network.StorageNetwork;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
@@ -28,7 +24,7 @@ import java.util.UUID;
 
 import static net.fxnt.fxntstorage.controller.StorageController.CONNECTED;
 
-public class StorageControllerEntity extends BaseContainerBlockEntity {
+public class StorageControllerEntity extends BlockEntity {
     private static final int INTERACT_WINDOW = 600;
 
     private int tickCount = 0;
@@ -64,32 +60,6 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
         return storageNetwork != null ? storageNetwork.getItemHandler() : new EmptyHandler();
     }
 
-
-    @Override
-    public int getContainerSize() {
-        return getItemHandler().getSlots();
-    }
-
-    @Override
-    public int getMaxStackSize() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        for (int i = 0; i < getContainerSize(); i++) {
-            if (!getItemHandler().getStackInSlot(i).isEmpty()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return false;
-    }
-
     public void serverTick(Level level, BlockPos blockPos) {
         if (level.isClientSide) return;
 
@@ -108,40 +78,6 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
             tickCount = 0;
         }
         tickCount++;
-    }
-
-    @Override
-    public @NotNull ItemStack getItem(int slot) {
-        return getItemHandler().getStackInSlot(slot);
-    }
-
-    @Override
-    public void setItem(int slot, ItemStack stack) {
-        getItemHandler().setStackInSlot(slot, stack);
-    }
-
-    @Override
-    public boolean canPlaceItem(int slot, ItemStack itemStack) {
-        return storageNetwork.canPlaceItem(slot, itemStack);
-    }
-
-    @Override
-    public boolean canTakeItem(Container pTarget, int pIndex, ItemStack pStack) {
-        return storageNetwork.canTakeItem(pIndex, pStack);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItem(int slot, int amount) {
-        return getItemHandler().extractItem(slot, amount, false);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItemNoUpdate(int slot) {
-        return getItemHandler().extractItem(slot, Integer.MAX_VALUE, false);
-    }
-
-    @Override
-    public void clearContent() {
     }
 
     public void transferItemsFromPlayer(Player player) {
@@ -173,26 +109,6 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
         player.getInventory().setChanged();
     }
 
-    @Override
-    protected @NotNull Component getDefaultName() {
-        return Component.empty();
-    }
-
-    @Override
-    protected AbstractContainerMenu createMenu(int pContainerId, Inventory pInventory) {
-        return new AbstractContainerMenu(null, pContainerId) {
-            @Override
-            public ItemStack quickMoveStack(Player player, int i) {
-                return ItemStack.EMPTY;
-            }
-
-            @Override
-            public boolean stillValid(Player player) {
-                return false;
-            }
-        };
-    }
-
     private record StorageControllerHandler(
             StorageControllerEntity storageControllerEntity) implements IItemHandlerModifiable {
 
@@ -206,17 +122,17 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
         }
 
         @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
+        public ItemStack getStackInSlot(int slot) {
             return get().getStackInSlot(slot);
         }
 
         @Override
-        public @NotNull ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
             return get().insertItem(slot, stack, simulate);
         }
 
         @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
             return get().extractItem(slot, amount, simulate);
         }
 

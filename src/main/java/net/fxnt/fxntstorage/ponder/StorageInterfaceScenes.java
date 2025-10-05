@@ -94,13 +94,13 @@ public class StorageInterfaceScenes {
                 scene.world().removeItemsFromBelt(funnel.below());
                 scene.world().flapFunnel(funnel, false);
                 int finalJ = i;
-                scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> t.setItem(0, emerald.copyWithCount(finalJ)));
+                scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, emerald.copyWithCount(finalJ)));
             }
             scene.idle(2);
 
         }
         scene.idle(17);
-        scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> t.setItem(0, emerald.copyWithCount(4)));
+        scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, emerald.copyWithCount(4)));
         scene.world().removeItemsFromBelt(funnel.below());
         scene.world().flapFunnel(funnel, false);
 
@@ -115,7 +115,7 @@ public class StorageInterfaceScenes {
 
         for (int i = 0; i < 4; i++) {
             scene.world().createItemOnBelt(funnel.below(), Direction.SOUTH, diamond);
-            scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, (t) -> t.setItem(0, diamond.copyWithCount(t.getItem(0).getCount() - 1)));
+            scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, diamond.copyWithCount(t.getItemHandler().getStackInSlot(0).getCount() - 1)));
             scene.idle(19);
         }
 

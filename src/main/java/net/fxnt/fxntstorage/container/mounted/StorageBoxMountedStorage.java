@@ -2,7 +2,6 @@ package net.fxnt.fxntstorage.container.mounted;
 
 import com.mojang.serialization.Codec;
 import com.simibubi.create.AllTags;
-import com.simibubi.create.api.contraption.storage.item.MountedItemStorage;
 import com.simibubi.create.api.contraption.storage.item.MountedItemStorageType;
 import com.simibubi.create.api.contraption.storage.item.WrapperMountedItemStorage;
 import com.simibubi.create.api.contraption.storage.item.menu.StorageInteractionWrapper;
@@ -10,12 +9,14 @@ import com.simibubi.create.content.contraptions.Contraption;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.foundation.utility.CreateCodecs;
+import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.container.StorageBoxEntity;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
+import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -40,25 +41,20 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
-public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStackHandler> {
+public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStackHandler> implements ContraptionStorageFilters.FilteredMountedStorage {
     public static final Codec<StorageBoxMountedStorage> CODEC = CreateCodecs.ITEM_STACK_HANDLER.xmap(
             StorageBoxMountedStorage::new, storage -> storage.wrapped
     );
 
-    private final Set<FilterItemStack> storageFilters = new HashSet<>();
-    private static final Map<Contraption, Set<FilterItemStack>> contraptionFilters = new HashMap<>();
     public boolean initialized = false;
     private boolean dirty = false;
 
     private FilterItemStack filterItem = FilterItemStack.empty();
+    private @Nullable Contraption currentContraption = null;
     private boolean voidUpgrade;
     private SortOrder sortOrder;
 
@@ -159,15 +155,7 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
             storageBoxEntity.applyInventoryToBlock(this.wrapped);
         }
 
-        if (level.isClientSide) return;
-
-        if (level.getBlockEntity(pos) == null && wrapped.getSlots() > 0) {
-            removeFiltersForContraptionFromLevel(level);
-        }
-    }
-
-    private void removeFiltersForContraptionFromLevel(Level level) {
-        contraptionFilters.keySet().removeIf(entity -> entity.entity.level() == level && entity.entity.isRemoved());
+        currentContraption = null;
     }
 
     @Override
@@ -193,45 +181,18 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
 
     @Override
     public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-        boolean matchedFilter = false;
-
-        for (FilterItemStack filter : storageFilters) {
-            ItemStack filterStack = filter.item();
-
-            // Skip filters that are empty - check those in fallback logic
-            if (filterStack.isEmpty()) continue;
-
-            if (FilterItemStack.of(filterStack).test(null, stack)) {
-                matchedFilter = true;
-
-                // Only allow if this box's filter also matches
-                if (!filterItem.item().isEmpty() && FilterItemStack.of(filterItem.item()).test(null, stack)) {
-                    return true;
-                }
+        if (currentContraption != null) {
+            ContraptionStorageFilters registry = ContraptionStorageFilters.getOrCreate(currentContraption);
+            if (registry.matches(currentContraption.entity.level(), stack) && filterItem.isEmpty()) {
+                return false;
             }
         }
 
-        // If nothing matched, allow items into this box if:
-        // - this box's filter is empty
-        // - AND any of the filters in storageFilters are empty
-        if (!matchedFilter && filterItem.item().isEmpty()) {
-            for (FilterItemStack filter : storageFilters) {
-                if (filter.item().isEmpty()) {
-                    return true;
-                }
-            }
-        }
-
-        // A filter was matched somewhere
-        if (matchedFilter)
-            return false;
-
-        // Fallback logic
         return filterTest(stack);
     }
 
     private boolean filterTest(ItemStack stack) {
-        return FilterItemStack.of(filterItem.item()).test(null, stack);
+        return filterItem.test(null, stack);
     }
 
     private float calculatePercentageUsed() {
@@ -305,24 +266,12 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
         voidUpgrade = context.blockEntityData.getBoolean("VoidUpgrade");
         sortOrder = SortOrder.valueOf(context.blockEntityData.getString("SortOrder"));
 
-        Contraption contraption = context.contraption.entity.getContraption();
-        storageFilters.clear();
+        this.currentContraption = context.contraption.entity.getContraption();
 
-        contraptionFilters.computeIfAbsent(contraption, c -> {
-            Set<FilterItemStack> filterSet = new HashSet<>();
-            for (Map.Entry<BlockPos, MountedItemStorage> entry : c.getStorage().getMountedItems().storages.entrySet()) {
-                if (entry.getValue() instanceof StorageBoxMountedStorage) {
-                    StructureTemplate.StructureBlockInfo block = c.getBlocks().get(entry.getKey());
-                    if (block.nbt() != null) {
-                        FilterItemStack filterItem = FilterItemStack.of(block.nbt().getCompound("Filter"));
-                        filterSet.add(filterItem);
-                    }
-                }
-            }
-            return filterSet;
-        });
-
-        storageFilters.addAll(contraptionFilters.get(contraption));
+        if (this.currentContraption != null && !filterItem.isEmpty()) {
+            ContraptionStorageFilters registry = ContraptionStorageFilters.getOrCreate(currentContraption);
+            registry.register(this, filterItem);
+        }
 
         ModNetwork.sendToAllTracking(context.contraption.entity, new SyncMountedStoragePacket(
                 context.contraption.entity.getId(),

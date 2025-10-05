@@ -3,13 +3,8 @@ package net.fxnt.fxntstorage.controller;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public class StorageInterfaceEntity extends BaseContainerBlockEntity {
+public class StorageInterfaceEntity extends BlockEntity {
     private int tickCount = 0;
     public StorageControllerEntity controller = null;
 
@@ -80,81 +75,6 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity {
         return controller != null ? controller.getItemHandler() : new EmptyHandler();
     }
 
-    @Override
-    public int getContainerSize() {
-        return getItemHandler().getSlots();
-    }
-
-    @Override
-    public int getMaxStackSize() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        IItemHandlerModifiable handler = getItemHandler();
-        for (int i = 0; i < handler.getSlots(); i++) {
-            if (!handler.getStackInSlot(i).isEmpty()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return false;
-    }
-
-    @Override
-    public @NotNull ItemStack getItem(int slot) {
-        return getItemHandler().getStackInSlot(slot);
-    }
-
-    @Override
-    public boolean canPlaceItem(int slot, ItemStack itemStack) {
-        return controller != null && controller.canPlaceItem(slot, itemStack);
-    }
-
-    @Override
-    public void setItem(int slot, ItemStack itemStack) {
-        getItemHandler().setStackInSlot(slot, itemStack);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItem(int slot, int amount) {
-        return getItemHandler().extractItem(slot, amount, false);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItemNoUpdate(int slot) {
-        return getItemHandler().extractItem(slot, Integer.MAX_VALUE, false);
-    }
-
-    @Override
-    public void clearContent() {
-    }
-
-    @Override
-    protected @NotNull Component getDefaultName() {
-        return Component.empty();
-    }
-
-    @Override
-    protected @NotNull AbstractContainerMenu createMenu(int i, Inventory inventory) {
-        return new AbstractContainerMenu(null, i) {
-            @Override
-            public @NotNull ItemStack quickMoveStack(Player pPlayer, int pIndex) {
-                return ItemStack.EMPTY;
-            }
-
-            @Override
-            public boolean stillValid(Player pPlayer) {
-                return false;
-            }
-        };
-    }
-
     private record StorageInterfaceHandler(
             StorageInterfaceEntity storageInterfaceEntity) implements IItemHandlerModifiable {
 
@@ -168,17 +88,17 @@ public class StorageInterfaceEntity extends BaseContainerBlockEntity {
         }
 
         @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
+        public ItemStack getStackInSlot(int slot) {
             return get().getStackInSlot(slot);
         }
 
         @Override
-        public @NotNull ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
             return get().insertItem(slot, stack, simulate);
         }
 
         @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
             return get().extractItem(slot, amount, simulate);
         }
 

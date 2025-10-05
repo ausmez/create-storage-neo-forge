@@ -58,7 +58,7 @@ public class StorageControllerScenes {
         scene.idle(15);
         scene.world().modifyBlockEntity(util.grid().at(3, 3, 2), SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(gold);
-            t.setItem(0, gold.copyWithCount(64));
+            t.getItemHandler().setStackInSlot(0, gold.copyWithCount(64));
         });
         scene.world().modifyBlock(util.grid().at(3, 3, 2), (s) -> ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
         scene.idle(60);
@@ -69,7 +69,7 @@ public class StorageControllerScenes {
         scene.idle(15);
         scene.world().modifyBlockEntity(util.grid().at(2, 3, 2), SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(diamond);
-            t.setItem(0, diamond.copyWithCount(64));
+            t.getItemHandler().setStackInSlot(0, diamond.copyWithCount(64));
         });
         scene.world().modifyBlock(util.grid().at(2, 3, 2), (s) -> ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
         scene.idle(60);
@@ -81,7 +81,7 @@ public class StorageControllerScenes {
         ElementLink<EntityElement> itemEntity = scene.world().createItemEntity(util.vector().centerOf(controller.north()).add(0, -0.2, 0), util.vector().of(0, 0, 0), gold.copyWithCount(64));
         scene.world().modifyBlockEntity(util.grid().at(3, 3, 2), SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(new ItemStack(Items.AIR));
-            t.setItem(0, ItemStack.EMPTY);
+            t.getItemHandler().setStackInSlot(0, ItemStack.EMPTY);
         });
         scene.world().modifyBlock(util.grid().at(3, 3, 2), (s) -> ModBlocks.SIMPLE_STORAGE_BOX_BIRCH.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY), false);
         scene.idle(55);

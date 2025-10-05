@@ -36,6 +36,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
+@SuppressWarnings("deprecation")
 public class SimpleStorageBox extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
@@ -56,14 +57,14 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
+    public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         BlockEntityType<?> type = ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get();
         return new SimpleStorageBoxEntity(type, pPos, pState);
     }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> blockEntityType) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
         return createTickerHelper(blockEntityType, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (type, world, pos, entity) -> {
             if (entity instanceof SimpleStorageBoxEntity) {
                 entity.serverTick(type);
@@ -72,7 +73,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public void setPlacedBy(@NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
+    public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
         if (blockEntity instanceof SimpleStorageBoxEntity be) {
             if (pStack.hasCustomHoverName()) {
@@ -83,8 +84,9 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public @NotNull InteractionResult use(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, Player pPlayer, @NotNull InteractionHand pHand, @NotNull BlockHitResult pHit) {
-        if (pPlayer.isSpectator() || pHand == InteractionHand.OFF_HAND || !hitFront(pState, pHit)) return InteractionResult.PASS;
+    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        if (pPlayer.isSpectator() || pHand == InteractionHand.OFF_HAND || !hitFront(pState, pHit))
+            return InteractionResult.PASS;
         if (pLevel.isClientSide) return InteractionResult.SUCCESS;
 
         BlockEntity entity = pLevel.getBlockEntity(pPos);
@@ -132,7 +134,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public void attack(@NotNull BlockState blockState, @NotNull Level level, @NotNull BlockPos blockPos, @NotNull Player player) {
+    public void attack(BlockState blockState, Level level, BlockPos blockPos, Player player) {
         if (player.isSpectator() || level.isClientSide) return;
 
         BlockHitResult hit = rayTraceEyes(level, player, blockPos);
@@ -157,8 +159,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
         return blockState.getValue(FACING) == side;
     }
 
-    @NotNull
-    public static BlockHitResult rayTraceEyes(@NotNull Level level, @NotNull Player player, @NotNull BlockPos blockPos) {
+    public static BlockHitResult rayTraceEyes(Level level, Player player, BlockPos blockPos) {
         Vec3 eyePos = player.getEyePosition(1);
         Vec3 lookVector = player.getViewVector(1);
         Vec3 endPos = eyePos.add(lookVector.scale(eyePos.distanceTo(Vec3.atCenterOf(blockPos)) + 1));
@@ -167,7 +168,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public @NotNull RenderShape getRenderShape(@NotNull BlockState pState) {
+    public RenderShape getRenderShape(BlockState pState) {
         return RenderShape.MODEL;
     }
 
@@ -182,7 +183,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public @NotNull BlockState mirror(BlockState pState, Mirror pMirror) {
+    public BlockState mirror(BlockState pState, Mirror pMirror) {
         return pState.rotate(pMirror.getRotation(pState.getValue(FACING)));
     }
 
@@ -193,28 +194,18 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public boolean hasAnalogOutputSignal(@NotNull BlockState pState) {
+    public boolean hasAnalogOutputSignal(BlockState pState) {
         return true;
     }
 
     @Override
-    public int getAnalogOutputSignal(@NotNull BlockState pState, Level pLevel, @NotNull BlockPos pPos) {
+    public int getAnalogOutputSignal(BlockState pState, Level pLevel, BlockPos pPos) {
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
         if (blockEntity instanceof SimpleStorageBoxEntity entity) {
             double percentage = (double) entity.getStoredAmount() / entity.getMaxItemCapacity();
             return (int) Math.min(percentage * 15, 15);
         }
         return 0;
-    }
-
-    @Nullable
-    public static Direction getDirectionFacing(BlockState state) {
-        if (!(state.getBlock() instanceof SimpleStorageBox)) return null;
-        return ((SimpleStorageBox) state.getBlock()).getFacing(state);
-    }
-
-    protected Direction getFacing(BlockState state) {
-        return state.getValue(FACING);
     }
 
 }

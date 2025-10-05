@@ -98,7 +98,7 @@ public class SimpleStorageBoxScenes {
 
         scene.world().modifyBlockEntity(b1, SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(sand);
-            t.setItem(0, sand.copyWithCount(2048));
+            t.getItemHandler().setStackInSlot(0, sand.copyWithCount(2048));
         });
         scene.world().modifyBlock(b1, s -> state1, false);
         scene.overlay().showText(60).text("Sand Block = 2048 (64 per stack)").placeNearTarget().pointAt(util.vector().blockSurface(b1, Direction.NORTH).add(-0.2, 0.25, 0));
@@ -106,7 +106,7 @@ public class SimpleStorageBoxScenes {
 
         scene.world().modifyBlockEntity(b2, SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(pearl);
-            t.setItem(0, pearl.copyWithCount(512));
+            t.getItemHandler().setStackInSlot(0, pearl.copyWithCount(512));
         });
         scene.world().modifyBlock(b2, s -> state2, false);
         scene.overlay().showText(60).text("Ender Pearl = 512 (16 per stack)").placeNearTarget().pointAt(util.vector().blockSurface(b2, Direction.NORTH).add(-0.2, 0.25, 0));
@@ -114,7 +114,7 @@ public class SimpleStorageBoxScenes {
 
         scene.world().modifyBlockEntity(b3, SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(water);
-            t.setItem(0, water.copyWithCount(32));
+            t.getItemHandler().setStackInSlot(0, water.copyWithCount(32));
         });
         scene.world().modifyBlock(b3, s -> state3, false);
         scene.overlay().showText(60).text("Water Bucket = 32 (1 per stack)").placeNearTarget().pointAt(util.vector().blockSurface(b3, Direction.NORTH).add(-0.2, 0.25, 0));
@@ -151,7 +151,7 @@ public class SimpleStorageBoxScenes {
         scene.idle(10);
         scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(gold);
-            t.setItem(0, gold.copyWithCount(64));
+            t.getItemHandler().setStackInSlot(0, gold.copyWithCount(64));
         });
         scene.world().modifyBlock(sSBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
         scene.idle(80);
@@ -172,13 +172,13 @@ public class SimpleStorageBoxScenes {
                 scene.idle(4);
                 scene.world().removeItemsFromBelt(util.grid().at(3, 1, 2));
                 int finalJ = j + 64;
-                scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.setItem(0, gold.copyWithCount(finalJ)));
+                scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, gold.copyWithCount(finalJ)));
             }
             scene.idle(2);
         }
         scene.idle(17);
         scene.world().removeItemsFromBelt(util.grid().at(3, 1, 2));
-        scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.setItem(0, gold.copyWithCount(t.getItem(0).getCount() + 1)));
+        scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, gold.copyWithCount(t.getItemHandler().getStackInSlot(0).getCount() + 1)));
         scene.idle(50);
 
         scene.overlay().showText(50).text("The filter is set automatically when the first item is added").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.25, 0.25, 0));
@@ -190,7 +190,7 @@ public class SimpleStorageBoxScenes {
         scene.overlay().showControls(util.vector().blockSurface(sSBox, Direction.NORTH), Pointing.RIGHT, 50).leftClick();
         scene.overlay().showText(50).independent().text("Left-click the front panel to extract a single item").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
         ElementLink<EntityElement> itemEntity = scene.world().createItemEntity(util.vector().centerOf(2, 2, 1), new Vec3(0, 0, 0), gold);
-        scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.setItem(0, gold.copyWithCount(t.getItem(0).getCount() - 1)));
+        scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, gold.copyWithCount(t.getItemHandler().getStackInSlot(0).getCount() - 1)));
         scene.idle(60);
 
         scene.world().modifyEntity(itemEntity, Entity::discard);
@@ -198,7 +198,7 @@ public class SimpleStorageBoxScenes {
         scene.overlay().showControls(util.vector().blockSurface(sSBox, Direction.NORTH), Pointing.RIGHT, 50).leftClick().whileSneaking();
         scene.overlay().showText(50).text("Left-click while sneaking to remove a single item stack").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
         itemEntity = scene.world().createItemEntity(util.vector().centerOf(2, 2, 1), new Vec3(0, 0, 0), gold.copyWithCount(64));
-        scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.setItem(0, gold.copyWithCount(t.getItem(0).getCount() - 64)));
+        scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, gold.copyWithCount(t.getItemHandler().getStackInSlot(0).getCount() - 64)));
         scene.idle(60);
 
         scene.world().modifyEntity(itemEntity, Entity::discard);
@@ -239,10 +239,10 @@ public class SimpleStorageBoxScenes {
         scene.idle(40);
         scene.world().modifyBlock(leftBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, (t) -> {
-            t.setItem(3, vUpgrade);
+            t.getItemHandler().setStackInSlot(3, vUpgrade);
             t.voidUpgrade = true;
             t.setFilter(iron);
-            t.setItem(0, iron.copyWithCount(2048));
+            t.getItemHandler().setStackInSlot(0, iron.copyWithCount(2048));
         });
         scene.idle(50);
 
@@ -252,10 +252,10 @@ public class SimpleStorageBoxScenes {
         scene.world().modifyBlock(rightBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> {
             for (int i = CAPACITY_UPGRADE_SLOT_START; i < SLOT_COUNT; i++) {
-                t.setItem(i, cUpgrade);
+                t.getItemHandler().setStackInSlot(i, cUpgrade);
             }
             t.setFilter(gold);
-            t.setItem(0, gold.copyWithCount(1048576));
+            t.getItemHandler().setStackInSlot(0, gold.copyWithCount(1048576));
         });
         scene.idle(50);
 

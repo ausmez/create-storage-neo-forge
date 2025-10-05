@@ -66,6 +66,8 @@ public class JetpackHandler {
     private long lastFuelSync = 0;
     private Vec3 lastValidVelocity = Vec3.ZERO;
     private long lastServerUpdate = 0;
+    private double lastKnownY = 0;
+    private static final double TELEPORT_THRESHOLD = 5.0; // Blocks
 
     private long lastPacketTime = 0;
     private int missedPackets = 0;
@@ -86,6 +88,10 @@ public class JetpackHandler {
 
     private void executeClient() {
         updatePredictedFuel();
+
+        if (isHovering && wasTeleported()) {
+            hoverHeight = player.getY();
+        }
 
         if (isJumping) {
             if (predictedFuelRemaining <= 0) {
@@ -134,11 +140,16 @@ public class JetpackHandler {
     }
 
     private void executeServer() {
+        if (isHovering && wasTeleported()) {
+            hoverHeight = player.getY();
+        }
+
         jetPackFuelRemaining = (float) calculateJetPackFuel(player);
 
         if (isJumping || isHovering && jetPackFuelRemaining > 0) {
             depleteJetPackFuel(player);
             validatePlayerMovement();
+            player.resetFallDistance();
 
             if (player.tickCount % 5 == 0) {
                 validateAndCorrectPosition();
@@ -154,6 +165,14 @@ public class JetpackHandler {
         }
 
         syncFuelToClient();
+        fadeOutVisualAirOverlay();
+    }
+
+    private boolean wasTeleported() {
+        double yDifference = Math.abs(player.getY() - lastKnownY);
+        boolean teleported = yDifference > TELEPORT_THRESHOLD && lastKnownY != 0;
+        lastKnownY = player.getY();
+        return teleported;
     }
 
     private void updatePredictedFuel() {
@@ -247,7 +266,7 @@ public class JetpackHandler {
                 airGaugeLastCleared = player.level().getGameTime();
             }
             long currentTime = player.level().getGameTime();
-            if (currentTime - airGaugeLastCleared >= 1250) {
+            if (currentTime - airGaugeLastCleared >= 25) {
                 if (!player.level().isClientSide) {
                     // Send network packet to clear the air gauge, after ~1.25 secs
                     ModNetwork.sendToPlayer((ServerPlayer) player, new VisualJetpackAirPacket(-1));
@@ -300,6 +319,7 @@ public class JetpackHandler {
         isHovering = false;
         hoverHeight = 0;
         if (announce) displayHoverMessage(false);
+        if (player.onGround()) airGaugeLastCleared = 0;
     }
 
     private void displayHoverMessage(boolean isStarting) {
@@ -412,16 +432,25 @@ public class JetpackHandler {
     }
 
     private void applyElytraBoost() {
-        double deltaX = player.getDeltaMovement().x;
-        double deltaY = player.getDeltaMovement().y;
-        double deltaZ = player.getDeltaMovement().z;
+        Vec3 motion = player.getDeltaMovement();
+        Vec3 look = player.getLookAngle();
 
-        if (Math.abs(deltaX) < 1.0)
-            player.setDeltaMovement(deltaX + player.getLookAngle().x * 0.04, deltaY, deltaZ);
-        if (Math.abs(deltaY) < 1.5)
-            player.setDeltaMovement(deltaX, deltaY + player.getLookAngle().y * 0.1, deltaZ);
-        if (Math.abs(deltaZ) < 1.0)
-            player.setDeltaMovement(deltaX, deltaY, deltaZ + player.getLookAngle().z * 0.04);
+        // Scale factors
+        double horizontalBoost = 0.12;
+        double verticalBoost   = 0.1;
+
+        double newX = motion.x + look.x * horizontalBoost;
+        double newY = motion.y + look.y * verticalBoost;
+        double newZ = motion.z + look.z * horizontalBoost;
+
+        // Clamp so we don’t reach insane speeds
+        double maxSpeed = ConfigManager.CommonConfig.ELYTRA_BOOST_SPEED_MULTIPLIER.get();
+        Vec3 newMotion = new Vec3(newX, newY, newZ);
+        if (newMotion.length() > maxSpeed) {
+            newMotion = newMotion.normalize().scale(maxSpeed);
+        }
+
+        player.setDeltaMovement(newMotion);
     }
 
     private void syncFuelToClient() {

@@ -19,7 +19,6 @@ import java.util.Objects;
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
 public class SimpleStorageBoxMenu extends AbstractContainerMenu {
-    private final Container container;
     public final SimpleStorageBoxEntity blockEntity;
     public final Player player;
 
@@ -30,8 +29,6 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     public SimpleStorageBoxMenu(int containerId, Inventory inventory, BlockEntity entity) {
         super(ModMenuTypes.SIMPLE_STORAGE_BOX_MENU.get(), containerId);
         this.player = inventory.player;
-        this.container = (Container) entity;
-        this.container.startOpen(player);
         this.blockEntity = ((SimpleStorageBoxEntity) entity);
         this.initSlots();
     }
@@ -70,18 +67,14 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return this.container.stillValid(player);
+        return !blockEntity.isRemoved()
+                && Container.stillValidBlockEntity(blockEntity, player, player.getAttributeValue(net.minecraftforge.common.ForgeMod.BLOCK_REACH.get()) + 0.5);
     }
 
 
     @Override
     public void removed(Player pPlayer) {
         super.removed(player);
-        container.stopOpen(player);
-    }
-
-    public Container getInventory() {
-        return this.container;
     }
 
     @Override
@@ -135,7 +128,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                     playerStack.grow(1);
                 }
                 slotStack.shrink(1);
-                container.setChanged();
+                blockEntity.setChanged();
                 player.getInventory().setChanged();
                 return ItemStack.EMPTY;
             }
@@ -147,7 +140,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                 if (!slots.get(0).hasItem()) {
                     slots.get(0).set(slotStack.copyWithCount(1));
                     slotStack.shrink(1);
-                    container.setChanged();
+                    blockEntity.setChanged();
                     player.getInventory().setChanged();
                     return slotStack;
                 }
@@ -157,7 +150,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                     if (!slots.get(i).hasItem()) {
                         slots.get(i).set(slotStack.copyWithCount(1));
                         slotStack.shrink(1);
-                        container.setChanged();
+                        blockEntity.setChanged();
                         player.getInventory().setChanged();
                         return slotStack;
                     }

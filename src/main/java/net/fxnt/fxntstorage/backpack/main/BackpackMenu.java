@@ -21,10 +21,12 @@ import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.ToolActions;
 import net.minecraftforge.items.IItemHandler;
@@ -68,7 +70,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         for (int i = 0; i < ITEM_SLOT_COUNT; i++) {
             addSlot(new BackpackSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
-                public boolean mayPlace(@NotNull ItemStack pStack) {
+                public boolean mayPlace(ItemStack pStack) {
                     if ((pStack.getItem() instanceof BackpackItem)) return false;
                     return super.mayPlace(pStack);
                 }
@@ -79,7 +81,7 @@ public class BackpackMenu extends AbstractContainerMenu {
                 }
 
                 @Override
-                public int getMaxStackSize(@NotNull ItemStack stack) {
+                public int getMaxStackSize(ItemStack stack) {
                     return Math.max(finalContainer.getStackMultiplier() * stack.getMaxStackSize(), stack.getMaxStackSize());
                 }
 
@@ -96,18 +98,18 @@ public class BackpackMenu extends AbstractContainerMenu {
         for (int i = 0; i < TOOL_SLOT_COUNT; i++) {
             addSlot(new ToolSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
-                public boolean mayPlace(@NotNull ItemStack pStack) {
+                public boolean mayPlace(ItemStack pStack) {
                     if ((pStack.getItem() instanceof BackpackItem)) return false;
                     return super.mayPlace(pStack);
                 }
 
                 @Override
-                public void onTake(@NotNull Player pPlayer, @NotNull ItemStack pStack) {
+                public void onTake(Player pPlayer, ItemStack pStack) {
                     super.onTake(pPlayer, pStack);
                 }
 
                 @Override
-                public int getMaxStackSize(@NotNull ItemStack stack) {
+                public int getMaxStackSize(ItemStack stack) {
                     return Math.min(super.getMaxStackSize(stack), stack.getMaxStackSize());
                 }
 
@@ -124,7 +126,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         for (int i = 0; i < UPGRADE_SLOT_COUNT; i++) {
             addSlot(new UpgradeSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
-                public boolean mayPlace(@NotNull ItemStack pStack) {
+                public boolean mayPlace(ItemStack pStack) {
                     if (pStack.is(ModTags.Items.BACKPACK_UPGRADE)) {
                         UpgradeItem item = (UpgradeItem) pStack.getItem();
                         return isUniqueUpgrade(itemHandler, item);
@@ -161,7 +163,7 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public void setSynchronizer(@NotNull ContainerSynchronizer pSynchronizer) {
+    public void setSynchronizer(ContainerSynchronizer pSynchronizer) {
         // Vanilla synchronizer transfers stack counts as bytes, need to override
         // and transmit stack counts as VarInt to allow for stacks > 127
         if (player instanceof ServerPlayer serverPlayer) {
@@ -172,14 +174,20 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(@NotNull Player player) {
+    public boolean stillValid(Player player) {
         if (backpackType == Util.BACKPACK_IN_HAND) {
             ItemStack selectedStack = player.getInventory().getSelected();
             return selectedStack.getItem() instanceof BackpackItem;
         } else if (backpackType == Util.BACKPACK_ON_BACK) {
             return BackpackHelper.isWearingBackpack(player);
+        } else if (backpackType == Util.BACKPACK_AS_BLOCK) {
+            if (container instanceof BlockEntity be) {
+                return !be.isRemoved()
+                        && Container.stillValidBlockEntity(be, player, player.getAttributeValue(net.minecraftforge.common.ForgeMod.BLOCK_REACH.get()) + 0.5);
+            }
         }
-        return true;
+
+        return false;
     }
 
     private boolean isUniqueUpgrade(IItemHandler itemHandler, Item upgradeItem) {
@@ -216,7 +224,7 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public void clicked(int pSlotId, int pButton, @NotNull ClickType pClickType, @NotNull Player pPlayer) {
+    public void clicked(int pSlotId, int pButton, ClickType pClickType, Player pPlayer) {
         // Prevent moving backpack while it is open
         if (pSlotId >= 0 && backpackType == Util.BACKPACK_IN_HAND) {
             int selectedHotBarSlot = pPlayer.getInventory().selected;
@@ -301,11 +309,11 @@ public class BackpackMenu extends AbstractContainerMenu {
         container.setPlayerInteraction(false);
     }
 
-    private boolean isUpgradeItem(@NotNull ItemStack itemStack) {
+    private boolean isUpgradeItem(ItemStack itemStack) {
         return itemStack.is(ModTags.Items.BACKPACK_UPGRADE);
     }
 
-    private boolean isToolItem(@NotNull ItemStack itemStack) {
+    private boolean isToolItem(ItemStack itemStack) {
         // Items that, when shift-clicked, get transferred into tool storage area
         return itemStack.is(Tags.Items.TOOLS)
                 || itemStack.canPerformAction(ToolActions.SHEARS_HARVEST)
@@ -320,7 +328,7 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
+    public @NotNull ItemStack quickMoveStack(Player player, int index) {
         Slot slot = slots.get(index);
         if (!slot.hasItem())
             return ItemStack.EMPTY;

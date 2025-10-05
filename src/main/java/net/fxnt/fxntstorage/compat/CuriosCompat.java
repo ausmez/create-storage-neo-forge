@@ -7,8 +7,13 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.SlotResult;
 import top.theillusivec4.curios.api.type.capability.ICurio;
+import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
+
+import java.util.Optional;
 
 public class CuriosCompat implements ICurio {
     public final ItemStack stack;
@@ -29,7 +34,17 @@ public class CuriosCompat implements ICurio {
 
     @Override
     public boolean canEquip(SlotContext slotContext) {
-        return !(slotContext.entity().getItemBySlot(EquipmentSlot.CHEST).getItem().asItem() instanceof BackpackItem);
+        if (slotContext.entity().getItemBySlot(EquipmentSlot.CHEST).getItem().asItem() instanceof BackpackItem) {
+            return false;
+        }
+        Optional<ICuriosItemHandler> curios = CuriosApi.getCuriosInventory(slotContext.entity()).resolve();
+        if (curios.isPresent()) {
+            ICuriosItemHandler curiosInv = curios.get(); // Check ALL slots
+            Optional<SlotResult> backpackSlot = curiosInv.findFirstCurio(stack -> stack.getItem() instanceof BackpackItem);
+            return backpackSlot.isEmpty();
+        }
+
+        return false;
     }
 
     @Override

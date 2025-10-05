@@ -263,7 +263,8 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        return true;
+        return !this.isRemoved()
+                && Container.stillValidBlockEntity(this, pPlayer, pPlayer.getAttributeValue(net.minecraftforge.common.ForgeMod.BLOCK_REACH.get()) + 0.5);
     }
 
     public FilteringBehaviour getFilter() {
@@ -422,10 +423,9 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
          */
 
         if (transferAll) {
-            ItemStack filterItem = filtering.getFilter();
-            for (int i = 0; i < pPlayer.getInventory().getContainerSize(); i++) {
+            for (int i = 0; i < pPlayer.getInventory().items.size(); i++) {
                 ItemStack playerStack = pPlayer.getInventory().getItem(i);
-                if (playerStack.isEmpty() || !ItemStack.isSameItemSameTags(filterItem, playerStack)) continue;
+                if (playerStack.isEmpty() || !filtering.test(playerStack)) continue;
 
                 // Transfer items to the container
                 ItemStack remainder = ItemHandlerHelper.insertItem(itemHandler, playerStack, false);

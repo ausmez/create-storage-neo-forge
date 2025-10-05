@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.util;
 
+import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
@@ -14,6 +15,7 @@ import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.CrossbowChargedPacket;
+import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -358,6 +360,14 @@ public class EventHandler {
                     backpackContainer.setDataChanged();
                 break;
             }
+        }
+    }
+
+    // --- StorageBoxMountedStorage & SimpleStorageBoxMountedStorage ---
+    @SubscribeEvent
+    public static void onEntityRemoved(EntityLeaveLevelEvent event) {
+        if (!event.getLevel().isClientSide && event.getEntity() instanceof AbstractContraptionEntity contraption) {
+            ContraptionStorageFilters.cleanupContraption(contraption.getContraption());
         }
     }
 

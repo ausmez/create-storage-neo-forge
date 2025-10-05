@@ -36,7 +36,7 @@ public class BackpackRenderPlayer extends RenderLayer<AbstractClientPlayer, Play
         if (backpack.isEmpty()) return;
 
         if (FXNTStorage.curiosLoaded) {
-            boolean isCuriosSlotVisible = BackpackHelper.isCuriosSlotVisible(livingEntity, "back");
+            boolean isCuriosSlotVisible = BackpackHelper.isBackpackCuriosSlotVisible(livingEntity);
 
             if (!(livingEntity.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem)) {
                 // Is the Curios slot visibility toggled

@@ -5,6 +5,7 @@ import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.util.BackpackHandler;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.compat.CuriosCompat;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
@@ -38,14 +39,12 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.CuriosCapability;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 @ParametersAreNonnullByDefault
 public class BackpackItem extends BlockItem {
@@ -126,7 +125,7 @@ public class BackpackItem extends BlockItem {
             }
 
             @Override
-            public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+            public @NotNull <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
                 if (FXNTStorage.curiosLoaded && cap == CuriosCapability.ITEM)
                     return curio.cast();
 
@@ -141,12 +140,10 @@ public class BackpackItem extends BlockItem {
     @Override
     public boolean canEquip(ItemStack stack, EquipmentSlot armorType, Entity entity) {
         if (armorType != EquipmentSlot.CHEST) return false;
+        if (stack.getItem() instanceof BackpackItem
+                && ((LivingEntity) entity).getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem) return true; // Allow backpack swap
         if (FXNTStorage.curiosLoaded) {
-            AtomicReference<Boolean> ret = new AtomicReference<>(false);
-            CuriosApi.getCuriosInventory((LivingEntity) entity)
-                    .ifPresent(curiosItemHandler -> curiosItemHandler.getStacksHandler("back")
-                            .ifPresent(stacksHandler -> ret.set(stacksHandler.getStacks().getStackInSlot(0).getItem() instanceof BackpackItem)));
-            return !ret.get();
+            return !BackpackHelper.isWearingBackpack((Player) entity);
         }
         return super.canEquip(stack, armorType, entity);
     }
