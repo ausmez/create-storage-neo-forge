@@ -331,7 +331,8 @@
   "fxntstorage.configuration.mineOresOnly": "Mine Ores Only",
   "fxntstorage.configuration.keepBackpackOnDeath": "Keep Backpack On Death",
   "fxntstorage.configuration.elytraBoostEnabled": "Elytra Boost Enabled",
-  "fxntstorage.configuration.elytraBoostMultiplier": "Elytra Boost Multiplier",
+  "fxntstorage.configuration.elytraBoostMultiplier": "Elytra Boost Fuel Multiplier",
+  "fxntstorage.configuration.elytraBoostSpeedMultiplier": "Elytra Boost Speed Multiplier",
   "fxntstorage.configuration.jetpackMiningPenalty": "Mining Speed Penalty",
   "fxntstorage.configuration.feeder_upgrade": "Feeder Upgrade",
   "fxntstorage.configuration.displayFeederMessage": "Display Feeder Message",
@@ -357,5 +358,8 @@
   "fxntstorage.configuration.feeder_upgrade.tooltip": "Configuration options for the Backpack Feeder Upgrade",
   "fxntstorage.configuration.tool_swap_upgrade.tooltip": "Configuration options for the Backpack Tool Swap Upgrade",
   "fxntstorage.configuration.jetpack_upgrade.tooltip": "Configuration options for the Backpack Flight Upgrade",
-  "fxntstorage.configuration.invalidBlock": "Not a valid block"
+  "fxntstorage.configuration.flight_upgrade.tooltip": "Configuration options for the Backpack Flight Upgrade",
+  "fxntstorage.configuration.invalidBlock": "Not a valid block",
+  "fxntstorage.configuration.flight_upgrade": "Jetpack Upgrade",
+  "fxntstorage.configuration.jetpackAllowVoidFlight": "Allow Void Flight"
 }

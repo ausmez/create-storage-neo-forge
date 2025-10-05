@@ -13,14 +13,12 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.items.IItemHandler;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
 public class SimpleStorageBoxMenu extends AbstractContainerMenu {
-    private final Container container;
     public final SimpleStorageBoxEntity blockEntity;
     public final Player player;
 
@@ -31,8 +29,6 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     public SimpleStorageBoxMenu(int containerId, Inventory inventory, BlockEntity entity) {
         super(ModMenuTypes.SIMPLE_STORAGE_BOX_MENU.get(), containerId);
         this.player = inventory.player;
-        this.container = (Container) entity;
-        this.container.startOpen(player);
         this.blockEntity = ((SimpleStorageBoxEntity) entity);
         this.initSlots();
     }
@@ -70,18 +66,14 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(@NotNull Player player) {
-        return this.container.stillValid(player);
+    public boolean stillValid(Player player) {
+        return !blockEntity.isRemoved()
+                && Container.stillValidBlockEntity(blockEntity, player, 0);
     }
 
     @Override
     public void removed(Player player) {
         super.removed(player);
-        container.stopOpen(player);
-    }
-
-    public Container getInventory() {
-        return this.container;
     }
 
     @Override
@@ -110,9 +102,8 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
         blockEntity.setPlayerInteraction(false);
     }
 
-    @NotNull
     @Override
-    public ItemStack quickMoveStack(@NotNull Player player, int index) {
+    public ItemStack quickMoveStack(Player player, int index) {
         ItemStack slotStack = this.slots.get(index).getItem();
 
         // As not adding container slots, void upgrade (container slot 1) is actually index 0 as it's the first added
@@ -135,7 +126,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                     playerStack.grow(1);
                 }
                 slotStack.shrink(1);
-                this.container.setChanged();
+                blockEntity.setChanged();
                 player.getInventory().setChanged();
                 return ItemStack.EMPTY;
             }
@@ -147,7 +138,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                 if (!this.slots.getFirst().hasItem()) {
                     this.slots.getFirst().set(slotStack.copyWithCount(1));
                     slotStack.shrink(1);
-                    this.container.setChanged();
+                    blockEntity.setChanged();
                     player.getInventory().setChanged();
                     return slotStack;
                 }
@@ -157,7 +148,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                     if (!this.slots.get(i).hasItem()) {
                         this.slots.get(i).set(slotStack.copyWithCount(1));
                         slotStack.shrink(1);
-                        this.container.setChanged();
+                        blockEntity.setChanged();
                         player.getInventory().setChanged();
                         return slotStack;
                     }
@@ -168,7 +159,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean canTakeItemForPickAll(@NotNull ItemStack stack, Slot slot) {
+    public boolean canTakeItemForPickAll(ItemStack stack, Slot slot) {
         int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
         if (slot.index < playerStartSlot) {
             return false;

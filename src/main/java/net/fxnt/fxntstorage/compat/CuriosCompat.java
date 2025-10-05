@@ -12,8 +12,12 @@ import org.jetbrains.annotations.NotNull;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.CuriosCapability;
 import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.SlotResult;
 import top.theillusivec4.curios.api.event.DropRulesEvent;
 import top.theillusivec4.curios.api.type.capability.ICurio;
+import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
+
+import java.util.Optional;
 
 public class CuriosCompat {
 
@@ -63,7 +67,17 @@ public class CuriosCompat {
 
         @Override
         public boolean canEquip(SlotContext slotContext) {
-            return !(slotContext.entity().getItemBySlot(EquipmentSlot.CHEST).getItem().asItem() instanceof BackpackItem);
+            if (slotContext.entity().getItemBySlot(EquipmentSlot.CHEST).getItem().asItem() instanceof BackpackItem) {
+                return false;
+            }
+            Optional<ICuriosItemHandler> curios = CuriosApi.getCuriosInventory(slotContext.entity());
+            if (curios.isPresent()) {
+                ICuriosItemHandler curiosInv = curios.get(); // Check ALL slots
+                Optional<SlotResult> backpackSlot = curiosInv.findFirstCurio(stack -> stack.getItem() instanceof BackpackItem);
+                return backpackSlot.isEmpty();
+            }
+
+            return false;
         }
 
         @Override

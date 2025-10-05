@@ -2,12 +2,12 @@ package net.fxnt.fxntstorage.simple_storage.mounted;
 
 import com.mojang.serialization.MapCodec;
 import com.simibubi.create.AllTags;
-import com.simibubi.create.api.contraption.storage.item.MountedItemStorage;
 import com.simibubi.create.api.contraption.storage.item.MountedItemStorageType;
 import com.simibubi.create.api.contraption.storage.item.WrapperMountedItemStorage;
 import com.simibubi.create.api.contraption.storage.item.menu.StorageInteractionWrapper;
 import com.simibubi.create.content.contraptions.Contraption;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
+import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.foundation.codec.CreateCodecs;
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.fxnt.fxntstorage.FXNTStorage;
@@ -16,6 +16,7 @@ import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
+import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.core.BlockPos;
@@ -28,7 +29,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -40,23 +40,23 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
-public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStackHandler> {
+public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStackHandler> implements ContraptionStorageFilters.FilteredMountedStorage {
     public static final MapCodec<SimpleStorageBoxMountedStorage> CODEC = CreateCodecs.ITEM_STACK_HANDLER.xmap(
             SimpleStorageBoxMountedStorage::new, storage -> storage.wrapped
     ).fieldOf("value");
 
-    private final Set<Item> storageFilters = new HashSet<>();
-    private static final Map<Contraption, Set<Item>> contraptionFilters = new HashMap<>();
     public boolean initialized = false;
     private boolean dirty = false;
 
     private ItemStack filterItem = ItemStack.EMPTY;
+    private @Nullable FilterItemStack lastRegisteredFilter = null;
+    private @Nullable Contraption currentContraption = null;
 
     protected SimpleStorageBoxMountedStorage(MountedItemStorageType<?> type, ItemStackHandler handler) {
         super(type, handler);
@@ -183,15 +183,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             simpleStorageBox.applyInventoryToBlock(wrapped, filterItem);
         }
 
-        if (level.isClientSide) return;
-
-        if (level.getBlockEntity(pos) == null && wrapped.getSlots() > 0) {
-            removeFiltersForContraptionFromLevel(level);
-        }
-    }
-
-    private void removeFiltersForContraptionFromLevel(Level level) {
-        contraptionFilters.keySet().removeIf(entity -> entity.entity.level() == level && entity.entity.isRemoved());
+        currentContraption = null;
     }
 
     @Override
@@ -248,8 +240,12 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
-        if (!storageFilters.isEmpty() && storageFilters.contains(stack.getItem()) && filterItem.isEmpty())
-            return false;
+        if (currentContraption != null) {
+            ContraptionStorageFilters registry = ContraptionStorageFilters.getOrCreate(currentContraption);
+            if (registry.matches(currentContraption.entity.level(), stack) && filterItem.isEmpty()) {
+                return false;
+            }
+        }
 
         if (filterTest(stack)) {
             boolean voidUpgrade = hasVoidUpgrade();
@@ -333,22 +329,14 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
                         : context.blockEntityData.getCompound("FilterItem")
         ).copyWithCount(1);
 
-        Contraption contraption = context.contraption.entity.getContraption();
-        storageFilters.clear();
+        this.currentContraption = context.contraption.entity.getContraption();
 
-        contraptionFilters.computeIfAbsent(contraption, c -> {
-            Set<Item> filterSet = new HashSet<>();
-            for (MountedItemStorage storage : c.getStorage().getMountedItems().storages.values()) {
-                if (storage instanceof SimpleStorageBoxMountedStorage mounted) {
-                    if (!mounted.wrapped.getStackInSlot(0).isEmpty()) {
-                        filterSet.add(mounted.wrapped.getStackInSlot(0).getItem());
-                    }
-                }
-            }
-            return filterSet;
-        });
-
-        storageFilters.addAll(contraptionFilters.get(contraption));
+        if (this.currentContraption != null && !filterItem.isEmpty()) {
+            FilterItemStack filterWrapper = FilterItemStack.of(filterItem);
+            ContraptionStorageFilters registry = ContraptionStorageFilters.getOrCreate(currentContraption);
+            registry.register(this, filterWrapper);
+            lastRegisteredFilter = filterWrapper;
+        }
 
         PacketDistributor.sendToPlayersTrackingEntity(context.contraption.entity, new SyncMountedStoragePacket(
                 context.contraption.entity.getId(),
@@ -369,6 +357,30 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
     public void markDirty() {
         this.dirty = true;
+
+        if (currentContraption == null) return;
+
+        ContraptionStorageFilters registry = ContraptionStorageFilters.getOrCreate(currentContraption);
+
+        ItemStack candidate = wrapped.getStackInSlot(0).isEmpty() ? filterItem : wrapped.getStackInSlot(0).copyWithCount(1);
+        FilterItemStack newFilter = candidate.isEmpty() ? null : FilterItemStack.of(candidate);
+
+        if (lastRegisteredFilter != null && newFilter != null
+                && ItemStack.isSameItemSameComponents(lastRegisteredFilter.item(), newFilter.item())) {
+            return; // nothing changed
+        }
+
+        // Remove old filter
+        if (lastRegisteredFilter != null) {
+            registry.unregister(this);
+        }
+
+        // Add new filter if it exists
+        if (newFilter != null) {
+            registry.register(this, filterItem);
+        }
+
+        lastRegisteredFilter = newFilter;
     }
 
     private ItemStackHandler migrateSlotItems(ItemStackHandler oldHandler) {

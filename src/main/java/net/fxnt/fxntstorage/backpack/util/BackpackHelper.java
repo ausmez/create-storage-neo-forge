@@ -13,28 +13,27 @@ import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
+import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
+import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class BackpackHelper {
 
-    public static boolean isCuriosSlotVisible(Player player, String slotIdentifier) {
-        if (player != null) {
-            AtomicReference<Boolean> isVisible = new AtomicReference<>(false);
-            CuriosApi.getCuriosInventory(player)
-                    .flatMap(curiosItemHandler -> curiosItemHandler.getStacksHandler(slotIdentifier))
-                    .ifPresent(stacksHandler -> isVisible.set(stacksHandler.getRenders().getFirst()));
-            return isVisible.get();
-        }
-        return false;
+    public static boolean isBackpackCuriosSlotVisible(Player player) {
+        if (player == null) return false;
+
+        return CuriosApi.getCuriosInventory(player)
+                .flatMap(handler -> handler.findFirstCurio(stack -> stack.getItem() instanceof BackpackItem))
+                .map(slotResult -> slotResult.slotContext().visible())
+                .orElse(false);
     }
 
     public static boolean isWearingBackpack(Player player, boolean checkVisibility) {
         ItemStack itemStack = getEquippedBackpackStack(player);
         if (FXNTStorage.curiosLoaded && checkVisibility
                 && !(player.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem)) {
-            return BackpackHelper.isCuriosSlotVisible(player, "back");
+            return BackpackHelper.isBackpackCuriosSlotVisible(player);
         }
         return !itemStack.isEmpty();
     }
@@ -53,13 +52,22 @@ public class BackpackHelper {
         Optional<ICuriosItemHandler> curios = CuriosApi.getCuriosInventory(player);
 
         // If Curios capability is present, check the "back" slot for a BackpackItem
-        return curios
-                .map(handler -> handler.getStacksHandler("back"))
-                .flatMap(stacksHandler -> stacksHandler
-                        .map(handler -> handler.getStacks().getStackInSlot(0))
-                        .filter(itemStack -> itemStack.getItem() instanceof BackpackItem)
-                )
-                .orElseGet(() -> checkChestSlot(player)); // Fallback to chest slot if no backpack found
+        if (curios.isPresent()) {
+            Optional<ICurioStacksHandler> stacksHandler = curios.get().getStacksHandler("back");
+
+            if (stacksHandler.isPresent()) {
+                IDynamicStackHandler stacks = stacksHandler.get().getStacks();
+                for (int i = 0; i < stacks.getSlots(); i++) {
+                    ItemStack stack = stacks.getStackInSlot(i);
+                    if (stack.getItem() instanceof BackpackItem) {
+                        return stack;
+                    }
+                }
+            }
+        }
+
+        // Fallback to chest slot if no backpack found
+        return checkChestSlot(player);
     }
 
     private static ItemStack checkChestSlot(@NotNull LivingEntity player) {
@@ -68,7 +76,7 @@ public class BackpackHelper {
     }
 
     public static boolean equipBackpack(Player player, ItemStack backpack) {
-        if (backpack.isEmpty()) {
+        if (player == null || backpack.isEmpty()) {
             return false; // Nothing to equip or player is null
         }
 
@@ -78,16 +86,22 @@ public class BackpackHelper {
         // Get the Curios item handler
         Optional<ICuriosItemHandler> curios = CuriosApi.getCuriosInventory(player);
 
-        return curios
-                .map(handler -> handler.getStacksHandler("back"))
-                .flatMap(stacksHandler -> stacksHandler
-                        .filter(handler -> handler.getStacks().getStackInSlot(0).isEmpty()) // Ensure "back" slot is empty
-                        .map(handler -> {
-                            handler.getStacks().setStackInSlot(0, backpack); // Equip backpack
-                            return true;
-                        })
-                )
-                .orElseGet(() -> equipInChestSlot(player, backpack)); // Fallback to chest slot
+        if (curios.isPresent()) {
+            ICuriosItemHandler curiosInv = curios.get();
+            Optional<ICurioStacksHandler> stacksHandler = curiosInv.getStacksHandler("back");
+
+            if (stacksHandler.isPresent()) {
+                IDynamicStackHandler stacks = stacksHandler.get().getStacks();
+                for (int i = 0; i < stacks.getSlots(); i++) {
+                    if (stacks.getStackInSlot(i).isEmpty()) {
+                        curiosInv.setEquippedCurio("back", i, backpack);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return equipInChestSlot(player, backpack);
     }
 
     // Helper method to equip the backpack in the chest slot

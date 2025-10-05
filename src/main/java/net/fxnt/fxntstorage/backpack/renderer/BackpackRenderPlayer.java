@@ -6,7 +6,6 @@ import com.mojang.math.Axis;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
-import net.fxnt.fxntstorage.init.ModBlocks;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -21,7 +20,6 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 public class BackpackRenderPlayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-    private ResourceLocation TEXTURE_LOCATION;
     private final BackpackModelPlayer<AbstractClientPlayer> model;
 
     public BackpackRenderPlayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> pRenderer) {
@@ -36,11 +34,11 @@ public class BackpackRenderPlayer extends RenderLayer<AbstractClientPlayer, Play
         if (backpack.isEmpty()) return;
 
         if (FXNTStorage.curiosLoaded) {
-            boolean isCuriosSlotVisible = BackpackHelper.isCuriosSlotVisible(livingEntity, "back");
+            boolean isBackpackVisible = BackpackHelper.isBackpackCuriosSlotVisible(livingEntity);
 
             if (!(livingEntity.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem)) {
                 // Is the Curios slot visibility toggled
-                if (!isCuriosSlotVisible) return;
+                if (!isBackpackVisible) return;
             }
         }
 
@@ -59,19 +57,13 @@ public class BackpackRenderPlayer extends RenderLayer<AbstractClientPlayer, Play
         this.getParentModel().copyPropertiesTo(model);
         model.setupAnim(this.getParentModel());
 
-        if (backpack.getItem().equals(ModBlocks.BACKPACK.asItem())) {
-            TEXTURE_LOCATION = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/block/backpack.png");
-        } else if (backpack.getItem().equals(ModBlocks.ANDESITE_BACKPACK.asItem())) {
-            TEXTURE_LOCATION = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/block/andesite_backpack.png");
-        } else if (backpack.getItem().equals(ModBlocks.COPPER_BACKPACK.asItem())) {
-            TEXTURE_LOCATION = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/block/copper_backpack.png");
-        } else if (backpack.getItem().equals(ModBlocks.BRASS_BACKPACK.asItem())) {
-            TEXTURE_LOCATION = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/block/brass_backpack.png");
-        } else if (backpack.getItem().equals(ModBlocks.HARDENED_BACKPACK.asItem())) {
-            TEXTURE_LOCATION = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/block/hardened_backpack.png");
-        }
+        String backpackType = ResourceLocation.read(backpack.getItem().toString())
+                .result()
+                .map(ResourceLocation::getPath)
+                .orElse("backpack");
+        ResourceLocation textureLocation = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "textures/block/" + backpackType + ".png");
 
-        VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.entityCutout(TEXTURE_LOCATION));
+        VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.entityCutout(textureLocation));
 
         model.renderToBuffer(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY);
 

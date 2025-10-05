@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
@@ -149,24 +150,21 @@ public class StorageNetwork {
     }
 
     public void insertItems(ItemStack itemStack) {
-        List<SimpleStorageBoxEntity> emptyBoxes = new ArrayList<>();
-        boolean boxFound = false;
+        ItemStack remaining = itemStack.copy();
 
-        for (StorageNetworkItem networkItem : boxes) {
-            SimpleStorageBoxEntity blockEntity = networkItem.simpleStorageBoxEntity;
-            if (blockEntity.getFilterItem().isEmpty()) {
-                if (!emptyBoxes.contains(blockEntity)) emptyBoxes.add(blockEntity);
-            } else if (blockEntity.filterTest(itemStack)) {
-                ItemStack remaining = blockEntity.insertItems(itemStack);
-                if (remaining.isEmpty())
-                    boxFound = true;
+        while (!remaining.isEmpty()) {
+            SimpleStorageBoxEntity targetBox = StorageNetwork.this.findBestTargetBox(itemStack);
+            if (targetBox == null) break;
+
+            ItemStack beforeInsertion = remaining.copy();
+            remaining = insertIntoBox(targetBox, itemStack, 0, false);
+
+            if (remaining.getCount() >= beforeInsertion.getCount()) {
+                break;
             }
         }
-        if (!boxFound && itemStack.getCount() > 0) {
-            for (SimpleStorageBoxEntity box : emptyBoxes) {
-                itemStack = box.insertItems(itemStack);
-            }
-        }
+
+        itemStack.setCount(remaining.getCount());
     }
 
     public IItemHandlerModifiable getItemHandler() {
@@ -179,12 +177,73 @@ public class StorageNetwork {
 
     public boolean canPlaceItem(int slot, ItemStack itemStack) {
         if (slot > boxes.size()) return false;
-        return boxes.get(slot).simpleStorageBoxEntity.canPlaceItem(0, itemStack);
+        return boxes.get(slot).simpleStorageBoxEntity.getItemHandler().insertItem(0, itemStack, true).getCount() < itemStack.getCount();
     }
 
     public boolean canTakeItem(int slot, ItemStack itemStack) {
-        if (slot > boxes.size()) return false;
-        return boxes.get(slot).simpleStorageBoxEntity.canTakeItem(boxes.get(slot).simpleStorageBoxEntity, 0, itemStack);
+        return slot <= boxes.size() && !itemStack.isEmpty();
+    }
+
+    private @Nullable SimpleStorageBoxEntity findBestTargetBox(ItemStack itemStack) {
+        SimpleStorageBoxEntity emptyBox = null;
+        Predicate<SimpleStorageBoxEntity> canAccept = box -> {
+            int available = box.getMaxItemCapacity() - box.getStoredAmount();
+            return available > 0 || box.hasVoidUpgrade();
+        };
+
+        // Find boxes that have matching filter set, or first empty box
+        for (StorageNetworkItem networkItem : boxes) {
+            SimpleStorageBoxEntity box = networkItem.simpleStorageBoxEntity;
+            if (box.getFilterItem().is(itemStack.getItem()) && canAccept.test(box)) {
+                return box;
+            } else if (box.getItemHandler().getStackInSlot(0).isEmpty() && canAccept.test(box) && emptyBox == null) {
+                emptyBox = box;
+            }
+        }
+
+        return ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_FILL_EMPTY.get() ? emptyBox : null;
+    }
+
+    private ItemStack insertIntoBox(SimpleStorageBoxEntity targetBox, ItemStack itemStack, int boxSlot, boolean simulate) {
+        ItemStack remaining = itemStack.copy();
+        ItemStack current = targetBox.getItemHandler().getStackInSlot(boxSlot);
+
+        int available = targetBox.maxItemCapacity - targetBox.getStoredAmount();
+
+        // Handle void upgrade
+        if (available <= 0 && targetBox.hasVoidUpgrade())
+            return ItemStack.EMPTY; // Void all items
+        if (available <= 0 && !targetBox.hasVoidUpgrade())
+            return itemStack; // No room
+
+        if (current.isEmpty()) {
+            // Inserting into empty slot
+            int toInsert = Math.min(available, remaining.getCount());
+
+            if (toInsert > 0 && !simulate) {
+                ItemStack copy = remaining.copy();
+                copy.setCount(toInsert);
+                targetBox.getItemHandler().setStackInSlot(boxSlot, copy);
+                targetBox.setFilter(copy);
+                targetBox.setChanged();
+            }
+
+            remaining.shrink(toInsert);
+        } else if (ItemStack.isSameItemSameComponents(current, remaining)) {
+            // Inserting into slot with matching items
+            int space = Math.min(available, targetBox.maxItemCapacity - current.getCount());
+            int toInsert = Math.min(space, remaining.getCount());
+
+            if (toInsert > 0) {
+                if (!simulate) {
+                    current.grow(toInsert);
+                    targetBox.setChanged();
+                }
+                remaining.shrink(toInsert);
+            }
+        }
+
+        return remaining.isEmpty() ? ItemStack.EMPTY : remaining;
     }
 
     public static class StorageNetworkItem {
@@ -206,7 +265,7 @@ public class StorageNetwork {
         @Override
         public ItemStack getStackInSlot(int slot) {
             if (slot > boxes.size()) return ItemStack.EMPTY;
-            return boxes.get(slot).simpleStorageBoxEntity.getItem(0);
+            return boxes.get(slot).simpleStorageBoxEntity.getItemHandler().getStackInSlot(0);
         }
 
         @Override
@@ -214,59 +273,16 @@ public class StorageNetwork {
             if (itemStack.isEmpty()) return ItemStack.EMPTY;
             if (!canPlaceItem(slot, itemStack)) return itemStack;
 
-            ItemStack remaining = itemStack.copy();
-
             int boxSlot = 0;
-            if (slot > boxes.size()) return itemStack;
 
-            SimpleStorageBoxEntity targetBox = boxes.get(slot).simpleStorageBoxEntity;
-            ItemStack current = targetBox.getItem(boxSlot);
-
-            if (!ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_FILL_EMPTY.get()) {
-                // If target is empty, make sure NO other box wants this item
-                if (targetBox.getFilterItem().isEmpty()) {
-                    for (StorageNetworkItem networkItem : boxes) {
-                        SimpleStorageBoxEntity box = networkItem.simpleStorageBoxEntity;
-                        if (box == targetBox) continue;
-
-                        if (!box.getFilterItem().isEmpty() && box.filterTest(itemStack)) {
-                            // Another box is filtered to accept this item
-                            return itemStack;
-                        }
-                    }
-                }
+            // Find the best target box, ignoring the slot param
+            SimpleStorageBoxEntity targetBox = StorageNetwork.this.findBestTargetBox(itemStack);
+            if (targetBox == null) {
+                return itemStack; // No suitable box found
             }
 
-            int available = targetBox.maxItemCapacity - targetBox.getStoredAmount();
-            if (available <= 0 && targetBox.hasVoidUpgrade())
-                return ItemStack.EMPTY; // Void items
-            if (available <= 0 && !targetBox.hasVoidUpgrade())
-                return itemStack; // No room
-
-            if (current.isEmpty()) {
-                int toInsert = Math.min(available, remaining.getCount());
-
-                if (toInsert > 0 && !simulate) {
-                    ItemStack copy = remaining.copy();
-                    copy.setCount(toInsert);
-                    targetBox.setItem(boxSlot, copy);
-                }
-
-                remaining.shrink(toInsert);
-            } else if (ItemStack.isSameItemSameComponents(current, remaining)) {
-                int space = Math.min(available, targetBox.maxItemCapacity - current.getCount());
-                int toInsert = Math.min(space, remaining.getCount());
-
-                if (toInsert > 0) {
-                    if (!simulate) {
-                        current.grow(toInsert);
-                        targetBox.setItem(boxSlot, current);
-                    }
-                    remaining.shrink(toInsert);
-                }
-            }
-
-            return remaining.isEmpty() ? ItemStack.EMPTY : remaining;
+            // Insert into the selected box
+            return StorageNetwork.this.insertIntoBox(targetBox, itemStack, boxSlot, simulate);
         }
 
         @Override
@@ -275,7 +291,7 @@ public class StorageNetwork {
             if (slot > boxes.size()) return ItemStack.EMPTY;
 
             SimpleStorageBoxEntity box = boxes.get(slot).simpleStorageBoxEntity;
-            ItemStack current = box.getItem(boxSlot);
+            ItemStack current = box.getItemHandler().getStackInSlot(boxSlot);
             if (current.isEmpty()) return ItemStack.EMPTY;
             if (!canTakeItem(slot, current)) return ItemStack.EMPTY;
 
@@ -290,7 +306,7 @@ public class StorageNetwork {
                 }
             }
 
-            return box.removeItem(boxSlot, toExtract);
+            return box.getItemHandler().extractItem(boxSlot, toExtract, false);
         }
 
         @Override
@@ -308,7 +324,7 @@ public class StorageNetwork {
         @Override
         public void setStackInSlot(int slot, ItemStack stack) {
             if (slot >= boxes.size()) return;
-            boxes.get(slot).simpleStorageBoxEntity.setItem(0, stack);
+            boxes.get(slot).simpleStorageBoxEntity.getItemHandler().setStackInSlot(0, stack);
         }
     }
 

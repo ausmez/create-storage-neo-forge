@@ -31,6 +31,7 @@ public class ConfigManager {
         public static ModConfigSpec.ConfigValue<Integer> BACKPACK_MAGNET_RANGE;
         public static ModConfigSpec.BooleanValue ELYTRA_BOOST_ENABLED;
         public static ModConfigSpec.IntValue ELYTRA_BOOST_MULTIPLIER;
+        public static ModConfigSpec.DoubleValue ELYTRA_BOOST_SPEED_MULTIPLIER;
         public static ModConfigSpec.BooleanValue OREMINE_ORES_ONLY;
         public static ModConfigSpec.BooleanValue JETPACK_MINING_PENALTY;
         public static ModConfigSpec.BooleanValue JETPACK_ALLOW_VOID_FLIGHT;
@@ -52,19 +53,22 @@ public class ConfigManager {
             JETPACK_ALLOW_VOID_FLIGHT = COMMON_BUILDER
                     .comment("Allow the use of the flight upgrade over the void in The End dimension.")
                     .define("jetpackAllowVoidFlight", false);
-            COMMON_BUILDER.pop();
-            CURIOS_KEEP_BACKPACK = COMMON_BUILDER
-                    .comment("Keep Backpack equipped in Curios slot upon death.")
-                    .define("keepBackpackOnDeath", true);
             ELYTRA_BOOST_ENABLED = COMMON_BUILDER
                     .comment("Enable Jetpack boosting while gliding with an Elytra equipped.")
                     .define("elytraBoostEnabled", true);
             ELYTRA_BOOST_MULTIPLIER = COMMON_BUILDER
                     .comment("Multiplier for Jetpack fuel consumption while Elytra boosting.")
                     .defineInRange("elytraBoostMultiplier", 4, 1, 10);
+            ELYTRA_BOOST_SPEED_MULTIPLIER = COMMON_BUILDER
+                    .comment("Multiplier for Jetpack speed while Elytra boosting.")
+                    .defineInRange("elytraBoostSpeedMultiplier", 1.5, 1.0, 5.0);
             JETPACK_MINING_PENALTY = COMMON_BUILDER
                     .comment("Apply mining speed penalty when flying with the Jetpack.")
                     .define("jetpackMiningPenalty", true);
+            COMMON_BUILDER.pop();
+            CURIOS_KEEP_BACKPACK = COMMON_BUILDER
+                    .comment("Keep Backpack equipped in Curios slot upon death.")
+                    .define("keepBackpackOnDeath", true);
             COMMON_BUILDER.pop();
 
             // STORAGE BOX

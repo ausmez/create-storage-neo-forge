@@ -5,6 +5,7 @@ import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.util.BackpackHandler;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
@@ -25,13 +26,11 @@ import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
-import top.theillusivec4.curios.api.CuriosApi;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 @ParametersAreNonnullByDefault
 public class BackpackItem extends BlockItem {
@@ -45,12 +44,10 @@ public class BackpackItem extends BlockItem {
     @Override
     public boolean canEquip(ItemStack stack, EquipmentSlot armorType, LivingEntity entity) {
         if (armorType != EquipmentSlot.CHEST) return false;
+        if (stack.getItem() instanceof BackpackItem
+                && entity.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem) return true; // Allow backpack swap
         if (FXNTStorage.curiosLoaded) {
-            AtomicReference<Boolean> ret = new AtomicReference<>(false);
-            CuriosApi.getCuriosInventory(entity)
-                    .flatMap(curiosItemHandler -> curiosItemHandler.getStacksHandler("back"))
-                    .ifPresent(stacksHandler -> ret.set(stacksHandler.getStacks().getStackInSlot(0).getItem() instanceof BackpackItem));
-            return !ret.get();
+            return !BackpackHelper.isWearingBackpack((Player) entity);
         }
         return super.canEquip(stack, armorType, entity);
     }
@@ -115,7 +112,7 @@ public class BackpackItem extends BlockItem {
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    public @NotNull Optional<TooltipComponent> getTooltipImage(@NotNull ItemStack pStack) {
+    public @NotNull Optional<TooltipComponent> getTooltipImage(ItemStack pStack) {
         if (Screen.hasControlDown() && !Screen.hasShiftDown()) {
             return Optional.of(new BackpackTooltip(pStack));
         }

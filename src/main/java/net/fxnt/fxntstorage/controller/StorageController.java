@@ -21,7 +21,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class StorageController extends BaseEntityBlock implements IWrenchable {
@@ -37,7 +36,7 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
+    protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 
@@ -58,7 +57,7 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    protected @NotNull InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (player.isSpectator() || level.isClientSide || !hitFront(state, hitResult)) return InteractionResult.PASS;
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
@@ -75,7 +74,7 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     }
 
     @Override
-    public @NotNull RenderShape getRenderShape(BlockState state) {
+    public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 

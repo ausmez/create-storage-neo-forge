@@ -10,7 +10,6 @@ import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -23,6 +22,8 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.Nameable;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -30,22 +31,23 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.util.Lazy;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements ThresholdSwitchObservable {
+public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider, Nameable, ThresholdSwitchObservable {
     private int tickCount = 0;
+    private Component customName;
 
     public static final int BASE_CAPACITY = 32;
     public static final int ITEM_STACK_SIZE = 64;
@@ -66,6 +68,8 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     public static int SLOT_COUNT = BASE_SLOT_COUNT + MAX_CAPACITY_UPGRADES; // Item Slot + Void Upgrade Slot + Capacity Upgrade Slots
     public ItemStack filterItem = ItemStack.EMPTY;
     public boolean isPlayerInteraction = false;
+    private int previousStoredAmount = -1;
+    private boolean needsUpdate = false;
 
     private final ItemStackHandler itemHandler = createItemHandler(SLOT_COUNT);
     private final Lazy<IItemHandlerModifiable> lazyItemHandler = Lazy.of(() -> itemHandler);
@@ -74,7 +78,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         super(pType, pPos, pBlockState);
     }
 
-    private @NotNull ItemStackHandler createItemHandler(int slotCount) {
+    private ItemStackHandler createItemHandler(int slotCount) {
         return new ItemStackHandler(slotCount) {
             @Override
             protected void onContentsChanged(int slot) {
@@ -87,11 +91,11 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
                 if (this.stacks.getFirst().getCount() >= maxItemCapacity && voidUpgrade) {
                     return ItemStack.EMPTY;
                 }
-                return amount;
+                return voidUpgrade || simulate && amount.getCount() < stack.getCount() ? ItemStack.EMPTY : amount;
             }
 
             @Override
-            public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            public ItemStack extractItem(int slot, int amount, boolean simulate) {
                 if ((isPlayerInteraction && slot >= VOID_UPGRADE_SLOT) || slot <= 1) {
                     if (amount == 0) {
                         return ItemStack.EMPTY;
@@ -125,10 +129,10 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
             }
 
             @Override
-            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            public boolean isItemValid(int slot, ItemStack stack) {
                 if (stack.is(ModTags.Items.STORAGE_BOX_UPGRADE) && !isPlayerInteraction) return false;
                 if (filterTest(stack)) {
-                    if (slot > 0) return voidUpgrade;
+                    if (slot > 0) return false;
                     if (voidUpgrade) return true;
                     return this.stacks.getFirst().getCount() < maxItemCapacity;
                 }
@@ -181,6 +185,21 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         return this.maxItemCapacity;
     }
 
+    @Override
+    public Component getName() {
+        return customName;
+    }
+
+    @Override
+    public @Nullable Component getCustomName() {
+        return customName;
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return customName != null ? customName : getBlockState().getBlock().getName();
+    }
+
     public ItemStack getFilterItem() {
         return this.filterItem;
     }
@@ -200,13 +219,13 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     @Override
     protected void applyImplicitComponents(DataComponentInput componentInput) {
         super.applyImplicitComponents(componentInput);
+        customName = componentInput.get(DataComponents.CUSTOM_NAME);
         readInventory(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
     }
 
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
-        if (this.hasCustomName()) components.set(DataComponents.CUSTOM_NAME, this.getName());
-        if (!this.isEmpty()) components.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(this.getItems()));
+        components.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(getStacks()));
     }
 
     public void readInventory(ItemContainerContents contents) {
@@ -215,6 +234,14 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         for (int i = 0; i < itemStacks.size(); i++) {
             itemHandler.setStackInSlot(i, itemStacks.get(i));
         }
+    }
+
+    public List<ItemStack> getStacks() {
+        List<ItemStack> stacks = new ArrayList<>(List.of());
+        for (int i = 0; i < itemHandler.getSlots(); ++i) {
+            stacks.add(itemHandler.getStackInSlot(i));
+        }
+        return stacks;
     }
 
     @Override
@@ -226,6 +253,8 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         if (!filterItem.isEmpty()) {
             tag.put("FilterItem", filterItem.copyWithCount(1).saveOptional(registries));
         }
+        if (customName != null)
+            tag.putString("CustomName", Component.Serializer.toJson(customName, registries));
         super.saveAdditional(tag, registries);
     }
 
@@ -235,9 +264,12 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         super.loadAdditional(tag, registries);
         this.maxItemCapacity = tag.getInt("MaxItemCapacity"); // Needed for MountedStorage
         this.storedAmount = tag.getInt("StoredAmount");
+        this.previousStoredAmount = this.storedAmount;
         this.voidUpgrade = tag.getBoolean("VoidUpgrade"); // Needed for MountedStorage
         CompoundTag filterTag = tag.getCompound("FilterItem");
         filterItem = (filterTag.isEmpty()) ? ItemStack.EMPTY : ItemStack.parseOptional(registries, filterTag);
+        if (tag.contains("CustomName", Tag.TAG_STRING))
+            customName = parseCustomNameSafe(tag.getString("CustomName"), registries);
 
         CompoundTag itemsTag = tag.getCompound("Items");
         int oldSize = itemsTag.getInt("Size");
@@ -300,7 +332,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     }
 
     @Override
-    public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         saveAdditional(tag, registries);
         return tag;
@@ -319,7 +351,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         if (level.isClientSide) return;
 
         // Update StoredAmount and MaxItemCapacity
-        getStoredAmount();
+        int currentStoredAmount = getStoredAmount();
         getMaxItemCapacity();
 
         ItemStack slot0 = this.itemHandler.getStackInSlot(0);
@@ -329,28 +361,40 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
             setFilter(slot0);
         }
 
+        if (previousStoredAmount != currentStoredAmount) needsUpdate = true;
+
         if (tickCount++ < ConfigManager.CommonConfig.STORAGE_BOX_UPDATE_TIME.get()) return;
         tickCount = 0;
 
-        updateBlockState(level);
-    }
-
-    private void updateBlockState(Level level) {
-        level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), Block.UPDATE_ALL);
-
-        BlockState currentState = getBlockState();
-        EnumProperties.StorageUsed status = EnumProperties.StorageUsed.EMPTY;
-        int stored = getStoredAmount();
-
-        if (stored >= getMaxItemCapacity()) status = EnumProperties.StorageUsed.FULL;
-        else if (stored > 0) status = EnumProperties.StorageUsed.HAS_ITEMS;
-
-        if (currentState.getValue(SimpleStorageBox.STORAGE_USED) != status) {
-            level.setBlock(worldPosition, currentState.setValue(SimpleStorageBox.STORAGE_USED, status), Block.UPDATE_ALL);
+        if (needsUpdate) {
+            updateBlockState(level);
+            needsUpdate = false;
         }
     }
 
-    public void transferToStorage(@NotNull Player pPlayer, Boolean transferAll) {
+    private void updateBlockState(Level level) {
+        BlockState currentState = getBlockState();
+
+        EnumProperties.StorageUsed status = EnumProperties.StorageUsed.EMPTY;
+
+        if (storedAmount >= getMaxItemCapacity()) status = EnumProperties.StorageUsed.FULL;
+        else if (storedAmount > 0) status = EnumProperties.StorageUsed.HAS_ITEMS;
+
+        boolean amountChanged = previousStoredAmount != storedAmount;
+        boolean storageChanged = currentState.getValue(SimpleStorageBox.STORAGE_USED) != status;
+
+        if (amountChanged || storageChanged) {
+            BlockState newState = currentState;
+
+            if (amountChanged) previousStoredAmount = storedAmount;
+            if (storageChanged) newState = newState.setValue(SimpleStorageBox.STORAGE_USED, status);
+
+            level.setBlock(worldPosition, newState, Block.UPDATE_ALL);
+            level.sendBlockUpdated(worldPosition, currentState, newState, Block.UPDATE_ALL);
+        }
+    }
+
+    public void transferToStorage(Player pPlayer, Boolean transferAll) {
         // Get the item in the players main hand and check the hand is NOT empty and the item matches the filter (if one applied)
         ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
 
@@ -443,7 +487,7 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
         setChanged();
     }
 
-    public void transferFromStorage(@NotNull Player pPlayer) {
+    public void transferFromStorage(Player pPlayer) {
         ItemStack slot0 = itemHandler.getStackInSlot(0);
 
         if (!slot0.isEmpty()) {
@@ -500,99 +544,9 @@ public class SimpleStorageBoxEntity extends BaseContainerBlockEntity implements 
     }
 
     @Override
-    protected @NotNull Component getDefaultName() {
-        return Component.translatable("container.fxntstorage.simple_storage_box_title");
-    }
-
-    @Override
-    public boolean canPlaceItem(int slot, ItemStack stack) {
-        // Used by StorageNetwork
-        if (!this.filterTest(stack)) return false;
-        if (this.hasVoidUpgrade()) return true;
-
-        int freeSpace = this.getMaxItemCapacity() - this.getStoredAmount();
-
-        return freeSpace > 0;
-    }
-
-    @Override
-    protected @NotNull NonNullList<ItemStack> getItems() {
-        NonNullList<ItemStack> itemList = NonNullList.create();
-
-        for (int i = 0; i < this.itemHandler.getSlots(); ++i) {
-            ItemStack stack = this.itemHandler.getStackInSlot(i);
-            itemList.add(stack);
-        }
-        return itemList;
-    }
-
-    @Override
-    protected void setItems(NonNullList<ItemStack> nonNullList) {
-        for (int i = 0; i < nonNullList.size(); ++i) {
-            this.itemHandler.setStackInSlot(i, nonNullList.get(i));
-        }
-    }
-
-    @Override
     public @Nullable AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         if (player.isSpectator()) return null;
         return new SimpleStorageBoxMenu(containerId, playerInventory, new FriendlyByteBuf(Unpooled.buffer()).writeBlockPos(this.worldPosition));
-    }
-
-    @Override
-    protected AbstractContainerMenu createMenu(int i, Inventory inventory) {
-        return new AbstractContainerMenu(null, i) {
-            @Override
-            public @NotNull ItemStack quickMoveStack(Player pPlayer, int pIndex) {
-                return ItemStack.EMPTY;
-            }
-
-            @Override
-            public boolean stillValid(Player pPlayer) {
-                return false;
-            }
-        };
-    }
-
-    @Override
-    public int getContainerSize() {
-        return this.itemHandler.getSlots();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        for (int i = 0; i < itemHandler.getSlots(); ++i) {
-            if (!itemHandler.getStackInSlot(i).isEmpty()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public @NotNull ItemStack getItem(int i) {
-        return this.itemHandler.getStackInSlot(i);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItem(int pIndex, int pCount) {
-        return this.itemHandler.extractItem(pIndex, pCount, false);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItemNoUpdate(int pIndex) {
-        this.itemHandler.setStackInSlot(pIndex, ItemStack.EMPTY);
-        return ItemStack.EMPTY;
-    }
-
-    @Override
-    public void setItem(int i, @NotNull ItemStack itemStack) {
-        this.itemHandler.setStackInSlot(i, itemStack);
-    }
-
-    @Override
-    public boolean stillValid(@NotNull Player player) {
-        return true;
     }
 
     // ThresholdSwitchObservable //

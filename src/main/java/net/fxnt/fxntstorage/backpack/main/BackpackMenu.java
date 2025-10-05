@@ -20,10 +20,12 @@ import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.*;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
@@ -66,7 +68,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         for (int i = 0; i < ITEM_SLOT_COUNT; i++) {
             addSlot(new BackpackSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
-                public boolean mayPlace(@NotNull ItemStack pStack) {
+                public boolean mayPlace(ItemStack pStack) {
                     if ((pStack.getItem() instanceof BackpackItem)) return false;
                     return super.mayPlace(pStack);
                 }
@@ -77,7 +79,7 @@ public class BackpackMenu extends AbstractContainerMenu {
                 }
 
                 @Override
-                public int getMaxStackSize(@NotNull ItemStack stack) {
+                public int getMaxStackSize(ItemStack stack) {
                     return Math.max(finalContainer.getStackMultiplier() * stack.getMaxStackSize(), stack.getMaxStackSize());
                 }
 
@@ -94,18 +96,18 @@ public class BackpackMenu extends AbstractContainerMenu {
         for (int i = 0; i < TOOL_SLOT_COUNT; i++) {
             addSlot(new ToolSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
-                public boolean mayPlace(@NotNull ItemStack pStack) {
+                public boolean mayPlace(ItemStack pStack) {
                     if ((pStack.getItem() instanceof BackpackItem)) return false;
                     return super.mayPlace(pStack);
                 }
 
                 @Override
-                public void onTake(@NotNull Player pPlayer, @NotNull ItemStack pStack) {
+                public void onTake(Player pPlayer, ItemStack pStack) {
                     super.onTake(pPlayer, pStack);
                 }
 
                 @Override
-                public int getMaxStackSize(@NotNull ItemStack stack) {
+                public int getMaxStackSize(ItemStack stack) {
                     return Math.min(super.getMaxStackSize(stack), stack.getMaxStackSize());
                 }
 
@@ -122,7 +124,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         for (int i = 0; i < UPGRADE_SLOT_COUNT; i++) {
             addSlot(new UpgradeSlot(itemHandler, index, index * Util.SLOT_SIZE, 0) {
                 @Override
-                public boolean mayPlace(@NotNull ItemStack pStack) {
+                public boolean mayPlace(ItemStack pStack) {
                     if (pStack.is(ModTags.Items.BACKPACK_UPGRADE)) {
                         UpgradeItem item = (UpgradeItem) pStack.getItem();
                         return isUniqueUpgrade(itemHandler, item);
@@ -165,8 +167,13 @@ public class BackpackMenu extends AbstractContainerMenu {
             return selectedStack.getItem() instanceof BackpackItem;
         } else if (backpackType == Util.BACKPACK_ON_BACK) {
             return BackpackHelper.isWearingBackpack(player);
+        } else if (backpackType == Util.BACKPACK_AS_BLOCK) {
+            if (container instanceof BlockEntity be) {
+                return !be.isRemoved()
+                        && Container.stillValidBlockEntity(be, player, 0);
+            }
         }
-        return true;
+        return false;
     }
 
     private boolean isUniqueUpgrade(IItemHandler itemHandler, Item upgradeItem) {

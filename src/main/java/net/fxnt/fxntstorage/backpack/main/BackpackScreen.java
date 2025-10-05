@@ -111,7 +111,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     @Override
-    public void resize(@NotNull Minecraft minecraft, int winWidth, int winHeight) {
+    public void resize(Minecraft minecraft, int winWidth, int winHeight) {
         updateGuiTextureSize(winWidth, winHeight);
         setTopRowAndMoveThumb(topVisibleRow, 0);
         super.resize(minecraft, winWidth, winHeight);
@@ -254,7 +254,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     @Override
-    public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         this.renderBackground(graphics, mouseX, mouseY, delta);
         super.render(graphics, mouseX, mouseY, delta);
         this.renderTooltip(graphics, mouseX, mouseY);

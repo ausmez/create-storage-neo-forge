@@ -4,27 +4,21 @@ import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.storage_network.StorageNetwork;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.NonNullList;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BaseContainerBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.wrapper.EmptyItemHandler;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
 import static net.fxnt.fxntstorage.controller.StorageController.CONNECTED;
 
-public class StorageControllerEntity extends BaseContainerBlockEntity {
+public class StorageControllerEntity extends BlockEntity {
     private static final int INTERACT_WINDOW = 600;
 
     private int tickCount = 0;
@@ -46,31 +40,6 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
         return storageNetwork != null ? storageNetwork.getItemHandler() : new EmptyItemHandler();
     }
 
-    @Override
-    public int getContainerSize() {
-        return getItemHandler().getSlots();
-    }
-
-    @Override
-    public int getMaxStackSize() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        for (int i = 0; i < getContainerSize(); i++) {
-            if (!getItemHandler().getStackInSlot(i).isEmpty()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public boolean stillValid(Player player) {
-        return false;
-    }
-
     public void serverTick(Level level, BlockPos blockPos) {
         if (level.isClientSide) return;
 
@@ -89,40 +58,6 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
             tickCount = 0;
         }
         tickCount++;
-    }
-
-    @Override
-    public ItemStack getItem(int slot) {
-        return getItemHandler().getStackInSlot(slot);
-    }
-
-    @Override
-    public void setItem(int slot, ItemStack stack) {
-        getItemHandler().setStackInSlot(slot, stack);
-    }
-
-    @Override
-    public boolean canPlaceItem(int slot, ItemStack stack) {
-        return storageNetwork.canPlaceItem(slot, stack);
-    }
-
-    @Override
-    public boolean canTakeItem(Container target, int slot, ItemStack stack) {
-        return storageNetwork.canTakeItem(slot, stack);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItem(int slot, int amount) {
-        return getItemHandler().extractItem(slot, amount, false);
-    }
-
-    @Override
-    public @NotNull ItemStack removeItemNoUpdate(int slot) {
-        return getItemHandler().extractItem(slot, Integer.MAX_VALUE, false);
-    }
-
-    @Override
-    public void clearContent() {
     }
 
     public void transferItemsFromPlayer(Player player) {
@@ -152,44 +87,6 @@ public class StorageControllerEntity extends BaseContainerBlockEntity {
     private void doTransferItemsFromPlayer(Player player, ItemStack srcStack) {
         storageNetwork.insertItems(srcStack);
         player.getInventory().setChanged();
-    }
-
-    @Override
-    protected @NotNull Component getDefaultName() { // Required for BaseContainerBlockEntity
-        return Component.empty();
-    }
-
-    @Override
-    protected @NotNull NonNullList<ItemStack> getItems() {
-        IItemHandlerModifiable handler = storageNetwork.getItemHandler();
-        NonNullList<ItemStack> list = NonNullList.withSize(handler.getSlots(), ItemStack.EMPTY);
-        for (int i = 0; i < handler.getSlots(); i++) {
-            list.set(i, handler.getStackInSlot(i));
-        }
-        return list;
-    }
-
-    @Override
-    protected void setItems(NonNullList<ItemStack> nonNullList) {
-        IItemHandlerModifiable handler = storageNetwork.getItemHandler();
-        for (int i = 0; i < nonNullList.size() && i < handler.getSlots(); i++) {
-            handler.setStackInSlot(i, nonNullList.get(i));
-        }
-    }
-
-    @Override
-    protected AbstractContainerMenu createMenu(int i, Inventory inventory) {
-        return new AbstractContainerMenu(null, i) {
-            @Override
-            public ItemStack quickMoveStack(Player player, int i) {
-                return ItemStack.EMPTY;
-            }
-
-            @Override
-            public boolean stillValid(Player player) {
-                return false;
-            }
-        };
     }
 
 }

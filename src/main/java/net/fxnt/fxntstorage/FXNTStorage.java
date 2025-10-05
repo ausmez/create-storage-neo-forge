@@ -44,6 +44,8 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.client.gui.ConfigurationScreen;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.registries.RegisterEvent;
@@ -68,7 +70,7 @@ public class FXNTStorage {
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(FXNTStorage::registerTooltipComponent);
-//            modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+            modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         }
 
         modEventBus.addListener(this::onCommonSetup);

@@ -33,16 +33,19 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
         } else {
             StorageControllerEntity storageControllerEntity = ((StorageControllerEntity) targetBE);
 
+            if (storageControllerEntity.storageNetwork == null) return false;
+            final StorageNetwork storageNetwork = storageControllerEntity.storageNetwork;
+
             if (!simulate) {
                 for (ItemStack itemStack : items) {
-                    storageControllerEntity.storageNetwork.insertItems(itemStack);
+                    storageNetwork.insertItems(itemStack);
                 }
                 return true;
             } else {
                 List<ItemStorage> emptyBoxes = new ArrayList<>();
                 Map<Item, List<ItemStorage>> storageBoxes = new HashMap<>();
 
-                for (StorageNetwork.StorageNetworkItem item : storageControllerEntity.storageNetwork.boxes) {
+                for (StorageNetwork.StorageNetworkItem item : storageNetwork.boxes) {
                     Item filterItem = item.simpleStorageBoxEntity.filterItem.getItem();
                     ItemStorage storage = new ItemStorage(
                             item.simpleStorageBoxEntity.getMaxItemCapacity(),

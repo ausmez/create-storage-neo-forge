@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.util;
 
+import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
@@ -13,6 +14,7 @@ import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.CrossbowChargedPacket;
+import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,6 +34,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
 import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
@@ -355,6 +358,14 @@ public class EventHandler {
                     backpackContainer.setDataChanged();
                 break;
             }
+        }
+    }
+
+    // === StorageBoxMountedStorage & SimpleStorageBoxMountedStorage ===
+    @SubscribeEvent
+    public static void onEntityRemoved(EntityLeaveLevelEvent event) {
+        if (!event.getLevel().isClientSide && event.getEntity() instanceof AbstractContraptionEntity contraption) {
+            ContraptionStorageFilters.cleanupContraption(contraption.getContraption());
         }
     }
 
