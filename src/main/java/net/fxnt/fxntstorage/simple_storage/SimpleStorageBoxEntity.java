@@ -88,6 +88,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
             @Override
             public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
                 ItemStack amount = super.insertItem(slot, stack, simulate);
+                boolean voidUpgrade = hasVoidUpgrade();
                 if (this.stacks.getFirst().getCount() >= maxItemCapacity && voidUpgrade) {
                     return ItemStack.EMPTY;
                 }
@@ -96,7 +97,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
             @Override
             public ItemStack extractItem(int slot, int amount, boolean simulate) {
-                if ((isPlayerInteraction && slot >= VOID_UPGRADE_SLOT) || slot <= 1) {
+                if (isPlayerInteraction || slot < VOID_UPGRADE_SLOT) {
                     if (amount == 0) {
                         return ItemStack.EMPTY;
                     } else {
