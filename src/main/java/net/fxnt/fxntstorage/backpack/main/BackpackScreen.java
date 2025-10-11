@@ -376,7 +376,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     public final boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL) {
+        if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL || keyCode == GLFW.GLFW_KEY_RIGHT_CONTROL) {
             ModNetwork.sendToServer(new KeyPressedPacket(Util.BACKPACK_MENU_CTRL, true));
         }
         if (this.handleKeyPress(keyCode, scanCode, modifiers)) {
@@ -387,7 +387,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
     @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL) {
+        if (keyCode == GLFW.GLFW_KEY_LEFT_CONTROL || keyCode == GLFW.GLFW_KEY_RIGHT_CONTROL) {
             ModNetwork.sendToServer(new KeyPressedPacket(Util.BACKPACK_MENU_CTRL, false));
         }
         return super.keyReleased(keyCode, scanCode, modifiers);

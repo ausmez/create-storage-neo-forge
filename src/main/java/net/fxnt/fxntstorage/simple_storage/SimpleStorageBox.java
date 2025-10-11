@@ -120,6 +120,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
 
                         // Transfer items from player to box
                         simpleStorageBoxEntity.transferToStorage(pPlayer, false);
+                        return InteractionResult.CONSUME;
                     }
                 }
             }

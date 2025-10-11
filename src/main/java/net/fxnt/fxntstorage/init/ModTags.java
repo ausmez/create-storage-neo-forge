@@ -33,6 +33,7 @@ public class ModTags {
         public static final TagKey<Item> BACKPACK_UPGRADE_DEACTIVATED = itemTag("backpack_upgrade_deactivated");
         public static final TagKey<Item> STORAGE_BOX_ITEM = itemTag("storage_box");
         public static final TagKey<Item> STORAGE_BOX_UPGRADE = itemTag("storage_box_upgrade");
+        public static final TagKey<Item> REFILL_BLACKLIST = itemTag("refill_blacklist");
 
         private static TagKey<Item> itemTag(String name) {
             return ItemTags.create(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, name));

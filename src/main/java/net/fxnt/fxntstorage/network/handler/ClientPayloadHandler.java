@@ -23,38 +23,37 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Supplier;
 
 public class ClientPayloadHandler {
-    private static final ClientPayloadHandler INSTANCE = new ClientPayloadHandler();
-
-    public static ClientPayloadHandler getInstance() {
-        return INSTANCE;
-    }
 
     public static void handleSetCarriedPacket(SetCarriedPacket packet, Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> {
-            Minecraft client = Minecraft.getInstance();
-            client.execute(() -> {
-                if (client.player != null) {
-                    client.player.containerMenu.setCarried(packet.stack());
-                }
-            });
+            if (context.get().getDirection().getReceptionSide().isClient()) {
+                Minecraft client = Minecraft.getInstance();
+                client.execute(() -> {
+                    if (client.player != null) {
+                        client.player.containerMenu.setCarried(packet.stack());
+                    }
+                });
+            }
         });
         context.get().setPacketHandled(true);
     }
 
     public static void handleSyncNBTDataPacket(SyncNBTDataPacket packet, Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> {
-            Minecraft client = Minecraft.getInstance();
-            client.execute(() -> {
-                if (client.player != null) {
-                    ItemStack selectedItem = client.player.getMainHandItem();
-                    if (selectedItem.getItem() instanceof BackpackItem) {
-                        selectedItem.setTag(packet.stack().getTag());
+            if (context.get().getDirection().getReceptionSide().isClient()) {
+                Minecraft client = Minecraft.getInstance();
+                client.execute(() -> {
+                    if (client.player != null) {
+                        ItemStack selectedItem = client.player.getMainHandItem();
+                        if (selectedItem.getItem() instanceof BackpackItem) {
+                            selectedItem.setTag(packet.stack().getTag());
+                        }
+                        if (client.player.containerMenu instanceof BackpackItemMenu backpackItemMenu) {
+                            backpackItemMenu.setTag(packet.stack().getTag());
+                        }
                     }
-                    if (client.player.containerMenu instanceof BackpackItemMenu backpackItemMenu) {
-                        backpackItemMenu.setTag(packet.stack().getTag());
-                    }
-                }
-            });
+                });
+            }
         });
         context.get().setPacketHandled(true);
     }
@@ -90,16 +89,18 @@ public class ClientPayloadHandler {
 
     public static void handleVisualJetpackAirPacket(VisualJetpackAirPacket packet, Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> {
-            Minecraft client = Minecraft.getInstance();
-            client.execute(() -> {
-                if (client.player != null) {
-                    if (packet.airRemaining() < 0) {
-                        client.player.getPersistentData().remove("VisualJetpackAir");
-                    } else {
-                        client.player.getPersistentData().putInt("VisualJetpackAir", packet.airRemaining());
+            if (context.get().getDirection().getReceptionSide().isClient()) {
+                Minecraft client = Minecraft.getInstance();
+                client.execute(() -> {
+                    if (client.player != null) {
+                        if (packet.airRemaining() < 0) {
+                            client.player.getPersistentData().remove("VisualJetpackAir");
+                        } else {
+                            client.player.getPersistentData().putInt("VisualJetpackAir", packet.airRemaining());
+                        }
                     }
-                }
-            });
+                });
+            }
         });
         context.get().setPacketHandled(true);
     }
@@ -146,15 +147,17 @@ public class ClientPayloadHandler {
 
     public static void handleJetpackFuelSyncPacket(final JetpackFuelSyncPacket packet, @NonNull Supplier<NetworkEvent.Context> context) {
         context.get().enqueueWork(() -> {
-            Minecraft client = Minecraft.getInstance();
-            if (client.player != null) {
-                client.execute(() -> {
-                    JetpackHandler handler = JetpackManager.getJetpackHandler(client.player);
-                    if (handler != null) {
-                        handler.onFuelSync(packet.fuelRemaining(), packet.serverTime());
-                    }
+            if (context.get().getDirection().getReceptionSide().isClient()) {
+                Minecraft client = Minecraft.getInstance();
+                if (client.player != null) {
+                    client.execute(() -> {
+                        JetpackHandler handler = JetpackManager.getJetpackHandler(client.player);
+                        if (handler != null) {
+                            handler.onFuelSync(packet.fuelRemaining(), packet.serverTime());
+                        }
 
-                });
+                    });
+                }
             }
         });
         context.get().setPacketHandled(true);

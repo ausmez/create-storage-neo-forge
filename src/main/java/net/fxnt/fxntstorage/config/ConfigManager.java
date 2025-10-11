@@ -35,6 +35,7 @@ public class ConfigManager {
         public static ForgeConfigSpec.BooleanValue OREMINE_ORES_ONLY;
         public static ForgeConfigSpec.BooleanValue JETPACK_MINING_PENALTY;
         public static ForgeConfigSpec.BooleanValue JETPACK_ALLOW_VOID_FLIGHT;
+        public static ForgeConfigSpec.ConfigValue<List<? extends String>> REFILL_BLACKLIST;
 
         static {
             // BACKPACK
@@ -46,7 +47,7 @@ public class ConfigManager {
             COMMON_BUILDER.pop();
             COMMON_BUILDER.comment("Ore Mining Upgrade").push("ore_mining_upgrade");
             OREMINE_ORES_ONLY = COMMON_BUILDER
-                    .comment("Limits the Ore Mining Upgrade to mine ores only. Disable to allow all blocks (up to 64).")
+                    .comment("Limits the Ore Mining Upgrade to mine ores only. Disable to allow any block (up to 64).")
                     .define("mineOresOnly", true);
             COMMON_BUILDER.pop();
             COMMON_BUILDER.comment("Flight Upgrade").push("flight_upgrade");
@@ -65,6 +66,11 @@ public class ConfigManager {
             JETPACK_MINING_PENALTY = COMMON_BUILDER
                     .comment("Apply mining speed penalty when flying with the Jetpack.")
                     .define("jetpackMiningPenalty", true);
+            COMMON_BUILDER.pop();
+            COMMON_BUILDER.comment("Refill Upgrade").push("refill_upgrade");
+            REFILL_BLACKLIST = COMMON_BUILDER
+                    .comment("Blocks in this list will be ignored by the Refill Upgrade. A wildcard (*) can be used to blacklist all blocks within a namespace. (e.g. minecraft:*)")
+                    .defineListAllowEmpty("refillBlacklist", List.of(), ConfigManager::validateBlacklist);
             COMMON_BUILDER.pop();
             CURIOS_KEEP_BACKPACK = COMMON_BUILDER
                     .comment("Keep Backpack equipped in Curios slot upon death.")
@@ -112,6 +118,8 @@ public class ConfigManager {
         public static ForgeConfigSpec.EnumValue<TorchDeployerLightSource> TORCH_DEPLOYER_LIGHT_SOURCE;
         public static ForgeConfigSpec.BooleanValue CHECK_BACKPACK_FOR_PROJECTILES;
         public static ForgeConfigSpec.BooleanValue CHECK_BACKPACK_FOR_TOOLBOX_ITEMS;
+        public static ForgeConfigSpec.IntValue FEEDER_HUNGER_LEVEL;
+        public static ForgeConfigSpec.IntValue FEEDER_HEALTH_THRESHOLD;
 
         public enum TorchDeployerLightSource {
             BLOCK_LIGHT,
@@ -126,9 +134,15 @@ public class ConfigManager {
             ALLOW_CHORUS_FRUIT = CLIENT_BUILDER
                     .comment("Allow the Feeder Upgrade to use Chorus Fruit when feeding the player.")
                     .define("allowChorusFruit", false);
+            FEEDER_HEALTH_THRESHOLD = CLIENT_BUILDER
+                    .comment("Feeder Upgrade activates when health percentage falls below this value, regardless of Hunger Level.")
+                    .defineInRange("feederHealthThreshold", 80, 1, 100);
+            FEEDER_HUNGER_LEVEL = CLIENT_BUILDER
+                    .comment("Feeder Upgrade activates when hunger falls below this value. One point = half a drumstick")
+                    .defineInRange("feederHungerLevel", 18, 1, 20);
             CLIENT_BUILDER.pop();
 
-            CLIENT_BUILDER.comment("Jetpack Upgrade").push("jetpack_upgrade");
+            CLIENT_BUILDER.comment("Flight Upgrade").push("flight_upgrade");
             DISPLAY_JETPACK_AIR_OVERLAY = CLIENT_BUILDER
                     .comment("Display how much air is left in the jetpack on the HUD.")
                     .define("displayJetpackAirOverlay", true);
@@ -191,17 +205,19 @@ public class ConfigManager {
             }
 
             CompoundTag settings = new CompoundTag();
-            settings.put("prefersSilkTouchList", listTag);
-            settings.putBoolean("preferSilkTouch", TOOLSWAP_PREFER_SILK_TOUCH.get());
-            settings.putBoolean("ignoreFanProcessing", MAGNET_IGNORE_FAN_PROCESSING.get());
-            settings.putBoolean("displayFeederMessage", DISPLAY_FEEDER_MESSAGE.get());
-            settings.putBoolean("allowChorusFruit", ALLOW_CHORUS_FRUIT.get());
-            settings.putInt("torchDeployerCooldown", TORCH_DEPLOYER_COOLDOWN.get());
-            settings.putInt("torchDeployerLightLevel", TORCH_DEPLOYER_LIGHT_LEVEL.get());
-            settings.putString("torchDeployerLightSource", TORCH_DEPLOYER_LIGHT_SOURCE.get().name());
-            settings.putBoolean("jetpackHoverBobbing", JETPACK_HOVER_BOBBING.get());
-            settings.putBoolean("checkBackpackForProjectiles", CHECK_BACKPACK_FOR_PROJECTILES.get());
-            settings.putBoolean("checkBackpackForToolboxItems", CHECK_BACKPACK_FOR_TOOLBOX_ITEMS.get());
+            settings.put("PrefersSilkTouchList", listTag);
+            settings.putBoolean("PreferSilkTouch", TOOLSWAP_PREFER_SILK_TOUCH.get());
+            settings.putBoolean("IgnoreFanProcessing", MAGNET_IGNORE_FAN_PROCESSING.get());
+            settings.putBoolean("DisplayFeederMessage", DISPLAY_FEEDER_MESSAGE.get());
+            settings.putBoolean("AllowChorusFruit", ALLOW_CHORUS_FRUIT.get());
+            settings.putInt("TorchDeployerCooldown", TORCH_DEPLOYER_COOLDOWN.get());
+            settings.putInt("TorchDeployerLightLevel", TORCH_DEPLOYER_LIGHT_LEVEL.get());
+            settings.putString("TorchDeployerLightSource", TORCH_DEPLOYER_LIGHT_SOURCE.get().name());
+            settings.putBoolean("JetpackHoverBobbing", JETPACK_HOVER_BOBBING.get());
+            settings.putBoolean("CheckBackpackForProjectiles", CHECK_BACKPACK_FOR_PROJECTILES.get());
+            settings.putBoolean("CheckBackpackForToolboxItems", CHECK_BACKPACK_FOR_TOOLBOX_ITEMS.get());
+            settings.putInt("FeederHungerLevel", FEEDER_HUNGER_LEVEL.get());
+            settings.putInt("FeederHealthThreshold", FEEDER_HEALTH_THRESHOLD.get());
 
             ModNetwork.sendToServer(new SyncClientSettingsPacket(settings));
         }
@@ -219,6 +235,28 @@ public class ConfigManager {
         } catch (ResourceLocationException e) {
             return false;
         }
+    }
+
+    private static boolean validateBlacklist(final Object obj) {
+        if (!(obj instanceof String item)) return false;
+
+        // Check if item is a valid block entry
+        if (ConfigManager.validateBlock(obj)) return true;
+
+        // Check for wildcard entry
+        if (item.endsWith(":*")) {
+            String namespace = item.substring(0, item.length() - 2);
+
+            // Check namespace is a valid format
+            if (namespace.isEmpty()) return false;
+            if (!namespace.matches("^[a-z0-9_.-]+$")) return false;
+
+            // Check if namespace exists in registry
+            return ForgeRegistries.ITEMS.getKeys().stream()
+                    .anyMatch(key -> key.getNamespace().equals(namespace));
+        }
+
+        return false;
     }
 
 }

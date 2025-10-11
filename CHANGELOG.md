@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.4 - 2025-10-11
+## Changes
+- **Feeder Upgrade**
+    - Added `feederHealthThreshold` and `feederHungerLevel` config options for more control over when to auto-feed.
+    - No longer feeds player an Ominous Bottle. [NeoForge]
+- **Refill Upgrade**
+    - Now only refills placeable block items.
+    - Added a new tag: `refill_blacklist` — items with this tag will be ignored by the Refill Upgrade.
+    - Added a new config option to blacklist blocks, with support for wildcards to blacklist entire namespaces (i.e. minecraft:*)
+
+## Bug Fixes
+- Fixed an issue where backpack upgrades did not recognize the Right Ctrl key when toggling.
+- Fixed the Void Upgrade being extracted from the Simple Storage Box by automation (hopper, chutes, funnels, etc.).
+- Fixed an issue where the Simple Storage Box would not update its status.
+- Fixed block items being placed in front of a Simple Storage Box when inserting them.
+- Fixed server crash related to client-side class loading. [Forge]
+- Fixed a server disconnection issue when Feeder Upgrade attempted to auto-feed player Chorus Fruit. [Forge]
+
+---
 ## 1.1.3 - 2025-10-05
 ## Changes
 - Updated Elytra boost system to allow configurable boost speed multiplier.

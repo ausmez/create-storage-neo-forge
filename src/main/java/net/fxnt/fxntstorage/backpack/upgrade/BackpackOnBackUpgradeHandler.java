@@ -15,8 +15,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -30,7 +32,10 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodData;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -46,7 +51,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
@@ -150,7 +154,7 @@ public class BackpackOnBackUpgradeHandler {
     // SERVER SIDE
     public void applyFeederUpgrade() {
         if (this.itemStack.isEmpty() || this.player.level().isClientSide || !hasUpgrade(Util.FEEDER_UPGRADE)) return;
-        boolean doFeed = isDoFeed();
+        boolean doFeed = shouldFeedPlayer();
 
         if (doFeed) {
             // Look for food in backpack
@@ -222,7 +226,8 @@ public class BackpackOnBackUpgradeHandler {
         FoodProperties foodProperties = food.getFoodProperties(this.player);
         if (foodProperties == null) return false;
 
-        if (food.is(Items.CHORUS_FRUIT) && !ConfigManager.ClientConfig.ALLOW_CHORUS_FRUIT.get()) return true;
+        if (food.is(Items.CHORUS_FRUIT) && !player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getBoolean("AllowChorusFruit"))
+            return true;
 
         CompoundTag tag = food.getTag();
         if (tag != null && tag.contains("Effects", Tag.TAG_LIST)) {
@@ -248,96 +253,149 @@ public class BackpackOnBackUpgradeHandler {
         return false;
     }
 
-    private boolean isDoFeed() {
-        boolean doFeed = false;
-        int hunger = this.player.getFoodData().getFoodLevel(); // Max 20
-        float saturation = this.player.getFoodData().getSaturationLevel();
-        float health = this.player.getHealth();
-        // If player is hurt and saturation gone then feed
-        if (health < this.player.getMaxHealth() && hunger < 18 && saturation < 2) {
-            doFeed = true;
-        }
-        // Feed if less than 3 hunger haunches
-        if (hunger < 6) {
-            doFeed = true;
-        }
-        return doFeed;
+    private boolean shouldFeedPlayer() {
+        if (player.isCreative() || player.isSpectator()) return false;
+
+        FoodData foodData = player.getFoodData();
+        int hunger = foodData.getFoodLevel();
+        float health = player.getHealth();
+        float maxHealth = player.getMaxHealth();
+
+        CompoundTag fxntSettings = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG);
+
+        // Feed immediately
+        double healthThreshold = (double) fxntSettings.getInt("FeederHealthThreshold") / 100;
+        if (health < maxHealth * healthThreshold && hunger < 20)
+            return true;
+
+        return hunger < fxntSettings.getDouble("FeederHungerLevel");
     }
 
     // SERVER SIDE
     public void applyRefillUpgrade() {
-        if (this.itemStack.isEmpty() || this.player.level().isClientSide || !hasUpgrade(Util.REFILL_UPGRADE))
-            return;
-        // Item in main hand or offhand is less than max stack size, check for matching items in backpack and fill inventory stack
-        refillHand(this.player.getMainHandItem(), false);
-        refillHand(this.player.getOffhandItem(), true);
+        if (this.itemStack.isEmpty() || player.level().isClientSide || !hasUpgrade(Util.REFILL_UPGRADE)) return;
+
+        // Check for matching items in player inventory and backpack and fill hand stack
+        refillHand(player.getMainHandItem(), false);
+        refillHand(player.getOffhandItem(), true);
     }
 
     private void refillHand(@NotNull ItemStack handItem, boolean isOffHand) {
-        if (handItem.isEmpty()) return;
-        boolean success;
+        if (handItem.isEmpty() || handItem.getCount() >= handItem.getMaxStackSize()) return;
+
+        if (!(handItem.getItem() instanceof BlockItem)) return; // Continue only if a placeable block
+        if (isBlacklisted(handItem)) return; // Check if item is blacklisted
+
         int requiredItems = handItem.getMaxStackSize() - handItem.getCount();
-        if (requiredItems > 0) {
-            int offHandSlotIndex = 40;
-            int ignorePlayerSlot = isOffHand ? offHandSlotIndex : this.player.getInventory().selected;
-            // Check Player inventory first
-            success = refillMatchingItem(handItem, requiredItems, this.player, getContainer(), 0, this.player.getInventory().getContainerSize(), ignorePlayerSlot);
-            if (!success) {
-                refillMatchingItem(handItem, requiredItems, null, getContainer(), Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE, -1);
+        int ignorePlayerSlot = isOffHand ? 40 : player.getInventory().selected;
+
+        // Check Player inventory first
+        int remaining = refillFromPlayerInventory(handItem, requiredItems, ignorePlayerSlot);
+        if (remaining > 0) {
+            refillFromBackpack(handItem, remaining);
+        }
+    }
+
+    private boolean isBlacklisted(ItemStack stack) {
+        // Check tags
+        if (stack.is(ModTags.Items.REFILL_BLACKLIST)) return true;
+
+        // Check config list
+        ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        if (itemId == null) return false;
+
+        String fullId = itemId.toString();
+
+        for (String pattern : ConfigManager.CommonConfig.REFILL_BLACKLIST.get()) {
+            if (pattern.endsWith(":*")) {
+                // Wildcard match, blacklist namespace
+                String namespace = pattern.substring(0, pattern.length() - 2);
+                if (itemId.getNamespace().equals(namespace)) return true;
+            } else {
+                // Exact match
+                if (fullId.equals(pattern)) return true;
+            }
+        }
+        return false;
+    }
+
+    private int refillFromPlayerInventory(ItemStack handItem, int requiredItems, int ignoreSlot) {
+        Container inventory = player.getInventory();
+        int remaining = requiredItems;
+
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            if (i == ignoreSlot) continue;
+
+            ItemStack inventoryItem = inventory.getItem(i);
+            if (inventoryItem.isEmpty()) continue;
+            if (!ItemStack.isSameItemSameTags(handItem, inventoryItem)) continue;
+
+            int amountToTransfer = Math.min(remaining, inventoryItem.getCount());
+            inventoryItem.shrink(amountToTransfer);
+            handItem.grow(amountToTransfer);
+
+            remaining -= amountToTransfer;
+
+            if (!player.level().isClientSide && player.containerMenu instanceof BackpackMenu menu) {
+                syncInventorySlot(menu, i, inventoryItem);
+            }
+        }
+
+        if (requiredItems != remaining) {
+            if (!player.level().isClientSide && player.containerMenu instanceof BackpackMenu menu) {
+                syncInventorySlot(menu, ignoreSlot, handItem);
+            }
+
+        }
+
+        return remaining;
+    }
+
+    private void refillFromBackpack(ItemStack handItem, int requiredItems) {
+        IBackpackContainer container = getContainer();
+        IItemHandlerModifiable itemHandler = container.getItemHandler();
+        if (itemHandler == null) return;
+
+        int remaining = requiredItems;
+
+        for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.ITEM_SLOT_END_RANGE; i++) {
+            ItemStack containerItem = itemHandler.getStackInSlot(i);
+            if (containerItem.isEmpty()) continue;
+            if (!ItemStack.isSameItemSameTags(handItem, containerItem)) continue;
+
+            int amountToTransfer = Math.min(remaining, containerItem.getCount());
+            ItemStack extracted = itemHandler.extractItem(i, amountToTransfer, false);
+            if (extracted.isEmpty()) continue;
+
+            handItem.grow(extracted.getCount());
+            remaining -= extracted.getCount();
+        }
+
+        if (requiredItems != remaining) {
+            container.setDataChanged();
+            if (!player.level().isClientSide && player.containerMenu instanceof BackpackMenu menu) {
+                syncInventorySlot(menu, player.getInventory().selected, handItem);
             }
         }
     }
 
-    private boolean refillMatchingItem(ItemStack itemStack, int requiredItems, Player player, IBackpackContainer
-            container, int startIndex, int endIndex, int ignoreSlot) {
-        int amountToPlace = requiredItems;
-
-        if (player != null) {
-            // Check player inventory
-            Container inventory = player.getInventory();
-            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-                if (i == ignoreSlot) continue;
-                ItemStack inventoryItem = inventory.getItem(i);
-                if (ItemStack.isSameItemSameTags(itemStack, inventoryItem)) {
-                    if (inventoryItem.getCount() < requiredItems) {
-                        amountToPlace = inventoryItem.getCount();
-                    }
-                    ItemStack itemToTransfer = inventoryItem.copy();
-                    itemToTransfer.setCount(amountToPlace);
-                    inventoryItem.shrink(amountToPlace);
-                    itemStack.grow(amountToPlace);
-                    if (player.containerMenu instanceof BackpackMenu backpackMenu) {
-                        backpackMenu.container.setDataChanged();
-                    }
-                    return true;
+    private void syncInventorySlot(BackpackMenu menu, int slotIndex, ItemStack itemStack) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            // Find the slot in the container and send packet
+            for (int menuSlotIndex = 0; menuSlotIndex < menu.slots.size(); menuSlotIndex++) {
+                Slot slot1 = menu.slots.get(menuSlotIndex);
+                if (slot1.container == player.getInventory() && slot1.getContainerSlot() == slotIndex) {
+                    serverPlayer.connection.send(new ClientboundContainerSetSlotPacket(
+                            menu.containerId,
+                            menu.incrementStateId(),
+                            menuSlotIndex,
+                            itemStack
+                    ));
+                    break;
                 }
             }
-        } else {
-            // Check backpack item slots
-            IItemHandler itemHandler = container.getItemHandler();
-            if (itemHandler != null) {
-                for (int i = startIndex; i < endIndex; i++) {
-                    if (i == ignoreSlot) continue;
-                    ItemStack containerItem = itemHandler.getStackInSlot(i);
-                    if (ItemStack.isSameItemSameTags(itemStack, containerItem)) {
-                        if (containerItem.getCount() < requiredItems) {
-                            amountToPlace = containerItem.getCount();
-                        }
-                        // New stuff
-                        ItemStack itemToTransfer = containerItem.copy();
-                        itemToTransfer.setCount(amountToPlace);
-                        itemHandler.extractItem(i, amountToPlace, false);
-                        itemStack.grow(amountToPlace);
-                        container.setDataChanged();
-
-                        return true;
-                    }
-                }
-            }
-
-
         }
-        return false;
+
     }
 
     public boolean applyFallDamageUpgrade() {
