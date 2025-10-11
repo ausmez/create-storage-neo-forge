@@ -360,6 +360,11 @@
   "fxntstorage.configuration.jetpack_upgrade.tooltip": "Configuration options for the Backpack Flight Upgrade",
   "fxntstorage.configuration.flight_upgrade.tooltip": "Configuration options for the Backpack Flight Upgrade",
   "fxntstorage.configuration.invalidBlock": "Not a valid block",
-  "fxntstorage.configuration.flight_upgrade": "Jetpack Upgrade",
-  "fxntstorage.configuration.jetpackAllowVoidFlight": "Allow Void Flight"
+  "fxntstorage.configuration.flight_upgrade": "Flight Upgrade",
+  "fxntstorage.configuration.jetpackAllowVoidFlight": "Allow Void Flight",
+  "fxntstorage.configuration.feederHungerLevel": "Hunger Level",
+  "fxntstorage.configuration.feederHealthThreshold": "Health Threshold (%)",
+  "fxntstorage.configuration.refillBlacklist": "Refill Blacklist",
+  "fxntstorage.configuration.refill_upgrade": "Refill Upgrade",
+  "fxntstorage.configuration.refill_upgrade.tooltip": "Configuration options for the Backpack Refill Upgrade"
 }

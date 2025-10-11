@@ -96,6 +96,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
                         return;
                     }
                 }
+                blockEntity.setUpgradeSlotChanged(true);
             }
         }
         super.clicked(slotId, button, clickType, player);

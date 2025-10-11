@@ -21,8 +21,6 @@ import net.fxnt.fxntstorage.util.EventHandler;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -129,21 +127,11 @@ public class ServerPayloadHandler {
             ServerPlayer player = (ServerPlayer) context.player();
             CompoundTag settings = packet.settings();
 
-            ListTag listTag = settings.getList("prefersSilkTouchList", Tag.TAG_STRING);
-            ListTag prefersSilkTouchList = new ListTag();
-            prefersSilkTouchList.addAll(listTag);
-
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("AllowChorusFruit", settings.getBoolean("allowChorusFruit"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("DisplayFeederMessage", settings.getBoolean("displayFeederMessage"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("IgnoreFanProcessing", settings.getBoolean("ignoreFanProcessing"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("PreferSilkTouch", settings.getBoolean("preferSilkTouch"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).put("PrefersSilkTouchList", prefersSilkTouchList);
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putInt("TorchDeployerCooldown", settings.getInt("torchDeployerCooldown"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putInt("TorchDeployerLightLevel", settings.getInt("torchDeployerLightLevel"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putString("TorchDeployerLightSource", settings.getString("torchDeployerLightSource"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("JetpackHoverBobbing", settings.getBoolean("jetpackHoverBobbing"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("CheckBackpackForProjectiles", settings.getBoolean("checkBackpackForProjectiles"));
-            player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).putBoolean("CheckBackpackForToolboxItems", settings.getBoolean("checkBackpackForToolboxItems"));
+            CompoundTag settingsTag = Util.getOrCreateSubTag(
+                    player.getPersistentData(),
+                    ConfigManager.FXNTSTORAGE_SETTINGS_TAG
+            );
+            settingsTag.merge(settings);
         });
     }
 

@@ -30,7 +30,7 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
                 return false;
             } else if (!simulate) {
                 for (ItemStack itemStack : items) {
-                    ItemStack remainder = simpleStorageBoxEntity.insertItems(itemStack);
+                    ItemStack remainder = targetInv.insertItem(0, itemStack, simulate);
                 }
 
                 return true;

@@ -410,7 +410,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         return ItemStack.EMPTY;
     }
 
-    public boolean moveItemStack(ItemStack newStack, int startIndex, int endIndex, boolean reverseDirection) {
+    private boolean moveItemStack(ItemStack newStack, int startIndex, int endIndex, boolean reverseDirection) {
         boolean flag = false;
         int i = startIndex;
         if (reverseDirection) {
@@ -488,7 +488,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         return flag;
     }
 
-    public void toggleUpgrade(int slotId, boolean ctrlKeyDown) {
+    private void toggleUpgrade(int slotId, boolean ctrlKeyDown) {
         IItemHandlerModifiable itemStackHandler = container.getItemHandler();
 
         ItemStack itemStack = itemStackHandler.getStackInSlot(slotId);
