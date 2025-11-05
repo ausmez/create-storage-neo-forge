@@ -123,7 +123,7 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
             upgradesList.add(i, StringTag.valueOf(upgrades.get(i)));
         }
         tag.put("Upgrades", upgradesList);
-        tag.putInt("MaxStackSize", stackMultiplier);
+        tag.putInt("StackMultiplier", stackMultiplier);
         tag.putString("SortOrder", sortOrder.name());
 
         return tag;

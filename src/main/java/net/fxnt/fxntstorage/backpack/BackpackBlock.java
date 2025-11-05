@@ -47,7 +47,7 @@ public class BackpackBlock extends BaseEntityBlock {
     public static final int TOTAL_SLOT_COUNT = ITEM_SLOT_COUNT + TOOL_SLOT_COUNT + UPGRADE_SLOT_COUNT;
 
     public BackpackBlock(Properties pProperties, int stackMultiplier) {
-        super(pProperties);
+        super(pProperties.strength(0.2f, 600.0f));
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.NORTH));
         this.stackMultiplier = stackMultiplier;
     }

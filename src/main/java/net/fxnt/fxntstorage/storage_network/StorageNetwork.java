@@ -9,6 +9,7 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -35,6 +36,7 @@ public class StorageNetwork {
     public NonNullList<StorageNetworkItem> boxes = NonNullList.create();
     private int networkVersion = 0;
     private int tickCount = 0;
+    private Set<Item> filterItems = new HashSet<>();
 
     private final IItemHandlerModifiable itemHandler = new NetworkItemHandler();
 
@@ -81,6 +83,11 @@ public class StorageNetwork {
         }
 
         getBoxes(this.level, this.components);
+
+        Set<Item> newFilterItems = getCurrentFilters();
+        if (!newFilterItems.equals(filterItems)) {
+            filterItems = newFilterItems;
+        }
     }
 
     private void checkBoxes() {
@@ -97,6 +104,14 @@ public class StorageNetwork {
         if (networkChanged) {
             refreshStorageNetwork();
         }
+    }
+
+    private Set<Item> getCurrentFilters() {
+        List<Item> items = new ArrayList<>();
+        for (StorageNetworkItem box : boxes) {
+            items.add(box.simpleStorageBoxEntity.getFilterItem().getItem());
+        }
+        return new HashSet<>(items);
     }
 
     private Set<BlockPos> getConnectedComponents(@Nullable Level level, BlockPos origin) {
@@ -175,6 +190,10 @@ public class StorageNetwork {
         return blockState.is(ModTags.Blocks.STORAGE_NETWORK_BLOCK);
     }
 
+    public boolean isItemInNetwork(ItemStack stack) {
+        return filterItems.contains(stack.getItem());
+    }
+
     public boolean canPlaceItem(int slot, ItemStack itemStack) {
         if (slot >= boxes.size()) return false;
         return boxes.get(slot).simpleStorageBoxEntity.getItemHandler().insertItem(0, itemStack, true).getCount() < itemStack.getCount();
@@ -196,7 +215,7 @@ public class StorageNetwork {
             SimpleStorageBoxEntity box = networkItem.simpleStorageBoxEntity;
             if (box.getFilterItem().is(itemStack.getItem()) && canAccept.test(box)) {
                 return box;
-            } else if (box.getItemHandler().getStackInSlot(0).isEmpty() && canAccept.test(box) && emptyBox == null) {
+            } else if (box.getFilterItem().isEmpty() && canAccept.test(box) && emptyBox == null) {
                 emptyBox = box;
             }
         }

@@ -25,13 +25,14 @@ public abstract class ToolboxDisposeAllPacketMixin {
 
     @Mixin(ToolboxBlockEntity.class)
     public interface ToolboxBlockEntityMixin {
-        @Accessor("inventory")
+        @Accessor(value = "inventory", remap = false)
         ToolboxInventory fxnt$getInventory();
     }
 
     @Inject(
             method = "lambda$handle$0",
-            at = @At("TAIL")
+            at = @At("TAIL"),
+            remap = false
     )
 
     private void fxnt$afterDisposeAll(CompoundTag compound, ServerPlayer player, MutableBoolean sendData, ToolboxBlockEntity toolbox, ToolboxInventory inventory, CallbackInfo ci) {

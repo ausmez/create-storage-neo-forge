@@ -153,7 +153,7 @@ public class SimpleStorageBoxScenes {
             t.setFilter(gold);
             t.getItemHandler().setStackInSlot(0, gold.copyWithCount(64));
         });
-        scene.world().modifyBlock(sSBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
+        scene.world().modifyBlock(sSBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
         scene.idle(80);
 
         scene.world().showSection(belt, Direction.EAST);
@@ -237,7 +237,7 @@ public class SimpleStorageBoxScenes {
         scene.overlay().showControls(util.vector().blockSurface(leftBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(vUpgrade);
         scene.overlay().showText(65).text("Void upgrade will void any item added beyond the max capacity").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(leftBox, Direction.WEST));
         scene.idle(40);
-        scene.world().modifyBlock(leftBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
+        scene.world().modifyBlock(leftBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, (t) -> {
             t.getItemHandler().setStackInSlot(3, vUpgrade);
             t.voidUpgrade = true;
@@ -249,7 +249,7 @@ public class SimpleStorageBoxScenes {
         scene.overlay().showControls(util.vector().blockSurface(rightBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(cUpgrade);
         scene.overlay().showText(65).text("Capacity upgrade will double the storage for each upgrade").placeNearTarget().pointAt(util.vector().blockSurface(rightBox, Direction.WEST));
         scene.idle(40);
-        scene.world().modifyBlock(rightBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
+        scene.world().modifyBlock(rightBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> {
             for (int i = CAPACITY_UPGRADE_SLOT_START; i < SLOT_COUNT; i++) {
                 t.getItemHandler().setStackInSlot(i, cUpgrade);

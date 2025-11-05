@@ -1,7 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "fxntstorage:storage_controller",
-    "fxntstorage:storage_interface"
-  ]
-}

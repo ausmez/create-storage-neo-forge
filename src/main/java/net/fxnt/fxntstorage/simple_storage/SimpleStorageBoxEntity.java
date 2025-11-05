@@ -92,7 +92,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
-                if (slot < VOID_UPGRADE_SLOT)  storageSlotChanged = true;
+                if (slot < VOID_UPGRADE_SLOT) storageSlotChanged = true;
                 if (slot >= VOID_UPGRADE_SLOT) upgradeSlotChanged = true;
             }
 
@@ -271,6 +271,12 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     }
 
     @Override
+    public void setChanged() {
+        super.setChanged();
+        storageSlotChanged = true;
+    }
+
+    @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("Items", itemHandler.serializeNBT());
@@ -403,9 +409,9 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         if (storedAmount >= maxItemCapacity) status = EnumProperties.StorageUsed.FULL;
         else if (storedAmount > 0) status = EnumProperties.StorageUsed.HAS_ITEMS;
 
-        boolean storageChanged = currentState.getValue(SimpleStorageBox.STORAGE_USED) != status;
         BlockState newState = currentState;
-        if (storageChanged) newState = newState.setValue(SimpleStorageBox.STORAGE_USED, status);
+        if (currentState.getValue(SimpleStorageBox.STORAGE_USED) != status)
+            newState = newState.setValue(SimpleStorageBox.STORAGE_USED, status);
 
         level.setBlock(worldPosition, newState, Block.UPDATE_ALL);
         level.sendBlockUpdated(worldPosition, currentState, newState, Block.UPDATE_ALL);

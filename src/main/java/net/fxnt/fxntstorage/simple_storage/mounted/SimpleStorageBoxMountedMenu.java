@@ -8,6 +8,7 @@ import net.fxnt.fxntstorage.network.packet.SetMountedStorageDirtyPacket;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -234,19 +235,23 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        return this.container.stillValid(player);
+    }
+
+    public BlockPos getLocalPos() {
+        return this.localPos;
+    }
+
+    public void setFilterItem(ItemStack stack) {
+        this.nbt.put("FilterItem", stack.copyWithCount(1).save(new CompoundTag()));
     }
 
     public ItemStack getFilterItem() {
-        return ItemStack.of(
-                Objects.requireNonNull(
-                        ((AbstractContraptionEntity) Objects.requireNonNull(this.player.level().getEntity(contraptionId)))
-                                .getContraption()
-                                .getBlocks()
-                                .get(this.localPos)
-                                .nbt()
-                ).getCompound("FilterItem")
-        );
+        CompoundTag filterTag = this.nbt.getCompound("FilterItem");
+        if (filterTag.isEmpty() || !filterTag.contains("id", Tag.TAG_STRING)) {
+            return ItemStack.EMPTY;
+        }
+        return ItemStack.of(this.nbt.getCompound("FilterItem"));
     }
 
     public int getStoredAmount() {
@@ -308,7 +313,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
         contraption.getBlocks().put(localPos, new StructureTemplate.StructureBlockInfo(
                 info.pos(), info.state(), tag
         ));
-        contraption.deferInvalidate = true;
+//        contraption.resetClientContraption();
     }
 
     private void setStorageDirty() {

@@ -1,0 +1,6 @@
+{
+  "parent": "fxntstorage:block/storage_controller",
+  "textures": {
+    "north": "fxntstorage:block/storage_controller_front_connected"
+  }
+}

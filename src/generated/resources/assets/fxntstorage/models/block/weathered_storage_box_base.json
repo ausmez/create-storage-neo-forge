@@ -1,0 +1,9 @@
+{
+  "parent": "fxntstorage:block/storage_box_base",
+  "textures": {
+    "back": "create:block/weathered_iron_block",
+    "casing": "create:block/weathered_iron_block",
+    "particle": "create:block/weathered_iron_block",
+    "top": "create:block/weathered_iron_block_top"
+  }
+}

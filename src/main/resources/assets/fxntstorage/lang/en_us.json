@@ -4,91 +4,47 @@
   "itemGroup.fxntstorage.create": "FXNT Storage Create",
 
   "block.fxntstorage.storage_box": "Industrial Iron Storage Box",
-  "container.fxntstorage.industrial_iron_storage_box": "Industrial Iron Storage Box",
-
   "block.fxntstorage.cardboard_storage_box": "Cardboard Storage Box",
-  "container.fxntstorage.cardboard_storage_box": "Cardboard Storage Box",
-
   "block.fxntstorage.weathered_storage_box": "Weathered Iron Storage Box",
-  "container.fxntstorage.weathered_storage_box": "Weathered Iron Storage Box",
-
   "block.fxntstorage.andesite_storage_box": "Andesite Storage Box",
-  "container.fxntstorage.andesite_storage_box": "Andesite Storage Box",
-
   "block.fxntstorage.copper_storage_box": "Copper Storage Box",
-  "container.fxntstorage.copper_storage_box": "Copper Storage Box",
-
   "block.fxntstorage.brass_storage_box": "Brass Storage Box",
-  "container.fxntstorage.brass_storage_box": "Brass Storage Box",
-
   "block.fxntstorage.hardened_storage_box": "Hardened Storage Box",
-  "container.fxntstorage.hardened_storage_box": "Hardened Storage Box",
 
   "container.fxntstorage.simple_storage_box_title": "Simple Storage Box",
 
-  "block.fxntstorage.simple_storage_box": "Simple Oak Storage Box",
-  "container.fxntstorage.simple_storage_box": "Simple Oak Storage Box",
-
-  "block.fxntstorage.simple_storage_box_spruce": "Simple Spruce Storage Box",
-  "container.fxntstorage.simple_storage_box_spruce": "Simple Spruce Storage Box",
-
-  "block.fxntstorage.simple_storage_box_birch": "Simple Birch Storage Box",
-  "container.fxntstorage.simple_storage_box_birch": "Simple Birch Storage Box",
-
-  "block.fxntstorage.simple_storage_box_jungle": "Simple Jungle Storage Box",
-  "container.fxntstorage.simple_storage_box_jungle": "Simple Jungle Storage Box",
-
-  "block.fxntstorage.simple_storage_box_acacia": "Simple Acacia Storage Box",
-  "container.fxntstorage.simple_storage_box_acacia": "Simple Acacia Storage Box",
-
-  "block.fxntstorage.simple_storage_box_dark_oak": "Simple Dark Oak Storage Box",
-  "container.fxntstorage.simple_storage_box_dark_oak": "Simple Dark Oak Storage Box",
-
-  "block.fxntstorage.simple_storage_box_mangrove": "Simple Mangrove Storage Box",
-  "container.fxntstorage.simple_storage_box_mangrove": "Simple Mangrove Storage Box",
-
-  "block.fxntstorage.simple_storage_box_cherry": "Simple Cherry Storage Box",
-  "container.fxntstorage.simple_storage_box_cherry": "Simple Cherry Storage Box",
-
-  "block.fxntstorage.simple_storage_box_bamboo": "Simple Bamboo Storage Box",
-  "container.fxntstorage.simple_storage_box_bamboo": "Simple Bamboo Storage Box",
-
-  "block.fxntstorage.simple_storage_box_crimson": "Simple Crimson Storage Box",
-  "container.fxntstorage.simple_storage_box_crimson": "Simple Crimson Storage Box",
-
-  "block.fxntstorage.simple_storage_box_warped": "Simple Warped Storage Box",
-  "container.fxntstorage.simple_storage_box_warped": "Simple Warped Storage Box",
-
-  "block.fxntstorage.simple_storage_box_pale_oak": "Simple Pale Oak Storage Box",
-  "container.fxntstorage.simple_storage_box_pale_oak": "Simple Pale Oak Storage Box",
+  "block.fxntstorage.oak_simple_storage_box": "Simple Oak Storage Box",
+  "block.fxntstorage.spruce_simple_storage_box": "Simple Spruce Storage Box",
+  "block.fxntstorage.birch_simple_storage_box": "Simple Birch Storage Box",
+  "block.fxntstorage.jungle_simple_storage_box": "Simple Jungle Storage Box",
+  "block.fxntstorage.acacia_simple_storage_box": "Simple Acacia Storage Box",
+  "block.fxntstorage.dark_oak_simple_storage_box": "Simple Dark Oak Storage Box",
+  "block.fxntstorage.mangrove_simple_storage_box": "Simple Mangrove Storage Box",
+  "block.fxntstorage.cherry_simple_storage_box": "Simple Cherry Storage Box",
+  "block.fxntstorage.bamboo_simple_storage_box": "Simple Bamboo Storage Box",
+  "block.fxntstorage.crimson_simple_storage_box": "Simple Crimson Storage Box",
+  "block.fxntstorage.warped_simple_storage_box": "Simple Warped Storage Box",
+  "block.fxntstorage.pale_oak_simple_storage_box": "Simple Pale Oak Storage Box",
 
   "block.fxntstorage.storage_controller": "Simple Storage Controller",
-  "fxntstorage.container.storage_controller": "Simple Storage Controller",
-
   "block.fxntstorage.storage_interface": "Simple Storage Interface",
-  "container.fxntstorage.storage_interface": "Simple Storage Interface",
 
   "block.fxntstorage.passer_block": "Passer",
   "block.fxntstorage.smart_passer_block": "Smart Passer",
 
   "block.fxntstorage.backpack": "Industrial Iron Backpack",
-  "container.fxntstorage.backpack": "Industrial Iron Backpack",
   "item.fxntstorage.backpack": "Industrial Iron Backpack",
 
   "block.fxntstorage.andesite_backpack": "Andesite Backpack",
-  "container.fxntstorage.andesite_backpack": "Andesite Backpack",
   "item.fxntstorage.andesite_backpack": "Andesite Backpack",
 
   "block.fxntstorage.copper_backpack": "Copper Backpack",
-  "container.fxntstorage.copper_backpack": "Copper Backpack",
   "item.fxntstorage.copper_backpack": "Copper Backpack",
 
   "block.fxntstorage.brass_backpack": "Brass Backpack",
-  "container.fxntstorage.brass_backpack": "Brass Backpack",
   "item.fxntstorage.brass_backpack": "Brass Backpack",
 
   "block.fxntstorage.hardened_backpack": "Hardened Backpack",
-  "container.fxntstorage.hardened_backpack": "Hardened Backpack",
   "item.fxntstorage.hardened_backpack": "Hardened Backpack",
 
   "item.fxntstorage.backpack_blank_upgrade": "Upgrade Template",
@@ -118,18 +74,18 @@
   "item.fxntstorage.storage_box_void_upgrade": "Simple Storage Box Void Upgrade",
   "item.fxntstorage.storage_box_capacity_upgrade": "Simple Storage Box Capacity Upgrade",
 
-  "block.fxntstorage.storage_trim": "Oak Storage Trim",
-  "block.fxntstorage.storage_trim_spruce": "Spruce Storage Trim",
-  "block.fxntstorage.storage_trim_birch": "Birch Storage Trim",
-  "block.fxntstorage.storage_trim_jungle": "Jungle Storage Trim",
-  "block.fxntstorage.storage_trim_acacia": "Acacia Storage Trim",
-  "block.fxntstorage.storage_trim_dark_oak": "Dark Oak Storage Trim",
-  "block.fxntstorage.storage_trim_mangrove": "Mangrove Storage Trim",
-  "block.fxntstorage.storage_trim_cherry": "Cherry Storage Trim",
-  "block.fxntstorage.storage_trim_bamboo": "Bamboo Storage Trim",
-  "block.fxntstorage.storage_trim_crimson": "Crimson Storage Trim",
-  "block.fxntstorage.storage_trim_warped": "Warped Storage Trim",
-  "block.fxntstorage.storage_trim_pale_oak": "Pale Oak Storage Trim",
+  "block.fxntstorage.oak_storage_trim": "Oak Storage Trim",
+  "block.fxntstorage.spruce_storage_trim": "Spruce Storage Trim",
+  "block.fxntstorage.birch_storage_trim": "Birch Storage Trim",
+  "block.fxntstorage.jungle_storage_trim": "Jungle Storage Trim",
+  "block.fxntstorage.acacia_storage_trim": "Acacia Storage Trim",
+  "block.fxntstorage.dark_oak_storage_trim": "Dark Oak Storage Trim",
+  "block.fxntstorage.mangrove_storage_trim": "Mangrove Storage Trim",
+  "block.fxntstorage.cherry_storage_trim": "Cherry Storage Trim",
+  "block.fxntstorage.bamboo_storage_trim": "Bamboo Storage Trim",
+  "block.fxntstorage.crimson_storage_trim": "Crimson Storage Trim",
+  "block.fxntstorage.warped_storage_trim": "Warped Storage Trim",
+  "block.fxntstorage.pale_oak_storage_trim": "Pale Oak Storage Trim",
 
   "tooltip.fxntstorage.upgrade_deactivated": "DEACTIVATED",
   "tooltip.fxntstorage.holdForContents": "Hold [%s] to View Contents",
@@ -210,7 +166,7 @@
 
   "fxntstorage.storage_box_void_upgrade_exists": "This storage box already contains a void upgrade",
   "fxntstorage.storage_box_capacity_upgrade_max": "This storage box has reached maximum capacity",
-  "fxntstorage.shape_cache.cleared": "Create: Storage Shape Cache Cleared",
+  "fxntstorage.shape_cache.cleared": "Create: Storage shape cache cleared",
 
   "key.fxntstorage.category": "Create: Storage",
   "key.fxntstorage.toggle_backpack": "Open/Close Backpack (while wearing)",
@@ -315,5 +271,59 @@
   "fxntstorage.ponder.storage_interface_intro.header": "Storage Interface",
   "fxntstorage.ponder.storage_interface_intro.text_1": "Storage Interfaces only function within existing storage networks",
   "fxntstorage.ponder.storage_interface_intro.text_2": "It cannot be directly interacted with by the player",
-  "fxntstorage.ponder.storage_interface_intro.text_3": "Items can be inserted into and extracted from the network with funnels, chutes, hoppers or passers"
+  "fxntstorage.ponder.storage_interface_intro.text_3": "Items can be inserted into and extracted from the network with funnels, chutes, hoppers or passers",
+
+  "fxntstorage.configuration.storage_box": "Storage Box",
+  "fxntstorage.configuration.storageBoxUpdateTime": "Storage Box Update Time",
+  "fxntstorage.configuration.storage_network": "Storage Network",
+  "fxntstorage.configuration.allowInsertIntoEmptyBoxes": "Allow Insert Into Empty Boxes",
+  "fxntstorage.configuration.simpleStorageNetworkRange": "Simple Storage Network Range",
+  "fxntstorage.configuration.simpleStorageNetworkUpdateTime": "Simple Storage Network Update Time",
+  "fxntstorage.configuration.backpack": "Backpack Upgrades",
+  "fxntstorage.configuration.backpack.tooltip": "Configuration options for the Backpack",
+  "fxntstorage.configuration.magnet_upgrade": "Magnet Upgrade",
+  "fxntstorage.configuration.backpackMagnetRange": "Backpack Magnet Range",
+  "fxntstorage.configuration.ore_mining_upgrade": "Ore Mining Upgrade",
+  "fxntstorage.configuration.mineOresOnly": "Mine Ores Only",
+  "fxntstorage.configuration.keepBackpackOnDeath": "Keep Backpack On Death",
+  "fxntstorage.configuration.elytraBoostEnabled": "Elytra Boost Enabled",
+  "fxntstorage.configuration.elytraBoostMultiplier": "Elytra Boost Fuel Multiplier",
+  "fxntstorage.configuration.elytraBoostSpeedMultiplier": "Elytra Boost Speed Multiplier",
+  "fxntstorage.configuration.jetpackMiningPenalty": "Mining Speed Penalty",
+  "fxntstorage.configuration.feeder_upgrade": "Feeder Upgrade",
+  "fxntstorage.configuration.displayFeederMessage": "Display Feeder Message",
+  "fxntstorage.configuration.allowChorusFruit": "Allow Chorus Fruit",
+  "fxntstorage.configuration.jetpack_upgrade": "Jetpack Upgrade",
+  "fxntstorage.configuration.displayJetpackAirOverlay": "Display Jetpack Air Overlay",
+  "fxntstorage.configuration.jetpackHoverBobbing": "Jetpack Hover Bobbing",
+  "fxntstorage.configuration.ignoreFanProcessing": "Ignore Fan Processing",
+  "fxntstorage.configuration.tool_swap_upgrade": "Tool Swap Upgrade",
+  "fxntstorage.configuration.preferSilkTouch": "Prefer Silk Touch",
+  "fxntstorage.configuration.prefersSilkTouchList": "Prefers Silk Touch List",
+  "fxntstorage.configuration.torch_deployer_upgrade": "Torch Deployer Upgrade",
+  "fxntstorage.configuration.torchDeployerLightLevel": "Torch Deployer Light Level",
+  "fxntstorage.configuration.torchDeployerCooldown": "Torch Deployer Cooldown",
+  "fxntstorage.configuration.torchDeployerLightSource": "Torch Deployer Light Source",
+  "fxntstorage.configuration.checkBackpackForProjectiles": "Check Backpack for Projectiles",
+  "fxntstorage.configuration.checkBackpackForToolboxItems": "Check Backpack for Toolbox Items",
+  "fxntstorage.configuration.ore_mining_upgrade.tooltip": "Configuration options for the Backpack Ore Mining Upgrade",
+  "fxntstorage.configuration.magnet_upgrade.tooltip": "Configuration options for the Backpack Magnet Upgrade",
+  "fxntstorage.configuration.storage_box.tooltip": "Configuration options for the Storage Box",
+  "fxntstorage.configuration.storage_network.tooltip": "Configuration options for the Storage Network",
+  "fxntstorage.configuration.torch_deployer_upgrade.tooltip": "Configuration options for the Backpack Torch Deployer Upgrade",
+  "fxntstorage.configuration.feeder_upgrade.tooltip": "Configuration options for the Backpack Feeder Upgrade",
+  "fxntstorage.configuration.tool_swap_upgrade.tooltip": "Configuration options for the Backpack Tool Swap Upgrade",
+  "fxntstorage.configuration.jetpack_upgrade.tooltip": "Configuration options for the Backpack Flight Upgrade",
+  "fxntstorage.configuration.flight_upgrade.tooltip": "Configuration options for the Backpack Flight Upgrade",
+  "fxntstorage.configuration.invalidBlock": "Not a valid block",
+  "fxntstorage.configuration.flight_upgrade": "Flight Upgrade",
+  "fxntstorage.configuration.jetpackAllowVoidFlight": "Allow Void Flight",
+  "fxntstorage.configuration.feederHungerLevel": "Hunger Level",
+  "fxntstorage.configuration.feederHealthThreshold": "Health Threshold (%)",
+  "fxntstorage.configuration.refillBlacklist": "Refill Blacklist",
+  "fxntstorage.configuration.refill_upgrade": "Refill Upgrade",
+  "fxntstorage.configuration.refill_upgrade.tooltip": "Configuration options for the Backpack Refill Upgrade",
+
+  "block_type.fxntstorage.simple_storage_box": "%s Simple Storage Box",
+  "block_type.fxntstorage.storage_trim": "%s Storage Trim"
 }

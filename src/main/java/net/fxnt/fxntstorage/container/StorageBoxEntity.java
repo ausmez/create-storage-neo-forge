@@ -264,7 +264,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     public boolean stillValid(Player pPlayer) {
         return !this.isRemoved()
-                && Container.stillValidBlockEntity(this, pPlayer, pPlayer.getAttributeValue(net.minecraftforge.common.ForgeMod.BLOCK_REACH.get()) + 0.5);
+                && Container.stillValidBlockEntity(this, pPlayer, 5);
     }
 
     public FilteringBehaviour getFilter() {
@@ -363,11 +363,6 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
                 pLevel.sendBlockUpdated(pPos, pState, currentState, Block.UPDATE_CLIENTS);
             }
 
-            boolean copyNbt = !isContainerModified();
-            if (level != null && currentState.getValue(StorageBox.COPY_NBT) != copyNbt) {
-                level.setBlock(worldPosition, getBlockState().setValue(StorageBox.COPY_NBT, copyNbt), Block.UPDATE_ALL);
-            }
-
             int totalSlots = itemHandler.getSlots();
             boolean allSlotsFull = true;
             int filledSlots = 0;
@@ -402,16 +397,6 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         super.tick();
     }
 
-    private boolean isContainerModified() {
-        for (int i = 0; i < itemHandler.getSlots(); ++i) {
-            if (!itemHandler.getStackInSlot(i).isEmpty()) {
-                return false;
-            }
-        }
-        return !hasCustomName();
-    }
-
-    // Transferring Items
     public void transferToStorage(BlockState pState, Player pPlayer, Boolean transferAll) {
         // Get the item in the players main hand and check the hand is NOT empty and the item matches the filter (if one applied)
         ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);

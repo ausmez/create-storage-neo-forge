@@ -38,7 +38,7 @@ public class ModBlockEntities {
     public static final BlockEntityEntry<SimpleStorageBoxEntity> SIMPLE_STORAGE_BOX_ENTITY = REGISTRATE
             .blockEntity("simple_storage_box_entity", SimpleStorageBoxEntity::new)
             .validBlocks((NonNullSupplier<? extends Block>[]) Stream.of(
-                    ModBlocks.SIMPLE_STORAGE_BOX,
+                    ModBlocks.SIMPLE_STORAGE_BOX_OAK,
                     ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE,
                     ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
                     ModBlocks.SIMPLE_STORAGE_BOX_JUNGLE,

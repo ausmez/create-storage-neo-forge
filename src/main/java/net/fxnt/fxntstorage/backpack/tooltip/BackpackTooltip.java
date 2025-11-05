@@ -105,7 +105,7 @@ public class BackpackTooltip implements TooltipComponent {
             int slot = listItem.getByte("Slot") & 255;
             // Do not count upgrade slot items. They are dealt with separately
             if (item instanceof BackpackItem && slot < Util.UPGRADE_SLOT_START_RANGE ||
-                    item instanceof SimpleStorageBoxItem && slot < 2 ||
+                    item instanceof SimpleStorageBoxItem && slot == 0 ||
                     item instanceof StorageBoxItem) {
 
                 if (actualCountTagIsPresent) {

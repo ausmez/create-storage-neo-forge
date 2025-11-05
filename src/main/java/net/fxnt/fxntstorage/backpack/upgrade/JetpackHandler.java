@@ -146,7 +146,7 @@ public class JetpackHandler {
 
         jetPackFuelRemaining = (float) calculateJetPackFuel(player);
 
-        if (isJumping || isHovering && jetPackFuelRemaining > 0) {
+        if ((isJumping || isHovering) && jetPackFuelRemaining > 0) {
             depleteJetPackFuel(player);
             validatePlayerMovement();
             player.resetFallDistance();
@@ -460,7 +460,7 @@ public class JetpackHandler {
         int totalAir = (int) jetPackFuelRemaining;
 
         // Send visual air packet
-        if (!player.onGround()) {
+        if (!player.onGround() && jetPackFuelRemaining > 0) {
             ModNetwork.sendToPlayer(serverPlayer, new VisualJetpackAirPacket(totalAir));
             airGaugeCleared = false;
         } else {

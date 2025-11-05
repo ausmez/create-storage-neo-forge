@@ -37,19 +37,13 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.UUID;
-
 @SuppressWarnings("deprecation")
 public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity> {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
     public static final BooleanProperty VOID_UPGRADE = BooleanProperty.create("void_upgrade");
-    public static final BooleanProperty COPY_NBT = BooleanProperty.create("copy_nbt");
 
     private final int slotCount;
-
-    private long lastClickTime;
-    private UUID lastClickUUID;
 
     public StorageBox(Properties pProperties, int slotCount) {
         super(pProperties);
@@ -57,7 +51,6 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)
                 .setValue(VOID_UPGRADE, false)
-                .setValue(COPY_NBT, false)
         );
         this.slotCount = slotCount;
     }
@@ -140,20 +133,28 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
              */
         BlockEntity entity = pLevel.getBlockEntity(pPos);
 
-        if (entity instanceof StorageBoxEntity) {
+        if (entity instanceof StorageBoxEntity storageBoxEntity) {
             ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
 
-            final int INTERACTION_COOLDOWN = 8; // measured in ticks
-            if (pLevel.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && pPlayer.getUUID().equals(lastClickUUID)) {
+            long currentTime = pPlayer.level().getGameTime();
+            CompoundTag pd = pPlayer.getPersistentData();
+
+            boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
+                    && pd.getInt("fxntstorage:last_click_type") == 1;
+
+            if (isDoubleClick) {
+                pd.putInt("fxntstorage:last_click_type", 0);
                 // Double Right-click
-                if (itemInHand.isEmpty()) {
-                    ((StorageBoxEntity) entity).transferToStorage(pState, pPlayer, true);
+                if (itemInHand.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
+                    storageBoxEntity.transferToStorage(pState, pPlayer, true);
                 }
             } else {
+                pd.putLong("fxntstorage:last_click_time", currentTime);
+                pd.putInt("fxntstorage:last_click_type", 1);
                 // Single Right-Click
                 if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
                     // Right-Click with Create Wrench in hand will toggle void mode
-                    ((StorageBoxEntity) entity).toggleVoidUpgrade();
+                    storageBoxEntity.toggleVoidUpgrade();
                     return InteractionResult.SUCCESS;
                 }
 
@@ -165,12 +166,9 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
                 if (!itemInHand.isEmpty()) {
                     // Current item in player hand will be inserted into container
-                    ((StorageBoxEntity) entity).transferToStorage(pState, pPlayer, false);
+                    storageBoxEntity.transferToStorage(pState, pPlayer, false);
                 }
             }
-
-            lastClickTime = pLevel.getGameTime();
-            lastClickUUID = pPlayer.getUUID();
         }
 
         return InteractionResult.sidedSuccess(false);
@@ -227,7 +225,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> pBuilder) {
         super.createBlockStateDefinition(pBuilder);
-        pBuilder.add(FACING, STORAGE_USED, VOID_UPGRADE, COPY_NBT);
+        pBuilder.add(FACING, STORAGE_USED, VOID_UPGRADE);
     }
 
     @Override

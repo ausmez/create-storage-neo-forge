@@ -21,7 +21,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
 import static net.fxnt.fxntstorage.util.RendererHelper.*;
@@ -38,6 +37,8 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         BlockState state = context.state;
         CompoundTag tag = context.blockEntityData;
         if (tag == null || state == null) return;
+
+        boolean hasVoidUpgrade = tag.getBoolean("VoidUpgrade");
 
         int amount = tag.getInt("StoredAmount");
         int totalSpace = tag.getInt("MaxItemCapacity");
@@ -78,8 +79,8 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
             ItemStack filterItem = tag.getCompound("FilterItem").isEmpty()
                     ? ItemStack.EMPTY
                     : ItemStack.of(tag.getCompound("FilterItem"));
-            if (!filterItem.isEmpty()) {
-                renderItem(itemRenderer, filterItem, poseStack, buffer, tag.getBoolean("VoidUpgrade"));
+            if (!filterItem.isEmpty() || hasVoidUpgrade) {
+                renderItem(itemRenderer, filterItem, poseStack, buffer, hasVoidUpgrade);
             }
         }
 
@@ -87,7 +88,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
     }
 
     @Override
-    public void render(@NotNull SimpleStorageBoxEntity blockEntity, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource buffer, int packedLight, int packedOverlay) {
+    public void render(SimpleStorageBoxEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
         boolean isPonderScene;
 
         Minecraft mc = Minecraft.getInstance();

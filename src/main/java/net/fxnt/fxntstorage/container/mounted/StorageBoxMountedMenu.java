@@ -254,7 +254,7 @@ public class StorageBoxMountedMenu extends AbstractContainerMenu {
         if (storage != null && tag != null) {
             ((StorageBoxMountedStorage) storage).setSortOrder(SortOrder.valueOf(tag.getString("SortOrder")));
         }
-//        contraption.deferInvalidate = true;
+//        contraption.resetClientContraption();
     }
 
     private void setStorageDirty() {

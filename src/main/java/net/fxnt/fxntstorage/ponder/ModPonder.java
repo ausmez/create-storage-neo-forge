@@ -9,11 +9,12 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.init.ModCompats;
 import net.fxnt.fxntstorage.init.ModItems;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.List;
 
 public class ModPonder {
     public static final ResourceLocation CREATE_STORAGE = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "storage");
@@ -24,7 +25,7 @@ public class ModPonder {
 
             helper.registerTag(CREATE_STORAGE)
                     .addToIndex()
-                    .item(ModBlocks.SIMPLE_STORAGE_BOX.get(), true, false)
+                    .item(ModBlocks.SIMPLE_STORAGE_BOX_OAK.get(), true, false)
                     .title("Create: Storage")
                     .description("Items and components related to Create: Storage")
                     .register();
@@ -32,12 +33,12 @@ public class ModPonder {
             PonderTagRegistrationHelper<RegistryEntry<?>> HELPER = helper.withKeyFunction(RegistryEntry::getId);
             HELPER.addToTag(CREATE_STORAGE)
                     .add(ModBlocks.STORAGE_BOX)
-                    .add(ModBlocks.SIMPLE_STORAGE_BOX)
+                    .add(ModBlocks.SIMPLE_STORAGE_BOX_OAK)
                     .add(ModBlocks.PASSER_BLOCK)
                     .add(ModBlocks.SMART_PASSER_BLOCK)
                     .add(ModBlocks.STORAGE_CONTROLLER)
                     .add(ModBlocks.STORAGE_INTERFACE)
-                    .add(ModBlocks.STORAGE_TRIM)
+                    .add(ModBlocks.STORAGE_TRIM_OAK)
                     .add(ModItems.STORAGE_BOX_VOID_UPGRADE)
                     .add(ModItems.STORAGE_BOX_CAPACITY_UPGRADE);
         }
@@ -54,11 +55,15 @@ public class ModPonder {
                     .addStoryBoard("storagebox/interact", StorageBoxScenes::interact, CREATE_STORAGE)
                     .addStoryBoard("storagebox/filter", StorageBoxScenes::filter, CREATE_STORAGE);
 
-            MultiSceneBuilder builder = HELPER.forComponents(Stream.of(
-                    ModBlocks.SIMPLE_STORAGE_BOX, ModBlocks.SIMPLE_STORAGE_BOX_ACACIA, ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO, ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
-                    ModBlocks.SIMPLE_STORAGE_BOX_CHERRY, ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON, ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK, ModBlocks.SIMPLE_STORAGE_BOX_JUNGLE,
-                    ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE, ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE, ModBlocks.SIMPLE_STORAGE_BOX_WARPED, ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK
-            ).filter(Objects::nonNull).toList());
+            List<ResourceLocation> simpleStorageBoxes = ForgeRegistries.BLOCKS.getEntries().stream()
+                    .filter(entry -> entry.getKey().location().getNamespace().equals(FXNTStorage.MOD_ID)
+                            && entry.getKey().location().getPath().contains("simple_storage_box")
+                            && entry.getValue() instanceof SimpleStorageBox)
+                    .map(entry -> entry.getKey().location())
+                    .toList();
+
+            MultiSceneBuilder builder = helper.forComponents(simpleStorageBoxes);
+
             if (ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT)) {
                 builder.addStoryBoard("simplestoragebox/intro_alt", SimpleStorageBoxScenes::intro, CREATE_STORAGE);
             } else {

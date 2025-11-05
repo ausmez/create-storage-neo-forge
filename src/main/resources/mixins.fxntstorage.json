@@ -9,6 +9,7 @@
     "ItemEntityMixin",
     "PlayerMixin",
     "PotatoCannonItemMixin",
+    "SymmetryHandlerMixin",
     "ThresholdSwitchBlockEntity",
     "ToolboxDisposeAllPacketMixin",
     "ToolboxDisposeAllPacketMixin$ToolboxBlockEntityMixin"

@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "C": {
+      "item": "create:industrial_iron_block"
+    },
+    "L": {
+      "item": "minecraft:leather"
+    },
+    "S": {
+      "item": "minecraft:string"
+    },
+    "V": {
+      "item": "create:item_vault"
+    }
+  },
+  "pattern": [
+    "SCS",
+    "LVL",
+    "CCC"
+  ],
+  "result": {
+    "item": "fxntstorage:backpack"
+  },
+  "show_notification": true
+}

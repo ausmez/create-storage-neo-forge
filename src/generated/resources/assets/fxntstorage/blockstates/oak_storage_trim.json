@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "fxntstorage:block/oak_storage_trim"
+    }
+  }
+}

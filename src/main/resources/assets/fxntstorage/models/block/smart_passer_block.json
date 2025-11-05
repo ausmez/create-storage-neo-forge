@@ -2,7 +2,7 @@
   "parent": "block/block",
   "texture_size": [32, 32],
   "textures": {
-    "main": "fxntstorage:block/smart_passer_block",
+    "main": "fxntstorage:block/smart_passer_block_unpowered",
     "particle": "fxntstorage:block/smart_passer_block"
   },
   "elements": [

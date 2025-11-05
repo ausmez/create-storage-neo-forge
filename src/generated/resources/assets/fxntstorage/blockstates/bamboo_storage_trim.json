@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "fxntstorage:block/bamboo_storage_trim"
+    }
+  }
+}

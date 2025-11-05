@@ -9,7 +9,6 @@ import com.simibubi.create.content.contraptions.Contraption;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.foundation.utility.CreateCodecs;
-import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.container.StorageBoxEntity;
 import net.fxnt.fxntstorage.container.util.EnumProperties;

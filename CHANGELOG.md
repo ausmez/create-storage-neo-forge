@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.1.5 - 2025-11-05
+## Changes
+- **Create 6.0.7+ Support**
+    - Updated to support Create 6.0.7 and later.
+    - Create 6.0.7 is now the minimum supported version.
+- **Storage**
+    - Added a new tag: `symmetry_wand_blacklist`
+        - items with this tag will be ignored by Create's Wand of Symmetry when placing blocks
+    - Storage Boxes, Simple Storage Boxes, Backpacks, Create Toolboxes and Vanilla Shulker Boxes have been added to this tag
+- **Optional Dependency**
+    - Every Compat (Wood Good): Added support for Simple Storage Boxes and Storage Trims when additional wood type are available via other mods (i.e. Biomes O' Plenty, Ecologics, etc.) (#30)
+
+## Bug Fixes
+- Fixed items disappearing from backpacks when placed with Wand of Symmetry in hotbar (symmetry_wand_blacklist). (#29)
+- Fixed right-clicking a Storage Controller’s front face with a wrench incorrectly adding it to the storage network
+- Fixed double-clicking with an empty hand on a Storage Box now correctly respects filters
+- Fixed Simple Storage Box display count not updating when items are inserted via a storage network
+- Fixed Storage Network inserting items into empty Simple Storage Boxes that had a filter set. (#32)
+- Fixed double-click with an empty hand on a Storage Controller now correctly transfers matching items from inventory to the network
+- Fixed crash when a contraption is unmounted while a Simple Storage Box screen is open
+- Fixed issue with Storage Box transferring all items from player inventory on double click [Forge]
+- Fixed issue where double-clicking on a Storage Box, Simple Storage box or Storage Controller would not register in a multiplayer server
+- Fixed rendering issue where Simple Storage Boxes mounted on contraptions did not display the Void Upgrade icon
+- Fixed issue where remaining Jetpack fuel was still displayed while jumping after fuel was depleted
+- Fixed Simple Storage Box filter icon not updating on contraptions while the menu was open
+- Fixed Simple Storage Box tooltip displaying void upgrade item twice [Forge]
+- Fixed Simple Storage Boxes not saving their inventory when dropped [Forge]
+
+---
 ## 1.1.4 - 2025-10-11
 ## Changes
 - **Feeder Upgrade**

@@ -1,0 +1,56 @@
+{
+  "variants": {
+    "facing=down,powered=false": {
+      "model": "fxntstorage:block/smart_passer_block"
+    },
+    "facing=down,powered=true": {
+      "model": "fxntstorage:block/smart_passer_block_powered"
+    },
+    "facing=east,powered=false": {
+      "model": "fxntstorage:block/smart_passer_block",
+      "x": 90,
+      "y": 270
+    },
+    "facing=east,powered=true": {
+      "model": "fxntstorage:block/smart_passer_block_powered",
+      "x": 90,
+      "y": 270
+    },
+    "facing=north,powered=false": {
+      "model": "fxntstorage:block/smart_passer_block",
+      "x": 90,
+      "y": 180
+    },
+    "facing=north,powered=true": {
+      "model": "fxntstorage:block/smart_passer_block_powered",
+      "x": 90,
+      "y": 180
+    },
+    "facing=south,powered=false": {
+      "model": "fxntstorage:block/smart_passer_block",
+      "x": 90
+    },
+    "facing=south,powered=true": {
+      "model": "fxntstorage:block/smart_passer_block_powered",
+      "x": 90
+    },
+    "facing=up,powered=false": {
+      "model": "fxntstorage:block/smart_passer_block",
+      "x": 180
+    },
+    "facing=up,powered=true": {
+      "model": "fxntstorage:block/smart_passer_block_powered",
+      "x": 180
+    },
+    "facing=west,powered=false": {
+      "model": "fxntstorage:block/smart_passer_block",
+      "x": 90,
+      "y": 90
+    },
+    "facing=west,powered=true": {
+      "model": "fxntstorage:block/smart_passer_block_powered",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

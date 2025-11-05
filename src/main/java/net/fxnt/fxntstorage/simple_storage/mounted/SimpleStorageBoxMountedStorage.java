@@ -94,7 +94,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     private boolean canInsertItem(ItemStack itemInHand) {
-        return !itemInHand.is(AllTags.AllItemTags.WRENCH.tag)
+        return !itemInHand.is(AllTags.AllItemTags.WRENCH.tag) && !itemInHand.is(ModTags.Items.STORAGE_BOX_UPGRADE)
                 && (filterItem.isEmpty() || itemInHand.getItem().equals(filterItem.getItem()));
     }
 
@@ -394,8 +394,9 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
                 context.contraption.entity.getId(),
                 context.localPos,
                 calculateFillLevel(),
-                context.blockEntityData
+                context.blockEntityData.copy()
         ));
+        markDirty();
         initialized = true;
     }
 

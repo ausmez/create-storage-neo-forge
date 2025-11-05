@@ -11,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -19,9 +20,18 @@ import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.Objects;
 
 public class BackpackRecipe extends ShapedRecipe {
+
+    private static final Map<Item, Integer> BACKPACK_MULTIPLIERS = Map.of(
+            ModBlocks.ANDESITE_BACKPACK.asItem(), Util.ANDESITE_BACKPACK_STACK_MULTIPLIER,
+            ModBlocks.COPPER_BACKPACK.asItem(), Util.COPPER_BACKPACK_STACK_MULTIPLIER,
+            ModBlocks.BRASS_BACKPACK.asItem(), Util.BRASS_BACKPACK_STACK_MULTIPLIER,
+            ModBlocks.HARDENED_BACKPACK.asItem(), Util.HARDENED_BACKPACK_STACK_MULTIPLIER
+    );
+
     private ItemStack craftingStack;
 
     public BackpackRecipe(ResourceLocation id, String group, int width, int height, NonNullList<Ingredient> recipeItems, ItemStack result) {
@@ -53,19 +63,10 @@ public class BackpackRecipe extends ShapedRecipe {
         if (craftingStack.hasTag()) {
             craftedStack.setTag(craftingStack.getTag());
             CompoundTag entityTag = craftedStack.getOrCreateTagElement("BlockEntityTag");
-            if (entityTag.contains("StackMultiplier")) {
-                int newMaxStackSize = entityTag.getInt("StackMultiplier");
-                // Handle different backpack types
-                if (craftedStack.getItem().equals(ModBlocks.ANDESITE_BACKPACK.asItem())) {
-                    newMaxStackSize = Util.ANDESITE_BACKPACK_STACK_MULTIPLIER;
-                } else if (craftedStack.getItem().equals(ModBlocks.COPPER_BACKPACK.asItem())) {
-                    newMaxStackSize = Util.COPPER_BACKPACK_STACK_MULTIPLIER;
-                } else if (craftedStack.getItem().equals(ModBlocks.BRASS_BACKPACK.asItem())) {
-                    newMaxStackSize = Util.BRASS_BACKPACK_STACK_MULTIPLIER;
-                } else if (craftedStack.getItem().equals(ModBlocks.HARDENED_BACKPACK.asItem())) {
-                    newMaxStackSize = Util.HARDENED_BACKPACK_STACK_MULTIPLIER;
-                }
-                entityTag.putInt("StackMultiplier", newMaxStackSize);
+
+            Integer newStackMultiplier = BACKPACK_MULTIPLIERS.get(craftedStack.getItem());
+            if (newStackMultiplier != null) {
+                entityTag.putInt("StackMultiplier", newStackMultiplier);
             }
         }
         return craftedStack;

@@ -1,10 +1,11 @@
 package net.fxnt.fxntstorage.controller;
 
+import com.simibubi.create.AllTags;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.storage_network.StorageNetwork;
-import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -20,17 +21,10 @@ import net.minecraftforge.items.wrapper.EmptyHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.UUID;
-
 import static net.fxnt.fxntstorage.controller.StorageController.CONNECTED;
 
 public class StorageControllerEntity extends BlockEntity {
-    private static final int INTERACT_WINDOW = 600;
-
     private int tickCount = 0;
-    private long lastInteractTime = 0;
-    private UUID lastInteractPlayer = UUID.randomUUID();
-    private byte lastInteractType = -1;
     public StorageNetwork storageNetwork;
 
     private final LazyOptional<IItemHandlerModifiable> lazyItemHandler = LazyOptional.of(() -> new StorageControllerHandler(this));
@@ -82,25 +76,34 @@ public class StorageControllerEntity extends BlockEntity {
 
     public void transferItemsFromPlayer(Player player) {
         ItemStack handItem = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (handItem.is(AllTags.AllItemTags.WRENCH.tag)) return;
 
-        if (Util.getMillis() < lastInteractTime + INTERACT_WINDOW
-                && player.getUUID().equals(lastInteractPlayer)
-                && lastInteractType == 1
-                && handItem.isEmpty()
-        ) {
-            transferAllItemsFromPlayer(player);
-        } else if (!handItem.isEmpty()) {
-            lastInteractTime = Util.getMillis();
-            lastInteractPlayer = player.getUUID();
-            lastInteractType = 1;
+        long currentTime = player.level().getGameTime();
+        CompoundTag pd = player.getPersistentData();
+
+        boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
+                && pd.getInt("fxntstorage:last_click_type") == 1;
+
+        if (handItem.isEmpty()) {
+            if (isDoubleClick) {
+                transferAllItemsFromPlayer(player);
+                pd.putInt("fxntstorage:last_click_type", 0);
+            } else {
+                pd.putLong("fxntstorage:last_click_time", currentTime);
+                pd.putInt("fxntstorage:last_click_type", 1);
+            }
+        } else {
             doTransferItemsFromPlayer(player, handItem);
+            pd.putLong("fxntstorage:last_click_time", currentTime);
+            pd.putInt("fxntstorage:last_click_type", 1);
         }
     }
 
     public void transferAllItemsFromPlayer(Player player) {
-        for (int i = 0; i <= player.getInventory().getContainerSize(); i++) {
+        for (int i = 0; i <= player.getInventory().items.size(); i++) {
             ItemStack slotStack = player.getInventory().getItem(i);
-            doTransferItemsFromPlayer(player, slotStack);
+            if (storageNetwork.isItemInNetwork(slotStack))
+                doTransferItemsFromPlayer(player, slotStack);
         }
     }
 

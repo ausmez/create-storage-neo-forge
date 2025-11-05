@@ -1,0 +1,78 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_controller"
+      },
+      "when": {
+        "facing": "north"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_controller",
+        "y": 90
+      },
+      "when": {
+        "facing": "east"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_controller",
+        "y": 180
+      },
+      "when": {
+        "facing": "south"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_controller",
+        "y": 270
+      },
+      "when": {
+        "facing": "west"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_controller_connected"
+      },
+      "when": {
+        "connected_to_network": "true",
+        "facing": "north"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_controller_connected",
+        "y": 90
+      },
+      "when": {
+        "connected_to_network": "true",
+        "facing": "east"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_controller_connected",
+        "y": 180
+      },
+      "when": {
+        "connected_to_network": "true",
+        "facing": "south"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_controller_connected",
+        "y": 270
+      },
+      "when": {
+        "connected_to_network": "true",
+        "facing": "west"
+      }
+    }
+  ]
+}

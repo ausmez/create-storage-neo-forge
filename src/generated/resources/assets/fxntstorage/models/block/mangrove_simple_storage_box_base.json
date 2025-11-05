@@ -1,0 +1,9 @@
+{
+  "parent": "fxntstorage:block/storage_box_base",
+  "textures": {
+    "back": "fxntstorage:block/casings/mangrove_casing",
+    "casing": "fxntstorage:block/casings/mangrove_casing",
+    "particle": "fxntstorage:block/casings/mangrove_casing",
+    "top": "fxntstorage:block/casings/mangrove_casing"
+  }
+}

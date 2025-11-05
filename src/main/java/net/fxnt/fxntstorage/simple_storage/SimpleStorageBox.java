@@ -6,6 +6,7 @@ import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -24,7 +25,6 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
@@ -34,25 +34,16 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.UUID;
-
 @SuppressWarnings("deprecation")
 public class SimpleStorageBox extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
-    public static final BooleanProperty COPY_NBT = BooleanProperty.create("copy_nbt");
-
-    private long lastClickTime;
-    private UUID lastClickUUID;
-    private long lastAttackTime;
-    private UUID lastAttackUUID;
 
     public SimpleStorageBox(Properties pProperties) {
         super(pProperties);
         this.registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)
-                .setValue(COPY_NBT, false)
         );
     }
 
@@ -94,13 +85,22 @@ public class SimpleStorageBox extends BaseEntityBlock {
 
             ItemStack handItem = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
 
-            long INTERACTION_COOLDOWN = 8; // 8 ticks is generally equivalent to ~400ms
-            if (pLevel.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && pPlayer.getUUID().equals(lastClickUUID)) {
+            long currentTime = pPlayer.level().getGameTime();
+            CompoundTag pd = pPlayer.getPersistentData();
+
+            boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
+                    && pd.getInt("fxntstorage:last_click_type") == 1;
+
+            if (isDoubleClick) {
                 // Double Right-click
+                pd.putInt("fxntstorage:last_click_type", 0);
                 if (handItem.isEmpty() || ItemStack.isSameItemSameTags(handItem, simpleStorageBoxEntity.filterItem)) {
                     simpleStorageBoxEntity.transferToStorage(pPlayer, true);
                 }
             } else {
+                pd.putLong("fxntstorage:last_click_time", currentTime);
+                pd.putInt("fxntstorage:last_click_type", 1);
+
                 if (handItem.isEmpty()) {
                     if (pPlayer.isShiftKeyDown()) {
                         // If interacting with an empty hand while sneaking then open menu
@@ -125,9 +125,6 @@ public class SimpleStorageBox extends BaseEntityBlock {
                 }
             }
 
-            lastClickTime = pLevel.getGameTime();
-            lastClickUUID = pPlayer.getUUID();
-
             simpleStorageBoxEntity.setChanged();
 
         }
@@ -145,13 +142,13 @@ public class SimpleStorageBox extends BaseEntityBlock {
         BlockEntity blockEntity = level.getBlockEntity(blockPos);
         Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
         if (blockEntity instanceof SimpleStorageBoxEntity storageBoxEntity && !(item instanceof AxeItem)) {
-            // Small cooldown to prevent double-extraction
-            if (lastAttackTime == 0 || level.getGameTime() - lastAttackTime > 1 && player.getUUID().equals(lastAttackUUID)) {
-                storageBoxEntity.transferFromStorage(player);
-            }
+            CompoundTag pd = player.getPersistentData();
+            long lastAttackTime = pd.getLong("fxntstorage:last_attack_time");
 
-            lastAttackTime = level.getGameTime();
-            lastAttackUUID = player.getUUID();
+            if (level.getGameTime() - lastAttackTime > 1) {
+                storageBoxEntity.transferFromStorage(player);
+                pd.putLong("fxntstorage:last_attack_time", level.getGameTime());
+            }
         }
     }
 
@@ -191,7 +188,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> pBuilder) {
         super.createBlockStateDefinition(pBuilder);
-        pBuilder.add(FACING, STORAGE_USED, COPY_NBT);
+        pBuilder.add(FACING, STORAGE_USED);
     }
 
     @Override

@@ -1,0 +1,9 @@
+{
+  "parent": "fxntstorage:block/storage_box_base",
+  "textures": {
+    "back": "fxntstorage:block/casings/dark_oak_casing",
+    "casing": "fxntstorage:block/casings/dark_oak_casing",
+    "particle": "fxntstorage:block/casings/dark_oak_casing",
+    "top": "fxntstorage:block/casings/dark_oak_casing"
+  }
+}

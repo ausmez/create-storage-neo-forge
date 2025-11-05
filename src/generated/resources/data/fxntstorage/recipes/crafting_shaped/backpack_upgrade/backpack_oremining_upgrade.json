@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "R": {
+      "item": "create:redstone_link"
+    },
+    "X": {
+      "item": "create:mechanical_drill"
+    }
+  },
+  "pattern": [
+    " R ",
+    "IBI",
+    " X "
+  ],
+  "result": {
+    "item": "fxntstorage:backpack_oremining_upgrade"
+  },
+  "show_notification": true
+}

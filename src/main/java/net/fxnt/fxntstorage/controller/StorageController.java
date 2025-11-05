@@ -4,11 +4,7 @@ import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -51,19 +47,6 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
         });
     }
 
-    @Override
-    @SuppressWarnings("deprecation")
-    public InteractionResult use(BlockState blockState, Level level, BlockPos blockPos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (player.isSpectator() || level.isClientSide || hand == InteractionHand.OFF_HAND || !hitFront(blockState, hit)) return InteractionResult.PASS;
-
-        BlockEntity blockEntity = level.getBlockEntity(blockPos);
-        if (blockEntity instanceof StorageControllerEntity storageControllerEntity) {
-            // Transfer items from player to controller
-            storageControllerEntity.transferItemsFromPlayer(player);
-        }
-        return InteractionResult.PASS;
-    }
-
     public boolean hitFront(BlockState blockState, BlockHitResult hit) {
         Direction side = hit.getDirection();
         return blockState.getValue(FACING) == side;
@@ -84,8 +67,4 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
         pBuilder.add(FACING, CONNECTED);
     }
 
-    @Override
-    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
-        return InteractionResult.SUCCESS;
-    }
 }

@@ -8,6 +8,7 @@ import net.fxnt.fxntstorage.backpack.tooltip.BackpackClientTooltip;
 import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackAirOverlay;
 import net.fxnt.fxntstorage.compat.constructionwand.ConstructionWandCompat;
+import net.fxnt.fxntstorage.compat.everycomp.EveryCompCompat;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
@@ -22,6 +23,7 @@ import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
@@ -67,6 +69,7 @@ public class FXNTStorage {
         ModRecipes.register(modEventBus);
         ModTabs.register(modEventBus);
         ModMenuTypes.register(modEventBus);
+        ModLootConditionTypes.register(modEventBus);
 
         REGISTRATE.registerEventListeners(modEventBus);
 
@@ -75,6 +78,7 @@ public class FXNTStorage {
 
         curiosLoaded = ModList.get().isLoaded(ModCompats.CURIOS);
         if (ModList.get().isLoaded(ModCompats.CONSTRUCTION_WAND)) ConstructionWandCompat.init();
+        if (ModList.get().isLoaded(ModCompats.EVERY_COMPAT)) EveryCompCompat.init();
     }
 
     private static void onCommonSetup(final FMLCommonSetupEvent event) {
@@ -86,6 +90,10 @@ public class FXNTStorage {
 
     private static void registerTooltipComponent(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(BackpackTooltip.class, BackpackClientTooltip::new);
+    }
+
+    public static ResourceLocation modLoc(String path) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
 
     @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)

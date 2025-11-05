@@ -1,8 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "fxntstorage:cardboard_storage_box",
-    "#fxntstorage:simple_storage_box",
-    "#fxntstorage:storage_trim"
-  ]
-}

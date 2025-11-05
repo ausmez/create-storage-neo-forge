@@ -68,7 +68,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         return !blockEntity.isRemoved()
-                && Container.stillValidBlockEntity(blockEntity, player, player.getAttributeValue(net.minecraftforge.common.ForgeMod.BLOCK_REACH.get()) + 0.5);
+                && Container.stillValidBlockEntity(blockEntity, player, 5);
     }
 
 

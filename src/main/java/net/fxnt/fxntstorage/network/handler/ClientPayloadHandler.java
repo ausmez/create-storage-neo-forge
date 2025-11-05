@@ -9,6 +9,7 @@ import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.network.packet.*;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
+import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
@@ -124,8 +125,7 @@ public class ClientPayloadHandler {
                     newNbt.putInt("MaxItemCapacity", nbt.getInt("MaxItemCapacity"));
 
                     if (oldState.getBlock() instanceof SimpleStorageBox) { // SimpleStorageBox
-                        CompoundTag tag = blockInfo.nbt().getCompound("FilterItem");
-                        if ("minecraft:air".equals(tag.getString("id"))) {
+                        if (nbt.contains("FilterItem", CompoundTag.TAG_COMPOUND)) {
                             newNbt.put("FilterItem", nbt.getCompound("FilterItem"));
                         }
                         newState = oldState.setValue(SimpleStorageBox.STORAGE_USED, packet.fillLevel());
@@ -136,9 +136,15 @@ public class ClientPayloadHandler {
                                 .setValue(StorageBox.VOID_UPGRADE, nbt.getBoolean("VoidUpgrade"));
                     }
 
+                    // Update FilterItem icon if player has menu open
+                    if (client.player.containerMenu instanceof SimpleStorageBoxMountedMenu menu) {
+                        if (menu.getLocalPos().equals(packet.localPos()))
+                            menu.setFilterItem(ItemStack.of(newNbt.getCompound("FilterItem")));
+                    }
+
                     StructureTemplate.StructureBlockInfo newInfo = new StructureTemplate.StructureBlockInfo(blockInfo.pos(), newState, newNbt);
                     contraptionEntity.getContraption().getBlocks().put(packet.localPos(), newInfo);
-                    contraptionEntity.getContraption().deferInvalidate = true;
+                    contraptionEntity.getContraption().resetClientContraption();
                 }
             }
         });

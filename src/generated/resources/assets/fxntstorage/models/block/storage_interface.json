@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "bottom": "fxntstorage:block/storage_interface_top",
+    "particle": "fxntstorage:block/storage_interface_top",
+    "side": "fxntstorage:block/storage_interface_side",
+    "top": "fxntstorage:block/storage_interface_top"
+  }
+}

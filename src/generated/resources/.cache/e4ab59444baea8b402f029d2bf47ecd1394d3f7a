@@ -1,0 +1,12 @@
+// 1.20.1	2025-11-03T14:06:35.942107154	Tags for minecraft:block mod id fxntstorage
+c5fa3030d8b84cadc365e4a9a27291e7bcdf28b8 data/create/tags/blocks/casing.json
+8fd459e00bf5102669731c74f8ee3ef1e3e3e6dd data/create/tags/blocks/wrench_pickup.json
+ee83de5f3f738c703fe93ad99133abfd2080947a data/fxntstorage/tags/blocks/breakable_with_any_tool.json
+cb28339548a9f5c43f81c4715df14c62d24020ad data/fxntstorage/tags/blocks/ore_mining_block.json
+c1ab440cb04f38c1b83ab14834b4e75c01f34b06 data/fxntstorage/tags/blocks/simple_storage_box.json
+4b0414b9fd1f20ea319405cdd66d9b83ea902a9d data/fxntstorage/tags/blocks/storage_network_block.json
+0f90bc7b5f01a44276d2c3cc4b8255ba3e6d3f03 data/fxntstorage/tags/blocks/storage_trim.json
+15ad0f340de0fa5290d54b538e7b4218d99f083e data/fxntstorage/tags/blocks/symmetry_wand_blacklist.json
+0ced683967ce551dc33a29f377b25c186db11788 data/minecraft/tags/blocks/mineable/axe.json
+d6dff220fae5c177caef2683b788481868192c47 data/minecraft/tags/blocks/mineable/pickaxe.json
+54b30af14b3b62170c6fe96e8f53783a3ab19215 data/toms_storage/tags/blocks/inventory_connector_skip.json

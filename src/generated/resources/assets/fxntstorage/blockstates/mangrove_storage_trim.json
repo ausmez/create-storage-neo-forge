@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "fxntstorage:block/mangrove_storage_trim"
+    }
+  }
+}
