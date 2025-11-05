@@ -12,8 +12,8 @@ import java.util.function.Supplier;
 public class ModMountedStorageTypes {
     private static final CreateRegistrate REGISTRATE = FXNTStorage.REGISTRATE;
 
-    public static final RegistryEntry<MountedItemStorageType<?>, StorageBoxMountedStorageType> STORAGE_BOX = simpleItem("storagebox", StorageBoxMountedStorageType::new);
-    public static final RegistryEntry<MountedItemStorageType<?>, SimpleStorageBoxMountedStorageType> SIMPLE_STORAGE_BOX = simpleItem("simple_storagebox", SimpleStorageBoxMountedStorageType::new);
+    public static final RegistryEntry<MountedItemStorageType<?>, StorageBoxMountedStorageType> STORAGE_BOX_MOUNTED = simpleItem("storagebox_mounted", StorageBoxMountedStorageType::new);
+    public static final RegistryEntry<MountedItemStorageType<?>, SimpleStorageBoxMountedStorageType> SIMPLE_STORAGE_BOX_MOUNTED = simpleItem("simple_storagebox_mounted", SimpleStorageBoxMountedStorageType::new);
 
     private static <T extends MountedItemStorageType<?>> RegistryEntry<MountedItemStorageType<?>, T> simpleItem(String name, Supplier<T> supplier) {
         return REGISTRATE.mountedItemStorage(name, supplier).register();

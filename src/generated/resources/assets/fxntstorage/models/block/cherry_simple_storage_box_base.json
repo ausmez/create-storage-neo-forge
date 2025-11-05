@@ -1,0 +1,9 @@
+{
+  "parent": "fxntstorage:block/storage_box_base",
+  "textures": {
+    "back": "fxntstorage:block/casings/cherry_casing",
+    "casing": "fxntstorage:block/casings/cherry_casing",
+    "particle": "fxntstorage:block/casings/cherry_casing",
+    "top": "fxntstorage:block/casings/cherry_casing"
+  }
+}

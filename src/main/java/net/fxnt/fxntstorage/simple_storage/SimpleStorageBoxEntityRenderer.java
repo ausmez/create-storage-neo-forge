@@ -38,6 +38,8 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         CompoundTag tag = context.blockEntityData;
         if (tag == null || state == null) return;
 
+        boolean hasVoidUpgrade = tag.getBoolean("VoidUpgrade");
+
         int amount = tag.getInt("StoredAmount");
         int totalSpace = tag.getInt("MaxItemCapacity");
         int percentUsed = (int) Math.round(((double) amount / totalSpace) * 100);
@@ -77,8 +79,8 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
             ItemStack filterItem = tag.getCompound("FilterItem").isEmpty()
                     ? ItemStack.EMPTY
                     : ItemStack.parseOptional(context.contraption.entity.level().registryAccess(), tag.getCompound("FilterItem"));
-            if (!filterItem.isEmpty()) {
-                renderItem(itemRenderer, filterItem, poseStack, buffer, tag.getBoolean("VoidUpgrade"));
+            if (!filterItem.isEmpty() || hasVoidUpgrade) {
+                renderItem(itemRenderer, filterItem, poseStack, buffer, hasVoidUpgrade);
             }
         }
 

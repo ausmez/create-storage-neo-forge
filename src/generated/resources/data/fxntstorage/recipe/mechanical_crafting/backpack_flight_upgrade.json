@@ -1,0 +1,42 @@
+{
+  "type": "create:mechanical_crafting",
+  "accept_mirrored": true,
+  "category": "misc",
+  "key": {
+    "#": {
+      "item": "create:brass_sheet"
+    },
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "F": {
+      "item": "create:encased_fan"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "N": {
+      "item": "create:nozzle"
+    },
+    "P": {
+      "item": "create:propeller"
+    },
+    "T": {
+      "item": "create:netherite_backtank"
+    },
+    "V": {
+      "item": "create:copper_valve_handle"
+    }
+  },
+  "pattern": [
+    " #V# ",
+    "#PIP#",
+    "#TBT#",
+    "#FIF#",
+    " #N# "
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:backpack_flight_upgrade"
+  }
+}

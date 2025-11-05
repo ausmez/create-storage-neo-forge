@@ -1,7 +1,6 @@
 package net.fxnt.fxntstorage.simple_storage.mounted;
 
 import com.mojang.serialization.MapCodec;
-import com.simibubi.create.AllTags;
 import com.simibubi.create.api.contraption.storage.item.MountedItemStorageType;
 import com.simibubi.create.api.contraption.storage.item.WrapperMountedItemStorage;
 import com.simibubi.create.api.contraption.storage.item.menu.StorageInteractionWrapper;
@@ -35,6 +34,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -63,7 +63,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     protected SimpleStorageBoxMountedStorage(ItemStackHandler handler) {
-        this(ModMountedStorageTypes.SIMPLE_STORAGE_BOX.get(), handler);
+        this(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED.get(), handler);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     private boolean canInsertItem(ItemStack itemInHand) {
-        return !itemInHand.is(AllTags.AllItemTags.WRENCH.tag)
+        return !itemInHand.is(Tags.Items.TOOLS_WRENCH) && !itemInHand.is(ModTags.Items.STORAGE_BOX_UPGRADE)
                 && (filterItem.isEmpty() || itemInHand.getItem().equals(filterItem.getItem()));
     }
 
@@ -379,8 +379,9 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
                 context.contraption.entity.getId(),
                 context.localPos,
                 calculateFillLevel(),
-                context.blockEntityData
+                context.blockEntityData.copy()
         ));
+        markDirty();
         initialized = true;
     }
 

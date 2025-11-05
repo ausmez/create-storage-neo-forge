@@ -10,42 +10,59 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.List;
-import java.util.function.Function;
+import java.util.Map;
+import java.util.Optional;
 
 @ParametersAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 public class BackpackRecipe extends ShapedRecipe {
+
+    private static final Map<Item, Integer> BACKPACK_MULTIPLIERS = Map.of(
+            ModBlocks.ANDESITE_BACKPACK.asItem(), Util.ANDESITE_BACKPACK_STACK_MULTIPLIER,
+            ModBlocks.COPPER_BACKPACK.asItem(), Util.COPPER_BACKPACK_STACK_MULTIPLIER,
+            ModBlocks.BRASS_BACKPACK.asItem(), Util.BRASS_BACKPACK_STACK_MULTIPLIER,
+            ModBlocks.HARDENED_BACKPACK.asItem(), Util.HARDENED_BACKPACK_STACK_MULTIPLIER
+    );
+
+    private final ShapedRecipe wrapped;
+
     public BackpackRecipe(ShapedRecipe recipe) {
         super(recipe.getGroup(), recipe.category(), recipe.pattern, recipe.getResultItem(RegistryAccess.EMPTY));
+        this.wrapped = recipe;
+    }
+
+    public ShapedRecipe getWrapped() {
+        return wrapped;
     }
 
     @Override
     public ItemStack assemble(CraftingInput input, HolderLookup.Provider registries) {
         ItemStack result = super.assemble(input, registries);
-        // Find the backpack in the input
-        List<ItemStack> storageItems = input.items().stream().filter(stack -> !stack.isEmpty() && stack.get(DataComponents.CONTAINER) != null).toList();
 
-        if (storageItems.isEmpty())
-            return result;
+        // Find the old backpack in the input
+        Optional<ItemStack> oldBackpack = input.items().stream()
+                .filter(stack -> !stack.isEmpty()
+                        && stack.has(DataComponents.CONTAINER)
+                        && stack.has(ModDataComponents.BACKPACK_STACK_MULTIPLIER))
+                .findFirst();
 
-        int newStackMultiplier = storageItems.getFirst().getOrDefault(ModDataComponents.BACKPACK_STACK_MULTIPLIER, 2);
-        if (result.getItem().equals(ModBlocks.ANDESITE_BACKPACK.asItem())) {
-            newStackMultiplier = Util.ANDESITE_BACKPACK_STACK_MULTIPLIER;
-        } else if (result.getItem().equals(ModBlocks.COPPER_BACKPACK.asItem())) {
-            newStackMultiplier = Util.COPPER_BACKPACK_STACK_MULTIPLIER;
-        } else if (result.getItem().equals(ModBlocks.BRASS_BACKPACK.asItem())) {
-            newStackMultiplier = Util.BRASS_BACKPACK_STACK_MULTIPLIER;
-        } else if (result.getItem().equals(ModBlocks.HARDENED_BACKPACK.asItem())) {
-            newStackMultiplier = Util.HARDENED_BACKPACK_STACK_MULTIPLIER;
+        if (oldBackpack.isEmpty()) return result;
+
+        // Copy container contents from old backpack
+        result.copyFrom(oldBackpack.get(), DataComponents.CONTAINER);
+
+        // Set the new multiplier
+        Integer newStackMultiplier = BACKPACK_MULTIPLIERS.get(result.getItem());
+        if (newStackMultiplier != null) {
+            result.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, newStackMultiplier);
         }
-
-        result.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, newStackMultiplier);
-        result.copyFrom(storageItems.getFirst(), DataComponents.CONTAINER);
 
         return result;
     }
@@ -57,8 +74,17 @@ public class BackpackRecipe extends ShapedRecipe {
     public static class Serializer implements RecipeSerializer<BackpackRecipe> {
         public static final Serializer INSTANCE = new Serializer();
 
-        public static final MapCodec<BackpackRecipe> CODEC = RecipeSerializer.SHAPED_RECIPE.codec().xmap(BackpackRecipe::new, Function.identity());
-        public static final StreamCodec<RegistryFriendlyByteBuf, BackpackRecipe> STREAM_CODEC = RecipeSerializer.SHAPED_RECIPE.streamCodec().map(BackpackRecipe::new, Function.identity());
+        public static final MapCodec<BackpackRecipe> CODEC =
+                RecipeSerializer.SHAPED_RECIPE.codec().xmap(
+                        BackpackRecipe::new,
+                        BackpackRecipe::getWrapped
+                );
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, BackpackRecipe> STREAM_CODEC =
+                RecipeSerializer.SHAPED_RECIPE.streamCodec().map(
+                        BackpackRecipe::new,
+                        BackpackRecipe::getWrapped
+                );
 
         @Override
         public MapCodec<BackpackRecipe> codec() {

@@ -2,13 +2,15 @@ package net.fxnt.fxntstorage.init;
 
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
 import com.tterrag.registrate.util.entry.BlockEntry;
+import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.main.BackpackUnpacking;
 import net.fxnt.fxntstorage.container.StorageBoxUnpacking;
 import net.fxnt.fxntstorage.controller.StorageControllerUnpacking;
 import net.fxnt.fxntstorage.controller.StorageInterfaceUnpacking;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxUnpacking;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.fml.ModList;
 
 @SuppressWarnings("UnstableApiUsage")
 public class ModUnpackers {
@@ -25,24 +27,10 @@ public class ModUnpackers {
         );
 
         // Simple Storage Boxes
-        register(SimpleStorageBoxUnpacking.INSTANCE,
-                ModBlocks.SIMPLE_STORAGE_BOX,
-                ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE,
-                ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
-                ModBlocks.SIMPLE_STORAGE_BOX_JUNGLE,
-                ModBlocks.SIMPLE_STORAGE_BOX_ACACIA,
-                ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK,
-                ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE,
-                ModBlocks.SIMPLE_STORAGE_BOX_CHERRY,
-                ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO,
-                ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON,
-                ModBlocks.SIMPLE_STORAGE_BOX_WARPED
-        );
-
-        // Pale Oak if Vanilla Backport mod installed
-        if (ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT)) {
-            register(SimpleStorageBoxUnpacking.INSTANCE, ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK);
-        }
+        BuiltInRegistries.BLOCK.stream().filter(block -> {
+            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
+            return id.getNamespace().equals(FXNTStorage.MOD_ID) && id.getPath().contains("simple_storage_box");
+        }).forEach((block -> UnpackingHandler.REGISTRY.register(block, SimpleStorageBoxUnpacking.INSTANCE)));
 
         // Storage Controller & Interface
         register(StorageControllerUnpacking.INSTANCE, ModBlocks.STORAGE_CONTROLLER);

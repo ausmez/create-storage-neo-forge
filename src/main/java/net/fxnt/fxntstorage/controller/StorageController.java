@@ -5,8 +5,6 @@ import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -54,18 +52,6 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
                 entity.serverTick(type, world);
             }
         });
-    }
-
-    @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (player.isSpectator() || level.isClientSide || !hitFront(state, hitResult)) return InteractionResult.PASS;
-
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof StorageControllerEntity storageControllerEntity) {
-            // Transfer items from player to controller
-            storageControllerEntity.transferItemsFromPlayer(player);
-        }
-        return InteractionResult.PASS;
     }
 
     public boolean hitFront(BlockState blockState, BlockHitResult hit) {

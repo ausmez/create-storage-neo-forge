@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_blank_upgrade": {
+      "conditions": {
+        "items": [
+          {
+            "items": "fxntstorage:backpack_blank_upgrade"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "fxntstorage:crafting_shaped/backpack_upgrade/backpack_refill_upgrade"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_blank_upgrade"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "fxntstorage:crafting_shaped/backpack_upgrade/backpack_refill_upgrade"
+    ]
+  }
+}

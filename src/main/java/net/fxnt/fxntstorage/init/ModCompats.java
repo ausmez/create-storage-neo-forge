@@ -13,7 +13,9 @@ public class ModCompats {
     public static final String CURIOS = "curios";
     public static final String CARRY_ON = "carryon";
     public static final String CONSTRUCTION_STICK = "constructionstick";
+    public static final String EVERY_COMPAT = "everycomp";
     public static final String INVENTORY_SORTER = "inventorysorter";
+    public static final String TOMS_STORAGE = "toms_storage";
     public static final String VANILLA_BACKPORT = "vanillabackport";
 
     @SubscribeEvent

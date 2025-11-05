@@ -1,0 +1,19 @@
+{
+  "values": [
+    "fxntstorage:oak_storage_trim",
+    "fxntstorage:spruce_storage_trim",
+    "fxntstorage:birch_storage_trim",
+    "fxntstorage:jungle_storage_trim",
+    "fxntstorage:acacia_storage_trim",
+    "fxntstorage:dark_oak_storage_trim",
+    "fxntstorage:mangrove_storage_trim",
+    "fxntstorage:cherry_storage_trim",
+    "fxntstorage:bamboo_storage_trim",
+    "fxntstorage:crimson_storage_trim",
+    "fxntstorage:warped_storage_trim",
+    {
+      "id": "fxntstorage:pale_oak_storage_trim",
+      "required": false
+    }
+  ]
+}

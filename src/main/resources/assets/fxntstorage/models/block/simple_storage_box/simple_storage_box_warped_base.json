@@ -1,8 +1,0 @@
-{
-  "parent": "fxntstorage:block/storage_box/storage_box_base",
-  "textures": {
-    "casing": "fxntstorage:block/casings/warped_casing",
-    "top": "fxntstorage:block/casings/warped_casing",
-    "particle": "fxntstorage:block/casings/warped_casing"
-  }
-}

@@ -1,0 +1,8 @@
+{
+  "values": [
+    "#fxntstorage:simple_storage_box",
+    "#fxntstorage:storage_trim",
+    "fxntstorage:storage_controller",
+    "fxntstorage:storage_interface"
+  ]
+}

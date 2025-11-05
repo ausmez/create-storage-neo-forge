@@ -1,0 +1,34 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "R": {
+      "item": "create:redstone_link"
+    },
+    "X": {
+      "item": "minecraft:iron_sword"
+    },
+    "Y": {
+      "item": "minecraft:iron_pickaxe"
+    },
+    "Z": {
+      "item": "minecraft:iron_hoe"
+    }
+  },
+  "pattern": [
+    " R ",
+    "IBI",
+    "XYZ"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:backpack_toolswap_upgrade"
+  }
+}

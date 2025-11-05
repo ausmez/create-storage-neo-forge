@@ -1,7 +1,6 @@
 package net.fxnt.fxntstorage.container.mounted;
 
 import com.mojang.serialization.MapCodec;
-import com.simibubi.create.AllTags;
 import com.simibubi.create.api.contraption.storage.item.MountedItemStorageType;
 import com.simibubi.create.api.contraption.storage.item.WrapperMountedItemStorage;
 import com.simibubi.create.api.contraption.storage.item.menu.StorageInteractionWrapper;
@@ -32,6 +31,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -62,7 +62,7 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
     }
 
     protected StorageBoxMountedStorage(ItemStackHandler wrapped) {
-        this(ModMountedStorageTypes.STORAGE_BOX.get(), wrapped);
+        this(ModMountedStorageTypes.STORAGE_BOX_MOUNTED.get(), wrapped);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
         ItemStack itemInHand = player.getMainHandItem();
 
         // Right-Click with Create Wrench in hand will toggle void mode
-        if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag) && info.nbt() != null) {
+        if (itemInHand.is(Tags.Items.TOOLS_WRENCH) && info.nbt() != null) {
             boolean nbtValue = info.nbt().getBoolean("VoidUpgrade");
             voidUpgrade = !nbtValue;
 

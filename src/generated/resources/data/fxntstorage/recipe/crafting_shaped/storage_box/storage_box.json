@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "storage_box",
+  "key": {
+    "C": {
+      "item": "create:industrial_iron_block"
+    },
+    "D": {
+      "item": "create:display_board"
+    },
+    "V": {
+      "item": "create:item_vault"
+    }
+  },
+  "pattern": [
+    "CCC",
+    "CVC",
+    "CDC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:storage_box"
+  }
+}

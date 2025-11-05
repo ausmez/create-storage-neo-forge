@@ -3,7 +3,6 @@ package net.fxnt.fxntstorage.container;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.simibubi.create.AllTags;
 import com.simibubi.create.foundation.block.IBE;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
@@ -12,6 +11,7 @@ import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -38,11 +38,11 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @SuppressWarnings("deprecation")
 public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity> {
@@ -56,9 +56,6 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     public static final BooleanProperty VOID_UPGRADE = BooleanProperty.create("void_upgrade");
 
     private final int slotCount;
-
-    private long lastClickTime;
-    private UUID lastClickUUID;
 
     public StorageBox(Properties pProperties, int slotCount) {
         super(pProperties);
@@ -168,15 +165,23 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         if (entity instanceof StorageBoxEntity storageBoxEntity) {
             ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
 
-            final int INTERACTION_COOLDOWN = 8; // measured in ticks
-            if (level.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && player.getUUID().equals(lastClickUUID)) {
+            long currentTime = player.level().getGameTime();
+            CompoundTag pd = player.getPersistentData();
+
+            boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
+                    && pd.getInt("fxntstorage:last_click_type") == 1;
+
+            if (isDoubleClick) {
+                pd.putInt("fxntstorage:last_click_type", 0);
                 // Double Right-click
-                if (itemInHand.isEmpty()) {
+                if (itemInHand.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
                     storageBoxEntity.transferToStorage(state, player, true);
                 }
             } else {
+                pd.putLong("fxntstorage:last_click_time", currentTime);
+                pd.putInt("fxntstorage:last_click_type", 1);
                 // Single Right-Click
-                if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
+                if (itemInHand.is(Tags.Items.TOOLS_WRENCH)) {
                     // Right-Click with Create Wrench in hand will toggle void mode
                     storageBoxEntity.toggleVoidUpgrade();
                     return InteractionResult.SUCCESS;
@@ -193,9 +198,6 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                     storageBoxEntity.transferToStorage(state, player, false);
                 }
             }
-
-            lastClickTime = level.getGameTime();
-            lastClickUUID = player.getUUID();
         }
 
         return InteractionResult.sidedSuccess(false);

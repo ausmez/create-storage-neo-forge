@@ -86,7 +86,7 @@ public class StorageInterfaceScenes {
             scene.world().modifyEntity(itemEntity, Entity::discard);
             scene.world().createItemOnBelt(util.grid().at(2, 1, 0), Direction.NORTH, emerald);
             if (i == 1) {
-                scene.world().modifyBlock(rightBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX.get().defaultBlockState()
+                scene.world().modifyBlock(rightBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.get().defaultBlockState()
                         .setValue(SimpleStorageBox.STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
                 scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> t.setFilter(emerald));
             }

@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "storage_box",
+  "key": {
+    "X": {
+      "item": "create:chute"
+    },
+    "Y": {
+      "item": "minecraft:redstone"
+    },
+    "Z": {
+      "item": "minecraft:hopper"
+    }
+  },
+  "pattern": [
+    "X",
+    "Y",
+    "Z"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:passer_block"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "storage_box",
+  "key": {
+    "A": {
+      "item": "create:andesite_alloy"
+    },
+    "W": {
+      "item": "minecraft:acacia_planks"
+    }
+  },
+  "pattern": [
+    "AWA",
+    "W W",
+    "AWA"
+  ],
+  "result": {
+    "count": 4,
+    "id": "fxntstorage:acacia_storage_trim"
+  }
+}

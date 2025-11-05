@@ -9,6 +9,7 @@ import net.fxnt.fxntstorage.backpack.util.BackpackClientHelper;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.network.packet.*;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
+import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedMenu;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
@@ -109,9 +110,15 @@ public class ClientPayloadHandler {
                             .setValue(StorageBox.VOID_UPGRADE, nbt.getBoolean("VoidUpgrade"));
                 }
 
+                // Update FilterItem icon if player has menu open
+                if (context.player().containerMenu instanceof SimpleStorageBoxMountedMenu menu) {
+                    if (menu.getLocalPos().equals(packet.localPos()))
+                        menu.setFilterItem(ItemStack.parse(context.player().registryAccess(), newNbt.getCompound("FilterItem")).orElse(ItemStack.EMPTY));
+                }
+
                 StructureTemplate.StructureBlockInfo newInfo = new StructureTemplate.StructureBlockInfo(blockInfo.pos(), newState, newNbt);
                 contraptionEntity.getContraption().getBlocks().put(packet.localPos(), newInfo);
-                contraptionEntity.getContraption().deferInvalidate = true;
+                contraptionEntity.getContraption().resetClientContraption();
             }
         });
     }

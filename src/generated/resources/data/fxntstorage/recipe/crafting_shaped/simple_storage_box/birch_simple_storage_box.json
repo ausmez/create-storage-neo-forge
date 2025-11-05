@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "storage_box",
+  "key": {
+    "A": {
+      "item": "create:andesite_alloy"
+    },
+    "D": {
+      "item": "create:display_board"
+    },
+    "V": {
+      "item": "create:item_vault"
+    },
+    "W": {
+      "item": "minecraft:birch_planks"
+    }
+  },
+  "pattern": [
+    "AWA",
+    "WVW",
+    "ADA"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:birch_simple_storage_box"
+  }
+}

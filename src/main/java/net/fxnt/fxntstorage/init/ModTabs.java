@@ -30,7 +30,7 @@ public class ModTabs {
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> CREATIVE_MODE_TAB =
             REGISTER.register("creative_mode_tab", () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.fxntstorage.main"))
-                    .icon(ModBlocks.SIMPLE_STORAGE_BOX::asStack)
+                    .icon(ModBlocks.SIMPLE_STORAGE_BOX_OAK::asStack)
                     .withTabsBefore(AllCreativeModeTabs.PALETTES_CREATIVE_TAB.getId())
                     .displayItems(new DisplayItemsGenerator())
                     .build());
@@ -64,7 +64,7 @@ public class ModTabs {
             Map<ItemProviderEntry<?, ?>, ItemProviderEntry<?, ?>> simpleBeforeOrderings = Map.of(
                     ModItems.STORAGE_BOX_VOID_UPGRADE, ModBlocks.BACKPACK,
                     ModItems.STORAGE_BOX_CAPACITY_UPGRADE, ModBlocks.BACKPACK,
-                    ModItems.BACKPACK_BLANK_UPGRADE, ModBlocks.STORAGE_TRIM
+                    ModItems.BACKPACK_BLANK_UPGRADE, ModBlocks.STORAGE_TRIM_OAK
             );
 
             List<Item> upgradeItems = REGISTRATE.getAll(Registries.ITEM).stream()

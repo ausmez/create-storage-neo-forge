@@ -1,0 +1,22 @@
+{
+  "type": "fxntstorage:backpack_crafting",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:andesite_backpack"
+    },
+    "C": {
+      "item": "create:copper_casing"
+    }
+  },
+  "pattern": [
+    "CCC",
+    "CBC",
+    "CCC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:copper_backpack"
+  }
+}

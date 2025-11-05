@@ -1,0 +1,28 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "vanillabackport"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "storage_box",
+  "key": {
+    "A": {
+      "item": "create:andesite_alloy"
+    },
+    "W": {
+      "item": "vanillabackport:pale_oak_planks"
+    }
+  },
+  "pattern": [
+    "AWA",
+    "W W",
+    "AWA"
+  ],
+  "result": {
+    "count": 4,
+    "id": "fxntstorage:pale_oak_storage_trim"
+  }
+}

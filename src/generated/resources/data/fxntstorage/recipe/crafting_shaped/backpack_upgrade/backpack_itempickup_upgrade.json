@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "R": {
+      "item": "create:redstone_link"
+    },
+    "X": {
+      "item": "create:smart_chute"
+    }
+  },
+  "pattern": [
+    " R ",
+    "IBI",
+    " X "
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:backpack_itempickup_upgrade"
+  }
+}

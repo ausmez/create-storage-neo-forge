@@ -1,0 +1,6 @@
+{
+  "parent": "fxntstorage:block/smart_passer_block",
+  "textures": {
+    "main": "fxntstorage:block/smart_passer_block_powered"
+  }
+}

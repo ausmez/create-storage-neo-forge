@@ -1,13 +1,13 @@
 package net.fxnt.fxntstorage.simple_storage;
 
 import com.mojang.serialization.MapCodec;
-import com.simibubi.create.AllTags;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,21 +29,16 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
-import java.util.UUID;
 
 public class SimpleStorageBox extends BaseEntityBlock {
     public static final MapCodec<SimpleStorageBox> CODEC = simpleCodec(SimpleStorageBox::new);
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
-
-    private long lastClickTime;
-    private UUID lastClickUUID;
-    private long lastAttackTime;
-    private UUID lastAttackUUID;
 
     public SimpleStorageBox(Properties pProperties) {
         super(pProperties);
@@ -109,25 +104,34 @@ public class SimpleStorageBox extends BaseEntityBlock {
 
             ItemStack handItem = player.getItemInHand(InteractionHand.MAIN_HAND);
 
-            long INTERACTION_COOLDOWN = 8; // 8 ticks is generally equivalent to ~400ms
-            if (level.getGameTime() - lastClickTime < INTERACTION_COOLDOWN && player.getUUID().equals(lastClickUUID)) {
+            long currentTime = player.level().getGameTime();
+            CompoundTag pd = player.getPersistentData();
+
+            boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
+                    && pd.getInt("fxntstorage:last_click_type") == 1;
+
+            if (isDoubleClick) {
                 // Double Right-click
+                pd.putInt("fxntstorage:last_click_type", 0);
                 if (handItem.isEmpty() || ItemStack.isSameItemSameComponents(handItem, simpleStorageBoxEntity.filterItem)) {
                     simpleStorageBoxEntity.transferToStorage(player, true);
                 }
             } else {
+                pd.putLong("fxntstorage:last_click_time", currentTime);
+                pd.putInt("fxntstorage:last_click_type", 1);
+
                 if (handItem.isEmpty()) {
                     if (player.isShiftKeyDown()) {
                         // If interacting with an empty hand while sneaking then open menu
                         player.openMenu(simpleStorageBoxEntity, pos);
                         return InteractionResult.CONSUME;
                     }
-                } else if (handItem.is(AllTags.AllItemTags.WRENCH.tag) && simpleStorageBoxEntity.getStoredAmount() == 0 && !simpleStorageBoxEntity.filterItem.isEmpty()) {
+                } else if (handItem.is(Tags.Items.TOOLS_WRENCH) && simpleStorageBoxEntity.getStoredAmount() == 0 && !simpleStorageBoxEntity.filterItem.isEmpty()) {
                     // If box empty, holding wrench & has filter item then remove filter
                     simpleStorageBoxEntity.removeFilter();
                 } else {
                     // Prevent wrench from being placed in the filter
-                    if (!handItem.is(AllTags.AllItemTags.WRENCH.tag)) {
+                    if (!handItem.is(Tags.Items.TOOLS_WRENCH)) {
                         // Set filter if item is not an upgrade or empty hand and no items exist and no filter exists
                         if (!handItem.isEmpty() && !handItem.is(ModTags.Items.STORAGE_BOX_UPGRADE) && simpleStorageBoxEntity.getStoredAmount() == 0 && simpleStorageBoxEntity.filterItem.isEmpty()) {
                             simpleStorageBoxEntity.setFilter(handItem);
@@ -139,9 +143,6 @@ public class SimpleStorageBox extends BaseEntityBlock {
                     }
                 }
             }
-
-            lastClickTime = level.getGameTime();
-            lastClickUUID = player.getUUID();
 
             simpleStorageBoxEntity.setChanged();
         }
@@ -159,13 +160,13 @@ public class SimpleStorageBox extends BaseEntityBlock {
         BlockEntity blockEntity = level.getBlockEntity(blockPos);
         Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
         if (blockEntity instanceof SimpleStorageBoxEntity storageBoxEntity && !(item instanceof AxeItem)) {
-            // Small cooldown to prevent double-extraction
-            if (lastAttackTime == 0 || level.getGameTime() - lastAttackTime > 1 && player.getUUID().equals(lastAttackUUID)) {
-                storageBoxEntity.transferFromStorage(player);
-            }
+            CompoundTag pd = player.getPersistentData();
+            long lastAttackTime = pd.getLong("fxntstorage:last_attack_time");
 
-            lastAttackTime = level.getGameTime();
-            lastAttackUUID = player.getUUID();
+            if (level.getGameTime() - lastAttackTime > 1) {
+                storageBoxEntity.transferFromStorage(player);
+                pd.putLong("fxntstorage:last_attack_time", level.getGameTime());
+            }
         }
     }
 

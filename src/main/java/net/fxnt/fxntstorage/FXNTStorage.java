@@ -10,6 +10,7 @@ import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.upgrade.JetpackAirOverlay;
 import net.fxnt.fxntstorage.compat.CuriosCompat;
 import net.fxnt.fxntstorage.compat.constructionstick.ConstructionStickCompat;
+import net.fxnt.fxntstorage.compat.everycomp.EveryCompCompat;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
@@ -83,6 +84,7 @@ public class FXNTStorage {
         ModTabs.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModDataComponents.register(modEventBus);
+        ModLootConditionTypes.register(modEventBus);
 
         REGISTRATE.registerEventListeners(modEventBus);
 
@@ -90,6 +92,7 @@ public class FXNTStorage {
 
         if (curiosLoaded) loadCuriosCompat(modEventBus);
         if (ModList.get().isLoaded(ModCompats.CONSTRUCTION_STICK)) ConstructionStickCompat.init();
+        if (ModList.get().isLoaded(ModCompats.EVERY_COMPAT)) EveryCompCompat.init();
     }
 
     private static void loadCuriosCompat(IEventBus bus) {
@@ -119,6 +122,10 @@ public class FXNTStorage {
                 ModBlocks.BRASS_BACKPACK.get(),
                 ModBlocks.HARDENED_BACKPACK.get()
         );
+    }
+
+    public static ResourceLocation modLoc(String path) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
 
     @EventBusSubscriber(modid = MOD_ID)

@@ -1,0 +1,9 @@
+{
+  "parent": "fxntstorage:block/storage_box_base",
+  "textures": {
+    "back": "create:block/railway_casing",
+    "casing": "create:block/railway_casing",
+    "particle": "create:block/railway_casing",
+    "top": "create:block/railway_casing"
+  }
+}

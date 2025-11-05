@@ -1,8 +1,0 @@
-{
-  "parent": "fxntstorage:block/storage_box/storage_box_base",
-  "textures": {
-    "casing": "create:block/weathered_iron_block",
-    "top": "create:block/weathered_iron_block_top",
-    "particle": "create:block/weathered_iron_block"
-  }
-}
