@@ -133,10 +133,17 @@ public class ConfigManager {
         public static ForgeConfigSpec.BooleanValue CHECK_BACKPACK_FOR_TOOLBOX_ITEMS;
         public static ForgeConfigSpec.IntValue FEEDER_HUNGER_LEVEL;
         public static ForgeConfigSpec.IntValue FEEDER_HEALTH_THRESHOLD;
+        public static ForgeConfigSpec.EnumValue<SimpleStorageGoggleOverlay> SIMPLE_STORAGE_GOGGLE_INFO;
 
         public enum TorchDeployerLightSource {
             BLOCK_LIGHT,
             SKY_LIGHT
+        }
+
+        public enum SimpleStorageGoggleOverlay {
+            OFF,
+            ONLY_TAGGED,
+            ALL_ITEMS
         }
 
         static {
@@ -215,6 +222,11 @@ public class ConfigManager {
                     .comment("Toolbox integration, allowing items to be transferred directly from equipped backpack.")
                     .translation("fxntstorage.configuration.checkBackpackForToolboxItems")
                     .define("checkBackpackForToolboxItems", true);
+
+            SIMPLE_STORAGE_GOGGLE_INFO = CLIENT_BUILDER
+                    .comment("Display goggle overlay for items with tag data in Simple Storage Boxes. (e.g. enchanted items, potions, tipped arrows or trimmed armor)")
+                    .translation("fxntstorage.configuration.simpleStorageGoggleInfo")
+                    .defineEnum("simpleStorageGoggleInfo", SimpleStorageGoggleOverlay.ONLY_TAGGED);
 
             CLIENT_SPEC = CLIENT_BUILDER.build();
         }

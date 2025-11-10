@@ -22,10 +22,9 @@ import net.minecraft.world.level.block.FenceBlock;
 
 public class RendererHelper {
     public static final int MAX_DISTANCE = 10;
-    public static final int DEFAULT_LIGHT = 250;
     public static final float[] SIDE_ROT_Y = {0f, 0f, (float) (Math.PI), 0f, (float) (3f * Math.PI / 2f), (float) (Math.PI / 2f)};
 
-    public static void renderLine(String text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int color) {
+    public static void renderLine(String text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int color, int packedLight) {
         Font font = Minecraft.getInstance().font;
         float zOffset = 15.05f;
 
@@ -35,11 +34,11 @@ public class RendererHelper {
 
         float x = -font.width(text) / 2f;
 
-        font.drawInBatch(text, x, 0, color, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, 250);
+        font.drawInBatch(text, x, 0, color, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, packedLight);
         poseStack.popPose();
     }
 
-    public static void renderItem(ItemRenderer itemRenderer, ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, boolean voidUpgrade) {
+    public static void renderItem(ItemRenderer itemRenderer, ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, int packedLight, boolean voidUpgrade) {
         Level level = Minecraft.getInstance().level;
         poseStack.pushPose();
         poseStack.translate(0.5f, 0.175f, 15.05f / 16f);
@@ -55,7 +54,7 @@ public class RendererHelper {
         poseStack.translate(0, 0, zOffset);
 
 
-        itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, DEFAULT_LIGHT, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
+        itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
         poseStack.popPose();
 
         if (voidUpgrade) {
@@ -68,7 +67,7 @@ public class RendererHelper {
             poseStack.scale(scale, scale, scale);
 
             ItemStack icon = new ItemStack(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
-            itemRenderer.renderStatic(icon, ItemDisplayContext.FIXED, DEFAULT_LIGHT, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
+            itemRenderer.renderStatic(icon, ItemDisplayContext.FIXED, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
 
             poseStack.popPose();
         }

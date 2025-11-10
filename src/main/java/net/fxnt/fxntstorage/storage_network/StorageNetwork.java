@@ -9,7 +9,6 @@ import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -36,7 +35,7 @@ public class StorageNetwork {
     public NonNullList<StorageNetworkItem> boxes = NonNullList.create();
     private int networkVersion = 0;
     private int tickCount = 0;
-    private Set<Item> filterItems = new HashSet<>();
+    private Set<ItemStack> filterItems = new HashSet<>();
 
     private final IItemHandlerModifiable itemHandler = new NetworkItemHandler();
 
@@ -84,10 +83,26 @@ public class StorageNetwork {
 
         getBoxes(this.level, this.components);
 
-        Set<Item> newFilterItems = getCurrentFilters();
-        if (!newFilterItems.equals(filterItems)) {
+        Set<ItemStack> newFilterItems = getCurrentFilters();
+        if (!areFilterSetsEqual(filterItems, newFilterItems)) {
             filterItems = newFilterItems;
         }
+    }
+
+    private boolean areFilterSetsEqual(Set<ItemStack> oldSet, Set<ItemStack> newSet) {
+        if (oldSet.size() != newSet.size()) return false;
+
+        for (ItemStack oldStack : oldSet) {
+            boolean found = false;
+            for (ItemStack newStack : newSet) {
+                if (ItemStack.isSameItemSameTags(oldStack, newStack)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return false;
+        }
+        return true;
     }
 
     private void checkBoxes() {
@@ -106,12 +121,14 @@ public class StorageNetwork {
         }
     }
 
-    private Set<Item> getCurrentFilters() {
-        List<Item> items = new ArrayList<>();
+    private Set<ItemStack> getCurrentFilters() {
+        Set<ItemStack> items = new HashSet<>();
         for (StorageNetworkItem box : boxes) {
-            items.add(box.simpleStorageBoxEntity.getFilterItem().getItem());
+            ItemStack filterItem = box.simpleStorageBoxEntity.getFilterItem();
+            if (!filterItem.isEmpty())
+                items.add(filterItem.copy());
         }
-        return new HashSet<>(items);
+        return items;
     }
 
     private Set<BlockPos> getConnectedComponents(@Nullable Level level, BlockPos origin) {
@@ -191,7 +208,14 @@ public class StorageNetwork {
     }
 
     public boolean isItemInNetwork(ItemStack stack) {
-        return filterItems.contains(stack.getItem());
+        if (stack.isEmpty()) return false;
+
+        for (ItemStack filterStack : filterItems) {
+            if (ItemStack.isSameItemSameTags(stack, filterStack)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean canPlaceItem(int slot, ItemStack itemStack) {
@@ -213,7 +237,7 @@ public class StorageNetwork {
         // Find boxes that have matching filter set, or first empty box
         for (StorageNetworkItem networkItem : boxes) {
             SimpleStorageBoxEntity box = networkItem.simpleStorageBoxEntity;
-            if (box.getFilterItem().is(itemStack.getItem()) && canAccept.test(box)) {
+            if (ItemStack.isSameItemSameTags(box.getFilterItem(), itemStack) && canAccept.test(box)) {
                 return box;
             } else if (box.getFilterItem().isEmpty() && canAccept.test(box) && emptyBox == null) {
                 emptyBox = box;
