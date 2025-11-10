@@ -39,42 +39,50 @@ public class ConfigManager {
 
         static {
             // BACKPACK
-            COMMON_BUILDER.comment("Backpack").push("backpack");
+            COMMON_BUILDER.comment("Backpack Upgrades").translation("fxntstorage.configuration.backpack").push("backpack");
             COMMON_BUILDER.comment("Magnet Upgrade").push("magnet_upgrade");
             BACKPACK_MAGNET_RANGE = COMMON_BUILDER
                     .comment("The range (in blocks) around the backpack within which the Magnet Upgrade will pull items.")
+                    .translation("fxntstorage.configuration.backpackMagnetRange")
                     .defineInRange("backpackMagnetRange", 5, 2, 16);
             COMMON_BUILDER.pop();
             COMMON_BUILDER.comment("Ore Mining Upgrade").push("ore_mining_upgrade");
             OREMINE_ORES_ONLY = COMMON_BUILDER
                     .comment("Limits the Ore Mining Upgrade to mine ores only. Disable to allow any block (up to 64).")
+                    .translation("fxntstorage.configuration.mineOresOnly")
                     .define("mineOresOnly", true);
             COMMON_BUILDER.pop();
             COMMON_BUILDER.comment("Flight Upgrade").push("flight_upgrade");
             JETPACK_ALLOW_VOID_FLIGHT = COMMON_BUILDER
                     .comment("Allow the use of the flight upgrade over the void in The End dimension.")
+                    .translation("fxntstorage.configuration.jetpackAllowVoidFlight")
                     .define("jetpackAllowVoidFlight", false);
             ELYTRA_BOOST_ENABLED = COMMON_BUILDER
                     .comment("Enable Jetpack boosting while gliding with an Elytra equipped.")
+                    .translation("fxntstorage.configuration.elytraBoostEnabled")
                     .define("elytraBoostEnabled", true);
             ELYTRA_BOOST_MULTIPLIER = COMMON_BUILDER
                     .comment("Multiplier for Jetpack fuel consumption while Elytra boosting.")
+                    .translation("fxntstorage.configuration.elytraBoostMultiplier")
                     .defineInRange("elytraBoostMultiplier", 4, 1, 10);
             ELYTRA_BOOST_SPEED_MULTIPLIER = COMMON_BUILDER
                     .comment("Multiplier for Jetpack speed while Elytra boosting.")
+                    .translation("fxntstorage.configuration.elytraBoostSpeedMultiplier")
                     .defineInRange("elytraBoostSpeedMultiplier", 1.5, 1.0, 5.0);
             JETPACK_MINING_PENALTY = COMMON_BUILDER
                     .comment("Apply mining speed penalty when flying with the Jetpack.")
+                    .translation("fxntstorage.configuration.jetpackMiningPenalty")
                     .define("jetpackMiningPenalty", true);
             COMMON_BUILDER.pop();
             COMMON_BUILDER.comment("Refill Upgrade").push("refill_upgrade");
             REFILL_BLACKLIST = COMMON_BUILDER
                     .comment("Blocks in this list will be ignored by the Refill Upgrade. A wildcard (*) can be used to blacklist all blocks within a namespace. (e.g. minecraft:*)")
+                    .translation("fxntstorage.configuration.refillBlacklist")
                     .defineListAllowEmpty("refillBlacklist", List.of(), () -> "", ConfigManager::validateBlacklist);
             COMMON_BUILDER.pop();
-
             CURIOS_KEEP_BACKPACK = COMMON_BUILDER
                     .comment("Keep Backpack equipped in Curios slot upon death.")
+                    .translation("fxntstorage.configuration.keepBackpackOnDeath")
                     .define("keepBackpackOnDeath", true);
             COMMON_BUILDER.pop();
 
@@ -82,19 +90,23 @@ public class ConfigManager {
             COMMON_BUILDER.comment("Storage Box").push("storage_box");
             STORAGE_BOX_UPDATE_TIME = COMMON_BUILDER
                     .comment("The number of ticks before Storage Boxes update their block count and block states. Higher value = better performance.")
+                    .translation("fxntstorage.configuration.storageBoxUpdateTime")
                     .define("storageBoxUpdateTime", 20);
             COMMON_BUILDER.pop();
 
             // STORAGE NETWORK
             COMMON_BUILDER.comment("Storage Network").push("storage_network");
             SIMPLE_STORAGE_NETWORK_FILL_EMPTY = COMMON_BUILDER
-                    .comment("When all existing boxes with matching filters are full, allow the Storage Network to insert items into empty boxes instead.")
+                    .comment("When all existing boxes with matching filters are full, allow the Storage Network to insert into empty boxes instead.")
+                    .translation("fxntstorage.configuration.allowInsertIntoEmptyBoxes")
                     .define("allowInsertIntoEmptyBoxes", true);
             SIMPLE_STORAGE_NETWORK_RANGE = COMMON_BUILDER
                     .comment("The maximum number of blocks the storage network will search from the controller to find connected components.")
+                    .translation("fxntstorage.configuration.simpleStorageNetworkRange")
                     .defineInRange("simpleStorageNetworkRange", 32, 8, 64);
             SIMPLE_STORAGE_NETWORK_UPDATE_TIME = COMMON_BUILDER
                     .comment("The number of ticks between each update check for controllers and interfaces to refresh their connection to the storage network.")
+                    .translation("fxntstorage.configuration.simpleStorageNetworkUpdateTime")
                     .define("simpleStorageNetworkUpdateTime", 20);
             COMMON_BUILDER.pop();
 
@@ -121,49 +133,65 @@ public class ConfigManager {
         public static ModConfigSpec.BooleanValue CHECK_BACKPACK_FOR_TOOLBOX_ITEMS;
         public static ModConfigSpec.IntValue FEEDER_HUNGER_LEVEL;
         public static ModConfigSpec.IntValue FEEDER_HEALTH_THRESHOLD;
+        public static ModConfigSpec.EnumValue<SimpleStorageGoggleOverlay> SIMPLE_STORAGE_GOGGLE_INFO;
 
         public enum TorchDeployerLightSource {
             BLOCK_LIGHT,
             SKY_LIGHT
         }
 
+        public enum SimpleStorageGoggleOverlay {
+            OFF,
+            ONLY_TAGGED,
+            ALL_ITEMS
+        }
+
         static {
             CLIENT_BUILDER.comment("Feeder Upgrade").push("feeder_upgrade");
             DISPLAY_FEEDER_MESSAGE = CLIENT_BUILDER
                     .comment("Display a message on screen when the Feeder Upgrade automatically feeds the player.")
+                    .translation("fxntstorage.configuration.displayFeederMessage")
                     .define("displayFeederMessage", true);
             ALLOW_CHORUS_FRUIT = CLIENT_BUILDER
                     .comment("Allow the Feeder Upgrade to use Chorus Fruit when feeding the player.")
+                    .translation("fxntstorage.configuration.allowChorusFruit")
                     .define("allowChorusFruit", false);
             FEEDER_HEALTH_THRESHOLD = CLIENT_BUILDER
                     .comment("Feeder Upgrade activates when health percentage falls below this value, regardless of Hunger Level.")
+                    .translation("fxntstorage.configuration.feederHealthThreshold")
                     .defineInRange("feederHealthThreshold", 80, 1, 100);
             FEEDER_HUNGER_LEVEL = CLIENT_BUILDER
                     .comment("Feeder Upgrade activates when hunger falls below this value. One point = half a drumstick")
+                    .translation("fxntstorage.configuration.feederHungerLevel")
                     .defineInRange("feederHungerLevel", 18, 1, 20);
             CLIENT_BUILDER.pop();
 
             CLIENT_BUILDER.comment("Flight Upgrade").push("flight_upgrade");
             DISPLAY_JETPACK_AIR_OVERLAY = CLIENT_BUILDER
                     .comment("Display how much air is left in the jetpack on the HUD.")
+                    .translation("fxntstorage.configuration.displayJetpackAirOverlay")
                     .define("displayJetpackAirOverlay", true);
             JETPACK_HOVER_BOBBING = CLIENT_BUILDER
                     .comment("Add a gentle up-and-down motion while hovering with the jetpack.")
+                    .translation("fxntstorage.configuration.jetpackHoverBobbing")
                     .define("jetpackHoverBobbing", true);
             CLIENT_BUILDER.pop();
 
             CLIENT_BUILDER.comment("Magnet Upgrade").push("magnet_upgrade");
             MAGNET_IGNORE_FAN_PROCESSING = CLIENT_BUILDER
                     .comment("Prevent the Magnet Upgrade from pulling items that are being processed by a Create Encased Fan.")
+                    .translation("fxntstorage.configuration.ignoreFanProcessing")
                     .define("ignoreFanProcessing", true);
             CLIENT_BUILDER.pop();
 
             CLIENT_BUILDER.comment("Tool Swap Upgrade").push("tool_swap_upgrade");
             TOOLSWAP_PREFER_SILK_TOUCH = CLIENT_BUILDER
                     .comment("Prefer tools with Silk Touch when breaking blocks from the prefers Silk Touch list.")
+                    .translation("fxntstorage.configuration.preferSilkTouch")
                     .define("preferSilkTouch", false);
             TOOLSWAP_PREFERS_SILK_TOUCH_LIST = CLIENT_BUILDER
                     .comment("Blocks in this list will drop the block when broken with a Silk Touch tool.")
+                    .translation("fxntstorage.configuration.prefersSilkTouchList")
                     .defineListAllowEmpty("prefersSilkTouchList", List.of("minecraft:grass_block", "minecraft:mycelium", "minecraft:podzol", "minecraft:clay", "minecraft:gravel", "minecraft:snow",
                                     "minecraft:glowstone", "minecraft:stone", "minecraft:sea_lantern", "minecraft:coal_ore", "minecraft:deepslate_coal_ore", "minecraft:nether_gold_ore", "minecraft:nether_quartz_ore",
                                     "minecraft:gilded_blackstone", "minecraft:iron_ore", "minecraft:deepslate_iron_ore", "minecraft:lapis_ore", "minecraft:deepslate_lapis_ore", "minecraft:gold_ore", "minecraft:deepslate_gold_ore",
@@ -174,22 +202,32 @@ public class ConfigManager {
 
             CLIENT_BUILDER.comment("Torch Deployer Upgrade").push("torch_deployer_upgrade");
             TORCH_DEPLOYER_LIGHT_LEVEL = CLIENT_BUILDER
-                    .comment("Deploys a torch when light level is at or below this value. 0 = very dark, 15 = daylight")
+                    .comment("Deploys a torch when light level is at or below this level. 0 = very dark, 15 = daylight")
+                    .translation("fxntstorage.configuration.torchDeployerLightLevel")
                     .defineInRange("torchDeployerLightLevel", 2, 0, 15);
             TORCH_DEPLOYER_COOLDOWN = CLIENT_BUILDER
                     .comment("Delay between each torch placement attempt (in ticks). 20 ticks = 1 second.")
+                    .translation("fxntstorage.configuration.torchDeployerCooldown")
                     .defineInRange("torchDeployerCooldown", 20, 0, Integer.MAX_VALUE);
             TORCH_DEPLOYER_LIGHT_SOURCE = CLIENT_BUILDER
                     .comment("Choose the light source to check when determining block light levels.")
+                    .translation("fxntstorage.configuration.torchDeployerLightSource")
                     .defineEnum("torchDeployerLightSource", TorchDeployerLightSource.BLOCK_LIGHT);
             CLIENT_BUILDER.pop();
 
             CHECK_BACKPACK_FOR_PROJECTILES = CLIENT_BUILDER
                     .comment("Ranged weapons can use arrows and other ammo stored in equipped backpack.")
+                    .translation("fxntstorage.configuration.checkBackpackForProjectiles")
                     .define("checkBackpackForProjectiles", true);
             CHECK_BACKPACK_FOR_TOOLBOX_ITEMS = CLIENT_BUILDER
                     .comment("Toolbox integration, allowing items to be transferred directly from equipped backpack.")
+                    .translation("fxntstorage.configuration.checkBackpackForToolboxItems")
                     .define("checkBackpackForToolboxItems", true);
+
+            SIMPLE_STORAGE_GOGGLE_INFO = CLIENT_BUILDER
+                    .comment("Display goggle overlay for items with tag data in Simple Storage Boxes. (e.g. enchanted items, potions, tipped arrows or trimmed armor)")
+                    .translation("fxntstorage.configuration.simpleStorageGoggleInfo")
+                    .defineEnum("simpleStorageGoggleInfo", SimpleStorageGoggleOverlay.ONLY_TAGGED);
 
             CLIENT_SPEC = CLIENT_BUILDER.build();
         }

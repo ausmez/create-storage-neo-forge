@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.simple_storage;
 
+import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchObservable;
 import com.simibubi.create.foundation.utility.CreateLang;
 import io.netty.buffer.Unpooled;
@@ -8,6 +9,7 @@ import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModTags;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentMap;
@@ -27,13 +29,17 @@ import net.minecraft.world.Nameable;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.common.util.Lazy;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
@@ -45,7 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ParametersAreNonnullByDefault
-public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider, Nameable, ThresholdSwitchObservable {
+public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider, Nameable, ThresholdSwitchObservable, IHaveGoggleInformation {
     private int tickCount = 0;
     private Component customName;
 
@@ -546,6 +552,27 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         for (int i = 0; i < itemHandler.getSlots(); i++) {
             itemHandler.setStackInSlot(i, wrapped.getStackInSlot(i));
         }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        if (filterItem.isEmpty() || ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.OFF) return false;
+
+        boolean hasPotion = filterItem.has(DataComponents.POTION_CONTENTS);
+        boolean hasEnchantments = (filterItem.has(DataComponents.ENCHANTMENTS) && !filterItem.get(DataComponents.ENCHANTMENTS).isEmpty()) || filterItem.has(DataComponents.STORED_ENCHANTMENTS);
+        boolean hasTrim = filterItem.has(DataComponents.TRIM);
+
+        if ((!hasPotion && !hasEnchantments && !hasTrim) && ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.ONLY_TAGGED) return false;
+
+        Minecraft mc = Minecraft.getInstance();
+        List<Component> vanillaTooltip = filterItem.getTooltipLines(Item.TooltipContext.of(mc.level), mc.player, TooltipFlag.NORMAL);
+
+        for (Component component : vanillaTooltip) {
+            tooltip.add(Component.literal("    ").append(component.copy()));
+        }
+
+        return true;
     }
 
 }

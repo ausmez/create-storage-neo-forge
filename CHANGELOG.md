@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.6 - 2025-11-10
+## Changes
+- Added Goggle overlay for Simple Storage Boxes (configurable), displaying the vanilla tooltip for items with:
+  - Enchantments (enchanted books, armor)
+  - Potion data (potions, tipped arrows)
+  - Trim data (trimmed armor)
+
+## Bug Fixes
+- Fixed lighting issues affecting rendered filter items on Storage Boxes and Simple Storage Boxes.
+- Fixed storage networks ignoring NBT/Data Components when inserting items (such as potions and enchanted books) (#33)
+
+---
 ## 1.1.5 - 2025-11-05
 ## Changes
 - **Create 6.0.7+ Support**

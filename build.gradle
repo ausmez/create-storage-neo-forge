@@ -142,13 +142,15 @@ dependencies {
     runtimeOnly "curse.maven:jade-324717:${jade_id}"
     runtimeOnly "curse.maven:jade-addons-583345:${jadeaddon_id}"
     runtimeOnly "curse.maven:carry-on-274259:5649344"
-    compileOnly "curse.maven:configured-457570:5873783"
+    implementation "curse.maven:configured-457570:7122915"
     runtimeOnly "curse.maven:catalogue-459701:5893750"
 //    runtimeOnly "curse.maven:mouse-tweaks-60089:5637846"
     runtimeOnly "curse.maven:inventory-sorter-240633:6235889"
     runtimeOnly "curse.maven:xaeros-world-map-317780:6538359"
     runtimeOnly "curse.maven:xaeros-minimap-263420:6515043"
     runtimeOnly "curse.maven:appleskin-248787:6616291"
+//    runtimeOnly "curse.maven:irisshaders-455508:6661598"
+//    runtimeOnly "curse.maven:sodium-394468:6382651"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

@@ -11,13 +11,16 @@ import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -66,15 +69,21 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
 
         int color = getColorForDistance(distance);
 
-        renderLine(line1, -1f, poseStack, buffer, color);
-        renderLine(line2, -4f, poseStack, buffer, color);
+        BlockPos lightPos = context.contraption.entity.blockPosition().offset(context.localPos).relative(side);
+
+        int blockLight = context.world.getBrightness(LightLayer.BLOCK, lightPos);
+        int skyLight = context.world.getBrightness(LightLayer.SKY, lightPos);
+        int lightLevel = LightTexture.pack(blockLight, skyLight);
+
+        renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
+        renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
 
         if (tag.contains("Filter")) {
             ItemStack filterItem = tag.getCompound("Filter").isEmpty()
                     ? ItemStack.EMPTY
                     : ItemStack.parseOptional(context.contraption.entity.level().registryAccess(), tag.getCompound("Filter"));
             if (!filterItem.isEmpty()) {
-                renderItem(mc.getItemRenderer(), filterItem, poseStack, buffer, false);
+                renderItem(mc.getItemRenderer(), filterItem, poseStack, buffer, lightLevel, false);
             }
         }
 
@@ -88,8 +97,6 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         Minecraft mc = Minecraft.getInstance();
         Screen currentScreen = mc.screen;
         isPonderScene = currentScreen instanceof AbstractSimiScreen;
-
-        FilteringRenderer.renderOnBlockEntity(blockEntity, partialTick, poseStack, buffer, DEFAULT_LIGHT, packedOverlay);
 
         Player player = mc.player;
         if (player == null) return;
@@ -110,14 +117,22 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         BlockState blockState = blockEntity.getBlockState();
         Direction side = blockState.getValue(HorizontalDirectionalBlock.FACING);
 
+        BlockPos lightPos = blockEntity.getBlockPos().relative(side);
+
+        int blockLight = level.getBrightness(LightLayer.BLOCK, lightPos);
+        int skyLight = level.getBrightness(LightLayer.SKY, lightPos);
+        int lightLevel = LightTexture.pack(blockLight, skyLight);
+
+        FilteringRenderer.renderOnBlockEntity(blockEntity, partialTick, poseStack, buffer, lightLevel, packedOverlay);
+
         poseStack.translate(0.5f, 0, 0.5f);
         poseStack.mulPose((new Matrix4f()).rotateYXZ(SIDE_ROT_Y[side.ordinal()], 0, 0));
         poseStack.translate(-0.5f, 0, -0.5f);
 
         int color = getColorForDistance(distance);
 
-        renderLine(line1, 7f, poseStack, buffer, color);
-        renderLine(line2, 4f, poseStack, buffer, color);
+        renderLine(line1, 7f, poseStack, buffer, color, lightLevel);
+        renderLine(line2, 4f, poseStack, buffer, color, lightLevel);
     }
 
 }

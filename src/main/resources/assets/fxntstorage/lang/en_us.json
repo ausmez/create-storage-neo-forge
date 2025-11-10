@@ -319,6 +319,7 @@
   "fxntstorage.configuration.refillBlacklist": "Refill Blacklist",
   "fxntstorage.configuration.refill_upgrade": "Refill Upgrade",
   "fxntstorage.configuration.refill_upgrade.tooltip": "Configuration options for the Backpack Refill Upgrade",
+  "fxntstorage.configuration.simpleStorageGoggleInfo": "Simple Storage Goggle Overlay",
 
   "block_type.fxntstorage.simple_storage_box": "%s Simple Storage Box",
   "block_type.fxntstorage.storage_trim": "%s Storage Trim"

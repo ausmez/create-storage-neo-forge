@@ -9,15 +9,18 @@ import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -72,15 +75,21 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         ItemRenderer itemRenderer = mc.getItemRenderer();
         int color = getColorForDistance(distance);
 
-        renderLine(line1, -1f, poseStack, buffer, color);
-        renderLine(line2, -4f, poseStack, buffer, color);
+        BlockPos lightPos = context.contraption.entity.blockPosition().offset(context.localPos).relative(side);
+
+        int blockLight = context.world.getBrightness(LightLayer.BLOCK, lightPos);
+        int skyLight = context.world.getBrightness(LightLayer.SKY, lightPos);
+        int lightLevel = LightTexture.pack(blockLight, skyLight);
+
+        renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
+        renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
 
         if (tag.contains("FilterItem")) {
             ItemStack filterItem = tag.getCompound("FilterItem").isEmpty()
                     ? ItemStack.EMPTY
                     : ItemStack.parseOptional(context.contraption.entity.level().registryAccess(), tag.getCompound("FilterItem"));
             if (!filterItem.isEmpty() || hasVoidUpgrade) {
-                renderItem(itemRenderer, filterItem, poseStack, buffer, hasVoidUpgrade);
+                renderItem(itemRenderer, filterItem, poseStack, buffer, lightLevel, hasVoidUpgrade);
             }
         }
 
@@ -122,12 +131,18 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         int color = getColorForDistance(distance);
 
-        renderLine(line1, -1f, poseStack, buffer, color);
-        renderLine(line2, -4f, poseStack, buffer, color);
+        BlockPos lightPos = blockEntity.getBlockPos().relative(side);
+
+        int blockLight = level.getBrightness(LightLayer.BLOCK, lightPos);
+        int skyLight = level.getBrightness(LightLayer.SKY, lightPos);
+        int lightLevel = LightTexture.pack(blockLight, skyLight);
+
+        renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
+        renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
 
         ItemStack filterItem = blockEntity.getFilterItem();
         if (!filterItem.isEmpty() || blockEntity.voidUpgrade) {
-            renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, blockEntity.voidUpgrade);
+            renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, lightLevel, blockEntity.voidUpgrade);
         }
     }
 
