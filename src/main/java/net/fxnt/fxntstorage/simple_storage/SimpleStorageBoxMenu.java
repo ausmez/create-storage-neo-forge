@@ -68,7 +68,7 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         return !blockEntity.isRemoved()
-                && Container.stillValidBlockEntity(blockEntity, player, 5);
+                && Container.stillValidBlockEntity(blockEntity, player, 7);
     }
 
 

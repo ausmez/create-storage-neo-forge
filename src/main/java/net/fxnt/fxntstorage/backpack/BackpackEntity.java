@@ -25,6 +25,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.Nameable;
+import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -46,11 +47,13 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class BackpackEntity extends BlockEntity implements IBackpackContainer, MenuProvider, Nameable {
+    private ArmorStand pendingStand;
+    private int standDiscardTimer = 0;
+
     private int slotCount;
 
     private final BlockPos pos;
-    private int lastTick = 0;
-    private boolean doTick = false;
+    private int tickCount = 0;
     private Component customName;
     private boolean initializedBlock = false;
     private boolean isGhostSlotLocked = false;
@@ -204,7 +207,6 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-//        itemHandler.deserializeNBT(tag.getCompound("Items"));
         if (tag.contains("Items")) {
             ListTag listTag = tag.getCompound("Items").getList("Items", Tag.TAG_COMPOUND);
             for (int i = 0; i < listTag.size(); ++i) {
@@ -314,18 +316,26 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         return stack.getItem() instanceof BackpackItem;
     }
 
+    public void setPendingStand(ArmorStand stand) {
+        this.pendingStand = stand;
+    }
+
     public void serverTick(Level level) {
         if (!level.isClientSide) {
             // Need to run moveItems() every updateClientStorageData
             moveItems();
 
-            this.lastTick++;
-            int updateEveryXTicks = 30;
-            if (this.lastTick >= updateEveryXTicks) {
-                this.lastTick = 0;
-                this.doTick = true;
+            // Discard Magnet Pickup Entity after game has processed spawn and item pickup packets
+            if (pendingStand != null) {
+                if (standDiscardTimer++ >= 5) { // Discard after 5 ticks
+                    pendingStand.discard();
+                    pendingStand = null;
+                    standDiscardTimer = 0;
+                }
             }
-            if (!this.doTick) return;
+
+            if (tickCount++ < 30) return;
+            tickCount = 0;
 
             if (!this.initializedBlock) {
                 level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), BackpackBlock.UPDATE_ALL);
@@ -336,7 +346,6 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
                 BackpackAsBlockUpgradeHandler upgradeHandler = new BackpackAsBlockUpgradeHandler(this);
                 upgradeHandler.applyMagnetUpgrade();
             }
-            this.doTick = false;
         }
     }
 

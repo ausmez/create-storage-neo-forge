@@ -183,7 +183,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         } else if (backpackType == Util.BACKPACK_AS_BLOCK) {
             if (container instanceof BlockEntity be) {
                 return !be.isRemoved()
-                        && Container.stillValidBlockEntity(be, player, 5);
+                        && Container.stillValidBlockEntity(be, player, 7);
             }
         }
 

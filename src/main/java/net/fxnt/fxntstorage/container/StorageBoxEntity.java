@@ -264,7 +264,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     public boolean stillValid(Player pPlayer) {
         return !this.isRemoved()
-                && Container.stillValidBlockEntity(this, pPlayer, 5);
+                && Container.stillValidBlockEntity(this, pPlayer, 7);
     }
 
     public FilteringBehaviour getFilter() {

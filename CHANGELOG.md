@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.7 - 2025-11-29
+
+## Bug Fixes
+- Fixed an issue where quickly right-clicking between multiple Storage or Simple Storage Boxes could be incorrectly detected as a double click.
+- Fixed log spam caused by using the Magnet Upgrade in a backpack that had been placed in the world. (#35)
+- Fixed an issue where certain menus would close while the player was still within interaction range. [Forge]
+- Fixed an issue where the Magnet Upgrade’s range would not update when modified via the config screen.
+
+---
 ## 1.1.6 - 2025-11-10
 ## Changes
 - Added Goggle overlay for Simple Storage Boxes (configurable), displaying the vanilla tooltip for items with:

@@ -89,16 +89,19 @@ public class SimpleStorageBox extends BaseEntityBlock {
             CompoundTag pd = pPlayer.getPersistentData();
 
             boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
-                    && pd.getInt("fxntstorage:last_click_type") == 1;
+                    && pd.getInt("fxntstorage:last_click_type") == 1
+                    && pd.getLong("fxntstorage:last_block_pos") == simpleStorageBoxEntity.getBlockPos().asLong();
 
             if (isDoubleClick) {
                 // Double Right-click
                 pd.putInt("fxntstorage:last_click_type", 0);
+                pd.remove("fxntstorage:last_block_pos");
                 if (handItem.isEmpty() || ItemStack.isSameItemSameTags(handItem, simpleStorageBoxEntity.filterItem)) {
                     simpleStorageBoxEntity.transferToStorage(pPlayer, true);
                 }
             } else {
                 pd.putLong("fxntstorage:last_click_time", currentTime);
+                pd.putLong("fxntstorage:last_block_pos", simpleStorageBoxEntity.getBlockPos().asLong());
                 pd.putInt("fxntstorage:last_click_type", 1);
 
                 if (handItem.isEmpty()) {
