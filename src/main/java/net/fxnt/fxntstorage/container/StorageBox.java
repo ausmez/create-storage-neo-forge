@@ -169,16 +169,19 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
             CompoundTag pd = player.getPersistentData();
 
             boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
-                    && pd.getInt("fxntstorage:last_click_type") == 1;
+                    && pd.getInt("fxntstorage:last_click_type") == 1
+                    && pd.getLong("fxntstorage:last_block_pos") == storageBoxEntity.getBlockPos().asLong();
 
             if (isDoubleClick) {
                 pd.putInt("fxntstorage:last_click_type", 0);
+                pd.remove("fxntstorage:last_block_pos");
                 // Double Right-click
                 if (itemInHand.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
                     storageBoxEntity.transferToStorage(state, player, true);
                 }
             } else {
                 pd.putLong("fxntstorage:last_click_time", currentTime);
+                pd.putLong("fxntstorage:last_block_pos", storageBoxEntity.getBlockPos().asLong());
                 pd.putInt("fxntstorage:last_click_type", 1);
                 // Single Right-Click
                 if (itemInHand.is(Tags.Items.TOOLS_WRENCH)) {

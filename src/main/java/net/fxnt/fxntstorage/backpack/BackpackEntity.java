@@ -51,8 +51,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     private int slotCount;
 
     private final BlockPos pos;
-    private int lastTick = 0;
-    private boolean doTick = false;
+    private int tickCount = 0;
     private Component customName;
     private boolean initializedBlock = false;
     private boolean isGhostSlotLocked = false;
@@ -302,13 +301,8 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
             // Need to run moveItems() every tick
             moveItems();
 
-            this.lastTick++;
-            int updateEveryXTicks = 30;
-            if (this.lastTick >= updateEveryXTicks) {
-                this.lastTick = 0;
-                this.doTick = true;
-            }
-            if (!this.doTick) return;
+            if (tickCount++ < 30) return;
+            tickCount = 0;
 
             if (!this.initializedBlock) {
                 level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), BackpackBlock.UPDATE_ALL);
@@ -319,7 +313,6 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
                 BackpackAsBlockUpgradeHandler upgradeHandler = new BackpackAsBlockUpgradeHandler(this);
                 upgradeHandler.applyMagnetUpgrade();
             }
-            this.doTick = false;
         }
     }
 

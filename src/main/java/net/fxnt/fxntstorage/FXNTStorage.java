@@ -24,6 +24,7 @@ import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxScreen;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedScreen;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -172,6 +173,7 @@ public class FXNTStorage {
             event.registerBlockEntityRenderer(ModBlockEntities.STORAGE_BOX_ENTITY.get(), StorageBoxEntityRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), SimpleStorageBoxEntityRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.SMART_PASSER_ENTITY.get(), PasserEntityRenderer::new);
+            event.registerEntityRenderer(ModEntityTypes.MAGNET_PICKUP_ENTITY.get(), NoopRenderer::new);
         }
 
         @SubscribeEvent
