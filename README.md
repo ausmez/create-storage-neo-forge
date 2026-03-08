@@ -1,15 +1,24 @@
-This is a Neo/Forge port of FoxyNoTail's [Create: Storage](https://www.curseforge.com/minecraft/mc-mods/create-storage)
-addon from his second Create YouTube series, with some minor
-tweaks and enhancements.
+# Create: Storage
 
-Check the CHANGELOG for the list of changes.
+> A comprehensive storage expansion for the [Create Mod](https://www.curseforge.com/minecraft/mc-mods/create) — featuring tiered storage boxes, upgradeable backpacks, linked storage networks, and smart item transfer blocks.
+
+![create_storage_2.png](.github/images/create_storage_2.png)
+
+<p style="text-align: center;">
+  <a href="https://modrinth.com/mod/create-storage-neo-forge"><img src="https://img.shields.io/modrinth/dt/create-storage-neo-forge?logo=modrinth&label=Modrinth&color=00af5c" alt="Modrinth"></a>
+  <a href="https://www.curseforge.com/minecraft/mc-mods/create-storage-neo-forge"><img src="https://img.shields.io/curseforge/dt/1281770?logo=curseforge&label=CurseForge&color=f16436" alt="CurseForge"></a>
+  <a href="https://github.com/Creators-of-Create/Create"><img src="https://img.shields.io/badge/Create-6.0.7+-4b8bc2" alt="Create"></a>
+  <a href="https://neoforged.net"><img src="https://img.shields.io/badge/NeoForge-21.1.181+-d88231" alt="NeoForged"></a>
+  <a href="https://files.minecraftforge.net"><img src="https://img.shields.io/badge/Forge-47.3.30+-26303d" alt="Forge"></a>
+</p>
 
 ---
 
-This mod features a handful of Storage Boxes, each with different sized inventories as well as a handful of new
-upgradable backpacks.
+## What is Create: Storage?
 
-![create_storage_2.png](.github/images/create_storage_2.png)
+**Create: Storage** extends Create's automation ecosystem with purpose-built storage solutions that look and feel native to the mod. Whether you need compact filtered containers on your assembly lines, high-capacity bulk storage, a centralized item network, or a do-it-all backpack for expeditions — this mod has you covered.
+
+Originally created by **FoxyNoTail** for Fabric, this is the actively maintained **NeoForge/Forge** port with a growing feature set beyond the original.
 
 ---
 
@@ -17,10 +26,10 @@ upgradable backpacks.
 
 ### Description
 
-**Storage Boxes** and **Simple Storage Boxes** are containers designed for compact, filterable item storage. Each **Storage Box** variant offers different storage capacities and visual styles, whereas the **Simple Storage Boxes** offer
-large single item storage with high capacity upgrades available.
-Designed to integrate seamlessly into mechanical and logistical systems within the Create Mod, they provide a clean and
-functional way to manage large amounts of items.
+**Storage Boxes** and **Simple Storage Boxes** are containers designed for compact, filterable item storage. Each
+**Storage Box** variant offers different storage capacities and visual styles, whereas the **Simple Storage Boxes** offer
+large single item storage with high capacity upgrades available. Designed to integrate seamlessly into mechanical
+and logistical systems within the Create Mod, they provide a clean and functional way to manage large amounts of items.
 
 ## Storage Box
 
@@ -77,14 +86,13 @@ functional way to manage large amounts of items.
 ### Description
 
 Links multiple **Simple Storage Boxes** together into a single network, allowing players and automation to access and
-manage all stored items from a central (or multiple) point.
-Simple storage networks are formed by connecting **Simple Storage Boxes** to a **Storage Controller** using **Storage
-Trim** blocks, which act as conduits.
-Once connected, the **Storage Controller** aggregates all items from the attached boxes, enabling insertion and
-extraction through a single interface.
+manage all stored items from a central (or multiple) point. Simple storage networks are formed by connecting **Simple
+Storage Boxes** to a **Storage Controller** using **Storage Trim** blocks, which act as conduits. Once connected, the
+**Storage Controller** aggregates all items from the attached boxes, enabling insertion and extraction through a
+single interface.
 
-Additional components, like the **Storage Interface**, can be used to interact with the network through automation (
-hoppers, chutes, funnels, etc.)
+Additional components, like the **Storage Interface**, can be used to interact with the network through automation
+(hoppers, chutes, funnels, etc.)
 
 ## Storage Trim
 
@@ -124,6 +132,13 @@ hoppers, chutes, funnels, etc.)
 
 ![storage_interface.png](.github/images/storage_interface.png)
 
+### Storage Interface (Filtered)
+
+Like the Storage Interface, but with a built-in Create filter slot — ideal for precisely controlling which items pass
+through when working with vanilla components or mixed automation setups.
+
+![storage_interface_filtered.png](.github/images/storage_interface_filtered.png)
+
 ---
 
 # Backpacks
@@ -154,18 +169,20 @@ beyond basic item storage, making them versatile companions for adventuring, bui
 
 ## Backpack Upgrades
 
-| Item                                                                                     | Name                       | Description                                                                                                                        |
-|------------------------------------------------------------------------------------------|----------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| ![backpack_upgrade_magnet.png](.github/images/backpack_upgrade_magnet.png)               | **Magnet Upgrade**         | Pulls items into the backpack's main storage compartment from up to 5 blocks away                                                  |
-| ![backpack_upgrade_itempickup.png](.github/images/backpack_upgrade_itempickup.png)       | **Item Pickup Upgrade**    | Transfers items directly into backpack's main storage instead of player inventory                                                  | 
-| ![backpack_upgrade_pickblock.png](.github/images/backpack_upgrade_pickblock.png)         | **Pick Block Upgrade**     | Pick block items directly from your backpack                                                                                       |
-| ![backpack_upgrade_refill.png](.github/images/backpack_upgrade_refill.png)               | **Refill Upgrade**         | Refills the player's main/off-hand item from the backpack if they are available                                                    |
-| ![backpack_upgrade_toolswap.png](.github/images/backpack_upgrade_toolswap.png)           | **Tool Swap Upgrade**      | Swaps out any tool held in the player's main hand for the best available tool or weapon when mining a block or attacking an entity |
-| ![backpack_upgrade_feeder.png](.github/images/backpack_upgrade_feeder.png)               | **Feeder Upgrade**         | Automatically feeds the player food from the backpack when the player is hungry enough to eat                                      |
-| ![backpack_upgrade_flight.png](.github/images/backpack_upgrade_flight.png)               | **Flight Upgrade**         | Turns any Backpack into a jetpack with hovering abilities (uses Create backtanks for fuel)                                         |
-| ![backpack_upgrade_falling.png](.github/images/backpack_upgrade_falling.png)             | **Fall Damage Upgrade**    | Prevents the player from taking fall damage while wearing the backpack                                                             |
-| ![backpack_upgrade_oremining.png](.github/images/backpack_upgrade_oremining.png)         | **Ore Mining Upgrade**     | Mines entire clusters of matching ore blocks, dropping the loot near the player                                                    |
-| ![backpack_upgrade_torchdeployer.png](.github/images/backpack_upgrade_torchdeployer.png) | **Torch Deployer Upgrade** | Automatically places a torch from the backpack when the surrounding light level is low                                           |
+| Item                                                                                     | Name                         | Description                                                                                                                        |
+|------------------------------------------------------------------------------------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| ![backpack_upgrade_magnet.png](.github/images/backpack_upgrade_magnet.png)               | **Magnet Upgrade**           | Pulls items into the backpack's main storage compartment from up to 5 blocks away                                                  |
+| ![backpack_upgrade_itempickup.png](.github/images/backpack_upgrade_itempickup.png)       | **Item Pickup Upgrade**      | Transfers items directly into backpack's main storage instead of player inventory                                                  | 
+| ![backpack_upgrade_pickblock.png](.github/images/backpack_upgrade_pickblock.png)         | **Pick Block Upgrade**       | Pick block items directly from your backpack                                                                                       |
+| ![backpack_upgrade_refill.png](.github/images/backpack_upgrade_refill.png)               | **Refill Upgrade**           | Refills the player's main/off-hand item from the backpack if they are available                                                    |
+| ![backpack_upgrade_toolswap.png](.github/images/backpack_upgrade_toolswap.png)           | **Tool Swap Upgrade**        | Swaps out any tool held in the player's main hand for the best available tool or weapon when mining a block or attacking an entity |
+| ![backpack_upgrade_feeder.png](.github/images/backpack_upgrade_feeder.png)               | **Feeder Upgrade**           | Automatically feeds the player food from the backpack when the player is hungry enough to eat                                      |
+| ![backpack_upgrade_flight.png](.github/images/backpack_upgrade_flight.png)               | **Flight Upgrade**           | Turns any Backpack into a jetpack with hovering abilities (uses Create backtanks for fuel)                                         |
+| ![backpack_upgrade_falling.png](.github/images/backpack_upgrade_falling.png)             | **Fall Damage Upgrade**      | Prevents the player from taking fall damage while wearing the backpack                                                             |
+| ![backpack_upgrade_oremining.png](.github/images/backpack_upgrade_oremining.png)         | **Ore Mining Upgrade**       | Mines entire clusters of matching ore blocks, dropping the loot near the player                                                    |
+| ![backpack_upgrade_torchdeployer.png](.github/images/backpack_upgrade_torchdeployer.png) | **Torch Deployer Upgrade**   | Automatically places a torch from the backpack when the surrounding light level is low                                             |
+| ![backpack_upgrade_jukebox.png](.github/images/backpack_upgrade_jukebox.png)             | **Jukebox Upgrade**          | Plays music from the music disc slot in the backpack, providing buffs and ambiance                                                 |
+| ![backpack_upgrade_health.png](.github/images/backpack_upgrade_health.png)               | **Mechanical Heart Upgrade** | Grants additional hearts to the backpack wearer (configurable)                                                                     |
 
 ---
 
@@ -174,10 +191,8 @@ beyond basic item storage, making them versatile companions for adventuring, bui
 ### Description
 
 Passer Blocks are utility blocks that are used to transfer items between adjacent containers. They operate in a similar
-way
-to hoppers, moving one item at a time, however they do not have any internal inventory. Smart Passer blocks expand on
-the
-Passer by enabling items to be filtered and transferring up to 64 items at once.
+way to hoppers, moving one item at a time, however they do not have any internal inventory. Smart Passer blocks expand on
+the Passer by enabling items to be filtered and transferring up to 64 items at once.
 
 ## Basic Passer
 
@@ -197,3 +212,35 @@ Passer by enabling items to be filtered and transferring up to 64 items at once.
 
 ![smart_passer_block.png](.github/images/smart_passer_block.png)
 ![smart_passer_block_powered.png](.github/images/smart_passer_block_powered.png)
+
+---
+
+## Compatibility
+
+| Mod                          | Support                                              |
+|------------------------------|------------------------------------------------------|
+| **Create**                   | Required — deep integration throughout               |
+| **Packager / Stock Keeper**  | Full integration for logistics networks              |
+| **JEI / EMI / REI**          | Recipe transfer from backpack inventory              |
+| **Curios**                   | Backpack back-slot support                           |
+| **Every Compat (Wood Good)** | Modded wood types for Simple Storage Boxes and Trims |
+| **Construction Wand/Sticks** | Backpack and Storage Box block placement support     |
+
+---
+
+## Requirements
+
+- **Minecraft:** 1.21.1 / 1.20.1
+- **Mod Loader:** NeoForge 21.1.181+ / Forge 47.3.30+
+- **Create:** 6.0.7+
+
+---
+
+## Credits
+
+- **FoxyNoTail** — Original mod concept and Fabric implementation
+- **ausmez** — NeoForge/Forge port and ongoing development
+
+---
+
+*Licensed under GNU GPL 3.0*
