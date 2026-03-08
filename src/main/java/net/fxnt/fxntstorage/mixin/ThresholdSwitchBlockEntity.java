@@ -15,10 +15,16 @@ import java.util.List;
 
 @Mixin(com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchBlockEntity.class)
 public class ThresholdSwitchBlockEntity {
-    @Shadow @Final @Mutable
+    @Shadow
+    @Final
+    @Mutable
     private static List<ThresholdSwitchCompat> COMPAT;
 
-    @Inject(method = "<clinit>", at = @At("TAIL"))
+    @Inject(
+            method = "<clinit>",
+            at = @At("TAIL")
+    )
+
     private static void fxnt$addCustomCompat(CallbackInfo ci) {
         List<ThresholdSwitchCompat> mutable = new ArrayList<>(COMPAT);
         mutable.add(new StorageNetworkCompat());

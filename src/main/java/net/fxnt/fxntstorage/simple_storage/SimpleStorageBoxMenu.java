@@ -167,5 +167,4 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
         }
         return super.canTakeItemForPickAll(stack, slot);
     }
-
 }

@@ -3,10 +3,9 @@ package net.fxnt.fxntstorage.backpack;
 import com.simibubi.create.foundation.item.TooltipHelper;
 import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
-import net.fxnt.fxntstorage.backpack.util.BackpackHandler;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
@@ -45,8 +44,9 @@ public class BackpackItem extends BlockItem {
     public boolean canEquip(ItemStack stack, EquipmentSlot armorType, LivingEntity entity) {
         if (armorType != EquipmentSlot.CHEST) return false;
         if (stack.getItem() instanceof BackpackItem
-                && entity.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem) return true; // Allow backpack swap
-        if (FXNTStorage.curiosLoaded) {
+                && entity.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem)
+            return true; // Allow backpack swap
+        if (FXNTStorage.CURIOS_LOADED) {
             return !BackpackHelper.isWearingBackpack((Player) entity);
         }
         return super.canEquip(stack, armorType, entity);
@@ -57,7 +57,7 @@ public class BackpackItem extends BlockItem {
         ItemStack stack = player.getItemInHand(usedHand);
 
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-            BackpackHandler.openBackpackFromInventory(serverPlayer, Util.BACKPACK_IN_HAND);
+            BackpackHelper.openBackpackFromInventory(serverPlayer, BackpackMenu.BackpackType.ITEM);
             return InteractionResultHolder.success(stack);
         }
         return InteractionResultHolder.pass(player.getItemInHand(usedHand));
@@ -74,11 +74,12 @@ public class BackpackItem extends BlockItem {
     }
 
     @Override
+    @OnlyIn(Dist.CLIENT)
     public void appendHoverText(ItemStack pStack, TooltipContext pContext, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pContext, pTooltipComponents, pIsAdvanced);
 
-        final Component CTRL_TO_VIEW_CONTENTS = Component.translatable("tooltip.fxntstorage.holdForContents", (Screen.hasControlDown()) ? "§fCtrl" : "§7Ctrl").withStyle(ChatFormatting.DARK_GRAY);
-        final Component SHIFT_TO_VIEW_SUMMARY = Component.translatable("tooltip.fxntstorage.holdForDescription", (Screen.hasShiftDown()) ? "§fShift" : "§7Shift").withStyle(ChatFormatting.DARK_GRAY);
+        final Component ctrlToViewContents = Component.translatable("tooltip.fxntstorage.holdForContents", (Screen.hasControlDown()) ? "§fCtrl" : "§7Ctrl").withStyle(ChatFormatting.DARK_GRAY);
+        final Component shiftToViewSummary = Component.translatable("tooltip.fxntstorage.holdForDescription", (Screen.hasShiftDown()) ? "§fShift" : "§7Shift").withStyle(ChatFormatting.DARK_GRAY);
 
         String translationKey = "tooltip.fxntstorage.backpack";
         int placeholder = ((BackpackBlock) block).stackMultiplier;
@@ -95,17 +96,17 @@ public class BackpackItem extends BlockItem {
         }
 
         if (Screen.hasShiftDown() == Screen.hasControlDown()) {
-            pTooltipComponents.add(SHIFT_TO_VIEW_SUMMARY);
-            pTooltipComponents.add(CTRL_TO_VIEW_CONTENTS);
+            pTooltipComponents.add(shiftToViewSummary);
+            pTooltipComponents.add(ctrlToViewContents);
         }
 
         if (Screen.hasShiftDown() && !Screen.hasControlDown()) {
-            pTooltipComponents.add(SHIFT_TO_VIEW_SUMMARY);
+            pTooltipComponents.add(shiftToViewSummary);
             pTooltipComponents.addAll(summaryLines);
         }
 
         if (!Screen.hasShiftDown() && Screen.hasControlDown()) {
-            pTooltipComponents.add(CTRL_TO_VIEW_CONTENTS);
+            pTooltipComponents.add(ctrlToViewContents);
         }
 
     }
@@ -118,5 +119,4 @@ public class BackpackItem extends BlockItem {
         }
         return Optional.empty();
     }
-
 }

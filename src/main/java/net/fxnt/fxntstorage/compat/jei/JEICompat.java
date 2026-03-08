@@ -9,7 +9,7 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
@@ -45,6 +45,8 @@ public class JEICompat implements IModPlugin {
                 return screen.getExclusionZones();
             }
         });
+
+        registration.addGhostIngredientHandler(BackpackScreen.class, new JEIGhostIngredientHandler());
     }
 
     @Override
@@ -55,5 +57,4 @@ public class JEICompat implements IModPlugin {
         registration.addRecipeTransferHandler(new JEICraftingTransferHandler(transferHelper, stackHelper), RecipeTypes.CRAFTING);
         registration.addRecipeTransferHandler(new JEIStonecuttingTransferHandler(transferHelper, stackHelper), RecipeTypes.STONECUTTING);
     }
-
 }

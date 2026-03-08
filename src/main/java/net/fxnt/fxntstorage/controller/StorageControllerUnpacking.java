@@ -2,7 +2,8 @@ package net.fxnt.fxntstorage.controller;
 
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
 import com.simibubi.create.content.logistics.stockTicker.PackageOrderWithCrafts;
-import net.fxnt.fxntstorage.config.ConfigManager;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import net.fxnt.fxntstorage.storage_network.StorageNetwork;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
@@ -33,8 +34,7 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
         } else {
             StorageControllerEntity storageControllerEntity = ((StorageControllerEntity) targetBE);
 
-            if (storageControllerEntity.storageNetwork == null) return false;
-            final StorageNetwork storageNetwork = storageControllerEntity.storageNetwork;
+            final StorageNetwork storageNetwork = storageControllerEntity.getConnectedNetwork();
 
             if (!simulate) {
                 for (ItemStack itemStack : items) {
@@ -45,7 +45,7 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
                 List<ItemStorage> emptyBoxes = new ArrayList<>();
                 Map<Item, List<ItemStorage>> storageBoxes = new HashMap<>();
 
-                for (StorageNetwork.StorageNetworkItem item : storageNetwork.boxes) {
+                for (StorageNetwork.StorageNetworkItem item : storageNetwork.getBoxes()) {
                     Item filterItem = item.simpleStorageBoxEntity.filterItem.getItem();
                     ItemStorage storage = new ItemStorage(
                             item.simpleStorageBoxEntity.getMaxItemCapacity(),
@@ -99,7 +99,8 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
                         }
                     }
 
-                    if (ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_FILL_EMPTY.get()) {
+                    ScrollValueBehaviour behaviour = storageControllerEntity.getBehaviour(ScrollOptionBehaviour.TYPE);
+                    if (behaviour == null || behaviour.getValue() == 0) {
                         if (!storageFound && !emptyBoxes.isEmpty()) {
                             ItemStorage box = emptyBoxes.removeFirst();
                             if (box.voidUpgrade() || itemStack.getCount() <= box.maxCapacity()) {
@@ -118,5 +119,4 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
 
     private record ItemStorage(int maxCapacity, int storedAmount, boolean voidUpgrade) {
     }
-
 }

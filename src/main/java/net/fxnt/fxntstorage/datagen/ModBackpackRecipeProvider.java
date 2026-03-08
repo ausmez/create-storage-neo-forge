@@ -62,5 +62,4 @@ public class ModBackpackRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_backpack", RecipeProvider.has(ModBlocks.BACKPACK))
                 .save(recipeOutput, modLoc("backpack_crafting/hardened_backpack_from_brass_backpack"));
     }
-
 }

@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "C": {
+      "item": "minecraft:redstone"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "R": {
+      "item": "create:redstone_link"
+    },
+    "X": {
+      "item": "minecraft:jukebox"
+    }
+  },
+  "pattern": [
+    " R ",
+    "IBI",
+    "CXC"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:backpack_jukebox_upgrade"
+  }
+}

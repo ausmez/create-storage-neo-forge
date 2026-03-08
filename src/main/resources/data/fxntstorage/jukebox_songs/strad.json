@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:strad",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:luck",
+      "amplifier": 1
+    }
+  ]
+}

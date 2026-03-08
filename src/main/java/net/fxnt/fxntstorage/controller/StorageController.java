@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.controller;
 import com.mojang.serialization.MapCodec;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
+import net.fxnt.fxntstorage.network.packet.StorageNetworkHighlightPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -19,6 +20,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 public class StorageController extends BaseEntityBlock implements IWrenchable {
@@ -54,6 +56,12 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
         });
     }
 
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        super.onRemove(state, level, pos, newState, movedByPiston);
+        PacketDistributor.sendToAllPlayers(new StorageNetworkHighlightPacket(pos, false));
+    }
+
     public boolean hitFront(BlockState blockState, BlockHitResult hit) {
         Direction side = hit.getDirection();
         return blockState.getValue(FACING) == side;
@@ -73,5 +81,4 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
         pBuilder.add(FACING, CONNECTED);
     }
-
 }

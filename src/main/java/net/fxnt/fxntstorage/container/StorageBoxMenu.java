@@ -220,5 +220,4 @@ public class StorageBoxMenu extends AbstractContainerMenu {
             }
         }
     }
-
 }

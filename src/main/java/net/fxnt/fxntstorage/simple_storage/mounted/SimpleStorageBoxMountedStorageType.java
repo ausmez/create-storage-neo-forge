@@ -17,5 +17,4 @@ public class SimpleStorageBoxMountedStorageType extends MountedItemStorageType<S
     public @Nullable SimpleStorageBoxMountedStorage mount(Level level, BlockState state, BlockPos pos, @Nullable BlockEntity be) {
         return be instanceof SimpleStorageBoxEntity simpleStorageBox ? SimpleStorageBoxMountedStorage.fromStorage(simpleStorageBox) : null;
     }
-
 }

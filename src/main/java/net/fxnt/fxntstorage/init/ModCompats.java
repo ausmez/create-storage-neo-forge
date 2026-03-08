@@ -29,5 +29,4 @@ public class ModCompats {
             runnable.run();
         }
     }
-
 }

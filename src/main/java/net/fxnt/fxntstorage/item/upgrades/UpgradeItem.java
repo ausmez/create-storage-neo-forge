@@ -38,6 +38,11 @@ public class UpgradeItem extends Item {
         return name.replace(replaceTarget, "");
     }
 
+    public String getBaseUpgradeName() {
+        String name = this.getDescriptionId();
+        return name.replaceAll("^.*?_([^_]+)_.*$", "$1");
+    }
+
     @Override
     public void appendHoverText(ItemStack pStack, TooltipContext pContext, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pContext, pTooltipComponents, pIsAdvanced);
@@ -52,6 +57,8 @@ public class UpgradeItem extends Item {
             case Util.FALLDAMAGE_UPGRADE_DEACTIVATED:
             case Util.OREMINING_UPGRADE_DEACTIVATED:
             case Util.TORCHDEPLOYER_UPGRADE_DEACTIVATED:
+            case Util.JUKEBOX_UPGRADE_DEACTIVATED:
+            case Util.HEALTH_UPGRADE_DEACTIVATED:
                 pTooltipComponents.add(Component.translatable("tooltip.fxntstorage.upgrade_deactivated").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD));
             case Util.MAGNET_UPGRADE:
             case Util.PICKBLOCK_UPGRADE:
@@ -62,6 +69,8 @@ public class UpgradeItem extends Item {
             case Util.FALLDAMAGE_UPGRADE:
             case Util.OREMINING_UPGRADE:
             case Util.TORCHDEPLOYER_UPGRADE:
+            case Util.JUKEBOX_UPGRADE:
+            case Util.HEALTH_UPGRADE:
             case Util.STORAGE_BOX_VOID_UPGRADE:
             case Util.STORAGE_BOX_CAPACITY_UPGRADE:
                 addUpgradeDetails(pTooltipComponents);
@@ -92,16 +101,20 @@ public class UpgradeItem extends Item {
 
             if (Objects.equals(name.replaceAll("_deactivated$", ""), Util.MAGNET_UPGRADE) ||
                     Objects.equals(name.replaceAll("_deactivated$", ""), Util.ITEMPICKUP_UPGRADE)) {
-                placeholder = ConfigManager.CommonConfig.BACKPACK_MAGNET_RANGE.get().toString();
+                placeholder = ConfigManager.ServerConfig.MAGNET_PULL_RANGE.get().toString();
                 text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".exclusion"), FontHelper.Palette.STANDARD_CREATE));
                 text.add(Component.empty());
             }
 
             if (Objects.equals(name.replaceAll("_deactivated$", ""), Util.OREMINING_UPGRADE)) {
-                placeholder = KeybindHandler.OREMINE_ANY_BLOCK.getKey().getDisplayName().getString();
+                placeholder = KeybindHandler.ORE_MINE_ANY_BLOCK.getKey().getDisplayName().getString();
             }
 
-            // Add up to 9 conditions/behaviours
+            if (Objects.equals(name.replaceAll("_deactivated$", ""), Util.JUKEBOX_UPGRADE)) {
+                placeholder = ConfigManager.ServerConfig.JUKEBOX_BUFFS_RANGE.get().toString();
+            }
+
+            // Add up to 9 conditions/behaviors
             for (int i = 1; i < 10; i++) {
                 if (!I18n.exists(translateKey + ".condition" + i)) break;
                 text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".condition" + i), FontHelper.Palette.ALL_GRAY));
@@ -110,7 +123,7 @@ public class UpgradeItem extends Item {
                         FontHelper.Palette.STANDARD_CREATE.primary(), FontHelper.Palette.STANDARD_CREATE.highlight(), 1));
             }
 
-            // Add a final condition/behaviour for toggling the upgrade
+            // Add a final condition/behavior for toggling the upgrade
             if (!name.equals(Util.STORAGE_BOX_CAPACITY_UPGRADE) && !name.equals(Util.STORAGE_BOX_VOID_UPGRADE)) {
                 text.addAll(TooltipHelper.cutTextComponent(Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.condition"), FontHelper.Palette.ALL_GRAY));
                 text.addAll(TooltipHelper.cutTextComponent(
@@ -139,7 +152,7 @@ public class UpgradeItem extends Item {
             text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary"), FontHelper.Palette.STANDARD_CREATE));
             text.add(Component.empty());
 
-            // Add a condition/behaviour for toggling the upgrade
+            // Add a condition/behavior for toggling the upgrade
             text.addAll(TooltipHelper.cutTextComponent(Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.condition"), FontHelper.Palette.ALL_GRAY));
             text.addAll(TooltipHelper.cutTextComponent(
                     Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.behaviour"),
@@ -162,5 +175,4 @@ public class UpgradeItem extends Item {
 
         tooltipComponents.addAll(text);
     }
-
 }

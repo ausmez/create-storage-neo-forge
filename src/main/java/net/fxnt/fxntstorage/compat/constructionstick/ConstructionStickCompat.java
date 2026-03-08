@@ -7,5 +7,4 @@ public class ConstructionStickCompat {
         ConstructionStick.containerManager.register(new HandlerBackpack());
         ConstructionStick.containerManager.register(new HandlerStorageBox());
     }
-
 }

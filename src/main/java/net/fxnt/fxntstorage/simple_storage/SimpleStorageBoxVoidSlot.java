@@ -26,5 +26,4 @@ public class SimpleStorageBoxVoidSlot extends SlotItemHandler {
     public int getMaxStackSize(ItemStack stack) {
         return 1;
     }
-
 }

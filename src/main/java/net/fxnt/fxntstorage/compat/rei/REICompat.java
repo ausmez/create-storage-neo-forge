@@ -6,6 +6,7 @@ import me.shedaniel.rei.api.client.registry.transfer.TransferHandlerRegistry;
 import me.shedaniel.rei.forge.REIPluginCommon;
 import net.fxnt.fxntstorage.init.ModTags;
 
+@SuppressWarnings("unused")
 @REIPluginCommon
 public class REICompat implements REIClientPlugin {
 

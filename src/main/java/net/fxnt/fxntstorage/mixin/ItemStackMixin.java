@@ -20,7 +20,11 @@ public class ItemStackMixin {
     @Unique
     private static int MAX_COUNT = 1048576;
 
-    @Inject(method = "<clinit>", at = @At("TAIL"))
+    @Inject(
+            method = "<clinit>",
+            at = @At("TAIL")
+    )
+
     private static void fxnt$overwriteCodec(CallbackInfo ci) {
         CODEC = Codec.lazyInitialized(() ->
                 RecordCodecBuilder.create(instance ->
@@ -33,5 +37,4 @@ public class ItemStackMixin {
                 )
         );
     }
-
 }

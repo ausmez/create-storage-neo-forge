@@ -6,20 +6,20 @@
     "B": {
       "item": "fxntstorage:backpack_blank_upgrade"
     },
+    "D": {
+      "item": "create:mechanical_drill"
+    },
     "I": {
       "item": "create:iron_sheet"
     },
     "R": {
       "item": "create:redstone_link"
-    },
-    "X": {
-      "item": "create:mechanical_drill"
     }
   },
   "pattern": [
     " R ",
     "IBI",
-    " X "
+    "DDD"
   ],
   "result": {
     "count": 1,

@@ -17,7 +17,7 @@ public class StorageBoxMovementBehaviour implements MovementBehaviour {
     public void tick(MovementContext context) {
         @Nullable StorageBoxMountedStorage storage = getMountedStorage(context);
         if (storage != null) {
-            if (!storage.initialized) {
+            if (!storage.isInitialized()) {
                 storage.initBlockEntityData(context);
             }
             if (storage.isDirty()) {
@@ -46,5 +46,4 @@ public class StorageBoxMovementBehaviour implements MovementBehaviour {
     public boolean disableBlockEntityRendering() {
         return true;
     }
-
 }

@@ -73,5 +73,4 @@ public class HandlerStorageBox implements IContainerHandler {
     private void setItemList(ItemStack itemStack, NonNullList<ItemStack> itemStacks) {
         itemStack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(itemStacks));
     }
-
 }

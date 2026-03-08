@@ -15,5 +15,4 @@ public class CarryOnCompat {
                 .forEach(id -> InterModComms.sendTo(ModCompats.CARRY_ON, BLACKLIST_BLOCK, id::toString));
         InterModComms.sendTo(ModCompats.CARRY_ON, BLACKLIST_BLOCK_ENTITY, () -> FXNTStorage.MOD_ID + ":*");
     }
-
 }

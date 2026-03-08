@@ -134,5 +134,4 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
         Direction direction = pState.getValue(FACING);
         return PasserShapeCache.getShape(direction);
     }
-
 }

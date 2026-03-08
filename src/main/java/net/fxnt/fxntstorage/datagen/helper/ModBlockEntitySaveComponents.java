@@ -57,5 +57,4 @@ public class ModBlockEntitySaveComponents implements LootItemCondition {
     public static Builder builder() {
         return () -> INSTANCE;
     }
-
 }

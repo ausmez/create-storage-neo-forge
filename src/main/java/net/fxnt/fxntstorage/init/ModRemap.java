@@ -59,5 +59,4 @@ public class ModRemap {
             FXNTStorage.LOGGER.debug("Remapping {} '{}' to '{}'", registry.key().location(), oldId, newId);
         });
     }
-
 }

@@ -415,7 +415,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
         // Add new filter if it exists
         if (newFilter != null) {
-            registry.register(this, filterItem);
+            registry.register(this, newFilter);
         }
 
         lastRegisteredFilter = newFilter;
@@ -449,5 +449,4 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
         return newHandler;
     }
-
 }

@@ -4,7 +4,7 @@ import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.widget.Bounds;
-import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
 import net.minecraft.client.renderer.Rect2i;
 
@@ -27,6 +27,7 @@ public class EMICompat implements EmiPlugin {
                 backPackScreen.getExclusionZones().stream().map(EMICompat::asEmiRect).forEach(consumer);
             }
         });
-    }
 
+        registry.addDragDropHandler(BackpackScreen.class, new EMIDragDropFilterHandler());
+    }
 }

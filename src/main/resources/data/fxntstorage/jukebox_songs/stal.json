@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:stal",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:invisibility",
+      "amplifier": 0
+    }
+  ]
+}

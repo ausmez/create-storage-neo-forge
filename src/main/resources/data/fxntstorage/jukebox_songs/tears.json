@@ -1,0 +1,10 @@
+{
+  "song": "vanillabackport:tears",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:fire_resistance",
+      "amplifier": 0
+    }
+  ]
+}

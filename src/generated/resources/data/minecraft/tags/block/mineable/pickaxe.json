@@ -4,6 +4,7 @@
     "fxntstorage:smart_passer_block",
     "fxntstorage:storage_controller",
     "fxntstorage:storage_interface",
+    "fxntstorage:storage_interface_filtered",
     "#fxntstorage:storage_box"
   ]
 }

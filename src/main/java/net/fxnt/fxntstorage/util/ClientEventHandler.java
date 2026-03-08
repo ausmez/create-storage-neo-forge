@@ -1,16 +1,23 @@
 package net.fxnt.fxntstorage.util;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.simibubi.create.AllSpecialTextures;
+import net.createmod.catnip.outliner.Outliner;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.main.BackpackMenu;
-import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackManager;
+import net.fxnt.fxntstorage.backpack.upgrade.jukebox.ClientJukeboxHandler;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
-import net.fxnt.fxntstorage.backpack.util.BackpackNetworkHelper;
+import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
 import net.fxnt.fxntstorage.container.util.StorageBoxNetworkHelper;
+import net.fxnt.fxntstorage.controller.StorageControllerHighlight;
+import net.fxnt.fxntstorage.network.packet.PickBlockUpgradePacket;
 import net.fxnt.fxntstorage.network.packet.PlayerInputPacket;
+import net.fxnt.fxntstorage.network.packet.SortInventoryPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -30,8 +37,11 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.Map;
+import java.util.Set;
 
 @EventBusSubscriber(modid = FXNTStorage.MOD_ID, value = Dist.CLIENT)
 public class ClientEventHandler {
@@ -76,7 +86,7 @@ public class ClientEventHandler {
             ItemStack stack = state.getCloneItemStack(hitResult, player.level(), blockPos, player);
 
             if (!stack.isEmpty()) {
-                BackpackNetworkHelper.doPickBlock(stack);
+                PacketDistributor.sendToServer(new PickBlockUpgradePacket(stack));
             } else {
                 FXNTStorage.LOGGER.debug("No valid clone item for block: {}", state.getBlock());
             }
@@ -109,8 +119,19 @@ public class ClientEventHandler {
             if (slot == null) return;
 
             // InventorySorter "overrides" for Backpack and StorageBox
-            if (player.containerMenu instanceof BackpackMenu menu)
-                BackpackNetworkHelper.sortBackpack(slot.index, menu.getSortOrder());
+            if (player.containerMenu instanceof BackpackMenu menu) {
+                BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
+                BackpackSlotLayout.SortRange sortRange = layout.getSortRangeForSlot(slot.index);
+
+                if (!sortRange.isValid()) return;
+
+                PacketDistributor.sendToServer(new SortInventoryPacket(
+                        Util.INV_TYPE_BACKPACK,
+                        sortRange.getStartIndex(),
+                        sortRange.getEndIndex(),
+                        menu.getSortOrder()
+                ));
+            }
             if (player.containerMenu instanceof StorageBoxMenu menu)
                 StorageBoxNetworkHelper.sortStorageBox(slot.index, menu.getContainerSize(), menu.getSortOrder());
             if (player.containerMenu instanceof StorageBoxMountedMenu menu)
@@ -119,10 +140,24 @@ public class ClientEventHandler {
     }
 
     @SubscribeEvent
-    public static void onServerJoin(EntityJoinLevelEvent event) {
-        if (event.getEntity() instanceof LocalPlayer player) {
-            ConfigManager.ClientConfig.sendSettings(player);
+    public static void onServerJoin(ClientPlayerNetworkEvent.LoggingIn event) {
+        LocalPlayer player = Minecraft.getInstance().player;
+
+        ConfigManager.ClientConfig.sendClientSettings();
+        ClientJukeboxHandler.init();
+        if (player != null)
             JetpackManager.addPlayer(player);
+        StorageControllerHighlight.removeAll();
+    }
+
+    @SubscribeEvent
+    public static void onServerLeave(ClientPlayerNetworkEvent.LoggingOut event) {
+        LocalPlayer player = event.getPlayer();
+        LocalPlayer localPlayer = Minecraft.getInstance().player;
+
+        if (player != null && localPlayer != null && player.getUUID().equals(localPlayer.getUUID())) {
+            ClientSettings.remove(player.getUUID());
+            ClientJukeboxHandler.stopAllMusic();
         }
     }
 
@@ -131,4 +166,24 @@ public class ClientEventHandler {
         JetpackManager.addPlayer(event.getNewPlayer());
     }
 
+    @SubscribeEvent
+    public static void onRenderLevel(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
+
+        Map<BlockPos, Set<BlockPos>> highlights = StorageControllerHighlight.getAll();
+        if (highlights.isEmpty()) return;
+
+        highlights.forEach(ClientEventHandler::renderConnectedBoxes);
+    }
+
+    private static void renderConnectedBoxes(BlockPos controllerPos, Set<BlockPos> components) {
+        Outliner outliner = Outliner.getInstance();
+        Object slot = "network_cluster_" + controllerPos.asLong();
+
+        outliner.showCluster(slot, components)
+                .colored(0xddc166)
+                .withFaceTextures(AllSpecialTextures.GLUE, AllSpecialTextures.HIGHLIGHT_CHECKERED)
+                .disableLineNormals()
+                .lineWidth(1 / 24f);
+    }
 }

@@ -127,5 +127,4 @@ public class SimpleStorageBoxScreen extends AbstractContainerScreen<SimpleStorag
 
         poseStack.popPose();
     }
-
 }

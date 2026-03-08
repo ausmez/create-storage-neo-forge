@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:relic",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:haste",
+      "amplifier": 0
+    }
+  ]
+}

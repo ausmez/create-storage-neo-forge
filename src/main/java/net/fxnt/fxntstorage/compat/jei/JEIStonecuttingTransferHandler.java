@@ -11,11 +11,11 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import mezz.jei.common.transfer.RecipeTransferOperationsResult;
 import mezz.jei.common.transfer.RecipeTransferUtil;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
-import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.network.packet.TransferRecipePacket;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -72,10 +72,11 @@ public class JEIStonecuttingTransferHandler implements IRecipeTransferHandler<St
         }
 
         if (!backpack.isEmpty()) {
-            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IBackpackContainer backpackContainer = BackpackContainer.Cache.getOrCreateWornBackpack(player, backpack);
             IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
+            BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
-            for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.ITEM_SLOT_END_RANGE; i++) {
+            for (int i : layout.items().range()) {
                 ItemStack stack = itemHandler.getStackInSlot(i);
                 if (!stack.isEmpty())
                     availableItemStacks.put(new SlotItemHandler(itemHandler, i, 0, 0), stack);

@@ -1,6 +1,7 @@
 {
   "values": [
     "fxntstorage:storage_controller",
-    "fxntstorage:storage_interface"
+    "fxntstorage:storage_interface",
+    "fxntstorage:storage_interface_filtered"
   ]
 }

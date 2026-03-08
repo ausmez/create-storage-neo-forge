@@ -2,13 +2,26 @@ package net.fxnt.fxntstorage.backpack.util;
 
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
-import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
+import net.fxnt.fxntstorage.init.ModMenuTypes;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.NotNull;
 import top.theillusivec4.curios.api.CuriosApi;
@@ -16,9 +29,13 @@ import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
 import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 import top.theillusivec4.curios.api.type.inventory.IDynamicStackHandler;
 
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class BackpackHelper {
+    private static final BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
     public static boolean isBackpackCuriosSlotVisible(Player player) {
         if (player == null) return false;
@@ -31,7 +48,7 @@ public class BackpackHelper {
 
     public static boolean isWearingBackpack(Player player, boolean checkVisibility) {
         ItemStack itemStack = getEquippedBackpackStack(player);
-        if (FXNTStorage.curiosLoaded && checkVisibility
+        if (FXNTStorage.CURIOS_LOADED && checkVisibility
                 && !(player.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem)) {
             return BackpackHelper.isBackpackCuriosSlotVisible(player);
         }
@@ -42,11 +59,34 @@ public class BackpackHelper {
         return isWearingBackpack(player, false);
     }
 
+    @OnlyIn(Dist.CLIENT)
+    public static ItemStack getEquippedBackpackStack(LocalPlayer player) {
+        if (player == null) return ItemStack.EMPTY;
+
+        // Check chest slot first
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (chestStack.getItem() instanceof BackpackItem) {
+            return chestStack;
+        }
+
+        // Check Curios
+        if (FXNTStorage.CURIOS_LOADED) {
+            Optional<ItemStack> backSlot = CuriosApi.getCuriosInventory(player)
+                    .flatMap(handler -> handler.getStacksHandler("back"))
+                    .map(handler -> handler.getStacks().getStackInSlot(0));
+            return backSlot
+                    .filter(stack -> stack.getItem() instanceof BackpackItem)
+                    .orElse(ItemStack.EMPTY);
+        }
+
+        return ItemStack.EMPTY;
+    }
+
     public static ItemStack getEquippedBackpackStack(LivingEntity player) {
         if (player == null) return ItemStack.EMPTY;
 
         // If Curios is not loaded or not present, check the chest slot directly
-        if (!FXNTStorage.curiosLoaded) return checkChestSlot(player);
+        if (!FXNTStorage.CURIOS_LOADED) return checkChestSlot(player);
 
         // Get the Curios item handler
         Optional<ICuriosItemHandler> curios = CuriosApi.getCuriosInventory(player);
@@ -81,7 +121,7 @@ public class BackpackHelper {
         }
 
         // If Curios is not installed or the "back" slot is unavailable, try chest slot
-        if (!FXNTStorage.curiosLoaded) return equipInChestSlot(player, backpack);
+        if (!FXNTStorage.CURIOS_LOADED) return equipInChestSlot(player, backpack);
 
         // Get the Curios item handler
         Optional<ICuriosItemHandler> curios = CuriosApi.getCuriosInventory(player);
@@ -132,71 +172,112 @@ public class BackpackHelper {
         return false;
     }
 
-    public int getItemSlotFromContainer(@NotNull IBackpackContainer container, Item itemToFind) {
-        for (int i = 0; i < container.getItemHandler().getSlots(); i++) {
-            ItemStack slotItem = container.getItemHandler().getStackInSlot(i);
-            if (slotItem.is(itemToFind)) {
-                return i;
+    public static boolean itemEntityToBackpack(@NotNull IBackpackContainer container, @NotNull ItemEntity itemEntity, @Nullable Player player) {
+        ItemStack stack = itemEntity.getItem();
+        if (stack.isEmpty()) return false;
+
+        final IItemHandlerModifiable handler = container.getItemHandler();
+
+        boolean changed = false;
+        int maxStackSize = container.getStackMultiplier() * stack.getMaxStackSize();
+        List<Integer> changedSlots = new ArrayList<>();
+
+        // If matching slot stack exists
+        if (!stack.isDamageableItem() && !stack.isBarVisible()) {
+            for (int i : layout.items().range()) {
+                ItemStack slotStack = handler.getStackInSlot(i);
+                if (slotStack.isEmpty()) continue;
+
+                if (!ItemStack.isSameItemSameComponents(stack, slotStack)) continue;
+
+                int space = maxStackSize - slotStack.getCount();
+                if (space <= 0) continue;
+
+                int toMove = Math.min(space, stack.getCount());
+                slotStack.grow(toMove);
+                stack.shrink(toMove);
+
+                changedSlots.add(i);
+
+                changed = true;
             }
         }
-        return -1;
+
+        // If matching slot doesn't exist
+        if (!stack.isEmpty()) {
+            for (int i : layout.items().range()) {
+                ItemStack slotStack = handler.getStackInSlot(i);
+                if (!slotStack.isEmpty()) continue;
+
+                int toMove = Math.min(stack.getCount(), maxStackSize);
+                ItemStack inserted = stack.split(toMove);
+                handler.setStackInSlot(i, inserted);
+                changedSlots.add(i);
+
+                changed = true;
+                break;
+            }
+        }
+
+        if (changed) {
+            container.setDataChanged();
+
+            if (player instanceof ServerPlayer sp && sp.containerMenu instanceof BackpackMenu menu
+                    && menu.container == container) {
+                for (int slotIndex : changedSlots) {
+                    ItemStack slotStack = handler.getStackInSlot(slotIndex);
+                    sp.connection.send(new ClientboundContainerSetSlotPacket(
+                            menu.containerId,
+                            menu.getStateId(),
+                            slotIndex,
+                            slotStack
+                    ));
+                }
+            }
+        }
+
+        return changed;
     }
 
-    public boolean itemEntityToBackpack(@NotNull IBackpackContainer container, @NotNull ItemEntity itemEntity, int startIndex, int endIndex) {
-        ItemStack newStack = itemEntity.getItem();
-        final IItemHandlerModifiable itemHandler = container.getItemHandler();
+    public static void openBackpackFromInventory(@NotNull ServerPlayer player, BackpackMenu.BackpackType backpackType) {
+        if (player.level().isClientSide) return;
 
-        if (endIndex == -1) endIndex = itemHandler.getSlots();
+        ItemStack itemStack = ItemStack.EMPTY;
+        IBackpackContainer container = null;
 
-        boolean success = false;
-        int i = startIndex;
-        if (!newStack.isDamageableItem() && newStack.getComponentsPatch().isEmpty() && !newStack.isBarVisible()) {
-            // If matching slot stack exists
-            while (!newStack.isEmpty() && i < endIndex) {
-                ItemStack itemStack = itemHandler.getStackInSlot(i);
-                if (!itemStack.isEmpty() && ItemStack.isSameItemSameComponents(newStack, itemStack)) {
-                    int totalCount = itemStack.getCount() + newStack.getCount();
-                    int maxPutSize = Math.max(newStack.getMaxStackSize(), container.getStackMultiplier() * newStack.getMaxStackSize());
-                    int availableSpace = maxPutSize - itemStack.getCount();
-
-                    if (totalCount <= maxPutSize) {
-                        newStack.setCount(0);
-                        itemStack.setCount(totalCount);
-                        success = true;
-                    } else if (availableSpace < newStack.getMaxStackSize()) {
-                        newStack.shrink(availableSpace);
-                        itemStack.setCount(maxPutSize);
-                        success = true;
-                    }
-                }
-                ++i;
+        switch (backpackType) {
+            case WORN -> {
+                itemStack = BackpackHelper.getEquippedBackpackStack(player);
+                container = BackpackContainer.Cache.getOrCreateWornBackpack(player, itemStack);
+            }
+            case ITEM -> {
+                itemStack = player.getItemInHand(InteractionHand.MAIN_HAND);
+                container = new BackpackContainer(player, itemStack);
             }
         }
-        if (!newStack.isEmpty()) {
-            i = startIndex;
-            // If matching slot doesn't exist
-            while (i < endIndex) {
-                ItemStack itemStack = container.getItemHandler().getStackInSlot(i);
-                if (itemStack.isEmpty()) {
 
-                    int maxPutSize = Math.max(newStack.getMaxStackSize(), container.getStackMultiplier() * newStack.getMaxStackSize());
-                    int availableSpace = maxPutSize - itemStack.getCount();
+        // No backpack equipped in either back, chest, or hand
+        if (itemStack.isEmpty() || container == null) return;
 
-                    if (newStack.getCount() > availableSpace) {
-                        ItemStack inputStack = newStack.split(container.getStackMultiplier() * newStack.getMaxStackSize());
-                        itemHandler.setStackInSlot(i, inputStack);
-                    } else {
-                        ItemStack inputStack = newStack.split(newStack.getCount());
-                        itemHandler.setStackInSlot(i, inputStack);
-                    }
-                    success = true;
-                    break;
-                }
-                ++i;
+        ItemStack backpack = itemStack;
+        IBackpackContainer finalContainer = container;
+        player.openMenu(new MenuProvider() {
+            @Override
+            public @NotNull Component getDisplayName() {
+                return backpack.getHoverName();
             }
-        }
-        container.setDataChanged();
-        return success;
+
+            @Override
+            public @NotNull AbstractContainerMenu createMenu(int containerId, @NotNull Inventory inventory, @NotNull Player player) {
+                return new BackpackMenu(
+                        ModMenuTypes.BACKPACK_MENU.get(),
+                        containerId,
+                        player.getInventory(),
+                        finalContainer,
+                        backpackType,
+                        null
+                );
+            }
+        }, buf -> buf.writeEnum(backpackType));
     }
-
 }

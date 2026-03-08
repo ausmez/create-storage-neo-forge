@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:precipice",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:resistance",
+      "amplifier": 0
+    }
+  ]
+}

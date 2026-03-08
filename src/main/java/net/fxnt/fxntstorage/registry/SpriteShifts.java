@@ -26,5 +26,4 @@ public class SpriteShifts {
                 ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "block/casings/" + name),
                 ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "block/casings/" + name + "_connected"));
     }
-
 }

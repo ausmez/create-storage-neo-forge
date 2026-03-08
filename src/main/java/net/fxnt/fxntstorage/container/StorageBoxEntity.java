@@ -1,21 +1,26 @@
 package net.fxnt.fxntstorage.container;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchObservable;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.inventory.VersionedInventoryTrackerBehaviour;
 import com.simibubi.create.foundation.utility.CreateLang;
+import dev.engine_room.flywheel.lib.transform.TransformStack;
 import io.netty.buffer.Unpooled;
+import net.createmod.catnip.math.AngleHelper;
+import net.createmod.catnip.math.VecHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
-import net.fxnt.fxntstorage.container.util.StorageBoxFilteringBox;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
@@ -24,6 +29,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
@@ -34,10 +40,11 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.util.Lazy;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -46,6 +53,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static net.fxnt.fxntstorage.container.StorageBox.VOID_UPGRADE;
 
@@ -62,8 +70,13 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     private VersionedInventoryTrackerBehaviour invVersionTracker;
 
     private final ItemStackHandler itemHandler = createItemHandler();
-    private final Lazy<IItemHandlerModifiable> lazyItemHandler = Lazy.of(() -> itemHandler);
     private SortOrder sortOrder;
+
+    private record StorageStats(int stored, int capacity) {
+        float percentage() {
+            return capacity == 0 ? 0f : (stored * 100f) / capacity;
+        }
+    }
 
     public StorageBoxEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -86,12 +99,11 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
             @Override
             public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-                // Void mode check - might be a slight delay between this check and percentageUsed being updated
-                ItemStack amount = super.insertItem(slot, stack, simulate);
-                if (percentageUsed == 100 && voidUpgrade) {
+                ItemStack result = super.insertItem(slot, stack, simulate);
+                if (voidUpgrade && calculatePercentageUsed() >= 100f && filterTest(result)) {
                     return ItemStack.EMPTY;
                 }
-                return amount;
+                return result;
             }
 
             @Override
@@ -104,7 +116,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     public IItemHandlerModifiable getItemHandler() {
-        return lazyItemHandler.get();
+        return itemHandler;
     }
 
     public void initializeEntity(int slotCount) {
@@ -115,9 +127,10 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     public void onLoad() {
         super.onLoad();
-        if (getLevel() != null && getLevel().isClientSide) {
-            getLevel().sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), Block.UPDATE_ALL);
-        }
+        if (level != null && level.isClientSide())
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        if (level instanceof ServerLevel serverLevel)
+            serverLevel.getLightEngine().checkBlock(worldPosition); //Re-Calc light levels
     }
 
     @Override
@@ -139,7 +152,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
     @Override
     public Component getName() {
-        return customName;
+        return customName != null ? customName : getBlockState().getBlock().getName();
     }
 
     @Override
@@ -273,14 +286,14 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
     @Override
     public ItemStack removeItem(int pSlot, int pAmount) {
-        itemHandler.extractItem(pSlot, pAmount, false);
-        return itemHandler.getStackInSlot(pSlot);
+        return itemHandler.extractItem(pSlot, pAmount, false);
     }
 
     @Override
     public ItemStack removeItemNoUpdate(int pSlot) {
-        itemHandler.insertItem(pSlot, ItemStack.EMPTY, false);
-        return itemHandler.getStackInSlot(pSlot);
+        ItemStack existing = itemHandler.getStackInSlot(pSlot).copy();
+        itemHandler.setStackInSlot(pSlot, ItemStack.EMPTY);
+        return existing;
     }
 
     @Override
@@ -306,48 +319,28 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         return Math.round(calculatePercentageUsed());
     }
 
-    private int calculateStoredAmount() {
-        int storedAmount = 0;
+    private StorageStats calculateStats() {
+        int stored = 0;
+        int capacity = 0;
+
         for (int i = 0; i < itemHandler.getSlots(); i++) {
-            storedAmount += itemHandler.getStackInSlot(i).getCount();
+            ItemStack stack = itemHandler.getStackInSlot(i);
+            stored += stack.getCount();
+            capacity += stack.isEmpty() ? 64 : stack.getMaxStackSize();
         }
-        return storedAmount;
+        return new StorageStats(stored, capacity);
     }
 
-    private int calculateMaxValue() {
-        int totalSpace = 0;
-        int maxItemStackSize = this.getMaxStackSize();
-        for (int i = 0; i < itemHandler.getSlots(); ++i) {
-            if (!itemHandler.getStackInSlot(i).isEmpty()) {
-                maxItemStackSize = itemHandler.getStackInSlot(i).getMaxStackSize();
-            }
-            totalSpace += maxItemStackSize;
-        }
-        return totalSpace;
+    private int calculateStoredAmount() {
+        return calculateStats().stored();
     }
 
-    private int calculateCurrentValue() {
-        int usedSpace = 0;
-        for (int i = 0; i < itemHandler.getSlots(); ++i) {
-            usedSpace += itemHandler.getStackInSlot(i).getCount();
-        }
-        return usedSpace;
+    private int calculateMaxCapacity() {
+        return calculateStats().capacity();
     }
 
     public float calculatePercentageUsed() {
-        int totalSpace = 0;
-        int usedSpace = 0;
-
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            var stack = itemHandler.getStackInSlot(i);
-            int maxStackSize = stack.isEmpty() ? 64 : stack.getMaxStackSize();
-
-            totalSpace += maxStackSize;
-            usedSpace += stack.getCount();
-        }
-        if (totalSpace == 0) return 0;
-
-        return ((float) usedSpace / totalSpace) * 100;
+        return calculateStats().percentage();
     }
 
     @Override
@@ -374,7 +367,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     public void tick(Level pLevel, BlockPos pPos, BlockState pState) {
         if (!pLevel.isClientSide) {
 
-            if (tickCount++ < ConfigManager.CommonConfig.STORAGE_BOX_UPDATE_TIME.get()) return;
+            if (tickCount++ < ConfigManager.ServerConfig.STORAGE_BOX_UPDATE_TIME.get()) return;
             tickCount = 0;
 
             BlockState currentState = this.getBlockState();
@@ -507,7 +500,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         }
     }
 
-    public void setVoidUpgrade(Boolean bool) {
+    public void setVoidUpgrade(boolean bool) {
         if (this.voidUpgrade != bool) this.toggleVoidUpgrade();
     }
 
@@ -521,7 +514,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     // ThresholdSwitchObservable
     @Override
     public int getMaxValue() {
-        return calculateMaxValue();
+        return calculateMaxCapacity();
     }
 
     @Override
@@ -531,7 +524,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
     @Override
     public int getCurrentValue() {
-        return calculateCurrentValue();
+        return calculateStoredAmount();
     }
 
     @Override
@@ -545,4 +538,45 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         }
     }
 
+    public static class StorageBoxFilteringBox extends ValueBoxTransform.Sided {
+
+        @Override
+        protected Vec3 getSouthLocation() {
+            return Vec3.ZERO;
+        }
+
+        @Override
+        public Vec3 getLocalOffset(LevelAccessor level, BlockPos pos, BlockState state) {
+            Direction side = getSide();
+            float horizontalAngle = AngleHelper.horizontalAngle(side);
+            return VecHelper.rotateCentered(VecHelper.voxelSpace(8, 10.8, 14.5f), horizontalAngle, Direction.Axis.Y);
+        }
+
+        @Override
+        public void rotate(LevelAccessor level, BlockPos pos, BlockState state, PoseStack ms) {
+
+            Direction facing = StorageBox.getDirectionFacing(state);
+
+            if (facing != null && facing.getAxis().isVertical()) {
+                super.rotate(level, pos, state, ms);
+                return;
+            }
+
+            if (state.getBlock() instanceof StorageBox) {
+                super.rotate(level, pos, state, ms);
+                TransformStack.of(ms).rotateX(0f);
+                return;
+            }
+            float yRot = AngleHelper.horizontalAngle(Objects.requireNonNull(StorageBox.getDirectionFacing(state))) + (facing == Direction.DOWN ? 180 : 0);
+            TransformStack.of(ms).rotateYDegrees(yRot).rotateXDegrees(facing == Direction.DOWN ? -90 : 90);
+        }
+
+        @Override
+        protected boolean isSideActive(BlockState state, Direction direction) {
+            Direction facing = StorageBox.getDirectionFacing(state);
+            if (facing == null) return false;
+            if (facing.getAxis().isVertical()) return direction.getAxis().isHorizontal();
+            return direction == facing;
+        }
+    }
 }

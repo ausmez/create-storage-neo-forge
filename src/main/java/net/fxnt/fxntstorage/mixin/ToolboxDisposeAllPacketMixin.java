@@ -3,11 +3,11 @@ package net.fxnt.fxntstorage.mixin;
 import com.simibubi.create.content.equipment.toolbox.ToolboxBlockEntity;
 import com.simibubi.create.content.equipment.toolbox.ToolboxDisposeAllPacket;
 import com.simibubi.create.content.equipment.toolbox.ToolboxInventory;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
-import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
-import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.util.Util;
+import net.fxnt.fxntstorage.config.ClientSettings;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -38,16 +38,15 @@ public abstract class ToolboxDisposeAllPacketMixin {
         ToolboxInventory toolboxInv = ((ToolboxBlockEntityMixin) toolbox).fxnt$getInventory();
 
         // Check equipped backpack for toolbox items
-        if (player.getPersistentData()
-                .getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)
-                .getBoolean("CheckBackpackForToolboxItems")
+        if (ClientSettings.getBoolean(player.getUUID(), "CheckBackpackForToolboxItems")
                 && BackpackHelper.isWearingBackpack(player)) {
 
             ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
-            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IBackpackContainer backpackContainer = BackpackContainer.Cache.getOrCreateWornBackpack(player, backpack);
             IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
+            BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
-            for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.ITEM_SLOT_END_RANGE; i++) {
+            for (int i : layout.items().range()) {
                 ItemStack stack = itemHandler.getStackInSlot(i);
                 ItemStack remainder = ItemHandlerHelper.insertItemStacked(toolboxInv, stack, false);
                 if (remainder.getCount() != stack.getCount()) {
@@ -56,6 +55,5 @@ public abstract class ToolboxDisposeAllPacketMixin {
                 }
             }
         }
-
     }
 }

@@ -35,7 +35,7 @@ public class CuriosCompat {
 
     public static void keepBackpack(DropRulesEvent event) {
         if (event.getEntity() instanceof Player player) {
-            if (ConfigManager.CommonConfig.CURIOS_KEEP_BACKPACK.get()) {
+            if (ConfigManager.ServerConfig.CURIOS_KEEP_BACKPACK.get()) {
                 CuriosApi.getCuriosInventory(player).flatMap(curiosInv -> curiosInv.getStacksHandler("back")).ifPresent(stacksHandler -> {
                     for (int i = 0; i < stacksHandler.getSlots(); ++i) {
                         if (stacksHandler.getStacks().getStackInSlot(i).getItem() instanceof BackpackItem) {
@@ -84,7 +84,5 @@ public class CuriosCompat {
         public boolean canSync(SlotContext slotContext) {
             return true;
         }
-
     }
-
 }

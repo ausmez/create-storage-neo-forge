@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:wait",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:water_breathing",
+      "amplifier": 0
+    }
+  ]
+}

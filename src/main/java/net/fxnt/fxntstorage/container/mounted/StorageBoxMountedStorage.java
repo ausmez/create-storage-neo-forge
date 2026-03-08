@@ -49,7 +49,7 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
             StorageBoxMountedStorage::new, storage -> storage.wrapped
     ).fieldOf("value");
 
-    public boolean initialized = false;
+    private boolean initialized = false;
     private boolean dirty = false;
 
     private FilterItemStack filterItem = FilterItemStack.empty();
@@ -283,6 +283,10 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
         return this.dirty;
     }
 
+    public boolean isInitialized() {
+        return this.initialized;
+    }
+
     public void markClean() {
         this.dirty = false;
     }
@@ -290,5 +294,4 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
     public void markDirty() {
         this.dirty = true;
     }
-
 }

@@ -9,10 +9,12 @@ import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageInterface;
+import net.fxnt.fxntstorage.controller.StorageInterfaceFiltered;
 import net.fxnt.fxntstorage.passer.PasserBlock;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -136,7 +138,7 @@ public class ModBlockstateHelper {
         return (ctx, prov) -> {
             prov.models().cube(
                     "storage_controller",
-                    modLoc("block/storage_controller_top"),
+                    ResourceLocation.fromNamespaceAndPath("create", "block/dark_metal_block"),
                     modLoc("block/storage_controller_top"),
                     modLoc("block/storage_controller_front"),
                     modLoc("block/storage_controller_side"),
@@ -173,9 +175,18 @@ public class ModBlockstateHelper {
         return (ctx, prov) -> prov.simpleBlock(ctx.get(),
                 prov.models().cubeBottomTop("storage_interface",
                                 modLoc("block/storage_interface_side"),
-                                modLoc("block/storage_interface_top"),
+                                ResourceLocation.fromNamespaceAndPath("create", "block/dark_metal_block"),
                                 modLoc("block/storage_interface_top"))
                         .texture("particle", modLoc("block/storage_interface_top")));
+    }
+
+    public static NonNullBiConsumer<DataGenContext<Block, StorageInterfaceFiltered>, RegistrateBlockstateProvider> storageInterfaceFiltered() {
+        return (ctx, prov) -> prov.simpleBlock(ctx.get(),
+                    prov.models().cubeBottomTop("storage_interface_filtered",
+                            modLoc("block/storage_interface_filtered"),
+                            ResourceLocation.fromNamespaceAndPath("create", "block/dark_metal_block"),
+                            modLoc("block/storage_controller_top")
+                    ).texture("particle", modLoc("block/storage_interface_top")));
     }
 
     public static NonNullBiConsumer<DataGenContext<Block, PasserBlock>, RegistrateBlockstateProvider> passerBlock(boolean isSmart) {
@@ -218,5 +229,4 @@ public class ModBlockstateHelper {
     private static int getRotationForDirection(Direction dir) {
         return (dir.get2DDataValue() * 90 + 180) % 360;
     }
-
 }

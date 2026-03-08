@@ -1,5 +1,78 @@
 # Changelog
 
+## 1.2.0 - 2026-03-08
+
+> **Note:** This is the final feature update supporting Minecraft 1.20.1, aligning with the Create mod team’s support lifecycle.
+
+> **⚠ Warning:** The backpack system has been significantly rewritten in this release. **Please back up your world before updating.**
+> Backpack data structures have changed and worlds without a backup may experience data loss on existing backpacks.
+
+## New Features
+- **Backpack Jukebox Upgrade**
+  - Adds a functional jukebox to your backpack.
+  - Provides configurable buffs while music is playing (range and toggle options available).
+  - Supports muting without stopping playback or disabling buffs.
+- **Backpack Mechanical Heart Upgrade**
+  - Grants bonus health while the backpack is worn.
+  - Bonus heart amount is configurable (default: **+5 hearts**).
+- **Simple Storage Filtered Interface**
+  - Variant of the Storage Interface with a built-in Create filter slot.
+  - Useful for controlling which items pass through when interacting with vanilla automation components.
+  - Supports configurable scope: **filtered items only**, or **filtered items + empty storage**.
+
+## Changes
+### **Backpack Upgrade Panels**
+Backpack upgrades now use dedicated UI panels within the backpack screen for upgrade settings.
+All per-upgrade options previously scattered across different menus are now accessible on a per-backpack basis.
+
+- **Magnet Upgrade**
+  - Added configurable filters (supports Create list / attribute / package filters).
+  - Option to ignore items processed by an Encased Fan moved to the panel UI.
+- **Tool Swap Upgrade**
+  - Added option to prioritize swords over axes as the primary weapon.
+  - Silk Touch preference moved to the panel UI.
+- **Jetpack Upgrade**
+  - Hover bobbing toggle moved to the panel UI.
+  - HUD airtime overlay toggle moved to the panel UI.
+- **Ore Mining Upgrade**
+  - Added toggle for ore vein preview highlighting.
+  - Added option to restrict mining to ores only.
+- **Feeder Upgrade**
+  - Added configurable filters (supports Create list / attribute / package filters).
+  - Chorus Fruit feeding toggle moved to the panel UI.
+  - Activation message toggle moved to the panel UI.
+
+#### **Storage Network Changes**
+- Storage Controllers can now lock or unlock empty Storage Boxes on a per-network basis.
+- Storage networks can now be visually highlighted to show all connected storage *(Right-click a Storage Controller with a wrench)*.
+- Filter item render distance on Storage and Simple Storage Boxes now uses Create’s configuration settings.
+
+#### **Other Changes**
+- Moved many configuration options from Common to Server settings.
+- Passer Blocks can now connect to Package Ports (Frog and Post).
+- Updated recipe for the Ore Mining Upgrade.
+- Flight Upgrade renamed to Jetpack Upgrade.
+- Migrated player settings where possible following internal persistent data restructuring.
+- Optimized the Storage Network search algorithm for improved performance.
+
+## Bug Fixes
+- Fixed Storage and Simple Storage Boxes rendering incorrectly in the Block Rotation menu.
+- Fixed lighting issues on Storage and Simple Storage Boxes.
+- Fixed Smart Passer deleting items when transferring exact amounts (#37).
+- Fixed item swap issue when swapping between backpack and offhand / hotbar slots (#40).
+- Fixed crash when Forbidden and Arcanus mod present (including ATM10) (#42)
+- Fixed Magnet Upgrade picking up items when backpack had no free slots.
+- Fixed Magnet Upgrade sometimes picking up items processed by an Encased Fan despite configuration.
+- Fixed potential server crash when double-clicking a Storage Controller.
+- Fixed potential endless loop in Storage Network searches.
+- Fixed possible NPE with custom names on Storage Boxes.
+- Fixed incorrect text appearing in some Ponder scenes.
+- Fixed Simple Storage Box filter not updating correctly when mounted on a contraption.
+- Fixed Storage Boxes ignoring the Filter Item while Void Mode is enabled.
+- Fixed missing sound when equipping a Backpack from the ground. [NeoForge]
+
+---
+
 ## 1.1.7 - 2025-11-29
 
 ## Bug Fixes

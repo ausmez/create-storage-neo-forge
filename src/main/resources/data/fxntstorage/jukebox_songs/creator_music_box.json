@@ -1,0 +1,14 @@
+{
+  "song": "minecraft:creator_music_box",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:regeneration",
+      "amplifier": 0
+    },
+    {
+      "effect": "minecraft:absorption",
+      "amplifier": 0
+    }
+  ]
+}

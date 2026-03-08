@@ -24,5 +24,4 @@ public class StorageBoxNetworkHelper {
 
         PacketDistributor.sendToServer(new SortInventoryPacket(Util.INV_TYPE_STORAGE_BOX, slotStart, slotEnd, pSortOrder));
     }
-
 }

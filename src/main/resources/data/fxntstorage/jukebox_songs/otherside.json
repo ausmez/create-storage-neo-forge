@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:otherside",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:regeneration",
+      "amplifier": 1
+    }
+  ]
+}

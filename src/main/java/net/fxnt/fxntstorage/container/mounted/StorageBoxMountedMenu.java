@@ -35,6 +35,9 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class StorageBoxMountedMenu extends AbstractContainerMenu {
+    private static final String TAG_SORT_ORDER = "SortOrder";
+    private static final String TAG_FILTER = "Filter";
+
     private final Container container;
     private final CompoundTag nbt;
     private final Player player;
@@ -103,15 +106,15 @@ public class StorageBoxMountedMenu extends AbstractContainerMenu {
     }
 
     public SortOrder getSortOrder() {
-        return SortOrder.valueOf(nbt.getString("SortOrder"));
+        return SortOrder.valueOf(nbt.getString(TAG_SORT_ORDER));
     }
 
     public void setSortOrder(SortOrder order) {
-        nbt.putString("SortOrder", order.name());
+        nbt.putString(TAG_SORT_ORDER, order.name());
         if (player.level().isClientSide) {
             PacketDistributor.sendToServer(new SetSortOrderPacket(getSortOrder()));
         } else {
-            updateContraptionNbt(tag -> tag.putString("SortOrder", order.name()));
+            updateContraptionNbt(tag -> tag.putString(TAG_SORT_ORDER, order.name()));
         }
     }
 
@@ -132,7 +135,7 @@ public class StorageBoxMountedMenu extends AbstractContainerMenu {
     }
 
     public boolean filterTest(ItemStack stack) {
-        ItemStack filterItem = ItemStack.parseOptional(player.registryAccess(), nbt.getCompound("Filter"));
+        ItemStack filterItem = ItemStack.parseOptional(player.registryAccess(), nbt.getCompound(TAG_FILTER));
         return FilterItemStack.of(filterItem).test(player.level(), stack);
     }
 
@@ -254,13 +257,11 @@ public class StorageBoxMountedMenu extends AbstractContainerMenu {
         ));
         MountedItemStorage storage = contraption.getStorage().getMountedItems().storages.get(localPos);
         if (storage != null && tag != null) {
-            ((StorageBoxMountedStorage) storage).setSortOrder(SortOrder.valueOf(tag.getString("SortOrder")));
+            ((StorageBoxMountedStorage) storage).setSortOrder(SortOrder.valueOf(tag.getString(TAG_SORT_ORDER)));
         }
-//        contraption.resetClientContraption();
     }
 
     private void setStorageDirty() {
         PacketDistributor.sendToServer(new SetMountedStorageDirtyPacket(contraptionId, localPos));
     }
-
 }

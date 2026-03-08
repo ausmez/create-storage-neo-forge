@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:ward",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:strength",
+      "amplifier": 1
+    }
+  ]
+}

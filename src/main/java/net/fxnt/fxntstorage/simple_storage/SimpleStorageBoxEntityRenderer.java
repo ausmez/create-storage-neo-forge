@@ -9,7 +9,7 @@ import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -20,11 +20,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
 
 import static net.fxnt.fxntstorage.util.RendererHelper.*;
 
@@ -56,8 +54,8 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         poseStack.pushPose();
         poseStack.translate(context.localPos.getX() + 0.5f, context.localPos.getY() + 0.5f, context.localPos.getZ() + 0.5f);
-        poseStack.mulPose(Axis.YP.rotation(SIDE_ROT_Y[side.ordinal()]));
-        poseStack.translate(-0.5f, 0, -0.5f);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-side.toYRot()));
+        poseStack.translate(0f, 0f, 0.5f - 0.95f / 16f);
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
@@ -76,10 +74,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         int color = getColorForDistance(distance);
 
         BlockPos lightPos = context.contraption.entity.blockPosition().offset(context.localPos).relative(side);
-
-        int blockLight = context.world.getBrightness(LightLayer.BLOCK, lightPos);
-        int skyLight = context.world.getBrightness(LightLayer.SKY, lightPos);
-        int lightLevel = LightTexture.pack(blockLight, skyLight);
+        int lightLevel = LevelRenderer.getLightColor(context.world, lightPos);
 
         renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
         renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
@@ -125,17 +120,13 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         BlockState blockState = blockEntity.getBlockState();
         Direction side = blockState.getValue(HorizontalDirectionalBlock.FACING);
 
+        poseStack.pushPose();
         poseStack.translate(0.5f, 0.5f, 0.5f);
-        poseStack.mulPose((new Matrix4f()).rotateYXZ(SIDE_ROT_Y[side.ordinal()], 0, 0));
-        poseStack.translate(-0.5f, 0, -0.5f);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-side.toYRot()));
+        poseStack.translate(0f, 0f, 0.5f - 0.95f / 16f);
 
         int color = getColorForDistance(distance);
-
-        BlockPos lightPos = blockEntity.getBlockPos().relative(side);
-
-        int blockLight = level.getBrightness(LightLayer.BLOCK, lightPos);
-        int skyLight = level.getBrightness(LightLayer.SKY, lightPos);
-        int lightLevel = LightTexture.pack(blockLight, skyLight);
+        int lightLevel = LevelRenderer.getLightColor(level, blockEntity.getBlockPos());
 
         renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
         renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
@@ -144,6 +135,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         if (!filterItem.isEmpty() || blockEntity.voidUpgrade) {
             renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, lightLevel, blockEntity.voidUpgrade);
         }
-    }
 
+        poseStack.popPose();
+    }
 }

@@ -17,5 +17,4 @@ public class ModRecipes {
     public static void register(RegisterEvent.RegisterHelper<RecipeSerializer<?>> helper) {
         helper.register(BACKPACK_RECIPE_KEY, BackpackRecipe.Serializer.INSTANCE);
     }
-
 }

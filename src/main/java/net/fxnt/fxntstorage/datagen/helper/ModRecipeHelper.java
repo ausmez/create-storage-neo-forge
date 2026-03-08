@@ -10,6 +10,7 @@ import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageInterface;
+import net.fxnt.fxntstorage.controller.StorageInterfaceFiltered;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
 import net.fxnt.fxntstorage.passer.PasserBlock;
@@ -192,4 +193,16 @@ public class ModRecipeHelper {
                 .save(prov, modLoc("crafting_shaped/" + ctx.getName()));
     }
 
+    public static NonNullBiConsumer<DataGenContext<Block, StorageInterfaceFiltered>, RegistrateRecipeProvider> storageInterfaceFiltered() {
+        return (ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                .define('X', AllBlocks.REDSTONE_LINK)
+                .define('Y', AllBlocks.BRASS_CASING)
+                .define('Z', Items.COMPARATOR)
+                .pattern("X")
+                .pattern("Y")
+                .pattern("Z")
+                .group("storage_box")
+                .unlockedBy("has_andesite_alloy", RegistrateRecipeProvider.has(AllItems.ANDESITE_ALLOY))
+                .save(prov, modLoc("crafting_shaped/" + ctx.getName()));
+    }
 }

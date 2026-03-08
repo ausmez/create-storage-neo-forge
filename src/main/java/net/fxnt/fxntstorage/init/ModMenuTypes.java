@@ -1,8 +1,7 @@
 package net.fxnt.fxntstorage.init;
 
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.main.BackpackBlockMenu;
-import net.fxnt.fxntstorage.backpack.main.BackpackItemMenu;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxMenu;
@@ -24,8 +23,7 @@ public class ModMenuTypes {
     public static final DeferredHolder<MenuType<?>, MenuType<StorageBoxMountedMenu>> STORAGE_BOX_MOUNTED_MENU = registerMenuType("storage_box_mounted_menu", StorageBoxMountedMenu::new);
     public static final DeferredHolder<MenuType<?>, MenuType<SimpleStorageBoxMenu>> SIMPLE_STORAGE_BOX_MENU = registerMenuType("simple_storage_box_menu", SimpleStorageBoxMenu::new);
     public static final DeferredHolder<MenuType<?>, MenuType<SimpleStorageBoxMountedMenu>> SIMPLE_STORAGE_BOX_MOUNTED_MENU = registerMenuType("simple_storage_box_mounted_menu", SimpleStorageBoxMountedMenu::new);
-    public static final DeferredHolder<MenuType<?>, MenuType<BackpackItemMenu>> BACKPACK_ITEM_MENU = registerMenuType("backpack_item_menu", BackpackItemMenu::new);
-    public static final DeferredHolder<MenuType<?>, MenuType<BackpackBlockMenu>> BACKPACK_BLOCK_MENU = registerMenuType("backpack_block_menu", BackpackBlockMenu::new);
+    public static final DeferredHolder<MenuType<?>, MenuType<BackpackMenu>> BACKPACK_MENU = registerMenuType("backpack_menu", BackpackMenu::new);
 
     private static <T extends AbstractContainerMenu> DeferredHolder<MenuType<?>, MenuType<T>> registerMenuType(String name, IContainerFactory<T> factory) {
         return MENUS.register(name, () -> IMenuTypeExtension.create(factory));
@@ -34,5 +32,4 @@ public class ModMenuTypes {
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);
     }
-
 }

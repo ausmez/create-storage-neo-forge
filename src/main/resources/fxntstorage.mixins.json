@@ -2,10 +2,10 @@
   "required": true,
   "minVersion": "0.8.5",
   "package": "net.fxnt.fxntstorage.mixin",
-  "refmap": "mixins.fxntstorage.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "EMIVanillaPluginMixin",
+    "EndermanMixin",
     "ItemEntityMixin",
     "ItemStackMixin",
     "NeoForgeValueMixin",

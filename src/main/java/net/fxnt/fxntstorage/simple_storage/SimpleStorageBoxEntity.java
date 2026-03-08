@@ -23,6 +23,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.Nameable;
@@ -199,7 +200,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     @Override
     public Component getName() {
-        return customName;
+        return customName != null ? customName : getBlockState().getBlock().getName();
     }
 
     @Override
@@ -223,9 +224,10 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     @Override
     public void onLoad() {
         super.onLoad();
-        if (this.getLevel() != null && this.getLevel().isClientSide) {
-            this.getLevel().sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
-        }
+        if (level != null && level.isClientSide)
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+        if (level instanceof ServerLevel serverLevel)
+            serverLevel.getLightEngine().checkBlock(worldPosition); // Re-calc light levels
     }
 
     @Override
@@ -380,7 +382,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
             }
         }
 
-        if (tickCount++ < ConfigManager.CommonConfig.STORAGE_BOX_UPDATE_TIME.get()) return;
+        if (tickCount++ < ConfigManager.ServerConfig.STORAGE_BOX_UPDATE_TIME.get()) return;
         tickCount = 0;
 
         if (storageSlotChanged || upgradeSlotChanged) {
@@ -574,5 +576,4 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
         return true;
     }
-
 }

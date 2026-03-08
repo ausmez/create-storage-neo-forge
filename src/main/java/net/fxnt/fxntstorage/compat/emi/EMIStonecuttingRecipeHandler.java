@@ -7,11 +7,11 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.handler.StonecuttingRecipeHandler;
 import dev.emi.emi.platform.EmiClient;
 import dev.emi.emi.registry.EmiRecipeFiller;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
-import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.network.packet.TransferRecipePacket;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickType;
@@ -30,14 +30,17 @@ public class EMIStonecuttingRecipeHandler extends StonecuttingRecipeHandler {
 
     @Override
     public List<Slot> getInputSources(StonecutterMenu handler) {
+        if (player == null) return new ArrayList<>();
+
         List<Slot> slots = new ArrayList<>(handler.slots.stream().filter(slot -> slot.mayPickup(player)).toList());
 
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         if (!backpack.isEmpty()) {
-            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IBackpackContainer backpackContainer = BackpackContainer.Cache.getOrCreateWornBackpack(player, backpack);
             IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
+            BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
-            for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.ITEM_SLOT_END_RANGE; i++) {
+            for (int i : layout.items().range()) {
                 ItemStack stack = itemHandler.getStackInSlot(i);
                 if (!stack.isEmpty()) {
                     Slot fakeSlot = new SlotItemHandler(itemHandler, i, 0, 0);

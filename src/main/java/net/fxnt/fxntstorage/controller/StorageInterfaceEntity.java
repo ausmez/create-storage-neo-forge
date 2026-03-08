@@ -1,5 +1,7 @@
 package net.fxnt.fxntstorage.controller;
 
+import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -9,14 +11,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.wrapper.EmptyItemHandler;
 
+import java.util.List;
 import java.util.Objects;
 
-public class StorageInterfaceEntity extends BlockEntity {
+public class StorageInterfaceEntity extends SmartBlockEntity {
     private int tickCount = 0;
     public StorageControllerEntity controller = null;
 
     public StorageInterfaceEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
+    }
+
+    @Override
+    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
     }
 
     public void setController(StorageControllerEntity controller) {
@@ -40,10 +47,10 @@ public class StorageInterfaceEntity extends BlockEntity {
         controller = null;
     }
 
-    public void serverTick(Level level) {
+    public void serverTick(Level level, BlockPos pos, BlockState state) {
         if (level.isClientSide) return;
 
-        if (tickCount++ < ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) return;
+        if (tickCount++ < ConfigManager.ServerConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) return;
         tickCount = 0;
 
         if (controller != null && !checkController()) {
@@ -54,5 +61,4 @@ public class StorageInterfaceEntity extends BlockEntity {
     public IItemHandlerModifiable getItemHandler() {
         return controller != null ? controller.getItemHandler() : new EmptyItemHandler();
     }
-
 }

@@ -1,12 +1,21 @@
 package net.fxnt.fxntstorage.util;
 
-import net.fxnt.fxntstorage.backpack.BackpackBlock;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataManager;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataSync;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.SuspiciousStewEffects;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -52,18 +61,10 @@ public class Util {
     public static final String OREMINING_UPGRADE_DEACTIVATED = "backpack_oremining_upgrade_deactivated";
     public static final String TORCHDEPLOYER_UPGRADE = "backpack_torchdeployer_upgrade";
     public static final String TORCHDEPLOYER_UPGRADE_DEACTIVATED = "backpack_torchdeployer_upgrade_deactivated";
-
-    public static final byte BACKPACK_ON_BACK = 1;
-    public static final byte BACKPACK_IN_HAND = 2;
-    public static final byte BACKPACK_AS_BLOCK = 3;
-
-    // Backpack Compartment Sizes
-    public static final int ITEM_SLOT_START_RANGE = 0;
-    public static final int ITEM_SLOT_END_RANGE = BackpackBlock.getItemSlotCount();
-    public static final int TOOL_SLOT_START_RANGE = ITEM_SLOT_END_RANGE;
-    public static final int TOOL_SLOT_END_RANGE = TOOL_SLOT_START_RANGE + BackpackBlock.getToolSlotCount();
-    public static final int UPGRADE_SLOT_START_RANGE = TOOL_SLOT_END_RANGE;
-    public static final int UPGRADE_SLOT_END_RANGE = UPGRADE_SLOT_START_RANGE + BackpackBlock.getUpgradeSlotCount();
+    public static final String JUKEBOX_UPGRADE = "backpack_jukebox_upgrade";
+    public static final String JUKEBOX_UPGRADE_DEACTIVATED = "backpack_jukebox_upgrade_deactivated";
+    public static final String HEALTH_UPGRADE = "backpack_health_upgrade";
+    public static final String HEALTH_UPGRADE_DEACTIVATED = "backpack_health_upgrade_deactivated";
 
     // Menus
     public static final int SLOT_SIZE = 18;
@@ -119,4 +120,39 @@ public class Util {
         return root.getCompound(key);
     }
 
+    public static boolean isEdible(@NotNull ItemStack food, LivingEntity player) {
+        if (!food.has(DataComponents.FOOD))
+            return false;
+
+        FoodProperties foodProperties = food.getItem().getFoodProperties(food, player);
+        return foodProperties != null && foodProperties.nutrition() > 0;
+    }
+
+    public static boolean hasNegativeEffects(@NotNull ItemStack food, LivingEntity player) {
+        FoodProperties foodProperties = food.getFoodProperties(player);
+        if (foodProperties == null) return false;
+
+        ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+        UpgradeDataManager manager = UpgradeDataManager.loadFromItem(backpack);
+
+        if (food.is(Items.CHORUS_FRUIT) && !manager.getSetting(UpgradeDataSync.Field.FEEDER_ALLOW_CHORUS_FRUIT, false))
+            return true;
+
+        if (food.is(Items.OMINOUS_BOTTLE)) return true;
+
+        SuspiciousStewEffects stewEffects = food.get(DataComponents.SUSPICIOUS_STEW_EFFECTS);
+        if (stewEffects != null) {
+            for (SuspiciousStewEffects.Entry entry : stewEffects.effects()) {
+                return entry.effect().value().getCategory().equals(MobEffectCategory.HARMFUL);
+            }
+        }
+
+        // This should capture most foods with negative effects
+        for (FoodProperties.PossibleEffect effect : foodProperties.effects()) {
+            MobEffectInstance instance = effect.effectSupplier().get();
+            if (instance.getEffect().value().getCategory().equals(MobEffectCategory.HARMFUL))
+                return true;
+        }
+        return false;
+    }
 }

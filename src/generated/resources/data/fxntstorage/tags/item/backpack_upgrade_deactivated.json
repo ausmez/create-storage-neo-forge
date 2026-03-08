@@ -9,6 +9,8 @@
     "fxntstorage:backpack_toolswap_upgrade_deactivated",
     "fxntstorage:backpack_falldamage_upgrade_deactivated",
     "fxntstorage:backpack_oremining_upgrade_deactivated",
-    "fxntstorage:backpack_torchdeployer_upgrade_deactivated"
+    "fxntstorage:backpack_torchdeployer_upgrade_deactivated",
+    "fxntstorage:backpack_jukebox_upgrade_deactivated",
+    "fxntstorage:backpack_health_upgrade_deactivated"
   ]
 }

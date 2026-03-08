@@ -33,5 +33,4 @@ public class NeoForgeValueMixin {
             cir.setReturnValue(Component.translatable("fxntstorage.configuration.invalidBlock"));
         }
     }
-
 }

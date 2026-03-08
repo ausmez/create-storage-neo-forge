@@ -321,5 +321,4 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
             PacketDistributor.sendToServer(new SetMountedStorageDirtyPacket(contraptionId, localPos));
         }
     }
-
 }

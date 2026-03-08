@@ -27,5 +27,4 @@ public class DataGenerators {
         generator.addProvider(event.includeServer(), new ModBackpackRecipeProvider(output, lookupProvider));
         generator.addProvider(event.includeServer(), new ModCuriosDataProvider(output, existingFileHelper, lookupProvider));
     }
-
 }

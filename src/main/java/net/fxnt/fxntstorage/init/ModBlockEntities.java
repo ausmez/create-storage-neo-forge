@@ -4,14 +4,12 @@ import com.tterrag.registrate.util.entry.BlockEntityEntry;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import net.fxnt.fxntstorage.backpack.BackpackEntity;
 import net.fxnt.fxntstorage.container.StorageBoxEntity;
-import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
+import net.fxnt.fxntstorage.controller.StorageInterfaceFilteredEntity;
 import net.fxnt.fxntstorage.passer.PasserEntity;
 import net.fxnt.fxntstorage.passer.PasserSmartEntity;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
-import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
-import net.minecraft.world.level.block.Block;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -31,13 +29,12 @@ public class ModBlockEntities {
                     ModBlocks.BRASS_STORAGE_BOX,
                     ModBlocks.HARDENED_STORAGE_BOX
             )
-            .renderer(() -> StorageBoxEntityRenderer::new)
             .register();
 
     @SuppressWarnings("unchecked")
     public static final BlockEntityEntry<SimpleStorageBoxEntity> SIMPLE_STORAGE_BOX_ENTITY = REGISTRATE
             .blockEntity("simple_storage_box_entity", SimpleStorageBoxEntity::new)
-            .validBlocks((NonNullSupplier<? extends Block>[]) Stream.of(
+            .validBlocks(Stream.of(
                     ModBlocks.SIMPLE_STORAGE_BOX_OAK,
                     ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE,
                     ModBlocks.SIMPLE_STORAGE_BOX_BIRCH,
@@ -51,7 +48,6 @@ public class ModBlockEntities {
                     ModBlocks.SIMPLE_STORAGE_BOX_WARPED,
                     ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK
             ).filter(Objects::nonNull).toArray(NonNullSupplier[]::new))
-            .renderer(() -> SimpleStorageBoxEntityRenderer::new)
             .register();
 
     public static final BlockEntityEntry<BackpackEntity> BACKPACK_ENTITY = REGISTRATE
@@ -73,6 +69,11 @@ public class ModBlockEntities {
     public static final BlockEntityEntry<StorageInterfaceEntity> STORAGE_INTERFACE_ENTITY = REGISTRATE
             .blockEntity("storage_interface_entity", StorageInterfaceEntity::new)
             .validBlock(ModBlocks.STORAGE_INTERFACE)
+            .register();
+
+    public static final BlockEntityEntry<StorageInterfaceFilteredEntity> STORAGE_INTERFACE_FILTERED_ENTITY = REGISTRATE
+            .blockEntity("storage_interface_filtered_entity", StorageInterfaceFilteredEntity::new)
+            .validBlock(ModBlocks.STORAGE_INTERFACE_FILTERED)
             .register();
 
     public static final BlockEntityEntry<PasserEntity> PASSER_ENTITY = REGISTRATE

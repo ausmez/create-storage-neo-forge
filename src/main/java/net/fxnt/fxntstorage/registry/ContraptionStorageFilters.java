@@ -57,5 +57,4 @@ public class ContraptionStorageFilters {
 
     public interface FilteredMountedStorage {
     }
-
 }

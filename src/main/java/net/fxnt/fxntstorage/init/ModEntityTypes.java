@@ -3,7 +3,7 @@ package net.fxnt.fxntstorage.init;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.EntityEntry;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.upgrade.MagnetPickupEntity;
+import net.fxnt.fxntstorage.backpack.upgrade.magnet.MagnetPickupEntity;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,5 +26,4 @@ public class ModEntityTypes {
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(MAGNET_PICKUP_ENTITY.get(), ArmorStand.createAttributes().build());
     }
-
 }
