@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:music_disc.far",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:slow_falling",
+      "amplifier": 0
+    }
+  ]
+}

@@ -1,10 +1,24 @@
 package net.fxnt.fxntstorage.util;
 
-import net.fxnt.fxntstorage.backpack.BackpackBlock;
+import com.mojang.datafixers.util.Pair;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataManager;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataSync;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Objects;
@@ -51,18 +65,10 @@ public class Util {
     public static final String OREMINING_UPGRADE_DEACTIVATED = "backpack_oremining_upgrade_deactivated";
     public static final String TORCHDEPLOYER_UPGRADE = "backpack_torchdeployer_upgrade";
     public static final String TORCHDEPLOYER_UPGRADE_DEACTIVATED = "backpack_torchdeployer_upgrade_deactivated";
-
-    public static final byte BACKPACK_ON_BACK = 1;
-    public static final byte BACKPACK_IN_HAND = 2;
-    public static final byte BACKPACK_AS_BLOCK = 3;
-
-    // Backpack Compartment Sizes
-    public static final int ITEM_SLOT_START_RANGE = 0;
-    public static final int ITEM_SLOT_END_RANGE = BackpackBlock.getItemSlotCount();
-    public static final int TOOL_SLOT_START_RANGE = ITEM_SLOT_END_RANGE;
-    public static final int TOOL_SLOT_END_RANGE = TOOL_SLOT_START_RANGE + BackpackBlock.getToolSlotCount();
-    public static final int UPGRADE_SLOT_START_RANGE = TOOL_SLOT_END_RANGE;
-    public static final int UPGRADE_SLOT_END_RANGE = UPGRADE_SLOT_START_RANGE + BackpackBlock.getUpgradeSlotCount();
+    public static final String JUKEBOX_UPGRADE = "backpack_jukebox_upgrade";
+    public static final String JUKEBOX_UPGRADE_DEACTIVATED = "backpack_jukebox_upgrade_deactivated";
+    public static final String HEALTH_UPGRADE = "backpack_health_upgrade";
+    public static final String HEALTH_UPGRADE_DEACTIVATED = "backpack_health_upgrade_deactivated";
 
     // Menus
     public static final int SLOT_SIZE = 18;
@@ -150,4 +156,45 @@ public class Util {
         return true;
     }
 
+    public static boolean isEdible(@NotNull ItemStack food, LivingEntity player) {
+        if (food.isEmpty())
+            return false;
+
+        FoodProperties foodProperties = food.getFoodProperties(player);
+        return foodProperties != null && foodProperties.getNutrition() > 0;
+    }
+
+    public static boolean hasNegativeEffects(@NotNull ItemStack food, LivingEntity player) {
+        FoodProperties foodProperties = food.getFoodProperties(player);
+        if (foodProperties == null) return false;
+
+        ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+        UpgradeDataManager manager = UpgradeDataManager.loadFromItem(backpack);
+
+        if (food.is(Items.CHORUS_FRUIT) && !manager.getSetting(UpgradeDataSync.Field.FEEDER_ALLOW_CHORUS_FRUIT, false))
+            return true;
+
+        CompoundTag tag = food.getTag();
+        if (tag != null && tag.contains("Effects", Tag.TAG_LIST)) {
+            ListTag effects = tag.getList("Effects", Tag.TAG_COMPOUND);
+
+            for (Tag entry : effects) {
+                if (!(entry instanceof CompoundTag effectTag)) continue;
+                if (!effectTag.contains("forge:effect_id", Tag.TAG_STRING)) continue;
+
+                String effectString = effectTag.getString("forge:effect_id");
+                ResourceLocation effectId = ResourceLocation.parse(effectString);
+                MobEffect effect = ForgeRegistries.MOB_EFFECTS.getValue(effectId);
+
+                if (effect != null)
+                    return effect.getCategory().equals(MobEffectCategory.HARMFUL);
+            }
+        }
+
+        // This should capture most foods with negative effects
+        for (Pair<MobEffectInstance, Float> effect : foodProperties.getEffects()) {
+            return (effect.getFirst().getEffect().getCategory().equals(MobEffectCategory.HARMFUL));
+        }
+        return false;
+    }
 }

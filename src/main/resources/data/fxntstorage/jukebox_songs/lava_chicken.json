@@ -1,0 +1,10 @@
+{
+  "song": "vanillabackport:music_disc.lava_chicken",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:speed",
+      "amplifier": 2
+    }
+  ]
+}

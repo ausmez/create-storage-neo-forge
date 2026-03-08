@@ -205,5 +205,4 @@ public class ShapedBackpackRecipeBuilder extends CraftingRecipeBuilder implement
             return this.advancementId;
         }
     }
-
 }

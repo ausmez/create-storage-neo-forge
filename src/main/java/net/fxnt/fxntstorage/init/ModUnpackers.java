@@ -3,7 +3,7 @@ package net.fxnt.fxntstorage.init;
 import com.simibubi.create.api.packager.unpacking.UnpackingHandler;
 import com.tterrag.registrate.util.entry.BlockEntry;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.main.BackpackUnpacking;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackUnpacking;
 import net.fxnt.fxntstorage.container.StorageBoxUnpacking;
 import net.fxnt.fxntstorage.controller.StorageControllerUnpacking;
 import net.fxnt.fxntstorage.controller.StorageInterfaceUnpacking;
@@ -34,7 +34,7 @@ public class ModUnpackers {
 
         // Storage Controller & Interface
         register(StorageControllerUnpacking.INSTANCE, ModBlocks.STORAGE_CONTROLLER);
-        register(StorageInterfaceUnpacking.INSTANCE, ModBlocks.STORAGE_INTERFACE);
+        register(StorageInterfaceUnpacking.INSTANCE, ModBlocks.STORAGE_INTERFACE, ModBlocks.STORAGE_INTERFACE_FILTERED);
 
         // Backpacks
         register(BackpackUnpacking.INSTANCE,
@@ -52,5 +52,4 @@ public class ModUnpackers {
             UnpackingHandler.REGISTRY.register(block.get(), handler);
         }
     }
-
 }

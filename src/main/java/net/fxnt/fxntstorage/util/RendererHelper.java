@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.util;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.simibubi.create.content.kinetics.simpleRelays.AbstractSimpleShaftBlock;
+import com.simibubi.create.infrastructure.config.AllConfigs;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -21,15 +22,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FenceBlock;
 
 public class RendererHelper {
-    public static final int MAX_DISTANCE = 10;
-    public static final float[] SIDE_ROT_Y = {0f, 0f, (float) (Math.PI), 0f, (float) (3f * Math.PI / 2f), (float) (Math.PI / 2f)};
+    public static final Double MAX_DISTANCE = AllConfigs.client().filterItemRenderDistance.get(); // Use Create config for max render distance
 
     public static void renderLine(String text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int color, int packedLight) {
         Font font = Minecraft.getInstance().font;
-        float zOffset = 15.05f;
 
         poseStack.pushPose();
-        poseStack.translate(0.5f, yOffset / 16f, zOffset / 16f);
+        poseStack.translate(0f, yOffset / 16f, 0f);
         poseStack.scale(1 / 64f, -1 / 64f, 1f);
 
         float x = -font.width(text) / 2f;
@@ -41,7 +40,7 @@ public class RendererHelper {
     public static void renderItem(ItemRenderer itemRenderer, ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, int packedLight, boolean voidUpgrade) {
         Level level = Minecraft.getInstance().level;
         poseStack.pushPose();
-        poseStack.translate(0.5f, 0.175f, 15.05f / 16f);
+        poseStack.translate(0f, 0.175f, 0f);
         poseStack.mulPose(Axis.YP.rotationDegrees(180));
 
         BakedModel model = itemRenderer.getModel(stack, null, null, 0);
@@ -59,7 +58,7 @@ public class RendererHelper {
 
         if (voidUpgrade) {
             poseStack.pushPose();
-            poseStack.translate(0.5f, 0.5f, 15.05f / 16f);
+            poseStack.translate(0f, 0.5f, 0f);
             poseStack.mulPose(Axis.YP.rotationDegrees(180));
             poseStack.translate(-0.3f, -0.2f, 0f);
 
@@ -98,5 +97,4 @@ public class RendererHelper {
         }
         return 0f;
     }
-
 }

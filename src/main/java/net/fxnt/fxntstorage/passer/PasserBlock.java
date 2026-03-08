@@ -48,7 +48,7 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
+    public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         if (this.isSmart) {
             BlockEntityType<?> type = ModBlockEntities.SMART_PASSER_ENTITY.get();
             return new PasserSmartEntity(type, pPos, pState);
@@ -119,5 +119,4 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
         Direction direction = pState.getValue(FACING);
         return PasserShapeCache.getShape(direction);
     }
-
 }

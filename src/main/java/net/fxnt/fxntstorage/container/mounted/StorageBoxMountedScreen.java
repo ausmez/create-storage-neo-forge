@@ -406,5 +406,4 @@ public class StorageBoxMountedScreen extends AbstractContainerScreen<StorageBoxM
                 new Rect2i(inventoryExclusionZoneMinX, inventoryExclusionZoneMinZ, inventoryExclusionZoneWidth, inventoryExclusionZoneHeight)
         );
     }
-
 }

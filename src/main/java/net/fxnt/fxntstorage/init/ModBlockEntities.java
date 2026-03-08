@@ -7,6 +7,7 @@ import net.fxnt.fxntstorage.container.StorageBoxEntity;
 import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
+import net.fxnt.fxntstorage.controller.StorageInterfaceFilteredEntity;
 import net.fxnt.fxntstorage.passer.PasserEntity;
 import net.fxnt.fxntstorage.passer.PasserSmartEntity;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
@@ -73,6 +74,11 @@ public class ModBlockEntities {
     public static final BlockEntityEntry<StorageInterfaceEntity> STORAGE_INTERFACE_ENTITY = REGISTRATE
             .blockEntity("storage_interface_entity", StorageInterfaceEntity::new)
             .validBlock(ModBlocks.STORAGE_INTERFACE)
+            .register();
+
+    public static final BlockEntityEntry<StorageInterfaceFilteredEntity> STORAGE_INTERFACE_FILTERED_ENTITY = REGISTRATE
+            .blockEntity("storage_interface_filtered_entity", StorageInterfaceFilteredEntity::new)
+            .validBlock(ModBlocks.STORAGE_INTERFACE_FILTERED)
             .register();
 
     public static final BlockEntityEntry<PasserEntity> PASSER_ENTITY = REGISTRATE

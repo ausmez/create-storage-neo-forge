@@ -35,5 +35,4 @@ public class SymmetryHandlerMixin {
             ci.cancel();
         }
     }
-
 }

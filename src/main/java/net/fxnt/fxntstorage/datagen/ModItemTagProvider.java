@@ -35,10 +35,11 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.BACKPACK_FALLDAMAGE_UPGRADE.get())
                 .add(ModItems.BACKPACK_OREMINING_UPGRADE.get())
                 .add(ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE.get())
+                .add(ModItems.BACKPACK_JUKEBOX_UPGRADE.get())
+                .add(ModItems.BACKPACK_HEALTH_UPGRADE.get())
                 .addTag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED);
 
         tag(ModTags.Items.CURIOS_BACK).addTag(ModTags.Items.BACKPACK_ITEM);
 
     }
-
 }

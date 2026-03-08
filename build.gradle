@@ -83,7 +83,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     maven { url = "https://maven.createmod.net" } // Create, Ponder, Flywheel
-    maven { url = 'https://maven.tterrag.com/' } // Registrate
+    maven { url = "https://maven.tterrag.com/" } // Registrate
+    maven { url = "https://modmaven.dev"}
     maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" } // ForgeConfigAPIPort
     maven { url = "https://maven.blamejared.com/" } // JEI
     maven { url = "https://maven.terraformersmc.com/" } // EMI
@@ -120,8 +121,8 @@ dependencies {
     implementation fg.deobf("dev.emi:emi-forge:${emi_version}")
     // REI
     compileOnly fg.deobf("curse.maven:roughly-enough-items-310111:5846923")
-//    runtimeOnly fg.deobf("curse.maven:architectury-api-419699:5137938")
-//    runtimeOnly fg.deobf("curse.maven:cloth-config-348521:5729105")
+    compileOnly fg.deobf("curse.maven:architectury-api-419699:5137938")
+    compileOnly fg.deobf("curse.maven:cloth-config-348521:5729105")
 
     // Vanilla Backport
     implementation fg.deobf("curse.maven:vanillabackport-417430:6680081")
@@ -148,6 +149,9 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:appleskin-248787:4770828")
 //    runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
 //    runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
+
+//    implementation fg.deobf("curse.maven:ftb-ultimine-forge-386134:6899418")
+//    implementation fg.deobf("curse.maven:ftb-library-forge-404465:7296748")
 }
 
 mixin {

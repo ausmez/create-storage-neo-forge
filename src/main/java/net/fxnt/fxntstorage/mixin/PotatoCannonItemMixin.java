@@ -1,11 +1,11 @@
 package net.fxnt.fxntstorage.mixin;
 
 import com.simibubi.create.content.equipment.potatoCannon.PotatoCannonItem;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
-import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
-import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.util.Util;
+import net.fxnt.fxntstorage.config.ClientSettings;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -38,17 +38,16 @@ public abstract class PotatoCannonItemMixin {
         }
 
         // Then check equipped backpack
-        if (player.getPersistentData()
-                .getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)
-                .getBoolean("CheckBackpackForProjectiles")
+        if (ClientSettings.getBoolean(player.getUUID(), "CheckBackpackForProjectiles")
                 && BackpackHelper.isWearingBackpack(player)) {
 
             ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
-            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IBackpackContainer backpackContainer = new BackpackContainer(player, backpack);
             IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
+            BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
             // Shrink ammo stack from backpack
-            for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.TOOL_SLOT_END_RANGE; i++) {
+            for (int i : layout.getItemsAndToolsRange()) {
                 ItemStack stack = itemHandler.getStackInSlot(i);
                 if (ItemStack.isSameItemSameTags(stack, ammoStack)) {
                     stack.shrink(amount);
@@ -62,5 +61,4 @@ public abstract class PotatoCannonItemMixin {
         // Fallback
         ammoStack.shrink(amount);
     }
-
 }

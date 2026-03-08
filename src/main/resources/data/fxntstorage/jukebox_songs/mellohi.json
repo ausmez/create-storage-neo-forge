@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:music_disc.mellohi",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "fxntstorage:calm_endermen",
+      "amplifier": 0
+    }
+  ]
+}

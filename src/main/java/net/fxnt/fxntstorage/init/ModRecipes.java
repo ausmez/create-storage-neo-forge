@@ -18,5 +18,4 @@ public class ModRecipes {
     public static void register(IEventBus eventBus) {
         RECIPE_SERIALIZERS.register(eventBus);
     }
-
 }

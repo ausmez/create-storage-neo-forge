@@ -244,6 +244,56 @@ public class ModItems {
             .tag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED)
             .register();
 
+    public static final ItemEntry<UpgradeItem> BACKPACK_JUKEBOX_UPGRADE = REGISTRATE
+            .item("backpack_jukebox_upgrade", properties -> new UpgradeItem(properties, Util.JUKEBOX_UPGRADE))
+            .properties(properties -> properties.stacksTo(1))
+            .recipe((ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                    .define('B', ModItems.BACKPACK_BLANK_UPGRADE)
+                    .define('R', AllBlocks.REDSTONE_LINK)
+                    .define('I', AllItems.IRON_SHEET)
+                    .define('X', Items.JUKEBOX)
+                    .define('C', Items.REDSTONE)
+                    .pattern(" R ")
+                    .pattern("IBI")
+                    .pattern("CXC")
+                    .group("backpack")
+                    .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
+                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_JUKEBOX_UPGRADE_DEACTIVATED = REGISTRATE
+            .item("backpack_jukebox_upgrade_deactivated", properties -> new UpgradeItem(properties, Util.JUKEBOX_UPGRADE_DEACTIVATED))
+            .properties(properties -> properties.stacksTo(1))
+            .tag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED)
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_HEALTH_UPGRADE = REGISTRATE
+            .item(Util.HEALTH_UPGRADE, properties -> new UpgradeItem(properties, Util.HEALTH_UPGRADE))
+            .properties(properties -> properties.stacksTo(1))
+            .recipe((ctx, prov) -> MechanicalCraftingRecipeBuilder.shapedRecipe(ctx.get())
+                    .key('E', AllItems.ELECTRON_TUBE)
+                    .key('P', AllItems.PRECISION_MECHANISM)
+                    .key('B', ModItems.BACKPACK_BLANK_UPGRADE)
+                    .key('H', Items.HEART_OF_THE_SEA)
+                    .key('L', Items.ENCHANTED_GOLDEN_APPLE)
+                    .key('S', AllItems.BRASS_SHEET)
+                    .key('C', AllBlocks.COGWHEEL)
+                    .key('I', AllItems.IRON_SHEET)
+                    .key('R', Items.REDSTONE)
+                    .patternLine(" E E ")
+                    .patternLine("SRPRS")
+                    .patternLine("SIBIS")
+                    .patternLine(" CHC ")
+                    .patternLine("  L  ")
+                    .build(prov, modLoc("mechanical_crafting/" + ctx.getName())))
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_HEALTH_UPGRADE_DEACTIVATED = REGISTRATE
+            .item(Util.HEALTH_UPGRADE_DEACTIVATED, properties -> new UpgradeItem(properties, Util.HEALTH_UPGRADE_DEACTIVATED))
+            .properties(properties -> properties.stacksTo(1))
+            .tag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED)
+            .register();
+
     public static void register() {
     }
 }

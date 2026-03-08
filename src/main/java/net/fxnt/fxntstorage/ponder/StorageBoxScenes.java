@@ -17,7 +17,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static net.fxnt.fxntstorage.container.StorageBox.STORAGE_USED;
@@ -41,17 +40,25 @@ public class StorageBoxScenes {
         BlockPos brass = util.grid().at(1, 2, 2);
         BlockPos hardened = util.grid().at(2, 3, 3);
 
-        List<BlockPos> blockPosList = Arrays.asList(cardboard, iron, weathered, andesite, copper, brass, hardened);
+        record PosEntry(BlockPos pos, String text) {
+        }
 
-        scene.overlay().showText(80).text("");
+        List<PosEntry> blockPosList = List.of(
+                new PosEntry(cardboard, "Cardboard: 48 slots"),
+                new PosEntry(iron, "Industrial Iron: 60 slots"),
+                new PosEntry(weathered, "Weathered Iron: 60 slots"),
+                new PosEntry(andesite, "Andesite: 84 slots"),
+                new PosEntry(copper, "Copper: 108 slots"),
+                new PosEntry(brass, "Brass: 132 slots"),
+                new PosEntry(hardened, "Hardened: 156 slots")
+        );
+
+        scene.overlay().showText(80).text("Storage Boxes come in seven variants, each capable of holding large quantities of items");
         scene.idle(90);
 
-        for (BlockPos blockPos : blockPosList) {
-            if (blockPos.equals(iron)) {
-                scene.overlay().showText(30).text("").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(blockPos, Direction.NORTH).add(0, 0.1, 0));
-            } else {
-                scene.overlay().showText(30).text("").placeNearTarget().pointAt(util.vector().blockSurface(blockPos, Direction.NORTH).add(0, 0.1, 0));
-            }
+        scene.addKeyframe();
+        for (PosEntry blockPos : blockPosList) {
+            scene.overlay().showText(30).text(blockPos.text()).placeNearTarget().pointAt(util.vector().blockSurface(blockPos.pos(), Direction.NORTH).add(0, 0.1, 0));
             scene.idle(40);
         }
 
@@ -74,7 +81,7 @@ public class StorageBoxScenes {
         Vec3 indicatorLight = new Vec3(0.5, 2.5, 2.5);
         ItemStack sand = new ItemStack(Items.SAND);
 
-        scene.overlay().showText(60).text("Display panel shows the total items stored and used percentage").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(srcStorageBox, Direction.NORTH).add(-0.1, 0.1, 0));
+        scene.overlay().showText(60).text("Display panel shows the total items stored and percentage used").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(srcStorageBox, Direction.NORTH).add(-0.1, 0.1, 0));
         scene.idle(70);
 
         scene.overlay().showControls(util.vector().blockSurface(srcStorageBox, Direction.NORTH).add(0, 0.15, 0), Pointing.DOWN, 30).rightClick().withItem(sand);
@@ -112,10 +119,10 @@ public class StorageBoxScenes {
             switch (i) {
                 case 2:
                     scene.world().modifyBlock(dstStorageBox, (s) -> ModBlocks.STORAGE_BOX.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
-                    scene.overlay().showText(70).text("Green indicates the box has items and available slots").placeNearTarget().pointAt(indicatorLight);
+                    scene.overlay().showText(70).text("Green indicates the box contains items and has free slots").placeNearTarget().pointAt(indicatorLight);
                     break;
                 case 7:
-                    scene.overlay().showText(80).text("Orange indicates all slots are filled, but not full stacks").placeNearTarget().pointAt(indicatorLight);
+                    scene.overlay().showText(80).text("Orange indicates no free slots, however stacks are not full").placeNearTarget().pointAt(indicatorLight);
                     scene.world().modifyBlock(dstStorageBox, (s) -> ModBlocks.STORAGE_BOX.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.SLOTS_FILLED), false);
                     scene.world().modifyBlockEntity(dstStorageBox, StorageBoxEntity.class, (t) -> {
                         for (int j = 0; j < t.getContainerSize(); j++) {
@@ -156,7 +163,7 @@ public class StorageBoxScenes {
         scene.world().modifyBlock(dstStorageBox, (s) -> ModBlocks.STORAGE_BOX.getDefaultState().setValue(VOID_UPGRADE, true), false);
         scene.idle(70);
 
-        scene.overlay().showText(60).text("When enabled, items added beyond capacity will be voided").placeNearTarget().pointAt(util.vector().blockSurface(dstStorageBox, Direction.NORTH).add(-0.45, -0.25, 0));
+        scene.overlay().showText(60).text("When enabled, items added beyond capacity will be voided (deleted)").placeNearTarget().pointAt(util.vector().blockSurface(dstStorageBox, Direction.NORTH).add(-0.45, -0.25, 0));
 
         scene.world().createItemOnBelt(beltPos, Direction.EAST, sand);
         for (int i = 0; i < 4; i++) {
@@ -171,7 +178,7 @@ public class StorageBoxScenes {
         scene.world().modifyBlock(srcStorageBox, (s) -> ModBlocks.STORAGE_BOX.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY), false);
         scene.idle(4);
         scene.world().removeItemsFromBelt(util.grid().at(1, 1, 2));
-        scene.idle(90);
+        scene.idle(60);
 
         scene.markAsFinished();
     }
@@ -213,7 +220,7 @@ public class StorageBoxScenes {
 
         scene.overlay().showControls(util.vector().blockSurface(storageBox, Direction.NORTH).add(0, -0.2, 0), Pointing.RIGHT, 90).showing(AllIcons.I_RMB).withItem(brassHand);
         scene.idle(10);
-        scene.overlay().showText(100).text("Double right-click with an empty hand and filter set to insert all matching items from inventory").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(storageBox, Direction.NORTH).add(-0.2, -0.1, 0));
+        scene.overlay().showText(100).text("Double right-click with an empty hand and filter set to insert all matching items from player's inventory").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(storageBox, Direction.NORTH).add(-0.2, -0.1, 0));
         scene.world().modifyBlockEntity(storageBox, StorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, diamond.copyWithCount(6)));
         scene.idle(110);
 
@@ -236,5 +243,4 @@ public class StorageBoxScenes {
 
         scene.markAsFinished();
     }
-
 }

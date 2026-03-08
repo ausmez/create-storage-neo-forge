@@ -20,5 +20,4 @@ public class ModLootConditionTypes {
     public static void register(IEventBus bus) {
         LOOT_CONDITIONS.register(bus);
     }
-
 }

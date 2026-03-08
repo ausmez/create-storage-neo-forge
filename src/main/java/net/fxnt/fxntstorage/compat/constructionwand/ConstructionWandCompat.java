@@ -7,5 +7,4 @@ public class ConstructionWandCompat {
         ConstructionWand.instance.containerManager.register(new HandlerBackpack());
         ConstructionWand.instance.containerManager.register(new HandlerStorageBox());
     }
-
 }

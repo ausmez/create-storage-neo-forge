@@ -66,7 +66,7 @@ public class StorageInterfaceScenes {
         scene.overlay().showOutline(PonderPalette.GREEN, "iface", util.select().position(iface), 35);
         scene.idle(45);
 
-        scene.overlay().showText(65).text("They cannot be directly interacted with by the player").placeNearTarget().pointAt(util.vector().blockSurface(iface, Direction.NORTH));
+        scene.overlay().showText(65).text("It cannot be directly interacted with by the player").placeNearTarget().pointAt(util.vector().blockSurface(iface, Direction.NORTH));
         scene.idle(15);
         scene.overlay().showControls(util.vector().blockSurface(iface, Direction.NORTH), Pointing.RIGHT, 25).showing(AllIcons.I_MTD_CLOSE).withItem(emerald);
         scene.idle(75);
@@ -79,7 +79,7 @@ public class StorageInterfaceScenes {
         scene.world().setKineticSpeed(util.select().position(largeCog), -16.0F);
         scene.idle(25);
 
-        scene.overlay().showText(55).text("Items can be inserted into the network with funnels, chutes, hoppers or passers").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(iface, Direction.NORTH));
+        scene.overlay().showText(55).text("Items can be inserted into and extracted from the network with funnels, chutes, hoppers or passers").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(iface, Direction.NORTH));
         for (int i = 0; i < 4; i++) {
             ElementLink<EntityElement> itemEntity = scene.world().createItemEntity(util.vector().centerOf(2, 4, 0).add(0, 0, -0.35), new Vec3(0, 0, 0), emerald);
             scene.idle(13);
@@ -121,5 +121,4 @@ public class StorageInterfaceScenes {
 
         scene.markAsFinished();
     }
-
 }

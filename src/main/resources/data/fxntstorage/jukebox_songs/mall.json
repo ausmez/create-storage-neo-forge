@@ -1,0 +1,14 @@
+{
+  "song": "minecraft:music_disc.mall",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "minecraft:jump_boost",
+      "amplifier": 1
+    },
+    {
+      "effect": "minecraft:speed",
+      "amplifier": 0
+    }
+  ]
+}

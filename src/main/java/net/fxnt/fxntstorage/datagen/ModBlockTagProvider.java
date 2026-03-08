@@ -84,7 +84,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .addTag(ModTags.Blocks.SIMPLE_STORAGE_BOX)
                 .addTag(ModTags.Blocks.STORAGE_TRIM)
                 .add(ModBlocks.STORAGE_CONTROLLER.get())
-                .add(ModBlocks.STORAGE_INTERFACE.get());
+                .add(ModBlocks.STORAGE_INTERFACE.get())
+                .add(ModBlocks.STORAGE_INTERFACE_FILTERED.get());
 
         tag(ModTags.Blocks.SYMMETRY_WAND_BLACKLIST)
                 .addTag(ModTags.Blocks.BACKPACK)
@@ -98,12 +99,14 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .addTag(ModTags.Blocks.SIMPLE_STORAGE_BOX)
                 .add(ModBlocks.STORAGE_CONTROLLER.get())
                 .add(ModBlocks.STORAGE_INTERFACE.get())
+                .add(ModBlocks.STORAGE_INTERFACE_FILTERED.get())
                 .add(ModBlocks.PASSER_BLOCK.get())
                 .add(ModBlocks.SMART_PASSER_BLOCK.get());
 
         tag(ModTags.Blocks.TOMS_STORAGE_INV_CONN_SKIP)
                 .add(ModBlocks.STORAGE_CONTROLLER.get())
-                .add(ModBlocks.STORAGE_INTERFACE.get());
+                .add(ModBlocks.STORAGE_INTERFACE.get())
+                .add(ModBlocks.STORAGE_INTERFACE_FILTERED.get());
 
         tag(BlockTags.MINEABLE_WITH_AXE)
                 .add(ModBlocks.CARDBOARD_STORAGE_BOX.get())
@@ -115,11 +118,11 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.SMART_PASSER_BLOCK.get())
                 .add(ModBlocks.STORAGE_CONTROLLER.get())
                 .add(ModBlocks.STORAGE_INTERFACE.get())
+                .add(ModBlocks.STORAGE_INTERFACE_FILTERED.get())
                 .addTag(ModTags.Blocks.STORAGE_BOX);
 
         tag(AllTags.AllBlockTags.CASING.tag)
                 .addTag(ModTags.Blocks.STORAGE_TRIM);
 
     }
-
 }

@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:music_disc.cat",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "fxntstorage:repel_creepers",
+      "amplifier": 0
+    }
+  ]
+}

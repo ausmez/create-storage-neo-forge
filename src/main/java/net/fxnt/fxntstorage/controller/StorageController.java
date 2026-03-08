@@ -2,6 +2,8 @@ package net.fxnt.fxntstorage.controller;
 
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
+import net.fxnt.fxntstorage.init.ModNetwork;
+import net.fxnt.fxntstorage.network.packet.StorageNetworkHighlightPacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -20,6 +22,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("deprecation")
 public class StorageController extends BaseEntityBlock implements IWrenchable {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty CONNECTED = BooleanProperty.create("connected_to_network");
@@ -45,6 +48,12 @@ public class StorageController extends BaseEntityBlock implements IWrenchable {
                 entity.serverTick(type, world);
             }
         });
+    }
+
+    @Override
+    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
+        super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);
+        ModNetwork.sendToAllPlayers(new StorageNetworkHighlightPacket(pPos, false));
     }
 
     public boolean hitFront(BlockState blockState, BlockHitResult hit) {

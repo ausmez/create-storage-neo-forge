@@ -1,7 +1,7 @@
 package net.fxnt.fxntstorage.compat.constructionwand;
 
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -17,7 +17,7 @@ public class HandlerBackpack implements IContainerHandler {
 
     @Override
     public int countItems(Player player, ItemStack itemStack, ItemStack inventoryStack) {
-        BackpackContainer container = new BackpackContainer(inventoryStack, player);
+        BackpackContainer container = new BackpackContainer(player, inventoryStack);
         int count = 0;
 
         for (ItemStack stack : container.getItems()) {
@@ -31,7 +31,7 @@ public class HandlerBackpack implements IContainerHandler {
 
     @Override
     public int useItems(Player player, ItemStack itemStack, ItemStack inventoryStack, int count) {
-        BackpackContainer container = new BackpackContainer(inventoryStack, player);
+        BackpackContainer container = new BackpackContainer(player, inventoryStack);
         boolean changed = false;
 
         for (ItemStack stack : container.getItems()) {
@@ -60,5 +60,4 @@ public class HandlerBackpack implements IContainerHandler {
             handler.setStackInSlot(i, container.getStackInSlot(i));
         }
     }
-
 }

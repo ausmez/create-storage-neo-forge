@@ -48,7 +48,7 @@ public class PasserBlockScenes {
         scene.world().modifyBlock(srcBox1, (s) -> ModBlocks.STORAGE_BOX.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
         scene.idle(40);
 
-        scene.overlay().showText(60).text("They will only transfer one item at a time (like a hopper)").placeNearTarget().pointAt(util.vector().blockSurface(passer, Direction.UP).add(0, -0.15, 0));
+        scene.overlay().showText(60).text("Items will only transfer one at a time, similar to hoppers").placeNearTarget().pointAt(util.vector().blockSurface(passer, Direction.UP).add(0, -0.15, 0));
         for (int i = 0; i < 12; i++) {
             if (i == 0)
                 scene.world().modifyBlock(dstBox, (s) -> ModBlocks.STORAGE_BOX.getDefaultState().setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);

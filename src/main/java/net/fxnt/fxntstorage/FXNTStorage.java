@@ -1,12 +1,14 @@
 package net.fxnt.fxntstorage;
 
+import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import net.createmod.ponder.foundation.PonderIndex;
-import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
-import net.fxnt.fxntstorage.backpack.renderer.BackpackRenderPlayer;
-import net.fxnt.fxntstorage.backpack.tooltip.BackpackClientTooltip;
-import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
-import net.fxnt.fxntstorage.backpack.upgrade.JetpackAirOverlay;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.client.renderer.BackpackRenderPlayer;
+import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackClientTooltip;
+import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackTooltip;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeRegistry;
+import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackAirOverlay;
 import net.fxnt.fxntstorage.compat.constructionwand.ConstructionWandCompat;
 import net.fxnt.fxntstorage.compat.everycomp.EveryCompCompat;
 import net.fxnt.fxntstorage.config.ConfigManager;
@@ -14,7 +16,6 @@ import net.fxnt.fxntstorage.container.StorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedScreen;
 import net.fxnt.fxntstorage.init.*;
-import net.fxnt.fxntstorage.passer.PasserEntityRenderer;
 import net.fxnt.fxntstorage.ponder.CsPonderPlugin;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxScreen;
@@ -53,12 +54,13 @@ public class FXNTStorage {
     public static final String MOD_ID = "fxntstorage";
     public static final Logger LOGGER = LogManager.getLogger(FXNTStorage.class);
     public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MOD_ID);
+    public static final int MAX_EFFECTS_PER_SONG = 3;
 
-    public static boolean curiosLoaded;
+    public static final boolean CURIOS_LOADED = ModList.get().isLoaded(ModCompats.CURIOS);
 
     public FXNTStorage(final FMLJavaModLoadingContext context) {
         context.registerConfig(ModConfig.Type.CLIENT, ConfigManager.ClientConfig.CLIENT_SPEC);
-        context.registerConfig(ModConfig.Type.COMMON, ConfigManager.CommonConfig.COMMON_SPEC);
+        context.registerConfig(ModConfig.Type.SERVER, ConfigManager.ServerConfig.SERVER_SPEC);
 
         IEventBus modEventBus = context.getModEventBus();
 
@@ -67,17 +69,19 @@ public class FXNTStorage {
         ModBlocks.register();
         ModBlockEntities.register();
         ModItems.register();
-        ModRecipes.register(modEventBus);
         ModTabs.register(modEventBus);
+        ModEffects.register(modEventBus);
+        ModRecipes.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModLootConditionTypes.register(modEventBus);
+
+        UpgradeRegistry.register();
 
         REGISTRATE.registerEventListeners(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
         modEventBus.addListener(FXNTStorage::onCommonSetup);
 
-        curiosLoaded = ModList.get().isLoaded(ModCompats.CURIOS);
         if (ModList.get().isLoaded(ModCompats.CONSTRUCTION_WAND)) ConstructionWandCompat.init();
         if (ModList.get().isLoaded(ModCompats.EVERY_COMPAT)) EveryCompCompat.init();
     }
@@ -104,7 +108,7 @@ public class FXNTStorage {
         public static void onConfigReload(final ModConfigEvent.Reloading event) {
             if (Objects.equals(event.getConfig().getModId(), MOD_ID) && event.getConfig().getType().equals(ModConfig.Type.CLIENT)) {
                 if (Minecraft.getInstance().getConnection() != null && Minecraft.getInstance().player != null) {
-                    ConfigManager.ClientConfig.sendSettings(Minecraft.getInstance().player);
+                    ConfigManager.ClientConfig.sendClientSettings();
                 }
             }
         }
@@ -115,8 +119,7 @@ public class FXNTStorage {
             MenuScreens.register(ModMenuTypes.SIMPLE_STORAGE_BOX_MOUNTED_MENU.get(), SimpleStorageBoxMountedScreen::createScreen);
             MenuScreens.register(ModMenuTypes.STORAGE_BOX_MENU.get(), StorageBoxScreen::createScreen);
             MenuScreens.register(ModMenuTypes.STORAGE_BOX_MOUNTED_MENU.get(), StorageBoxMountedScreen::createScreen);
-            MenuScreens.register(ModMenuTypes.BACKPACK_ITEM_MENU.get(), BackpackScreen::new);
-            MenuScreens.register(ModMenuTypes.BACKPACK_BLOCK_MENU.get(), BackpackScreen::new);
+            MenuScreens.register(ModMenuTypes.BACKPACK_MENU.get(), BackpackScreen::new);
 
             PonderIndex.addPlugin(new CsPonderPlugin());
         }
@@ -139,7 +142,8 @@ public class FXNTStorage {
         public static void registerEntityRenderer(EntityRenderersEvent.RegisterRenderers event) {
             event.registerBlockEntityRenderer(ModBlockEntities.STORAGE_BOX_ENTITY.get(), StorageBoxEntityRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), SimpleStorageBoxEntityRenderer::new);
-            event.registerBlockEntityRenderer(ModBlockEntities.SMART_PASSER_ENTITY.get(), PasserEntityRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.SMART_PASSER_ENTITY.get(), SmartBlockEntityRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.STORAGE_INTERFACE_FILTERED_ENTITY.get(), SmartBlockEntityRenderer::new);
             event.registerEntityRenderer(ModEntityTypes.MAGNET_PICKUP_ENTITY.get(), NoopRenderer::new);
         }
 
@@ -148,7 +152,7 @@ public class FXNTStorage {
             event.register(KeybindHandler.TOGGLE_BACKPACK_KEY);
             event.register(KeybindHandler.TOGGLE_JETPACK_HOVER_KEY);
             event.register(KeybindHandler.CLEAR_BACKPACK_SHAPE_CACHE);
-            event.register(KeybindHandler.OREMINE_ANY_BLOCK);
+            event.register(KeybindHandler.ORE_MINE_ANY_BLOCK);
         }
 
         @SubscribeEvent
@@ -156,5 +160,4 @@ public class FXNTStorage {
             event.registerAbove(VanillaGuiOverlay.AIR_LEVEL.id(), "remaining_air", JetpackAirOverlay.INSTANCE);
         }
     }
-
 }

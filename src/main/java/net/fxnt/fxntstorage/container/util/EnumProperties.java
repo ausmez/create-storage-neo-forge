@@ -14,5 +14,4 @@ public class EnumProperties {
             return name().toLowerCase(Locale.ROOT);
         }
     }
-
 }

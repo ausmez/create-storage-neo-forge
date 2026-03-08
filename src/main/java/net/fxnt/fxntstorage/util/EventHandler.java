@@ -1,27 +1,36 @@
 package net.fxnt.fxntstorage.util;
 
+import com.simibubi.create.AllItems;
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
-import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
-import net.fxnt.fxntstorage.backpack.upgrade.BackpackOnBackUpgradeHandler;
-import net.fxnt.fxntstorage.backpack.upgrade.JetpackHandler;
-import net.fxnt.fxntstorage.backpack.upgrade.JetpackManager;
-import net.fxnt.fxntstorage.backpack.upgrade.TorchDeployerManager;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.upgrade.*;
+import net.fxnt.fxntstorage.backpack.upgrade.health.MechanicalHeartUpgrade;
+import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackManager;
+import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.torch.TorchDeployerManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.CrossbowChargedPacket;
+import net.fxnt.fxntstorage.network.packet.StorageNetworkHighlightPacket;
+import net.fxnt.fxntstorage.network.packet.StorageNetworkSyncPacket;
 import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
+import net.fxnt.fxntstorage.storage_network.StorageNetwork;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CrossbowItem;
@@ -29,14 +38,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.Tags;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
+import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingGetProjectileEvent;
 import net.minecraftforge.event.entity.player.ArrowLooseEvent;
@@ -44,10 +51,12 @@ import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
+import top.theillusivec4.curios.api.event.CurioChangeEvent;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -57,10 +66,7 @@ import java.util.function.Predicate;
 
 @Mod.EventBusSubscriber(modid = FXNTStorage.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class EventHandler {
-    private static int slowTick = 0;
-    private static int mediumTick = 0;
-    private static final int slowTicks = 30;
-    private static final int mediumTicks = 15;
+    private static final BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -73,13 +79,32 @@ public class EventHandler {
         // Storage Controller
         if (block instanceof StorageController controller) {
             if (!controller.hitFront(state, event.getHitVec())) return;
+            if (player.getMainHandItem().is(AllItems.WRENCH.asItem()) && player.isShiftKeyDown()) return;
 
             BlockEntity be = level.getBlockEntity(pos);
             if (!(be instanceof StorageControllerEntity controllerEntity)) return;
 
-            if (state.getValue(StorageController.CONNECTED)) {
+            boolean isControllerConnected = state.getValue(StorageController.CONNECTED);
+            if (isControllerConnected) {
                 if (!level.isClientSide) {
-                    controllerEntity.transferItemsFromPlayer(player);
+                    if (player.getMainHandItem().is(AllItems.WRENCH.asItem())) {
+                        boolean enabled = controllerEntity.toggleHighlight((ServerPlayer) player);
+
+                        StorageNetwork network = controllerEntity.getConnectedNetwork();
+                        Set<BlockPos> components = network.getComponents();
+
+                        if (enabled)
+                            ModNetwork.sendToPlayer((ServerPlayer) event.getEntity(), new StorageNetworkSyncPacket(pos, components));
+                        ModNetwork.sendToPlayer((ServerPlayer) event.getEntity(), new StorageNetworkHighlightPacket(pos, enabled));
+
+                        player.displayClientMessage(
+                                Component.translatable(enabled ? "fxntstorage.storage_controller.highlight_enabled" : "fxntstorage.storage_controller.highlight_disabled")
+                                        .withStyle(ChatFormatting.YELLOW),
+                                true
+                        );
+                    } else {
+                        controllerEntity.transferItemsFromPlayer(player);
+                    }
                 }
                 event.setCanceled(true);
                 event.setCancellationResult(InteractionResult.SUCCESS);
@@ -90,32 +115,23 @@ public class EventHandler {
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
         Player player = event.getEntity();
-        if (player == null || player.isCreative() || player.level().isClientSide || !event.getAction().equals(PlayerInteractEvent.LeftClickBlock.Action.START))
-            return;
+        if (player.isCreative() || player.level().isClientSide) return;
+        if (!event.getAction().equals(PlayerInteractEvent.LeftClickBlock.Action.START)) return;
 
-        Level world = event.getLevel();
-        InteractionHand hand = event.getHand();
-        BlockPos pos = event.getPos();
-        ItemStack tool = player.getMainHandItem();
+        if (!BackpackHelper.isWearingBackpack(player)) return;
 
-        // Check if the selected item is tagged as a TOOL
-        if (tool.is(Tags.Items.TOOLS) || tool.is(Tags.Items.SHEARS)) {
-            new BackpackOnBackUpgradeHandler(player).fromAttackBlockEvent(player, world, hand, pos);
-        }
+        UpgradeEventDispatcher.dispatchLeftClickBlock(player, event.getHand(), event.getPos());
     }
 
     @SubscribeEvent
     public static void onAttackEntity(AttackEntityEvent event) {
         Player player = event.getEntity();
-        Level world = event.getEntity().getCommandSenderWorld();
-        InteractionHand hand = event.getEntity().getUsedItemHand();
-        ItemStack weapon = player.getMainHandItem().copy();
-        Entity target = event.getTarget();
+        if (player.level().isClientSide) return;
 
-        // Check if the selected item is tagged as a TOOL/WEAPON
-        if ((weapon.is(Tags.Items.TOOLS) || weapon.is(Tags.Items.SHEARS)) && target instanceof LivingEntity livingEntity) {
-            new BackpackOnBackUpgradeHandler(player).fromAttackEntityEvent(player, world, hand, livingEntity);
-        }
+        if (!(event.getTarget() instanceof LivingEntity livingEntity)) return;
+        if (!BackpackHelper.isWearingBackpack(player)) return;
+
+        UpgradeEventDispatcher.dispatchAttackEntity(player, player.getUsedItemHand(), livingEntity);
     }
 
     @SubscribeEvent
@@ -123,11 +139,12 @@ public class EventHandler {
         if (event.phase == TickEvent.Phase.START) {
             Player player = event.player;
 
-            if (!BackpackHelper.isWearingBackpack(player)) return;
-            BackpackOnBackUpgradeHandler handler = new BackpackOnBackUpgradeHandler(player);
+            ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+            BackpackContainer container = new BackpackContainer(player, backpack);
 
             JetpackHandler jetpackHandler = JetpackManager.getJetpackHandler(player);
-            if (handler.hasUpgrade(Util.FLIGHT_UPGRADE)) {
+
+            if (UpgradeHelper.hasActiveUpgrade(container, UpgradeType.FLIGHT)) {
                 jetpackHandler.execute();
             } else {
                 // Account for deactivating flight upgrade while hovering
@@ -138,19 +155,10 @@ public class EventHandler {
             if (player.level().isClientSide || player.isSpectator() || !player.isAlive() || player.isSleeping() || player.isDeadOrDying())
                 return;
 
-            /* Torch Deployer Upgrade */
-            if (handler.hasUpgrade(Util.TORCHDEPLOYER_UPGRADE)) handler.applyTorchDeployerUpgrade(player);
-
-            mediumTick++;
-            slowTick++;
-            if (mediumTick >= mediumTicks) {
-                handler.applyRefillUpgrade();
-                handler.applyFeederUpgrade();
-                mediumTick = 0;
-            }
-            if (slowTick >= slowTicks) {
-                handler.applyMagnetUpgrade();
-                slowTick = 0;
+            // NEW upgrade tick system
+            for (IUpgrade upgrade : UpgradeRegistry.getAll()) {
+                UpgradeContext ctx = UpgradeContext.forWornBackpack(player, backpack, container);
+                upgrade.tick(ctx);
             }
         }
     }
@@ -167,6 +175,7 @@ public class EventHandler {
         }
 
         JetpackManager.addPlayer(event.getEntity());
+        stopJukeboxIfPlaying((ServerPlayer) event.getEntity());
     }
 
     @SubscribeEvent
@@ -177,28 +186,49 @@ public class EventHandler {
             if (player.isSpectator() || player.level().isClientSide || !player.isAlive() || player.isSleeping() || player.isDeadOrDying())
                 return;
             if (!BackpackHelper.isWearingBackpack(player)) return;
-            if (new BackpackOnBackUpgradeHandler(player).applyFallDamageUpgrade()) {
+            if (UpgradeEventDispatcher.dispatchLivingFall(player, event)) {
                 event.setCanceled(true);
             }
         }
     }
 
     @SubscribeEvent
-    public static void onServerJoin(EntityJoinLevelEvent event) {
+    public static void onServerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             JetpackManager.addPlayer(player);
-            if (player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).isEmpty()) {
-                player.getPersistentData().put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, new CompoundTag());
+            JukeboxHandler.syncBlocksToPlayers(player);
+
+            CompoundTag persistent = player.getPersistentData();
+            if (!persistent.contains(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)) {
+                persistent.put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, new CompoundTag());
+            } else {
+                CompoundTag modTag = persistent.getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG);
+
+                int version = modTag.getInt("DataVersion");
+                if (version < ConfigManager.CURRENT_DATA_VERSION) {
+                    ConfigManager.migrateSettings(persistent, version);
+                    modTag.putInt("DataVersion", ConfigManager.CURRENT_DATA_VERSION);
+                    persistent.put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, modTag);
+                }
             }
         }
     }
 
     @SubscribeEvent
-    public static void onServerLeave(EntityLeaveLevelEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            JetpackManager.removePlayer(player);
-            TorchDeployerManager.removePlayer(player);
+    public static void onServerLeave(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        JetpackManager.removePlayer(player);
+        JukeboxHandler.stopPlayer(player);
+        TorchDeployerManager.removePlayer(player);
+        if (BackpackHelper.isWearingBackpack(player)
+                && UpgradeHelper.hasActiveUpgrade(new BackpackContainer(player, BackpackHelper.getEquippedBackpackStack(player)), UpgradeType.HEALTH)) {
+            MechanicalHeartUpgrade.saveCurrentHealth(player);
         }
+    }
+
+    @SubscribeEvent
+    public static void onServerStopping(ServerStoppingEvent event) {
+        playersUsingBackpackArrows.clear();
     }
 
     @SubscribeEvent
@@ -206,27 +236,11 @@ public class EventHandler {
         Player player = event.getPlayer();
         Level level = player.level();
 
-        if (level.isClientSide && player.isCreative()) return;
+        if (level.isClientSide || player.isCreative()) return;
 
-        BackpackOnBackUpgradeHandler handler = new BackpackOnBackUpgradeHandler(player);
-
-        // Torch Deployer Cooldown
-        if (event.getState().is(Blocks.TORCH) && handler.hasUpgrade(Util.TORCHDEPLOYER_UPGRADE)) {
-            TorchDeployerManager.resetCooldown(player);
-        }
-
-        // Ore Mining
-        if (!handler.hasUpgrade(Util.OREMINING_UPGRADE)) return;
-
-        ItemStack tool = player.getMainHandItem();
-        if (tool.isCorrectToolForDrops(event.getState()) || event.getState().is(ModTags.Blocks.BREAKABLE_WITH_ANY_TOOL)) {
-            if (ConfigManager.CommonConfig.OREMINE_ORES_ONLY.get() && !event.getState().is(ModTags.Blocks.ORE_MINING_BLOCK)) {
-                return;
-            }
-
-            boolean mineAllBlocks = player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getBoolean("MineAllBlocks");
-
-            handler.applyOreMiningUpgrade(level, event.getPos(), player, mineAllBlocks, 64);
+        // Ore Mining and Torch Deployer
+        if (!BackpackHelper.isWearingBackpack(player)) return;
+        if (UpgradeEventDispatcher.dispatchBlockBreak(player, event)) {
             event.setCanceled(true);
         }
     }
@@ -244,13 +258,13 @@ public class EventHandler {
             // Check Backpack
             boolean checkBackpack = player.level().isClientSide
                     ? ConfigManager.ClientConfig.CHECK_BACKPACK_FOR_PROJECTILES.get()
-                    : player.getPersistentData().getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG).getBoolean("CheckBackpackForProjectiles");
+                    : ClientSettings.getBoolean(player.getUUID(), "CheckBackpackForProjectiles");
 
             if (!checkBackpack || !BackpackHelper.isWearingBackpack(player))
                 return;
 
             ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
-            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IBackpackContainer backpackContainer = new BackpackContainer(player, backpack);
             IItemHandler itemHandler = backpackContainer.getItemHandler();
 
             Predicate<ItemStack> predicate = weapon.getAllSupportedProjectiles();
@@ -266,7 +280,7 @@ public class EventHandler {
 
             // Only provide arrows from backpack if no arrows found in inventory
             if (!hasArrowsInInventory) {
-                for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.TOOL_SLOT_END_RANGE; i++) {
+                for (int i : layout.getItemsAndToolsRange()) {
                     ItemStack stack = itemHandler.getStackInSlot(i);
 
                     if (predicate.test(stack)) {
@@ -330,7 +344,7 @@ public class EventHandler {
         if (!BackpackHelper.isWearingBackpack(player)) return;
 
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
-        IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+        IBackpackContainer backpackContainer = new BackpackContainer(player, backpack);
         IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
 
         ItemStack heldItem = player.getMainHandItem();
@@ -350,7 +364,7 @@ public class EventHandler {
 
         Predicate<ItemStack> predicate = weapon.getAllSupportedProjectiles();
 
-        for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.TOOL_SLOT_END_RANGE; i++) {
+        for (int i : layout.getItemsAndToolsRange()) {
             ItemStack stack = itemHandler.getStackInSlot(i);
 
             if (predicate.test(stack)) {
@@ -371,4 +385,52 @@ public class EventHandler {
         }
     }
 
+    @SubscribeEvent
+    public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (event.getSlot() != EquipmentSlot.CHEST) return;
+
+        ItemStack oldStack = event.getFrom();
+        ItemStack newStack = event.getTo();
+
+        // Backpack was removed from chest slot
+        if (isBackpack(oldStack) && !isBackpack(newStack)) {
+            stopJukeboxIfPlaying(player);
+            UpgradeEventDispatcher.dispatchBackpackUnequipped(player, oldStack);
+        }
+
+        // Backpack was equipped in the check slot
+        if (!isBackpack(oldStack) && isBackpack(newStack)) {
+            UpgradeEventDispatcher.dispatchBackpackEquipped(player, newStack);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onCurioChange(CurioChangeEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (!event.getIdentifier().equals("back")) return;
+
+        ItemStack oldStack = event.getFrom();
+        ItemStack newStack = event.getTo();
+
+        // Backpack removed from a back slot
+        if (isBackpack(oldStack) && !isBackpack(newStack)) {
+            stopJukeboxIfPlaying(player);
+            UpgradeEventDispatcher.dispatchBackpackUnequipped(player, oldStack);
+        }
+
+        if (!isBackpack(oldStack) && isBackpack(newStack)) {
+            UpgradeEventDispatcher.dispatchBackpackEquipped(player, newStack);
+        }
+    }
+
+    private static boolean isBackpack(ItemStack stack) {
+        return stack.is(ModTags.Items.BACKPACK_ITEM);
+    }
+
+    private static void stopJukeboxIfPlaying(ServerPlayer player) {
+        if (JukeboxHandler.isPlayerPlaying(player)) {
+            JukeboxHandler.stopPlayer(player);
+        }
+    }
 }

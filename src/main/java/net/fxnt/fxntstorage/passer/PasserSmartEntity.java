@@ -49,5 +49,4 @@ public class PasserSmartEntity extends PasserEntity {
                 ? ItemHelper.ExtractionCountMode.EXACTLY
                 : ItemHelper.ExtractionCountMode.UPTO;
     }
-
 }

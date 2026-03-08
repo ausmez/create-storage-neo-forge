@@ -59,7 +59,6 @@ public class CuriosCompat implements ICurio {
 
     @Override
     public @NotNull DropRule getDropRule(SlotContext slotContext, DamageSource source, int lootingLevel, boolean recentlyHit) {
-        return (ConfigManager.CommonConfig.CURIOS_KEEP_BACKPACK.get()) ? DropRule.ALWAYS_KEEP : DropRule.ALWAYS_DROP;
+        return (ConfigManager.ServerConfig.CURIOS_KEEP_BACKPACK.get()) ? DropRule.ALWAYS_KEEP : DropRule.ALWAYS_DROP;
     }
-
 }

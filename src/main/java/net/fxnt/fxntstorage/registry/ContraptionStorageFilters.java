@@ -2,7 +2,6 @@ package net.fxnt.fxntstorage.registry;
 
 import com.simibubi.create.content.contraptions.Contraption;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
-import net.fxnt.fxntstorage.FXNTStorage;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
@@ -13,9 +12,7 @@ public class ContraptionStorageFilters {
             Collections.synchronizedMap(new WeakHashMap<>());
 
     public static ContraptionStorageFilters getOrCreate(Contraption contraption) {
-        return CONTRAPTION_REGISTRY.computeIfAbsent(contraption, c -> {
-            return new ContraptionStorageFilters();
-        });
+        return CONTRAPTION_REGISTRY.computeIfAbsent(contraption, c -> new ContraptionStorageFilters());
     }
 
     public static void cleanupContraption(Contraption contraption) {
@@ -60,5 +57,4 @@ public class ContraptionStorageFilters {
 
     public interface FilteredMountedStorage {
     }
-
 }

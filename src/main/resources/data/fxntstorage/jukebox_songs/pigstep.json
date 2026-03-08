@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:music_disc.pigstep",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "fxntstorage:pacify_piglins",
+      "amplifier": 0
+    }
+  ]
+}

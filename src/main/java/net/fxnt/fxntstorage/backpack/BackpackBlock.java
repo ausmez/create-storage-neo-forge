@@ -1,5 +1,7 @@
 package net.fxnt.fxntstorage.backpack;
 
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.cache.BackpackShapeCache;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
@@ -38,13 +40,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @SuppressWarnings("deprecation")
 public class BackpackBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-
+    private static final BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
     public final int stackMultiplier;
-
-    public static final int ITEM_SLOT_COUNT = 108;
-    public static final int TOOL_SLOT_COUNT = 24;
-    public static final int UPGRADE_SLOT_COUNT = 6;
-    public static final int TOTAL_SLOT_COUNT = ITEM_SLOT_COUNT + TOOL_SLOT_COUNT + UPGRADE_SLOT_COUNT;
 
     public BackpackBlock(Properties pProperties, int stackMultiplier) {
         super(pProperties.strength(0.2f, 600.0f));
@@ -56,14 +53,14 @@ public class BackpackBlock extends BaseEntityBlock {
     public @Nullable BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         BlockEntityType<?> type = ModBlockEntities.BACKPACK_ENTITY.get();
         BackpackEntity blockEntity = new BackpackEntity(type, pPos, pState);
-        blockEntity.setData(TOTAL_SLOT_COUNT, stackMultiplier);
+        blockEntity.setData(layout.getTotalSlots(), stackMultiplier);
         return blockEntity;
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return level.isClientSide ? null : createTickerHelper(blockEntityType, ModBlockEntities.BACKPACK_ENTITY.get(), (type, wor, pos, entity) -> entity.serverTick(type));
+        return createTickerHelper(blockEntityType, ModBlockEntities.BACKPACK_ENTITY.get(), (world, blockPos, blockState, blockEntity) -> blockEntity.serverTick(level));
     }
 
     @Override
@@ -79,24 +76,8 @@ public class BackpackBlock extends BaseEntityBlock {
         }
     }
 
-    public static int getSlotCount() {
-        return TOTAL_SLOT_COUNT;
-    }
-
-    public static int getItemSlotCount() {
-        return ITEM_SLOT_COUNT;
-    }
-
-    public static int getToolSlotCount() {
-        return TOOL_SLOT_COUNT;
-    }
-
-    public static int getUpgradeSlotCount() {
-        return UPGRADE_SLOT_COUNT;
-    }
-
     public int getStackMultiplier() {
-        return this.stackMultiplier;
+        return stackMultiplier;
     }
 
     public ItemStack saveEntityToStack(BackpackEntity blockEntity, ItemStack itemStack) {
@@ -127,8 +108,9 @@ public class BackpackBlock extends BaseEntityBlock {
         }
 
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-        if (blockEntity instanceof BackpackEntity backPackEntity) {
-            NetworkHooks.openScreen((ServerPlayer) pPlayer, backPackEntity, pPos);
+        if (blockEntity instanceof BackpackEntity be) {
+            NetworkHooks.openScreen((ServerPlayer) pPlayer, be, buf ->
+                    buf.writeEnum(BackpackMenu.BackpackType.BLOCK).writeBlockPos(pPos));
         }
         return InteractionResult.CONSUME;
     }

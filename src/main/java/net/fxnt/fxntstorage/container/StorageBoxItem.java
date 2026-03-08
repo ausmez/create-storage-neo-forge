@@ -1,6 +1,6 @@
 package net.fxnt.fxntstorage.container;
 
-import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
+import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackTooltip;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.Direction;
@@ -71,6 +71,4 @@ public class StorageBoxItem extends BlockItem {
             }
         };
     }
-
-
 }

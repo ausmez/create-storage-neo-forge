@@ -319,5 +319,4 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
     private void setStorageDirty() {
         ModNetwork.sendToServer(new SetMountedStorageDirtyPacket(contraptionId, localPos));
     }
-
 }

@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "fxntstorage:block/storage_controller_top",
+    "down": "create:block/dark_metal_block",
     "east": "fxntstorage:block/storage_controller_side",
     "north": "fxntstorage:block/storage_controller_front",
     "particle": "fxntstorage:block/storage_controller_side",

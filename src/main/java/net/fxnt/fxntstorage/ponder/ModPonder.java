@@ -38,11 +38,11 @@ public class ModPonder {
                     .add(ModBlocks.SMART_PASSER_BLOCK)
                     .add(ModBlocks.STORAGE_CONTROLLER)
                     .add(ModBlocks.STORAGE_INTERFACE)
+                    .add(ModBlocks.STORAGE_INTERFACE_FILTERED)
                     .add(ModBlocks.STORAGE_TRIM_OAK)
                     .add(ModItems.STORAGE_BOX_VOID_UPGRADE)
                     .add(ModItems.STORAGE_BOX_CAPACITY_UPGRADE);
         }
-
     }
 
     public static class Scenes {
@@ -79,12 +79,15 @@ public class ModPonder {
                     .addStoryBoard("smartpasserblock/intro", SmartPasserBlockScenes::intro, CREATE_STORAGE);
 
             HELPER.forComponents(ModBlocks.STORAGE_CONTROLLER)
-                    .addStoryBoard("storagecontroller/intro", StorageControllerScenes::intro, CREATE_STORAGE);
+                    .addStoryBoard("storagecontroller/intro", StorageControllerScenes::intro, CREATE_STORAGE)
+                    .addStoryBoard("storagecontroller/highlight", StorageControllerScenes::highlighting, CREATE_STORAGE);
 
             HELPER.forComponents(ModBlocks.STORAGE_INTERFACE)
                     .addStoryBoard("storageinterface/intro", StorageInterfaceScenes::intro, CREATE_STORAGE);
 
-
+            HELPER.forComponents(ModBlocks.STORAGE_INTERFACE_FILTERED)
+                    .addStoryBoard("storageinterfacefiltered/intro", StorageInterfaceFilteredScenes::intro, CREATE_STORAGE)
+                    .addStoryBoard("storageinterfacefiltered/filter", StorageInterfaceFilteredScenes::filter, CREATE_STORAGE);
         }
     }
 

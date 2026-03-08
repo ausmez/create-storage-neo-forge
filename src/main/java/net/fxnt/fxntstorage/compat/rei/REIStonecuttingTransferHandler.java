@@ -6,12 +6,12 @@ import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.entry.InputIngredient;
 import me.shedaniel.rei.api.common.transfer.info.stack.SlotAccessor;
 import me.shedaniel.rei.plugin.common.BuiltinPlugin;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
-import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.network.packet.TransferRecipePacket;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.LocalPlayer;
@@ -51,24 +51,21 @@ public class REIStonecuttingTransferHandler implements SimpleTransferHandler {
         LocalPlayer player = context.getMinecraft().player;
         Inventory inventory = player.getInventory();
 
-        List<SlotAccessor> slotAccessors = new ArrayList<>();
-
         // Add player inventory
-        slotAccessors.addAll(
-                IntStream.range(0, inventory.items.size())
-                        .mapToObj(index -> SlotAccessor.fromPlayerInventory(player, index))
-                        .toList()
-        );
+        List<SlotAccessor> slotAccessors = new ArrayList<>(IntStream.range(0, inventory.items.size())
+                .mapToObj(index -> SlotAccessor.fromPlayerInventory(player, index))
+                .toList());
 
         // Add backpack inventory
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
 
         if (!backpack.isEmpty()) {
-            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IBackpackContainer backpackContainer = new BackpackContainer(player, backpack);
             IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
+            BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
             slotAccessors.addAll(
-                    IntStream.range(Util.ITEM_SLOT_START_RANGE, Util.ITEM_SLOT_END_RANGE)
+                    IntStream.range(layout.items().getStartIndex(), layout.items().getEndIndex())
                             .mapToObj(index -> new SlotItemHandler(itemHandler, index, 0, 0))
                             .map(SlotAccessor::fromSlot)
                             .toList()

@@ -4,6 +4,7 @@ import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.network.packet.SyncContainerPacket;
 import net.fxnt.fxntstorage.network.packet.SyncSlotCountPacket;
 import net.minecraft.core.NonNullList;
+import net.minecraft.network.protocol.game.ClientboundContainerSetDataPacket;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -35,7 +36,6 @@ public class HighStackCountSync implements ContainerSynchronizer {
 
     @Override
     public void sendDataChange(@NotNull AbstractContainerMenu container, int id, int value) {
-        // NOOP?
+        player.connection.send(new ClientboundContainerSetDataPacket(container.containerId, id, value));
     }
-
 }

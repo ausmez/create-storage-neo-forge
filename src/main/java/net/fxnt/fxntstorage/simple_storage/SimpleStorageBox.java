@@ -6,7 +6,6 @@ import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -34,10 +33,21 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 @SuppressWarnings("deprecation")
 public class SimpleStorageBox extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
+
+    private static class ClickData {
+        long lastClickTime;
+        long lastAttackTime;
+        BlockPos lastBlockPos;
+    }
+
+    private final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
 
     public SimpleStorageBox(Properties pProperties) {
         super(pProperties);
@@ -86,23 +96,19 @@ public class SimpleStorageBox extends BaseEntityBlock {
             ItemStack handItem = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
 
             long currentTime = pPlayer.level().getGameTime();
-            CompoundTag pd = pPlayer.getPersistentData();
-
-            boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
-                    && pd.getInt("fxntstorage:last_click_type") == 1
-                    && pd.getLong("fxntstorage:last_block_pos") == simpleStorageBoxEntity.getBlockPos().asLong();
+            ClickData data = CLICK_DATA.computeIfAbsent(pPlayer, p -> new ClickData());
+            boolean isDoubleClick = currentTime - data.lastClickTime < 10
+                    && data.lastBlockPos == simpleStorageBoxEntity.getBlockPos();
 
             if (isDoubleClick) {
                 // Double Right-click
-                pd.putInt("fxntstorage:last_click_type", 0);
-                pd.remove("fxntstorage:last_block_pos");
                 if (handItem.isEmpty() || ItemStack.isSameItemSameTags(handItem, simpleStorageBoxEntity.filterItem)) {
                     simpleStorageBoxEntity.transferToStorage(pPlayer, true);
                 }
+                data.lastClickTime = 0;
             } else {
-                pd.putLong("fxntstorage:last_click_time", currentTime);
-                pd.putLong("fxntstorage:last_block_pos", simpleStorageBoxEntity.getBlockPos().asLong());
-                pd.putInt("fxntstorage:last_click_type", 1);
+                data.lastClickTime = currentTime;
+                data.lastBlockPos = simpleStorageBoxEntity.getBlockPos();
 
                 if (handItem.isEmpty()) {
                     if (pPlayer.isShiftKeyDown()) {
@@ -145,12 +151,12 @@ public class SimpleStorageBox extends BaseEntityBlock {
         BlockEntity blockEntity = level.getBlockEntity(blockPos);
         Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
         if (blockEntity instanceof SimpleStorageBoxEntity storageBoxEntity && !(item instanceof AxeItem)) {
-            CompoundTag pd = player.getPersistentData();
-            long lastAttackTime = pd.getLong("fxntstorage:last_attack_time");
+            ClickData data = CLICK_DATA.computeIfAbsent(player, p -> new ClickData());
+            long currentTime = level.getGameTime();
 
-            if (level.getGameTime() - lastAttackTime > 1) {
+            if (currentTime - data.lastAttackTime > 1) {
                 storageBoxEntity.transferFromStorage(player);
-                pd.putLong("fxntstorage:last_attack_time", level.getGameTime());
+                data.lastAttackTime = currentTime;
             }
         }
     }

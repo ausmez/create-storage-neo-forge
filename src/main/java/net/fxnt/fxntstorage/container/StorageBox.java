@@ -37,11 +37,20 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 @SuppressWarnings("deprecation")
 public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity> {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
     public static final BooleanProperty VOID_UPGRADE = BooleanProperty.create("void_upgrade");
+
+    private static class ClickData {
+        long lastClickTime;
+        BlockPos lastBlockPos;
+    }
+    private static final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
 
     private final int slotCount;
 
@@ -137,23 +146,16 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
             ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
 
             long currentTime = pPlayer.level().getGameTime();
-            CompoundTag pd = pPlayer.getPersistentData();
-
-            boolean isDoubleClick = (currentTime - pd.getLong("fxntstorage:last_click_time")) < 10
-                    && pd.getInt("fxntstorage:last_click_type") == 1
-                    && pd.getLong("fxntstorage:last_block_pos") == storageBoxEntity.getBlockPos().asLong();
+            ClickData data = CLICK_DATA.computeIfAbsent(pPlayer, p -> new ClickData());
+            boolean isDoubleClick = currentTime - data.lastClickTime < 10
+                    && data.lastBlockPos == storageBoxEntity.getBlockPos();
 
             if (isDoubleClick) {
-                pd.putInt("fxntstorage:last_click_type", 0);
-                pd.remove("fxntstorage:last_block_pos");
                 // Double Right-click
                 if (itemInHand.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
                     storageBoxEntity.transferToStorage(pState, pPlayer, true);
                 }
             } else {
-                pd.putLong("fxntstorage:last_click_time", currentTime);
-                pd.putLong("fxntstorage:last_block_pos", storageBoxEntity.getBlockPos().asLong());
-                pd.putInt("fxntstorage:last_click_type", 1);
                 // Single Right-Click
                 if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
                     // Right-Click with Create Wrench in hand will toggle void mode
@@ -172,6 +174,8 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                     storageBoxEntity.transferToStorage(pState, pPlayer, false);
                 }
             }
+            data.lastClickTime = currentTime;
+            data.lastBlockPos = storageBoxEntity.getBlockPos();
         }
 
         return InteractionResult.sidedSuccess(false);
@@ -248,5 +252,4 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         ClipContext context = new ClipContext(eyePos, endPos, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player);
         return level.clip(context);
     }
-
 }

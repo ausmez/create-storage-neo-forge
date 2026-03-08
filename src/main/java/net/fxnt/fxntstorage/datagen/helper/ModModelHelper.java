@@ -127,5 +127,4 @@ public class ModModelHelper {
                 prov.models().withExistingParent("block/storage_box_" + fillLevel, modLoc("block/storage_box_light"))
                         .texture("light", modLoc("block/storage_box/" + lightColor + "_light")));
     }
-
 }

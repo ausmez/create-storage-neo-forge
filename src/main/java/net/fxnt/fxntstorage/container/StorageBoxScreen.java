@@ -406,5 +406,4 @@ public class StorageBoxScreen extends AbstractContainerScreen<StorageBoxMenu> {
                 new Rect2i(inventoryExclusionZoneMinX, inventoryExclusionZoneMinZ, inventoryExclusionZoneWidth, inventoryExclusionZoneHeight)
         );
     }
-
 }

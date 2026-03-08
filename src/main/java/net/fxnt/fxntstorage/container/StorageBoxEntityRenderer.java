@@ -11,6 +11,7 @@ import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -24,7 +25,6 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
 
 import static net.fxnt.fxntstorage.util.RendererHelper.*;
 
@@ -51,8 +51,8 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
 
         poseStack.pushPose();
         poseStack.translate(context.localPos.getX() + 0.5f, context.localPos.getY() + 0.5f, context.localPos.getZ() + 0.5f);
-        poseStack.mulPose(Axis.YP.rotation(SIDE_ROT_Y[side.ordinal()]));
-        poseStack.translate(-0.5f, 0, -0.5f);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-side.toYRot()));
+        poseStack.translate(0f, 0f, 0.5f - 0.95f / 16f);
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
@@ -117,22 +117,20 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         BlockState blockState = blockEntity.getBlockState();
         Direction side = blockState.getValue(HorizontalDirectionalBlock.FACING);
 
-        BlockPos lightPos = blockEntity.getBlockPos().relative(side);
-
-        int blockLight = level.getBrightness(LightLayer.BLOCK, lightPos);
-        int skyLight = level.getBrightness(LightLayer.SKY, lightPos);
-        int lightLevel = LightTexture.pack(blockLight, skyLight);
+        int lightLevel = LevelRenderer.getLightColor(level, blockEntity.getBlockPos());
 
         FilteringRenderer.renderOnBlockEntity(blockEntity, partialTick, poseStack, buffer, lightLevel, packedOverlay);
 
+        poseStack.pushPose();
         poseStack.translate(0.5f, 0, 0.5f);
-        poseStack.mulPoseMatrix((new Matrix4f()).rotateYXZ(SIDE_ROT_Y[side.ordinal()], 0, 0));
-        poseStack.translate(-0.5f, 0, -0.5f);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-side.toYRot()));
+        poseStack.translate(0f, 0f, 0.5f - 0.95f / 16f);
 
         int color = getColorForDistance(distance);
 
         renderLine(line1, 7f, poseStack, buffer, color, lightLevel);
         renderLine(line2, 4f, poseStack, buffer, color, lightLevel);
-    }
 
+        poseStack.popPose();
+    }
 }

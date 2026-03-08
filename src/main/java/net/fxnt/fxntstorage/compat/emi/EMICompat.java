@@ -4,7 +4,7 @@ import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.widget.Bounds;
-import net.fxnt.fxntstorage.backpack.main.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.client.renderer.Rect2i;
@@ -32,6 +32,6 @@ public class EMICompat implements EmiPlugin {
 
         registry.removeEmiStacks(emiStack -> emiStack.getItemStack().is(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED));
 
+        registry.addDragDropHandler(BackpackScreen.class, new EMIDragDropFilterHandler());
     }
-
 }

@@ -23,5 +23,4 @@ public class EMIVanillaPluginMixin {
         registry.addRecipeHandler(MenuType.CRAFTING, new EMICraftingRecipeHandler());
         registry.addRecipeHandler(MenuType.STONECUTTER, new EMIStonecuttingRecipeHandler());
     }
-
 }

@@ -45,5 +45,4 @@ public class SimpleStorageBoxMovementBehaviour implements MovementBehaviour {
     public boolean disableBlockEntityRendering() {
         return true;
     }
-
 }

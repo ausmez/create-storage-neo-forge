@@ -86,7 +86,7 @@ public class SimpleStorageBoxScenes {
         scene.idle(70);
         scene.overlay().showText(60).text("All Simple Storage Boxes have the same attributes");
         scene.idle(70);
-        scene.overlay().showText(60).text("Each box can hold up to 32x max stack size of one item").attachKeyFrame();
+        scene.overlay().showText(60).text("Each box can hold up to 32x the max stack size of one item").attachKeyFrame();
         scene.idle(70);
 
         ItemStack sand = new ItemStack(Items.SAND);
@@ -143,11 +143,11 @@ public class SimpleStorageBoxScenes {
         scene.world().showSection(util.select().column(2, 2), Direction.DOWN);
         scene.idle(10);
 
-        scene.overlay().showText(50).text("The front panel displays the percentage used").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
+        scene.overlay().showText(50).text("The front panel displays the item count and percentage used").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
         scene.idle(60);
 
         scene.overlay().showControls(util.vector().blockSurface(sSBox, Direction.NORTH), Pointing.RIGHT, 80).rightClick().withItem(gold);
-        scene.overlay().showText(80).text("Items can be inserted directly by right-clicking the front panel").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.25, 0.25, 0));
+        scene.overlay().showText(80).text("Items can be inserted directly by right-clicking the front panel...").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.25, 0.25, 0));
         scene.idle(10);
         scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(gold);
@@ -188,7 +188,7 @@ public class SimpleStorageBoxScenes {
         scene.idle(70);
 
         scene.overlay().showControls(util.vector().blockSurface(sSBox, Direction.NORTH), Pointing.RIGHT, 50).leftClick();
-        scene.overlay().showText(50).independent().text("Left-click the front panel to extract a single item").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
+        scene.overlay().showText(50).independent().text("Left-click front panel to extract a single item").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
         ElementLink<EntityElement> itemEntity = scene.world().createItemEntity(util.vector().centerOf(2, 2, 1), new Vec3(0, 0, 0), gold);
         scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, gold.copyWithCount(t.getItemHandler().getStackInSlot(0).getCount() - 1)));
         scene.idle(60);
@@ -196,7 +196,7 @@ public class SimpleStorageBoxScenes {
         scene.world().modifyEntity(itemEntity, Entity::discard);
 
         scene.overlay().showControls(util.vector().blockSurface(sSBox, Direction.NORTH), Pointing.RIGHT, 50).leftClick().whileSneaking();
-        scene.overlay().showText(50).text("Left-click while sneaking to remove a single item stack").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
+        scene.overlay().showText(50).text("Left-click while sneaking to remove a whole item stack").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
         itemEntity = scene.world().createItemEntity(util.vector().centerOf(2, 2, 1), new Vec3(0, 0, 0), gold.copyWithCount(64));
         scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(0, gold.copyWithCount(t.getItemHandler().getStackInSlot(0).getCount() - 64)));
         scene.idle(60);
@@ -204,7 +204,7 @@ public class SimpleStorageBoxScenes {
         scene.world().modifyEntity(itemEntity, Entity::discard);
 
         scene.overlay().showControls(util.vector().blockSurface(sSBox, Direction.NORTH), Pointing.RIGHT, 60).rightClick().whileSneaking();
-        scene.overlay().showText(60).text("Right-click with an empty hand to access the inventory menu").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
+        scene.overlay().showText(60).text("Right-click with an empty hand while sneaking to open the inventory menu").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
         scene.idle(70);
 
         scene.markAsFinished();
@@ -227,15 +227,15 @@ public class SimpleStorageBoxScenes {
         scene.world().showSection(util.select().layers(1, 2), Direction.DOWN);
         scene.idle(10);
 
-        scene.overlay().showText(70).text("Two upgrades are available for Simple Storage Boxes, Void Upgrade and Capacity Upgrades").attachKeyFrame().placeNearTarget();
+        scene.overlay().showText(70).text("Void and Capacity Upgrades are available for Simple Storage Boxes").attachKeyFrame().placeNearTarget();
         scene.idle(80);
-        scene.overlay().showText(70).text("Apply an upgrade by interacting with the front panel using the upgrade item...").placeNearTarget();
+        scene.overlay().showText(70).text("Upgrades are applied by using the item on the front panel...").placeNearTarget();
         scene.idle(80);
-        scene.overlay().showText(105).text("...or via the interface by right-clicking while sneaking").placeNearTarget();
+        scene.overlay().showText(105).text("...or adding via the interface accessed by right-clicking while sneaking").placeNearTarget();
         scene.idle(115);
 
         scene.overlay().showControls(util.vector().blockSurface(leftBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(vUpgrade);
-        scene.overlay().showText(65).text("Void upgrade will void any item added beyond the max capacity").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(leftBox, Direction.WEST));
+        scene.overlay().showText(65).text("Void Upgrade will void (delete) any item added beyond the max capacity").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(leftBox, Direction.WEST));
         scene.idle(40);
         scene.world().modifyBlock(leftBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, (t) -> {
@@ -247,7 +247,7 @@ public class SimpleStorageBoxScenes {
         scene.idle(50);
 
         scene.overlay().showControls(util.vector().blockSurface(rightBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(cUpgrade);
-        scene.overlay().showText(65).text("Capacity upgrade will double the storage for each upgrade").placeNearTarget().pointAt(util.vector().blockSurface(rightBox, Direction.WEST));
+        scene.overlay().showText(65).text("Capacity Upgrade will double the storage for each upgrade").placeNearTarget().pointAt(util.vector().blockSurface(rightBox, Direction.WEST));
         scene.idle(40);
         scene.world().modifyBlock(rightBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> {
@@ -259,9 +259,8 @@ public class SimpleStorageBoxScenes {
         });
         scene.idle(50);
 
-        scene.overlay().showText(70).text("A total of 9 capacity upgrades and 1 void upgrade can be added").placeNearTarget();
+        scene.overlay().showText(70).text("A total of 9 Capacity Upgrades and 1 Void Upgrade can be added").placeNearTarget();
 
         scene.markAsFinished();
     }
-
 }

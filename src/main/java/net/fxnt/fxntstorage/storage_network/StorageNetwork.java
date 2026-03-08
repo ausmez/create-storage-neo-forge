@@ -1,26 +1,30 @@
 package net.fxnt.fxntstorage.storage_network;
 
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
+import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.init.ModTags;
+import net.fxnt.fxntstorage.network.packet.StorageNetworkSyncPacket;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 @ParametersAreNonnullByDefault
@@ -30,9 +34,8 @@ public class StorageNetwork {
     @Nullable
     private Level level;
     private BlockPos controllerPos;
-    private final int searchRange = ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_RANGE.get();
     private Set<BlockPos> components = new HashSet<>();
-    public NonNullList<StorageNetworkItem> boxes = NonNullList.create();
+    private final NonNullList<StorageNetworkItem> boxes = NonNullList.create();
     private int networkVersion = 0;
     private int tickCount = 0;
     private Set<ItemStack> filterItems = new HashSet<>();
@@ -50,7 +53,7 @@ public class StorageNetwork {
     public void tick() {
         checkBoxes(); // Check if boxes removed every tick
 
-        if (tickCount++ < ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) return;
+        if (tickCount++ < ConfigManager.ServerConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) return;
         tickCount = 0;
 
         refreshStorageNetwork();
@@ -79,6 +82,14 @@ public class StorageNetwork {
 
             this.components = newComponents;
             this.networkVersion = (this.networkVersion + 1) % 1000;
+
+            Set<UUID> playersHighlighting = controller.getAllHighlightingPlayers();
+            for (UUID playerId : playersHighlighting) {
+                ServerPlayer player = Objects.requireNonNull(level.getServer()).getPlayerList().getPlayer(playerId);
+                if (player != null) {
+                    ModNetwork.sendToPlayer(player, new StorageNetworkSyncPacket(controllerPos, newComponents));
+                }
+            }
         }
 
         getBoxes(this.level, this.components);
@@ -92,17 +103,18 @@ public class StorageNetwork {
     private boolean areFilterSetsEqual(Set<ItemStack> oldSet, Set<ItemStack> newSet) {
         if (oldSet.size() != newSet.size()) return false;
 
-        for (ItemStack oldStack : oldSet) {
-            boolean found = false;
-            for (ItemStack newStack : newSet) {
-                if (ItemStack.isSameItemSameTags(oldStack, newStack)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) return false;
+        Set<String> oldKeys = new HashSet<>();
+        for (ItemStack s : oldSet) oldKeys.add(itemKey(s));
+        for (ItemStack s : newSet) {
+            if (!oldKeys.contains(itemKey(s))) return false;
         }
         return true;
+    }
+
+    private static String itemKey(ItemStack stack) {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        int tagHash = stack.hasTag() ? stack.getTag().hashCode() : 0;
+        return id + "@" + tagHash;
     }
 
     private void checkBoxes() {
@@ -121,6 +133,10 @@ public class StorageNetwork {
         }
     }
 
+    public Set<BlockPos> getComponents() {
+        return this.components;
+    }
+
     private Set<ItemStack> getCurrentFilters() {
         Set<ItemStack> items = new HashSet<>();
         for (StorageNetworkItem box : boxes) {
@@ -134,28 +150,28 @@ public class StorageNetwork {
     private Set<BlockPos> getConnectedComponents(@Nullable Level level, BlockPos origin) {
         if (level == null) return new HashSet<>();
 
-        List<BlockPos> positions = new ArrayList<>();
-        positions.add(origin);
+        int searchRange = ConfigManager.ServerConfig.SIMPLE_STORAGE_NETWORK_RANGE.get();
+        Set<BlockPos> visited = new LinkedHashSet<>();
+        Queue<BlockPos> frontier = new ArrayDeque<>();
 
-        int lastCheckedPos = 0;
-        int distanceToController = 0;
+        visited.add(origin);
+        frontier.add(origin);
 
-        while (distanceToController < searchRange && lastCheckedPos < positions.size()) {
-            for (int i = lastCheckedPos; i < positions.size(); i++) {
-                BlockPos checkPos = positions.get(i);
-                for (Direction direction : Direction.values()) {
-                    BlockPos pos = checkPos.relative(direction);
-                    if (isNetworkComponent(level.getBlockState(pos)) && squaredDistance(controllerPos, pos) <= searchRange * searchRange) {
-                        if (!positions.contains(pos)) positions.add(pos);
-                    }
+        int sqRange = searchRange * searchRange;
+
+        while (!frontier.isEmpty()) {
+            BlockPos current = frontier.poll();
+            for (Direction direction : Direction.values()) {
+                BlockPos neighbor = current.relative(direction);
+                if (!visited.contains(neighbor)
+                        && isNetworkComponent(level.getBlockState(neighbor))
+                        && squaredDistance(controllerPos, neighbor) <= sqRange) {
+                    visited.add(neighbor);
+                    frontier.add(neighbor);
                 }
-                lastCheckedPos = i;
             }
-            lastCheckedPos++;
-            distanceToController++;
         }
-
-        return new HashSet<>(positions);
+        return visited;
     }
 
     private int squaredDistance(BlockPos pos1, BlockPos pos2) {
@@ -185,11 +201,11 @@ public class StorageNetwork {
         ItemStack remaining = itemStack.copy();
 
         while (!remaining.isEmpty()) {
-            SimpleStorageBoxEntity targetBox = StorageNetwork.this.findBestTargetBox(itemStack);
+            SimpleStorageBoxEntity targetBox = StorageNetwork.this.findBestTargetBox(remaining);
             if (targetBox == null) break;
 
             ItemStack beforeInsertion = remaining.copy();
-            remaining = insertIntoBox(targetBox, itemStack, 0, false);
+            remaining = insertIntoBox(targetBox, remaining, 0, false);
 
             if (remaining.getCount() >= beforeInsertion.getCount()) {
                 break;
@@ -201,6 +217,10 @@ public class StorageNetwork {
 
     public IItemHandlerModifiable getItemHandler() {
         return itemHandler;
+    }
+
+    public List<StorageNetworkItem> getBoxes() {
+        return Collections.unmodifiableList(boxes);
     }
 
     private boolean isNetworkComponent(BlockState blockState) {
@@ -219,12 +239,12 @@ public class StorageNetwork {
     }
 
     public boolean canPlaceItem(int slot, ItemStack itemStack) {
-        if (slot >= boxes.size()) return false;
+        if (slot < 0 || slot >= boxes.size()) return false;
         return boxes.get(slot).simpleStorageBoxEntity.getItemHandler().insertItem(0, itemStack, true).getCount() < itemStack.getCount();
     }
 
     public boolean canTakeItem(int slot, ItemStack itemStack) {
-        return slot <= boxes.size() && !itemStack.isEmpty();
+        return slot >= 0 && slot < boxes.size() && !itemStack.isEmpty();
     }
 
     private @Nullable SimpleStorageBoxEntity findBestTargetBox(ItemStack itemStack) {
@@ -244,7 +264,8 @@ public class StorageNetwork {
             }
         }
 
-        return ConfigManager.CommonConfig.SIMPLE_STORAGE_NETWORK_FILL_EMPTY.get() ? emptyBox : null;
+        ScrollValueBehaviour behaviour = controller.getBehaviour(ScrollOptionBehaviour.TYPE);
+        return (behaviour == null || behaviour.getValue() == 0) ? emptyBox : null;
     }
 
     private ItemStack insertIntoBox(SimpleStorageBoxEntity targetBox, ItemStack itemStack, int boxSlot, boolean simulate) {
@@ -307,14 +328,19 @@ public class StorageNetwork {
 
         @Override
         public ItemStack getStackInSlot(int slot) {
-            if (slot > boxes.size()) return ItemStack.EMPTY;
+            if (slot >= boxes.size())
+                return ItemStack.EMPTY;
             return boxes.get(slot).simpleStorageBoxEntity.getItemHandler().getStackInSlot(0);
         }
 
         @Override
         public ItemStack insertItem(int slot, ItemStack itemStack, boolean simulate) {
-            if (itemStack.isEmpty()) return ItemStack.EMPTY;
-            if (!canPlaceItem(slot, itemStack)) return itemStack;
+            if (slot >= boxes.size())
+                return itemStack;
+            if (itemStack.isEmpty())
+                return ItemStack.EMPTY;
+            if (!canPlaceItem(slot, itemStack))
+                return itemStack;
 
             int boxSlot = 0;
 
@@ -331,7 +357,8 @@ public class StorageNetwork {
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
             int boxSlot = 0;
-            if (slot >= boxes.size()) return ItemStack.EMPTY;
+            if (slot >= boxes.size())
+                return ItemStack.EMPTY;
 
             SimpleStorageBoxEntity box = boxes.get(slot).simpleStorageBoxEntity;
             ItemStack current = box.getItemHandler().getStackInSlot(boxSlot);
@@ -354,9 +381,8 @@ public class StorageNetwork {
 
         @Override
         public int getSlotLimit(int slot) {
-            if (slot <= boxes.size())
-                return boxes.get(slot).simpleStorageBoxEntity.maxItemCapacity;
-            return 0;
+            if (slot < 0 || slot >= boxes.size()) return 0;
+            return boxes.get(slot).simpleStorageBoxEntity.maxItemCapacity;
         }
 
         @Override
@@ -370,5 +396,4 @@ public class StorageNetwork {
             boxes.get(slot).simpleStorageBoxEntity.getItemHandler().setStackInSlot(0, stack);
         }
     }
-
 }

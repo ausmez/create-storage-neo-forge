@@ -71,7 +71,7 @@ public class SmartPasserBlockScenes {
         scene.idle(20);
 
         scene.overlay().showFilterSlotInput(filter.add(0.35, 0.15, 0), Direction.NORTH, 50);
-        scene.overlay().showText(60).text("Use the value panel to specify the extracted stack size").placeNearTarget().pointAt(filter.add(0.25, 0.15, 0));
+        scene.overlay().showText(60).text("The value panel specifies the transfer stack size").placeNearTarget().pointAt(filter.add(0.25, 0.15, 0));
         for (int i = 0; i < 3; i++) {
             int finalI = i;
             scene.world().modifyBlockEntity(dstBox, StorageBoxEntity.class, (t) -> t.getItemHandler().setStackInSlot(1 + finalI, sand.copyWithCount(64)));

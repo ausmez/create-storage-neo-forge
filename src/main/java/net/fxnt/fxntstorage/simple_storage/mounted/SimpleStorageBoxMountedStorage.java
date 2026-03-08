@@ -505,5 +505,4 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             }
         };
     }
-
 }

@@ -21,5 +21,4 @@ public class ModCuriosDataProvider extends CuriosDataProvider {
                 .addEntities(EntityType.PLAYER)
                 .addSlots("back");
     }
-
 }

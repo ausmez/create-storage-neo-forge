@@ -11,12 +11,12 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import mezz.jei.common.transfer.RecipeTransferOperationsResult;
 import mezz.jei.common.transfer.RecipeTransferUtil;
-import net.fxnt.fxntstorage.backpack.main.BackpackContainer;
-import net.fxnt.fxntstorage.backpack.main.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.network.packet.TransferRecipePacket;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -68,10 +68,11 @@ public class JEICraftingTransferHandler implements IRecipeTransferHandler<Crafti
                 availableItemStacks.put(new Slot(playerInventory, i, 0, 0), stack);
         }
         if (!backpack.isEmpty()) {
-            IBackpackContainer backpackContainer = new BackpackContainer(backpack, player);
+            IBackpackContainer backpackContainer = new BackpackContainer(player, backpack);
             IItemHandlerModifiable itemHandler = backpackContainer.getItemHandler();
+            BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
-            for (int i = Util.ITEM_SLOT_START_RANGE; i < Util.ITEM_SLOT_END_RANGE; i++) {
+            for (int i : layout.items().range()) {
                 ItemStack stack = itemHandler.getStackInSlot(i);
                 if (!stack.isEmpty())
                     availableItemStacks.put(new SlotItemHandler(itemHandler, i, 0, 0), stack);
@@ -143,5 +144,4 @@ public class JEICraftingTransferHandler implements IRecipeTransferHandler<Crafti
         ModNetwork.sendToServer(new TransferRecipePacket(recipe.getId(), recipeList, maxTransfer, (byte) 0));
         return null;
     }
-
 }

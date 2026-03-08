@@ -114,5 +114,4 @@ public class WoodGoodModule extends SimpleModule {
         CreateClient.CASING_CONNECTIVITY.makeCasing(block, spriteShift.get());
         FXNTStorage.LOGGER.debug("Registered CTModel for {}", Utils.getID(block));
     }
-
 }

@@ -3,11 +3,10 @@ package net.fxnt.fxntstorage.backpack;
 import com.simibubi.create.foundation.item.TooltipHelper;
 import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.backpack.tooltip.BackpackTooltip;
-import net.fxnt.fxntstorage.backpack.util.BackpackHandler;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.compat.CuriosCompat;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
@@ -64,7 +63,7 @@ public class BackpackItem extends BlockItem {
     public @Nullable ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         return new ICapabilityProvider() {
             // Curios capability
-            final LazyOptional<?> curio = FXNTStorage.curiosLoaded
+            final LazyOptional<?> curio = FXNTStorage.CURIOS_LOADED
                     ? LazyOptional.of(() -> new CuriosCompat(stack))
                     : LazyOptional.empty();
 
@@ -126,7 +125,7 @@ public class BackpackItem extends BlockItem {
 
             @Override
             public @NotNull <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
-                if (FXNTStorage.curiosLoaded && cap == CuriosCapability.ITEM)
+                if (FXNTStorage.CURIOS_LOADED && cap == CuriosCapability.ITEM)
                     return curio.cast();
 
                 if (cap == ForgeCapabilities.ITEM_HANDLER)
@@ -141,8 +140,9 @@ public class BackpackItem extends BlockItem {
     public boolean canEquip(ItemStack stack, EquipmentSlot armorType, Entity entity) {
         if (armorType != EquipmentSlot.CHEST) return false;
         if (stack.getItem() instanceof BackpackItem
-                && ((LivingEntity) entity).getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem) return true; // Allow backpack swap
-        if (FXNTStorage.curiosLoaded) {
+                && ((LivingEntity) entity).getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof BackpackItem)
+            return true; // Allow backpack swap
+        if (FXNTStorage.CURIOS_LOADED) {
             return !BackpackHelper.isWearingBackpack((Player) entity);
         }
         return super.canEquip(stack, armorType, entity);
@@ -153,7 +153,7 @@ public class BackpackItem extends BlockItem {
         ItemStack stack = player.getItemInHand(hand);
 
         if (!world.isClientSide && player instanceof ServerPlayer serverPlayer) {
-            BackpackHandler.openBackpackFromInventory(serverPlayer, Util.BACKPACK_IN_HAND);
+            BackpackHelper.openBackpackFromInventory(serverPlayer, BackpackMenu.BackpackType.ITEM);
             return InteractionResultHolder.success(stack);
         }
         return InteractionResultHolder.pass(player.getItemInHand(hand));
@@ -213,5 +213,4 @@ public class BackpackItem extends BlockItem {
         }
         return Optional.empty();
     }
-
 }
