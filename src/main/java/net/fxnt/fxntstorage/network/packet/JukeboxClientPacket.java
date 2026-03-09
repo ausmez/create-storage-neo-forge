@@ -2,13 +2,13 @@ package net.fxnt.fxntstorage.network.packet;
 
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.ClientJukeboxHandler;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -39,7 +39,7 @@ public record JukeboxClientPacket(Action action, Source source, Optional<BlockPo
 
     public void handle(final IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (context.player() instanceof LocalPlayer player) {
+            if (context.player() instanceof Player player) {
                 switch (action()) {
                     case PLAY -> handlePlay(player);
                     case STOP -> handleStop(player);
@@ -48,7 +48,7 @@ public record JukeboxClientPacket(Action action, Source source, Optional<BlockPo
         });
     }
 
-    private void handlePlay(LocalPlayer player) {
+    private void handlePlay(Player player) {
         if (source() == Source.PLAYER) {
             if (ClientJukeboxHandler.isPlayerPlaying(player)) return;
             song().ifPresent(jukeboxSong -> {
@@ -67,7 +67,7 @@ public record JukeboxClientPacket(Action action, Source source, Optional<BlockPo
         }
     }
 
-    private void handleStop(LocalPlayer player) {
+    private void handleStop(Player player) {
         if (source() == Source.PLAYER) {
             ClientJukeboxHandler.stopPlayer(player.getUUID());
         } else {

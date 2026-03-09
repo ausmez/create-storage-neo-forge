@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 - 2026-03-09
+
+## Bug Fixes
+- Fixed server crash related to client-side class loading. (#44)
+
+---
+
 ## 1.2.0 - 2026-03-08
 
 > **Note:** This is the final feature update supporting Minecraft 1.20.1, aligning with the Create mod team’s support lifecycle.

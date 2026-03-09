@@ -6,7 +6,6 @@ import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedMenu;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -15,13 +14,15 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record SyncMountedStoragePacket(int contraptionId, BlockPos localPos, EnumProperties.StorageUsed fillLevel, CompoundTag nbt) implements CustomPacketPayload {
+public record SyncMountedStoragePacket(int contraptionId, BlockPos localPos, EnumProperties.StorageUsed fillLevel,
+                                       CompoundTag nbt) implements CustomPacketPayload {
     public static final Type<SyncMountedStoragePacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "sync_mounted_storage"));
 
@@ -40,7 +41,7 @@ public record SyncMountedStoragePacket(int contraptionId, BlockPos localPos, Enu
 
     public void handle(final IPayloadContext context) {
         context.enqueueWork(() -> {
-            if (context.player() instanceof LocalPlayer player) {
+            if (context.player() instanceof Player player) {
                 var level = player.level();
                 Entity entity = level.getEntity(contraptionId());
                 if (entity instanceof AbstractContraptionEntity contraptionEntity) {
