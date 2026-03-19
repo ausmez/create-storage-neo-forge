@@ -142,16 +142,10 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:carry-on-274259:4882500")
     runtimeOnly fg.deobf("curse.maven:configured-457570:5180900")
     runtimeOnly fg.deobf("curse.maven:catalogue-459701:4766090")
-//    runtimeOnly fg.deobf("curse.maven:mouse-tweaks-60089:5338457")
     runtimeOnly fg.deobf("curse.maven:inventory-sorter-240633:5979609")
     runtimeOnly fg.deobf("curse.maven:xaeros-world-map-317780:6538337")
     runtimeOnly fg.deobf("curse.maven:xaeros-minimap-263420:6515024")
     runtimeOnly fg.deobf("curse.maven:appleskin-248787:4770828")
-//    runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
-//    runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
-
-//    implementation fg.deobf("curse.maven:ftb-ultimine-forge-386134:6899418")
-//    implementation fg.deobf("curse.maven:ftb-library-forge-404465:7296748")
 }
 
 mixin {
