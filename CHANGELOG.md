@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.2 - 2026-03-19
+
+## Bug Fixes
+- Fixed an issue where the Ore Mining Upgrade would break all ore blocks even when the keybind was not held.
+- Fixed an “Invalid player data” error when connecting to a server with outdated player data. (#45)
+
+---
+
 ## 1.2.1 - 2026-03-09
 
 ## Bug Fixes

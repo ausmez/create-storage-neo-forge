@@ -118,13 +118,26 @@ dependencies {
     compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
 
     // JEI
-    implementation "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    compileOnly "curse.maven:configured-457570:${configured_id}"
     // EMI
-    implementation "dev.emi:emi-neoforge:${emi_version}"
+    compileOnly "dev.emi:emi-neoforge:${emi_version}"
     // REI
     compileOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
-    compileOnly "curse.maven:architectury-api-419699:5786327"
-    runtimeOnly "curse.maven:cloth-config-348521:5729127"
+    compileOnly "curse.maven:architectury-api-419699:${architectury_id}"
+
+    switch (recipe_viewer) {
+        case "JEI": {
+            runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+            runtimeOnly "curse.maven:configured-457570:${configured_id}"
+        }; break
+        case "EMI": runtimeOnly "dev.emi:emi-neoforge:${emi_version}"; break
+        case "REI": {
+            runtimeOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
+            runtimeOnly "curse.maven:architectury-api-419699:${architectury_id}"
+            runtimeOnly "curse.maven:cloth-config-348521:5729127"
+        }; break
+    }
 
     // Vanilla Backport
     implementation "curse.maven:vanillabackport-417430:${vanillabackport_id}"
@@ -142,7 +155,6 @@ dependencies {
     runtimeOnly "curse.maven:jade-324717:${jade_id}"
     runtimeOnly "curse.maven:jade-addons-583345:${jadeaddon_id}"
     runtimeOnly "curse.maven:carry-on-274259:5649344"
-    compileOnly "curse.maven:configured-457570:7276577"
     runtimeOnly "curse.maven:catalogue-459701:5893750"
     runtimeOnly "curse.maven:xaeros-world-map-317780:7416972"
     runtimeOnly "curse.maven:xaeros-minimap-263420:7412188"

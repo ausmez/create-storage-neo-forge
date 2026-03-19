@@ -7,9 +7,9 @@
 <p style="text-align: center;">
   <a href="https://modrinth.com/mod/create-storage-neo-forge"><img src="https://img.shields.io/modrinth/dt/create-storage-neo-forge?logo=modrinth&label=Modrinth&color=00af5c" alt="Modrinth"></a>
   <a href="https://www.curseforge.com/minecraft/mc-mods/create-storage-neo-forge"><img src="https://img.shields.io/curseforge/dt/1281770?logo=curseforge&label=CurseForge&color=f16436" alt="CurseForge"></a>
-  <a href="https://github.com/Creators-of-Create/Create"><img src="https://img.shields.io/badge/Create-6.0.7+-4b8bc2" alt="Create"></a>
-  <a href="https://neoforged.net"><img src="https://img.shields.io/badge/NeoForge-21.1.181+-d88231" alt="NeoForged"></a>
-  <a href="https://files.minecraftforge.net"><img src="https://img.shields.io/badge/Forge-47.3.30+-26303d" alt="Forge"></a>
+  <a href="https://github.com/Creators-of-Create/Create"><img src="https://img.shields.io/badge/Create-6.0.7%2B-4b8bc2" alt="Create"></a>
+  <a href="https://neoforged.net"><img src="https://img.shields.io/badge/NeoForge-21.1.181%2B-d88231" alt="NeoForged"></a>
+  <a href="https://files.minecraftforge.net"><img src="https://img.shields.io/badge/Forge-47.3.30%2B-26303d" alt="Forge"></a>
 </p>
 
 ---

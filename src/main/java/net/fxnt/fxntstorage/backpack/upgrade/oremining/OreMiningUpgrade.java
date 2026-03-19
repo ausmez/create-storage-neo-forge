@@ -6,6 +6,7 @@ import net.fxnt.fxntstorage.backpack.client.menu.button.ItemSpriteButton;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.init.ModTags;
+import net.fxnt.fxntstorage.network.packet.OreMiningPreviewPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -13,6 +14,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
@@ -28,6 +30,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -159,9 +162,15 @@ public class OreMiningUpgrade extends AbstractUpgrade {
             Component msg = Component.literal("Successfully mined §a" + blocksMined + "§r out of §a" + vein.size() + "§r");
             player.displayClientMessage(msg, false);
         }
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            PacketDistributor.sendToPlayer(serverPlayer, new OreMiningPreviewPacket(List.of()));
+        }
     }
 
     public static List<BlockPos> findVein(Player player, Level level, BlockPos start, BlockState targetState, boolean mineAllBlocks, int maxBlocks) {
+        if (!mineAllBlocks) return List.of(start);
+
         Set<BlockPos> visited = new HashSet<>();
         Queue<BlockPos> toVisit = new ArrayDeque<>();
         toVisit.add(start);
@@ -180,9 +189,7 @@ public class OreMiningUpgrade extends AbstractUpgrade {
                         if (visited.contains(neighbor)) continue;
 
                         BlockState neighborState = level.getBlockState(neighbor);
-
                         if (!neighborState.getBlock().equals(targetState.getBlock())) continue;
-                        if (!mineAllBlocks && !neighborState.is(ModTags.Blocks.ORE_MINING_BLOCK)) continue;
 
                         toVisit.add(neighbor);
                     }

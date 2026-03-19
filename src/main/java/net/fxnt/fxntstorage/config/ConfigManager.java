@@ -8,6 +8,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -337,27 +339,29 @@ public class ConfigManager {
         CompoundTag tag = settings.getCompound(FXNTSTORAGE_SETTINGS_TAG);
 
         if (oldVersion < 1) {
-            if (tag.contains("CheckBackpackForProjectiles"))
-                ClientConfig.CHECK_BACKPACK_FOR_PROJECTILES.set(tag.getBoolean("CheckBackpackForProjectiles"));
-            if (tag.contains("CheckBackpackForToolboxItems"))
-                ClientConfig.CHECK_BACKPACK_FOR_TOOLBOX_ITEMS.set(tag.getBoolean("CheckBackpackForToolboxItems"));
-            if (tag.contains("FeederHungerLevel"))
-                ClientConfig.FEEDER_HUNGER_LEVEL.set(tag.getInt("FeederHungerLevel"));
-            if (tag.contains("FeederHealthThreshold"))
-                ClientConfig.FEEDER_HEALTH_THRESHOLD.set(tag.getInt("FeederHealthThreshold"));
-            if (tag.contains("TorchDeployerLightLevel"))
-                ClientConfig.TORCH_DEPLOYER_LIGHT_LEVEL.set(tag.getInt("TorchDeployerLightLevel"));
-            if (tag.contains("TorchDeployerLightSource"))
-                ClientConfig.TORCH_DEPLOYER_LIGHT_SOURCE.set(ClientConfig.TorchDeployerLightSource.valueOf(tag.getString("TorchDeployerLightSource")));
-            if (tag.contains("TorchDeployerCooldown"))
-                ClientConfig.TORCH_DEPLOYER_COOLDOWN.set(tag.getInt("TorchDeployerCooldown"));
+            if (FMLEnvironment.dist == Dist.CLIENT) {
+                if (tag.contains("CheckBackpackForProjectiles"))
+                    ClientConfig.CHECK_BACKPACK_FOR_PROJECTILES.set(tag.getBoolean("CheckBackpackForProjectiles"));
+                if (tag.contains("CheckBackpackForToolboxItems"))
+                    ClientConfig.CHECK_BACKPACK_FOR_TOOLBOX_ITEMS.set(tag.getBoolean("CheckBackpackForToolboxItems"));
+                if (tag.contains("FeederHungerLevel"))
+                    ClientConfig.FEEDER_HUNGER_LEVEL.set(tag.getInt("FeederHungerLevel"));
+                if (tag.contains("FeederHealthThreshold"))
+                    ClientConfig.FEEDER_HEALTH_THRESHOLD.set(tag.getInt("FeederHealthThreshold"));
+                if (tag.contains("TorchDeployerLightLevel"))
+                    ClientConfig.TORCH_DEPLOYER_LIGHT_LEVEL.set(tag.getInt("TorchDeployerLightLevel"));
+                if (tag.contains("TorchDeployerLightSource"))
+                    ClientConfig.TORCH_DEPLOYER_LIGHT_SOURCE.set(ClientConfig.TorchDeployerLightSource.valueOf(tag.getString("TorchDeployerLightSource")));
+                if (tag.contains("TorchDeployerCooldown"))
+                    ClientConfig.TORCH_DEPLOYER_COOLDOWN.set(tag.getInt("TorchDeployerCooldown"));
 
-            if (tag.contains("PrefersSilkTouchList")) {
-                List<String> oldSilkTouchList = new ArrayList<>();
-                for (Tag tag1 : tag.getList("PrefersSilkTouchList", Tag.TAG_STRING)) {
-                    oldSilkTouchList.add(tag1.getAsString());
+                if (tag.contains("PrefersSilkTouchList")) {
+                    List<String> oldSilkTouchList = new ArrayList<>();
+                    for (Tag tag1 : tag.getList("PrefersSilkTouchList", Tag.TAG_STRING)) {
+                        oldSilkTouchList.add(tag1.getAsString());
+                    }
+                    ClientConfig.TOOLSWAP_PREFERS_SILK_TOUCH_LIST.set(oldSilkTouchList);
                 }
-                ClientConfig.TOOLSWAP_PREFERS_SILK_TOUCH_LIST.set(oldSilkTouchList);
             }
 
             tag.remove("AllowChorusFruit");
