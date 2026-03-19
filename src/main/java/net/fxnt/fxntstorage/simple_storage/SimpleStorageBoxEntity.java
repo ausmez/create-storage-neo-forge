@@ -21,6 +21,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
@@ -43,6 +44,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -292,7 +294,21 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         tag.putInt("MaxItemCapacity", this.getMaxItemCapacity()); // Needed for MountedStorage
         tag.putInt("StoredAmount", this.getStoredAmount());
         tag.putBoolean("VoidUpgrade", this.hasVoidUpgrade()); // Needed for MountedStorage
-        tag.put("FilterItem", filterItem.copyWithCount(1).save(new CompoundTag()));
+        // Save FilterItem using direct NBT construction to avoid getShareTag() as some mods inject
+        // spurious data via getShareTag()
+        if (!filterItem.isEmpty()) {
+            CompoundTag filterTag = new CompoundTag();
+            ResourceLocation itemKey = ForgeRegistries.ITEMS.getKey(filterItem.getItem());
+            filterTag.putString("id", itemKey != null ? itemKey.toString() : "minecraft:air");
+            filterTag.putByte("Count", (byte) 1);
+            CompoundTag itemNbt = filterItem.getTag();
+            if (itemNbt != null && !itemNbt.isEmpty()) {
+                filterTag.put("tag", itemNbt.copy());
+            }
+            tag.put("FilterItem", filterTag);
+        } else {
+            tag.put("FilterItem", new CompoundTag());
+        }
         if (this.customName != null)
             tag.putString("CustomName", Component.Serializer.toJson(this.customName));
     }
@@ -304,7 +320,21 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         this.storedAmount = tag.getInt("StoredAmount");
         this.voidUpgrade = tag.getBoolean("VoidUpgrade"); // Needed for MountedStorage
         CompoundTag filterTag = tag.getCompound("FilterItem");
-        this.filterItem = (filterTag.isEmpty()) ? ItemStack.EMPTY : ItemStack.of(filterTag);
+        if (filterTag.isEmpty()) {
+            this.filterItem = ItemStack.EMPTY;
+        } else {
+            this.filterItem = ItemStack.of(filterTag);
+            // Strip spurious Damage tag injected by mods via getShareTag() on saves made before this fix
+            if (!this.filterItem.isEmpty() && !this.filterItem.isDamageableItem()) {
+                CompoundTag itemTag = this.filterItem.getTag();
+                if (itemTag != null && itemTag.contains("Damage") && itemTag.getInt("Damage") == 0) {
+                    this.filterItem.removeTagKey("Damage");
+                    if (this.filterItem.getTag() != null && this.filterItem.getTag().isEmpty()) {
+                        this.filterItem.setTag(null);
+                    }
+                }
+            }
+        }
         if (tag.contains("CustomName", Tag.TAG_STRING))
             this.customName = Component.Serializer.fromJson(tag.getString("CustomName"));
 

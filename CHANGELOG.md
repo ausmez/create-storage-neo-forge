@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.2 - 2026-03-20
+
+## Bug Fixes
+- Fixed a compatibility issue with EMI Loot where breaking and replacing a Simple Storage Box would add a spurious `Damage: 0` tag to the FilterItem, causing filter mismatches. (#46)
+
+---
+
 ## 1.2.1 - 2026-03-19
 
 ## Bug Fixes
