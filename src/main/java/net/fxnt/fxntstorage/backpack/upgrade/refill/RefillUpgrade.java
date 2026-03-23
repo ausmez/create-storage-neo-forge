@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.backpack.upgrade.refill;
 
-import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.AbstractUpgrade;
@@ -90,11 +89,7 @@ public class RefillUpgrade extends AbstractUpgrade {
         }
 
         if (requiredItems != remaining) {
-            if (player.containerMenu instanceof BackpackMenu menu) {
-                menu.container.setDataChanged();
-            } else {
-                player.containerMenu.slotsChanged(inventory);
-            }
+            player.containerMenu.slotsChanged(inventory);
         }
 
         return remaining;

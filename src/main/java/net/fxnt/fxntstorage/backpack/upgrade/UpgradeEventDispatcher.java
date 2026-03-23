@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.backpack.upgrade;
 
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
@@ -22,7 +23,10 @@ public class UpgradeEventDispatcher {
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         if (backpack.isEmpty()) return null;
 
-        IBackpackContainer container = new BackpackContainer(player, backpack);
+        // If the backpack menu is open, use its container to avoid operating on a stale copy
+        IBackpackContainer container = (player.containerMenu instanceof BackpackMenu menu
+                && menu.type == BackpackMenu.BackpackType.WORN)
+                ? menu.container : new BackpackContainer(player, backpack);
         return UpgradeContext.forWornBackpack(player, backpack, container);
     }
 

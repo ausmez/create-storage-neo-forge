@@ -50,7 +50,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     private final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
 
     public SimpleStorageBox(Properties pProperties) {
-        super(pProperties);
+        super(pProperties.noOcclusion());
         this.registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)

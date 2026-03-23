@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.util;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
@@ -156,8 +157,11 @@ public class EventHandler {
                 return;
 
             // NEW upgrade tick system
+            IBackpackContainer tickContainer = (player.containerMenu instanceof BackpackMenu menu
+                    && menu.type == BackpackMenu.BackpackType.WORN)
+                    ? menu.container : container;
             for (IUpgrade upgrade : UpgradeRegistry.getAll()) {
-                UpgradeContext ctx = UpgradeContext.forWornBackpack(player, backpack, container);
+                UpgradeContext ctx = UpgradeContext.forWornBackpack(player, backpack, tickContainer);
                 upgrade.tick(ctx);
             }
         }

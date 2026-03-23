@@ -464,6 +464,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         graphics.blit(currentGuiConfig.texture, leftPos, topPos, 0, 0,
                 imageWidth, imageHeight, TEXTURE_WIDTH, currentGuiConfig.height);
         renderScrollbar(graphics);
+        renderLockedHotbarSlotOverlay(graphics);
     }
 
     private void renderScrollbar(GuiGraphics graphics) {
@@ -473,6 +474,17 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         graphics.blit(currentGuiConfig.texture, scrollBarX, getScrollThumbY(),
                 SCROLL_THUMB_TEX_MIN_X, SCROLL_THUMB_TEX_MIN_Z + thumbYOffset,
                 SCROLL_THUMB_WIDTH, SCROLL_THUMB_HEIGHT, TEXTURE_WIDTH, currentGuiConfig.height);
+    }
+
+    private void renderLockedHotbarSlotOverlay(GuiGraphics graphics) {
+        if (menu.getBackpackType() != BackpackMenu.BackpackType.ITEM) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+        int selectedSlot = mc.player.getInventory().selected;
+        Slot hotbarSlot = menu.getHotbarSlot(selectedSlot);
+        int slotX = leftPos + hotbarSlot.x;
+        int slotY = topPos + hotbarSlot.y;
+        graphics.fill(RenderType.guiOverlay(), slotX, slotY, slotX + 16, slotY + 16, 0x80AA0000);
     }
 
     private void handlePanelRender(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -578,8 +590,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     private void renderItemCountAndBar(GuiGraphics guiGraphics, ItemStack itemstack, int x, int y) {
-        renderItemCountScaled(guiGraphics, itemstack, x, y);
         renderItemBar(guiGraphics, itemstack, x, y);
+        renderItemCountScaled(guiGraphics, itemstack, x, y);
     }
 
     private void renderItemCountScaled(GuiGraphics guiGraphics, ItemStack itemstack, int x, int y) {
@@ -769,44 +781,6 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         setTopRowAndMoveThumb(topVisibleRow, newTop);
         return true;
     }
-
-//    @Override
-//    protected void renderSlot(GuiGraphics pGuiGraphics, Slot pSlot) {
-//        if (!menu.layout.items().contains(pSlot.index)) {
-//            super.renderSlot(pGuiGraphics, pSlot);
-//        } else {
-//            int x = pSlot.x;
-//            int y = pSlot.y;
-//            ItemStack itemStack = pSlot.getItem();
-//            pGuiGraphics.renderItem(itemStack, x, y, pSlot.x + pSlot.y * this.imageWidth);
-//            if (!itemStack.isEmpty()) {
-//                if (itemStack.getCount() != 1) {
-//                    String countText = String.valueOf(itemStack.getCount());
-//
-//                    PoseStack poseStack = pGuiGraphics.pose();
-//                    poseStack.pushPose();
-//                    poseStack.translate(0.0D, 0.0D, 200.0F);
-//                    float scale = Math.min(1.0F, 16.0F / font.width(countText));
-//                    if (scale < 1.0F) {
-//                        poseStack.scale(scale, scale, 1.0F);
-//                    }
-//                    pGuiGraphics.drawString(font, countText, (x + 19 - 2 - (font.width(countText) * scale)) / scale, (y + 6 + 3 + (1 / (scale * scale) - 1)) / scale, 16777215, true);
-//                    poseStack.popPose();
-//                }
-//                // Render item status bar
-//                if (itemStack.isBarVisible()) {
-//                    int l = itemStack.getBarWidth();
-//                    int i = itemStack.getBarColor();
-//                    int j = x + 2;
-//                    int k = y + 13;
-//                    pGuiGraphics.fill(RenderType.guiOverlay(), j, k, j + 13, k + 2, -16777216);
-//                    pGuiGraphics.fill(RenderType.guiOverlay(), j, k, j + l, k + 1, i | -16777216);
-//                }
-//            }
-//        }
-//
-//    }
-
 
     private boolean isMouseOverScrollArea(double mouseX, double mouseY) {
         int scrollBarX = leftPos + CONTAINER_SLOTS_MIN_X + (CONTAINER_COLUMNS * Util.SLOT_SIZE) + SCROLL_BAR_OFFSET_X;

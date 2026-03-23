@@ -170,10 +170,10 @@ public class StorageBoxScreen extends AbstractContainerScreen<StorageBoxMenu> {
         Button sortOrder = Button.builder(currentSortOrder.getDisplayName(), button -> {
                     currentSortOrder = currentSortOrder.next();
                     button.setMessage(currentSortOrder.getDisplayName());
-                    button.setTooltip(Tooltip.create(Component.literal("Sort by ").append(currentSortOrder.name().toUpperCase(Locale.ROOT))));
+                    button.setTooltip(Tooltip.create(Component.translatable("tooltip.fxntstorage.sortBy").append(Component.literal(" ")).append(currentSortOrder.name().toUpperCase(Locale.ROOT))));
                     menu.setSortOrder(currentSortOrder);
                 })
-                .tooltip(Tooltip.create(Component.literal("Sort by ").append(currentSortOrder.name().toUpperCase(Locale.ROOT))))
+                .tooltip(Tooltip.create(Component.translatable("tooltip.fxntstorage.sortBy").append(Component.literal(" ")).append(currentSortOrder.name().toUpperCase(Locale.ROOT))))
                 .size(16, 12)
                 .pos(leftPos + imageWidth - 42, topPos + 4)
                 .build();

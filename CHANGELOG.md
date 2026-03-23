@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.3 - 2026-03-23
+
+## Bug Fixes
+- Fixed item counts in backpacks appearing behind the durability bar.
+- Fixed item duplication with the Refill Upgrade when the backpack inventory is open. (#48)
+- Fixed an issue where upgrades (like Magnet and Feeder) could behave incorrectly while the backpack was open, sometimes causing item duplication or syncing problems.
+- Fixed the Feeder Upgrade not updating its settings correctly in real time.
+- Fixed an issue where backpacks wouldn’t quick-move between the hotbar and inventory, if one was already equipped.
+
 ## 1.2.2 - 2026-03-20
 
 ## Bug Fixes

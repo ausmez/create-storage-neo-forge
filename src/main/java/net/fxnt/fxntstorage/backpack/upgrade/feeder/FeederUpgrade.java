@@ -166,7 +166,6 @@ public class FeederUpgrade extends AbstractUpgrade {
             // Look for food in backpack
             IBackpackContainer container = context.container();
             IItemHandlerModifiable itemHandler = container.getItemHandler();
-            UpgradeDataManager manager = UpgradeDataManager.loadFromItem(context.backpack());
             BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
             FilterItemStack filter = FilterItemStack.of(itemHandler.getStackInSlot(layout.feederFilter().getStartIndex()));
 
@@ -224,7 +223,7 @@ public class FeederUpgrade extends AbstractUpgrade {
                             player.containerMenu.containerId, player.containerMenu.getStateId(), i, food
                     ));
 
-                    boolean displayMessage = manager.getSetting(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE, true);
+                    boolean displayMessage = container.getUpgradeSetting(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE);
 
                     if (displayMessage) {
                         String foodNameFormatted = (Util.isVowel(foodName.charAt(0)) ? "an" : "a") + " §a" + foodName + "§r";
