@@ -6,6 +6,7 @@
   "mixins": [
     "EMIVanillaPluginMixin",
     "EndermanMixin",
+    "InventoryMenuMixin",
     "ItemEntityMixin",
     "ItemStackMixin",
     "NeoForgeValueMixin",

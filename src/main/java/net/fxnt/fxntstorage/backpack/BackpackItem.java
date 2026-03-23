@@ -6,6 +6,7 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
@@ -36,7 +37,8 @@ public class BackpackItem extends BlockItem {
     private final Block block;
 
     public BackpackItem(Block block, Properties properties) {
-        super(block, properties.stacksTo(1).fireResistant());
+        super(block, properties.stacksTo(1).fireResistant()
+                .component(ModDataComponents.BACKPACK_STACK_MULTIPLIER, ((BackpackBlock) block).getStackMultiplier()));
         this.block = block;
     }
 

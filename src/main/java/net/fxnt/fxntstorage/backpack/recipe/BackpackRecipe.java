@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.backpack.recipe;
 import com.mojang.serialization.MapCodec;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.init.ModDataComponents;
+import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.HolderLookup;
@@ -48,15 +49,18 @@ public class BackpackRecipe extends ShapedRecipe {
 
         // Find the old backpack in the input
         Optional<ItemStack> oldBackpack = input.items().stream()
-                .filter(stack -> !stack.isEmpty()
-                        && stack.has(DataComponents.CONTAINER)
-                        && stack.has(ModDataComponents.BACKPACK_STACK_MULTIPLIER))
+                .filter(stack -> !stack.isEmpty() && stack.is(ModTags.Items.BACKPACK_ITEM))
                 .findFirst();
 
         if (oldBackpack.isEmpty()) return result;
 
-        // Copy container contents from old backpack
-        result.copyFrom(oldBackpack.get(), DataComponents.CONTAINER);
+        // Copy container contents and custom name from old backpack
+        if (oldBackpack.get().has(DataComponents.CONTAINER)) {
+            result.copyFrom(oldBackpack.get(), DataComponents.CONTAINER);
+        }
+        if (oldBackpack.get().has(DataComponents.CUSTOM_NAME)) {
+            result.copyFrom(oldBackpack.get(), DataComponents.CUSTOM_NAME);
+        }
 
         // Set the new multiplier
         Integer newStackMultiplier = BACKPACK_MULTIPLIERS.get(result.getItem());

@@ -432,6 +432,24 @@ public class BackpackMenu extends AbstractContainerMenu {
                     }
                     // Move itemStack2 from player inventory to container, stacking items left->right
                 } else {
+                    // Move backpack inventory <-> hotbar
+                    if (itemStack2.getItem() instanceof BackpackItem) {
+                        int playerInvStart = layout.getTotalSlots();
+                        int hotbarStart = playerInvStart + 27;
+                        int hotbarEnd = playerInvStart + 36;
+                        if (index < hotbarStart) {
+                            // Inventory -> hotbar
+                            if (moveItemStack(itemStack2, hotbarStart, hotbarEnd, false)) {
+                                return ItemStack.EMPTY;
+                            }
+                        } else {
+                            // Hotbar -> inventory
+                            if (moveItemStack(itemStack2, playerInvStart, hotbarStart, false)) {
+                                return ItemStack.EMPTY;
+                            }
+                        }
+                        return ItemStack.EMPTY;
+                    }
                     if (moveItemStack(itemStack2, layout.items().getStartIndex(), layout.items().getEndIndex(), false)) {
                         return ItemStack.EMPTY;
                     }

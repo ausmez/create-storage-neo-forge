@@ -20,7 +20,6 @@ public class PacketHandler {
         registrar.playToClient(StorageNetworkSyncPacket.TYPE, StorageNetworkSyncPacket.STREAM_CODEC, StorageNetworkSyncPacket::handle);
         registrar.playToClient(SyncContainerPacket.TYPE, SyncContainerPacket.STREAM_CODEC, SyncContainerPacket::handle);
         registrar.playToClient(SyncDataComponentPacket.TYPE, SyncDataComponentPacket.STREAM_CODEC, SyncDataComponentPacket::handle);
-        registrar.playToClient(SyncItemStackPacket.TYPE, SyncItemStackPacket.STREAM_CODEC, SyncItemStackPacket::handle);
         registrar.playToClient(SyncMountedStoragePacket.TYPE, SyncMountedStoragePacket.STREAM_CODEC, SyncMountedStoragePacket::handle);
         registrar.playToClient(SyncSlotCountPacket.TYPE, SyncSlotCountPacket.STREAM_CODEC, SyncSlotCountPacket::handle);
         registrar.playToClient(VisualJetpackAirPacket.TYPE, VisualJetpackAirPacket.STREAM_CODEC, VisualJetpackAirPacket::handle);

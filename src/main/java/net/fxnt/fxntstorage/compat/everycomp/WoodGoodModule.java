@@ -15,7 +15,6 @@ import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMovementBehaviour;
-import net.mehvahdjukaar.every_compat.EveryCompat;
 import net.mehvahdjukaar.every_compat.api.PaletteStrategies;
 import net.mehvahdjukaar.every_compat.api.SimpleEntrySet;
 import net.mehvahdjukaar.every_compat.api.SimpleModule;
@@ -24,8 +23,10 @@ import net.mehvahdjukaar.moonlight.api.set.wood.VanillaWoodTypes;
 import net.mehvahdjukaar.moonlight.api.set.wood.WoodType;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -42,7 +43,7 @@ public class WoodGoodModule extends SimpleModule {
     public WoodGoodModule(String modId) {
         super(modId, "cs", FXNTStorage.MOD_ID);
 
-        ResourceLocation tab = modRes(EveryCompat.MOD_ID); // Place items in Every Compat tab instead of Create: Storage
+        ResourceKey<CreativeModeTab> tab = FXNTStorage.REGISTRATE.getCreativeTab().getKey();
 
         // Using spruce because most textures re-color better than oak
         simple_storage_boxes = SimpleEntrySet.builder(WoodType.class, "simple_storage_box",

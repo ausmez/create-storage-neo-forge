@@ -24,7 +24,6 @@ import net.minecraft.world.level.Level;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import javax.annotation.Nullable;
@@ -216,9 +215,6 @@ public record TransferRecipePacket(ResourceLocation recipeId, List<Integer> reci
 
                 player.containerMenu.broadcastChanges();
                 if (container != null) container.setDataChanged();
-                if (itemHandler != null) {
-                    PacketDistributor.sendToPlayer(player, new SyncItemStackPacket(backpack.getComponents()));
-                }
             }
         });
     }

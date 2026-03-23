@@ -134,7 +134,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         private final float scale;
 
         private IconButton(int x, int y, int width, int height, Component message,
-                          OnPress onPress, ItemStack stack, float scale) {
+                           OnPress onPress, ItemStack stack, float scale) {
             super(x, y, width, height, message, onPress, Button.DEFAULT_NARRATION);
             this.stack = stack;
             this.scale = scale;
@@ -466,6 +466,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         graphics.blit(currentGuiConfig.texture, leftPos, topPos, 0, 0,
                 imageWidth, imageHeight, TEXTURE_WIDTH, currentGuiConfig.height);
         renderScrollbar(graphics);
+        renderLockedHotbarSlotOverlay(graphics);
     }
 
     private void renderScrollbar(GuiGraphics graphics) {
@@ -475,6 +476,17 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         graphics.blit(currentGuiConfig.texture, scrollBarX, getScrollThumbY(),
                 SCROLL_THUMB_TEX_MIN_X, SCROLL_THUMB_TEX_MIN_Z + thumbYOffset,
                 SCROLL_THUMB_WIDTH, SCROLL_THUMB_HEIGHT, TEXTURE_WIDTH, currentGuiConfig.height);
+    }
+
+    private void renderLockedHotbarSlotOverlay(GuiGraphics graphics) {
+        if (menu.getBackpackType() != BackpackMenu.BackpackType.ITEM) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+        int selectedSlot = mc.player.getInventory().selected;
+        Slot hotbarSlot = menu.getHotbarSlot(selectedSlot);
+        int slotX = leftPos + hotbarSlot.x;
+        int slotY = topPos + hotbarSlot.y;
+        graphics.fill(RenderType.guiOverlay(), slotX, slotY, slotX + 16, slotY + 16, 0x80AA0000);
     }
 
     private void handlePanelRender(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -543,8 +555,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         }
 
         if (!itemstack.isEmpty()) {
-            renderItemCount(guiGraphics, itemstack, x, y);
             renderItemBar(guiGraphics, itemstack, x, y);
+            renderItemCount(guiGraphics, itemstack, x, y);
         }
     }
 

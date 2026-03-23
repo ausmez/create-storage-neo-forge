@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.3 - 2026-03-23
+
+## Bug Fixes
+- Fixed an issue where Simple Storage Boxes from the EveryComp (Wood Good) mod didn’t react properly to lighting, causing the front text to appear unlit.
+- Fixed a crash that could occur when opening the Creative inventory with EveryComp (Wood Good) mod installed.
+- Fixed item counts in backpacks appearing behind the durability bar.
+- Fixed backpack upgrades not keeping custom names when upgrading to a higher tier.
+- Fixed a crash that could happen when syncing backpacks with very large inventories. (#47)
+- Fixed the Feeder Upgrade not updating its settings correctly in real time.
+- Fixed an issue where backpacks wouldn’t quick-move between the hotbar and inventory, if one was already equipped.
+
+---
+
 ## 1.2.2 - 2026-03-19
 
 ## Bug Fixes
