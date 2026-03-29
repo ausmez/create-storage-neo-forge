@@ -119,7 +119,7 @@ public class OreMiningUpgrade extends AbstractUpgrade {
             state.onDestroyedByPlayer(level, pos, player, true, level.getFluidState(pos));
 
             if (state.getDestroySpeed(level, pos) >= 0.0F) {
-                tool.hurtAndBreak(1, player, (p) -> p.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+                tool.getItem().mineBlock(tool, level, state, pos, player);
                 if (!player.getAbilities().instabuild) {
                     player.causeFoodExhaustion(0.2F);
                 }

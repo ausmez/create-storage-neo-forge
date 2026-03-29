@@ -44,7 +44,19 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
 
     private final Player player;
     private final ItemStack stack;
-    private final ItemStackHandler itemHandler = new ItemStackHandler(CONTAINER_SIZE);
+    private final ItemStackHandler itemHandler = new ItemStackHandler(CONTAINER_SIZE) {
+        @Override
+        public int getSlotLimit(int slot) {
+            ItemStack current = getStackInSlot(slot);
+            int maxStack = current.isEmpty() ? 64 : current.getMaxStackSize();
+            return maxStack * stackMultiplier;
+        }
+
+        @Override
+        protected int getStackLimit(int slot, @NotNull ItemStack stack) {
+            return stack.getMaxStackSize() * stackMultiplier;
+        }
+    };
     private final LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.of(() -> itemHandler);
     private final NonNullList<String> upgrades = NonNullList.create();
 
@@ -145,6 +157,12 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
         return tag;
     }
 
+    public void refreshFromStack() {
+        if (player instanceof ServerPlayer) {
+            loadItemsFromStack(this.stack);
+        }
+    }
+
     public void saveSettings() {
         upgradeData.saveToItem(stack);
         setChanged();
@@ -243,13 +261,19 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
     }
 
     @Override
-    public @NotNull ItemStack insertItem(int i, @NotNull ItemStack itemStack, boolean b) {
-        return itemHandler.insertItem(i, itemStack, b);
+    public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack itemStack, boolean simulate) {
+        ItemStack remainder = itemHandler.insertItem(slot, itemStack, simulate);
+        if (!simulate && remainder.getCount() != itemStack.getCount())
+            saveItemsToStack();
+        return remainder;
     }
 
     @Override
-    public @NotNull ItemStack extractItem(int i, int i1, boolean b) {
-        return itemHandler.extractItem(i, i1, b);
+    public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+        ItemStack result = itemHandler.extractItem(slot, amount, simulate);
+        if (!simulate && !result.isEmpty())
+            saveItemsToStack();
+        return result;
     }
 
     @Override

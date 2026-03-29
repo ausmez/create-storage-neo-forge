@@ -90,6 +90,7 @@ public class FXNTStorage {
         event.enqueueWork(() -> {
             ModNetwork.registerCommonPackets();
             ModUnpackers.registerHandlers();
+            ModInventoryIdentifiers.registerHandlers();
         });
     }
 

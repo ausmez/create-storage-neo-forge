@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.controller;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.AllTags;
+import com.simibubi.create.api.packager.InventoryIdentifier;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.CenteredSideValueBoxTransform;
@@ -13,6 +14,7 @@ import net.createmod.catnip.lang.Lang;
 import net.createmod.catnip.math.AngleHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.storage_network.StorageNetwork;
+import net.fxnt.fxntstorage.storage_network.StorageNetworkIdentifier;
 import net.fxnt.fxntstorage.util.DoubleClickType;
 import net.fxnt.fxntstorage.util.Icons;
 import net.minecraft.core.BlockPos;
@@ -76,6 +78,10 @@ public class StorageControllerEntity extends SmartBlockEntity {
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyItemHandler.invalidate();
+    }
+
+    public InventoryIdentifier getInventoryIdentifier() {
+        return new StorageNetworkIdentifier(getBlockPos(), storageNetwork.getComponents());
     }
 
     public void getStorageNetwork() {

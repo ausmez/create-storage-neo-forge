@@ -41,6 +41,10 @@ public class KeybindHandler {
     private static boolean flykeyWasDown = false;
     private static boolean minekeyWasDown = false;
 
+    public static void resetFlyKeyState() {
+        flykeyWasDown = false;
+    }
+
     @Mod.EventBusSubscriber(modid = FXNTStorage.MOD_ID, value = Dist.CLIENT)
     public static class ClientForgeEvents {
 

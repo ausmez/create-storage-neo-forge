@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.4 - 2026-03-29
+
+## Bug Fixes
+- Fixed the Jetpack Upgrade activating when seated, such as seats on trains, which would display the air overlay and consume fuel.
+- Fixed issue with multiple Packagers with Stock Links connected to the same Storage Network being treated as separate inventories, which caused duplicate items to appear in the Stock Keeper.
+- Fixed duplicate recipes for Simple Spruce Storage Box and Spruce Storage Trim.
+- Fixed multiple issues with backpacks not correctly persisting or syncing their inventory when accessed via item capabilities (e.g. Building Gadgets 2), which lead to items not being removed, duplicated, or reverted after certain actions. (#49)
+- Fixed the Ore Mining Upgrade not correctly applying tool behavior per block, causing tools like the Portable Drill from Create Stuff & Additions to not consume fuel or water when vein mining. (#49)
+- Fixed the Jetpack Upgrade failing to activate after returning from The End, where the air overlay would display and fuel would deplete but no flight occurred.
+
+---
+
 ## 1.2.3 - 2026-03-23
 
 ## Bug Fixes

@@ -163,6 +163,14 @@ public class BackpackMenu extends AbstractContainerMenu {
 
 
     @Override
+    public void broadcastChanges() {
+        if (container instanceof BackpackContainer backpackContainer) {
+            backpackContainer.refreshFromStack();
+        }
+        super.broadcastChanges();
+    }
+
+    @Override
     public void setSynchronizer(ContainerSynchronizer pSynchronizer) {
         // Vanilla synchronizer transfers stack counts as bytes, need to override
         // and transmit stack counts as VarInt to allow for stacks > 127

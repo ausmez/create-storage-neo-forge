@@ -69,6 +69,50 @@ public class BackpackItem extends BlockItem {
 
             // Item Handler capability
             final ItemStackHandler itemHandler = new ItemStackHandler() {
+                private boolean syncing = false;
+
+                private void syncFromStack() {
+                    if (syncing) return;
+                    syncing = true;
+                    try {
+                        CompoundTag beTag = stack.getOrCreateTag().getCompound("BlockEntityTag");
+                        if (beTag.contains("Items", Tag.TAG_COMPOUND)) {
+                            deserializeNBT(beTag.getCompound("Items"));
+                        }
+                    } finally {
+                        syncing = false;
+                    }
+                }
+
+                @Override
+                protected void onContentsChanged(int slot) {
+                    serializeNBT();
+                }
+
+                @Override
+                public int getSlots() {
+                    syncFromStack();
+                    return super.getSlots();
+                }
+
+                @Override
+                public @NotNull ItemStack getStackInSlot(int slot) {
+                    syncFromStack();
+                    return super.getStackInSlot(slot);
+                }
+
+                @Override
+                public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    syncFromStack();
+                    return super.extractItem(slot, amount, simulate);
+                }
+
+                @Override
+                public @NotNull ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+                    syncFromStack();
+                    return super.insertItem(slot, stack, simulate);
+                }
+
                 @Override
                 public CompoundTag serializeNBT() {
                     ListTag nbtTagList = new ListTag();
