@@ -164,6 +164,7 @@ public class ClientEventHandler {
     @SubscribeEvent
     public static void onClientRespawn(ClientPlayerNetworkEvent.Clone event) {
         JetpackManager.addPlayer(event.getNewPlayer());
+        KeybindHandler.resetFlyKeyState();
     }
 
     @SubscribeEvent

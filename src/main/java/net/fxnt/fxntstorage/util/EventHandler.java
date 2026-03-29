@@ -168,13 +168,13 @@ public class EventHandler {
 
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
-        if (!event.isWasDeath()) return;
+        if (event.isWasDeath()) {
+            CompoundTag oldData = event.getOriginal().getPersistentData();
+            CompoundTag newData = event.getEntity().getPersistentData();
 
-        CompoundTag oldData = event.getOriginal().getPersistentData();
-        CompoundTag newData = event.getEntity().getPersistentData();
-
-        if (oldData.contains(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)) {
-            newData.put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, Objects.requireNonNull(oldData.get(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)));
+            if (oldData.contains(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)) {
+                newData.put(ConfigManager.FXNTSTORAGE_SETTINGS_TAG, Objects.requireNonNull(oldData.get(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)));
+            }
         }
 
         JetpackManager.addPlayer(event.getEntity());
@@ -192,6 +192,13 @@ public class EventHandler {
             if (UpgradeEventDispatcher.dispatchLivingFall(player, event)) {
                 event.setCanceled(true);
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            JetpackManager.addPlayer(player);
         }
     }
 

@@ -107,7 +107,10 @@ public class FXNTStorage {
     }
 
     private void onCommonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(ModUnpackers::registerHandlers);
+        event.enqueueWork(() -> {
+            ModUnpackers.registerHandlers();
+            ModInventoryIdentifiers.registerHandlers();
+        });
     }
 
     private static void registerTooltipComponent(RegisterClientTooltipComponentFactoriesEvent event) {

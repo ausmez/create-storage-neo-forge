@@ -15,7 +15,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -119,7 +118,7 @@ public class OreMiningUpgrade extends AbstractUpgrade {
             state.onDestroyedByPlayer(level, pos, player, true, level.getFluidState(pos));
 
             if (state.getDestroySpeed(level, pos) >= 0.0F) {
-                tool.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+                tool.getItem().mineBlock(tool, level, state, pos, player);
                 if (!player.getAbilities().instabuild) {
                     player.causeFoodExhaustion(0.2F);
                 }

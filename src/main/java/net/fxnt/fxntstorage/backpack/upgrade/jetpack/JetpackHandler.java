@@ -87,6 +87,13 @@ public class JetpackHandler {
     public void execute() {
         if (player == null) return;
 
+        if (player.isPassenger()) {
+            isJumping = false;
+            endHovering(false);
+            fadeOutVisualAirOverlay();
+            return;
+        }
+
         if (player.level().isClientSide) {
             executeClient();
         } else {
@@ -271,7 +278,8 @@ public class JetpackHandler {
     }
 
     public void fadeOutVisualAirOverlay() {
-        if (player.onGround() && !airGaugeCleared) {
+        boolean grounded = player.onGround() || player.isPassenger();
+        if (grounded && !airGaugeCleared) {
             if (airGaugeLastCleared == 0) {
                 airGaugeLastCleared = player.level().getGameTime();
             }
@@ -283,7 +291,7 @@ public class JetpackHandler {
                 }
                 airGaugeCleared = true;
             }
-        } else if (!player.onGround() || !isJumping && !isHovering) {
+        } else if (!grounded || !isJumping && !isHovering) {
             airGaugeLastCleared = 0;
         }
     }
