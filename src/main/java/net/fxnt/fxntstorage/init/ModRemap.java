@@ -48,6 +48,12 @@ public class ModRemap {
         BLOCK_REMAP.put(modLoc("storage_trim_crimson"), ModBlocks.STORAGE_TRIM_CRIMSON.getId());
         BLOCK_REMAP.put(modLoc("storage_trim_warped"), ModBlocks.STORAGE_TRIM_WARPED.getId());
         BLOCK_REMAP.put(modLoc("storage_trim_pale_oak"), modLoc("pale_oak_storage_trim"));
+        // === BACKPACKS RENAME === //
+        BLOCK_REMAP.put(modLoc("back_pack"), ModBlocks.BACKPACK.getId());
+        BLOCK_REMAP.put(modLoc("andesite_back_pack"), ModBlocks.ANDESITE_BACKPACK.getId());
+        BLOCK_REMAP.put(modLoc("copper_back_pack"), ModBlocks.COPPER_BACKPACK.getId());
+        BLOCK_REMAP.put(modLoc("brass_back_pack"), ModBlocks.BRASS_BACKPACK.getId());
+        BLOCK_REMAP.put(modLoc("hardened_back_pack"), ModBlocks.HARDENED_BACKPACK.getId());
     }
 
     @SubscribeEvent

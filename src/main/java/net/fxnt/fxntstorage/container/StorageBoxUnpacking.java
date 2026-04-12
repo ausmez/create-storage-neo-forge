@@ -8,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
@@ -24,23 +23,31 @@ public enum StorageBoxUnpacking implements UnpackingHandler {
     @Override
     public boolean unpack(Level level, BlockPos blockPos, BlockState blockState, Direction direction, List<ItemStack> items, @Nullable PackageOrderWithCrafts packageOrderWithCrafts, boolean simulate) {
         BlockEntity targetBE = level.getBlockEntity(blockPos);
-        if (targetBE == null) {
-            return false;
-        } else {
-            boolean isVoidEnabled = blockState.getValue(VOID_UPGRADE);
-            IItemHandler targetInv = targetBE.getCapability(ForgeCapabilities.ITEM_HANDLER, direction).resolve().orElse(null);
-            if (targetInv == null) {
-                return false;
-            } else if (!simulate) {
+        if (targetBE == null) return false;
+
+        boolean isVoidEnabled = blockState.getValue(VOID_UPGRADE);
+        StorageBoxEntity storageBoxEntity = (StorageBoxEntity) targetBE;
+        IItemHandler targetInv = storageBoxEntity.getItemHandler();
+
+        if (!simulate) {
+            if (isVoidEnabled) {
+                // With void, all filter-matching items are accepted regardless of capacity
                 for (ItemStack itemStack : items) {
-                    ItemHandlerHelper.insertItemStacked(targetInv, itemStack.copy(), false);
+                    if (!storageBoxEntity.filterTest(itemStack)) return false;
                 }
                 return true;
-            } else if (isVoidEnabled) {
-                return true;
-            } else {
-                return UnpackingHandler.DEFAULT.unpack(level, blockPos, blockState, direction, items, packageOrderWithCrafts, simulate);
+            }
+            return UnpackingHandler.DEFAULT.unpack(level, blockPos, blockState, direction, items, packageOrderWithCrafts, simulate);
+        }
+
+        // Actual insertion
+        boolean allInserted = true;
+        for (ItemStack itemStack : items) {
+            ItemStack remainder = ItemHandlerHelper.insertItemStacked(targetInv, itemStack.copy(), false);
+            if (!remainder.isEmpty() && !isVoidEnabled) {
+                allInserted = false;
             }
         }
+        return allInserted;
     }
 }

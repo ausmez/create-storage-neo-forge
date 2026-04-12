@@ -152,7 +152,6 @@ public class FXNTStorage {
         public static void onKeyRegister(RegisterKeyMappingsEvent event) {
             event.register(KeybindHandler.TOGGLE_BACKPACK_KEY);
             event.register(KeybindHandler.TOGGLE_JETPACK_HOVER_KEY);
-            event.register(KeybindHandler.CLEAR_BACKPACK_SHAPE_CACHE);
             event.register(KeybindHandler.ORE_MINE_ANY_BLOCK);
         }
 

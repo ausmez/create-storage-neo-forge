@@ -1,7 +1,6 @@
 package net.fxnt.fxntstorage.backpack.upgrade.toolswap;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.simibubi.create.AllItems;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.client.menu.button.WidgetSprites;
@@ -57,7 +56,8 @@ public class ToolSwapUpgrade extends AbstractUpgrade {
 
         if (hand == InteractionHand.OFF_HAND) return false;
         if (player.isSpectator() || !player.isAlive() || player.isSleeping() || player.isDeadOrDying()) return false;
-        if (player.getMainHandItem().is(AllItems.WRENCH.asItem())) return false;
+        if (!player.getMainHandItem().is(Tags.Items.TOOLS) && !player.getMainHandItem().is(Tags.Items.SHEARS))
+            return false;
 
         IBackpackContainer container = context.container();
         ToolSwapHandler toolSwapHandler = new ToolSwapHandler(player, container);
@@ -72,7 +72,8 @@ public class ToolSwapUpgrade extends AbstractUpgrade {
 
         if (hand == InteractionHand.OFF_HAND) return false;
         if (player.isSpectator() || !player.isAlive() || player.isSleeping() || player.isDeadOrDying()) return false;
-        if (!player.getMainHandItem().is(Tags.Items.TOOLS) && !player.getMainHandItem().is(Tags.Items.SHEARS)) return false;
+        if (!player.getMainHandItem().is(Tags.Items.TOOLS) && !player.getMainHandItem().is(Tags.Items.SHEARS))
+            return false;
 
         IBackpackContainer container = context.container();
         ToolSwapHandler toolSwapHandler = new ToolSwapHandler(player, container);

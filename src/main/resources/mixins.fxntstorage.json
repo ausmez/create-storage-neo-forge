@@ -14,7 +14,8 @@
     "SymmetryHandlerMixin",
     "ThresholdSwitchBlockEntity",
     "ToolboxDisposeAllPacketMixin",
-    "ToolboxDisposeAllPacketMixin$ToolboxBlockEntityMixin"
+    "ToolboxDisposeAllPacketMixin$ToolboxBlockEntityMixin",
+    "WandUtilMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,8 +1,8 @@
 package net.fxnt.fxntstorage.network.packet;
 
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
+import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.container.StorageBox;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedMenu;
 import net.minecraft.client.Minecraft;

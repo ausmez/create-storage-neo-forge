@@ -15,8 +15,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -34,18 +32,14 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
         if (targetBE == null) {
             return false;
         } else {
-            IItemHandler targetInv = targetBE.getCapability(ForgeCapabilities.ITEM_HANDLER, direction).resolve().orElse(null);
-            StorageControllerEntity storageControllerEntity = ((StorageControllerEntity) targetBE);
+            if (!(targetBE instanceof StorageControllerEntity sce)) return false;
 
-            final StorageNetwork storageNetwork = storageControllerEntity.getConnectedNetwork();
+            final StorageNetwork storageNetwork = sce.getConnectedNetwork();
 
-            if (targetInv == null) {
-                return false;
-            } else if (!simulate) {
+            if (!simulate) {
                 for (ItemStack itemStack : items) {
                     storageNetwork.insertItems(itemStack);
                 }
-
                 return true;
             } else {
                 List<ItemStorage> emptyBoxes = new ArrayList<>();
@@ -105,7 +99,7 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
                         }
                     }
 
-                    ScrollValueBehaviour behaviour = storageControllerEntity.getBehaviour(ScrollOptionBehaviour.TYPE);
+                    ScrollValueBehaviour behaviour = sce.getBehaviour(ScrollOptionBehaviour.TYPE);
                     if (behaviour == null || behaviour.getValue() == 0) {
                         if (!storageFound && !emptyBoxes.isEmpty()) {
                             ItemStorage box = emptyBoxes.remove(0);

@@ -11,7 +11,7 @@ import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.foundation.utility.CreateCodecs;
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
+import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.init.ModNetwork;
@@ -172,7 +172,11 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             Vec3 currentPos = contraption.entity.toGlobalVector(localPosVec, 0);
             return this.isMenuValid(player, contraption, currentPos);
         };
-        Component blockName = Component.translatable("container.fxntstorage.simple_storage_box_title");
+        CompoundTag nbt = info.nbt();
+        Component customName = (nbt != null && nbt.contains("CustomName", Tag.TAG_STRING))
+                ? Component.nullToEmpty(nbt.getString("CustomName"))
+                : null;
+        Component blockName = customName != null ? customName : info.state().getBlock().getName();
         Component menuName = CreateLang.translateDirect("contraptions.moving_container", blockName);
         Consumer<Player> onClose = p -> {
             Vec3 newPos = contraption.entity.toGlobalVector(localPosVec, 0);

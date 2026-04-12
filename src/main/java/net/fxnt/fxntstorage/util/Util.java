@@ -4,24 +4,28 @@ import com.mojang.datafixers.util.Pair;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataManager;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataSync;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class Util {
 
@@ -196,5 +200,78 @@ public class Util {
             return (effect.getFirst().getEffect().getCategory().equals(MobEffectCategory.HARMFUL));
         }
         return false;
+    }
+
+    public static void sortStorageItems(AbstractContainerMenu menu, ServerPlayer player, int startIndex, int endIndex, SortOrder sortOrder, int containerSlotCount) {
+        // Create a map to track all items (with or without NBT)
+        Map<ItemWithNBT, Integer> itemCompMap = new HashMap<>();
+        // Track a template stack per key to preserve ForgeCaps when rebuilding
+        Map<Util.ItemWithNBT, ItemStack> templateStacks = new HashMap<>();
+
+        // Add all items in the container from startIndex to endIndex into the map
+        for (int i = startIndex; i < endIndex; i++) {
+            ItemStack stack = menu.getSlot(i).getItem();
+            if (!stack.isEmpty()) {
+                CompoundTag tag = stack.getTag();
+                Util.ItemWithNBT key = new Util.ItemWithNBT(stack.getItem(), tag);
+                itemCompMap.merge(key, stack.getCount(), Integer::sum);
+                templateStacks.putIfAbsent(key, stack);
+            }
+        }
+
+        // Create a list of entries and sort them
+        List<Map.Entry<Util.ItemWithNBT, Integer>> sortedItems = new ArrayList<>(itemCompMap.entrySet());
+
+        switch (sortOrder) {
+            case MOD:
+                sortedItems.sort(Comparator
+                        .comparing((Map.Entry<Util.ItemWithNBT, Integer> entry) -> Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(entry.getKey().item())).toString())  // Sort by registry name (ascending)
+                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));  // Then sort by count (descending)
+                break;
+            case NAME:
+                sortedItems.sort(Comparator
+                        .comparing((Map.Entry<Util.ItemWithNBT, Integer> entry) -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())  // Sort by item name (ascending)
+                        .thenComparing(entry -> entry.getKey().getDisplayNameString()) // Then by custom name
+                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));  // Then sort by count (descending)
+                break;
+            default:
+                // Default to COUNT
+                sortedItems.sort(
+                        Map.Entry.<Util.ItemWithNBT, Integer>comparingByValue().reversed()
+                                .thenComparing(entry -> entry.getKey().toString())
+                );
+        }
+
+        NonNullList<ItemStack> compactedList = NonNullList.withSize(endIndex - startIndex, ItemStack.EMPTY);
+        int idx = 0;
+
+        // Rebuild the item stack list based on sorted entries
+        for (Map.Entry<Util.ItemWithNBT, Integer> entry : sortedItems) {
+            Util.ItemWithNBT key = entry.getKey();
+            ItemStack template = templateStacks.get(key);
+            int totalCount = entry.getValue();
+
+            int maxStackSize = template.getMaxStackSize();
+
+            while (totalCount > 0) {
+                int stackSize = Math.min(totalCount, maxStackSize);
+                ItemStack stack = template.copy();
+                stack.setCount(stackSize);
+                compactedList.set(idx, stack);
+                totalCount -= stackSize;
+                idx++;
+            }
+        }
+
+        // Place the sorted items back into the inventory
+        for (int i = 0; i < compactedList.size(); i++) {
+            ItemStack stack = compactedList.get(i);
+            Slot slot = player.containerMenu.getSlot(i + startIndex);
+            slot.set(stack);
+
+            if (i + startIndex < containerSlotCount) {
+                player.connection.send(new ClientboundContainerSetSlotPacket(player.containerMenu.containerId, menu.getStateId(), i + startIndex, stack));
+            }
+        }
     }
 }

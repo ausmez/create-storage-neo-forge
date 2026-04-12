@@ -42,21 +42,19 @@ public class WoodGoodModule extends SimpleModule {
     public WoodGoodModule(String modId) {
         super(modId, "cs", FXNTStorage.MOD_ID);
 
-        ResourceLocation tab = modRes(EveryCompat.MOD_ID); // Place items in Every Compat tab instead of Create: Storage
-
         // Using spruce because most textures re-color better than oak
         simple_storage_boxes = SimpleEntrySet.builder(WoodType.class, "simple_storage_box",
                         getModBlock("spruce_simple_storage_box"), () -> VanillaWoodTypes.SPRUCE,
                         w -> new SimpleStorageBox(Utils.copyPropertySafe(w.planks))
                 )
-                .addTextureM(modRes("block/casings/spruce_casing"), modRes("block/casings/spruce_casing_m"), PaletteStrategies.PLANKS_LOW_CONTRAST)
+                .addTextureM(modRes("block/casings/spruce_casing"), modRes("block/casings/spruce_casing_m"), PaletteStrategies.PLANKS_STANDARD)
                 .addTile(ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY)
                 .addTag(ModTags.Blocks.SIMPLE_STORAGE_BOX, Registries.BLOCK)
                 .addTag(AllTags.AllBlockTags.WRENCH_PICKUP.tag)
-                .addRecipe(modRes("template/spruce_simple_storage_box"))
+                .addRecipe(modRes("crafting_shaped/storage_trim/spruce_storage_trim"))
                 .addCustomItem(((woodType, block, properties) -> new SimpleStorageBoxItem(block, properties)))
                 .copyParentDrop()
-                .setTabKey(tab)
+                .setTabKey(modRes(EveryCompat.MOD_ID))
                 .build();
         this.addEntry(simple_storage_boxes);
 
@@ -64,14 +62,14 @@ public class WoodGoodModule extends SimpleModule {
                         getModBlock("spruce_storage_trim"), () -> VanillaWoodTypes.SPRUCE,
                         w -> new CasingBlock(Utils.copyPropertySafe(w.planks))
                 )
-                .addTextureM(modRes("block/casings/spruce_casing_connected"), modRes("block/casings/spruce_casing_connected_m"), PaletteStrategies.PLANKS_LOW_CONTRAST)
+                .addTextureM(modRes("block/casings/spruce_casing_connected"), modRes("block/casings/spruce_casing_connected_m"), PaletteStrategies.PLANKS_STANDARD)
                 .addTag(ModTags.Blocks.STORAGE_TRIM, Registries.BLOCK)
                 .addTag(BlockTags.MINEABLE_WITH_AXE, Registries.BLOCK)
                 .addTag(AllTags.AllBlockTags.CASING.tag, Registries.BLOCK)
                 .addTag(AllTags.AllItemTags.CASING.tag, Registries.ITEM)
-                .addRecipe(modRes("template/spruce_storage_trim"))
+                .addRecipe(modRes("crafting_shaped/storage_trim/spruce_storage_trim"))
                 .copyParentDrop()
-                .setTabKey(tab)
+                .setTabKey(modRes(EveryCompat.MOD_ID))
                 .build();
         this.addEntry(storage_trims);
     }

@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.compat.constructionwand;
 
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -10,6 +11,8 @@ import thetadev.constructionwand.basics.WandUtil;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
 public class HandlerBackpack implements IContainerHandler {
+    private BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
+
     @Override
     public boolean matches(Player player, ItemStack itemStack, ItemStack inventoryStack) {
         return inventoryStack != null && inventoryStack.getCount() == 1 && Block.byItem(inventoryStack.getItem()) instanceof BackpackBlock;
@@ -20,7 +23,8 @@ public class HandlerBackpack implements IContainerHandler {
         BackpackContainer container = new BackpackContainer(player, inventoryStack);
         int count = 0;
 
-        for (ItemStack stack : container.getItems()) {
+        for (int i : layout.items().range()) {
+            ItemStack stack = container.getStackInSlot(i);
             if (WandUtil.stackEquals(stack, itemStack)) {
                 count += stack.getCount();
             }
@@ -34,7 +38,8 @@ public class HandlerBackpack implements IContainerHandler {
         BackpackContainer container = new BackpackContainer(player, inventoryStack);
         boolean changed = false;
 
-        for (ItemStack stack : container.getItems()) {
+        for (int i : layout.items().range()) {
+            ItemStack stack = container.getStackInSlot(i);
             if (WandUtil.stackEquals(stack, itemStack)) {
                 int toTake = Math.min(count, stack.getCount());
                 stack.shrink(toTake);

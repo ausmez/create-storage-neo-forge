@@ -192,7 +192,13 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     private Tooltip createSortTooltip() {
-        return Tooltip.create(Component.translatable("tooltip.fxntstorage.sortBy").append(Component.literal(" ")).append(currentSortOrder.name().toUpperCase(Locale.ROOT)));
+        return Tooltip.create(
+                Component.translatable("tooltip.fxntstorage.sortBy")
+                        .append(Component.literal(" "))
+                        .append(currentSortOrder.name().toUpperCase(Locale.ROOT))
+                        .append(Component.literal("\n"))
+                        .append(Component.translatable("tooltip.fxntstorage.sortBy.text").withStyle(ChatFormatting.DARK_GRAY))
+        );
     }
 
     protected void rebuildUpgradePanels() {

@@ -1,7 +1,7 @@
 package net.fxnt.fxntstorage.simple_storage;
 
 import com.simibubi.create.AllTags;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
+import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
@@ -66,11 +66,8 @@ public class SimpleStorageBox extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return createTickerHelper(blockEntityType, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (type, world, pos, entity) -> {
-            if (entity instanceof SimpleStorageBoxEntity) {
-                entity.serverTick(type);
-            }
-        });
+        return createTickerHelper(blockEntityType, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(),
+                (world, blockPos, blockState, entity) -> entity.serverTick(world, blockPos, blockState));
     }
 
     @Override
@@ -80,7 +77,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
             if (pStack.hasCustomHoverName()) {
                 be.setCustomName(pStack.getHoverName());
             }
-            be.forceTick();
+            be.initBlockState(pLevel);
         }
     }
 

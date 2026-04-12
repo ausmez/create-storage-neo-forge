@@ -24,11 +24,9 @@ public record SetCarriedPacket(ItemStack stack) {
         context.get().enqueueWork(() -> {
             if (context.get().getDirection().getReceptionSide().isClient()) {
                 Minecraft client = Minecraft.getInstance();
-                client.execute(() -> {
-                    if (client.player != null) {
-                        client.player.containerMenu.setCarried(packet.stack());
-                    }
-                });
+                if (client.player != null) {
+                    client.player.containerMenu.setCarried(packet.stack());
+                }
             }
         });
         context.get().setPacketHandled(true);

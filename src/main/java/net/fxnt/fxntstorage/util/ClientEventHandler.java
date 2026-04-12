@@ -5,15 +5,18 @@ import com.simibubi.create.AllSpecialTextures;
 import net.createmod.catnip.outliner.Outliner;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeHelper;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
 import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackManager;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.ClientJukeboxHandler;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.container.ISortableStorageBox;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
-import net.fxnt.fxntstorage.container.util.StorageBoxNetworkHelper;
 import net.fxnt.fxntstorage.controller.StorageControllerHighlight;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.network.packet.PickBlockUpgradePacket;
@@ -33,7 +36,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec2;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.*;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -42,8 +48,17 @@ import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = FXNTStorage.MOD_ID, value = Dist.CLIENT)
 public class ClientEventHandler {
-    private static double lastforwardImpulse = -99;
-    private static double lastleftImpulse = -99;
+    private static double lastForwardImpulse = -99;
+    private static double lastLeftImpulse = -99;
+
+    private record SlotRange(int start, int end) {
+    }
+
+    private static SlotRange getSlotRange(int slotId, int slotCount) {
+        if (slotId < slotCount) return new SlotRange(0, slotCount);
+        if (slotId < slotCount + 27) return new SlotRange(slotCount, slotCount + 27);
+        return new SlotRange(slotCount + 27, slotCount + 36);
+    }
 
     @SubscribeEvent
     public static void onMovementInputUpdate(MovementInputUpdateEvent event) {
@@ -53,12 +68,18 @@ public class ClientEventHandler {
 
         Player player = event.getEntity();
 
-        if (forwardImpulse != lastforwardImpulse || leftImpulse != lastleftImpulse) {
+        if (forwardImpulse != lastForwardImpulse || leftImpulse != lastLeftImpulse) {
+            lastForwardImpulse = forwardImpulse;
+            lastLeftImpulse = leftImpulse;
+
+            if (!BackpackHelper.isWearingBackpack(player)) return;
+            ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+            BackpackContainer container = new BackpackContainer(player, backpack);
+
+            if (!UpgradeHelper.hasActiveUpgrade(container.getItemHandler(), UpgradeType.FLIGHT)) return;
+
             ModNetwork.sendToServer(new PlayerInputPacket(forwardImpulse, -leftImpulse));
             JetpackManager.getJetpackHandler(player).processPlayerInputPacket(forwardImpulse, -leftImpulse);
-
-            lastforwardImpulse = forwardImpulse;
-            lastleftImpulse = leftImpulse;
         }
     }
 
@@ -128,10 +149,15 @@ public class ClientEventHandler {
                         menu.getSortOrder()
                 ));
             }
-            if (player.containerMenu instanceof StorageBoxMenu menu)
-                StorageBoxNetworkHelper.sortStorageBox(slot.index, menu.getContainerSize(), menu.getSortOrder());
-            if (player.containerMenu instanceof StorageBoxMountedMenu menu)
-                StorageBoxNetworkHelper.sortStorageBox(slot.index, menu.getContainerSize(), menu.getSortOrder());
+            if (player.containerMenu instanceof ISortableStorageBox menu) {
+                SlotRange range = getSlotRange(slot.index, menu.getContainerSize());
+                ModNetwork.sendToServer(new SortInventoryPacket(
+                        Util.INV_TYPE_STORAGE_BOX,
+                        range.start,
+                        range.end,
+                        menu.getSortOrder())
+                );
+            }
         }
     }
 

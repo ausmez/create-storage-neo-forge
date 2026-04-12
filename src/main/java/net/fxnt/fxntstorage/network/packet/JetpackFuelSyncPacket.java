@@ -30,13 +30,10 @@ public record JetpackFuelSyncPacket(float fuelRemaining, long serverTime) {
             if (context.get().getDirection().getReceptionSide().isClient()) {
                 Minecraft client = Minecraft.getInstance();
                 if (client.player != null) {
-                    client.execute(() -> {
-                        JetpackHandler handler = JetpackManager.getJetpackHandler(client.player);
-                        if (handler != null) {
-                            handler.onFuelSync(packet.fuelRemaining(), packet.serverTime());
-                        }
-
-                    });
+                    JetpackHandler handler = JetpackManager.getJetpackHandler(client.player);
+                    if (handler != null) {
+                        handler.onFuelSync(packet.fuelRemaining(), packet.serverTime());
+                    }
                 }
             }
         });

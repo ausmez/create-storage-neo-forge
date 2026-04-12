@@ -5,11 +5,15 @@ import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.client.menu.button.WidgetSprites;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
+import net.fxnt.fxntstorage.init.ModNetwork;
+import net.fxnt.fxntstorage.network.packet.JetpackStateResetPacket;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,6 +42,19 @@ public class JetpackUpgrade extends AbstractUpgrade {
                 UpgradeDataSync.Field.JETPACK_BOBBING, true,
                 UpgradeDataSync.Field.JETPACK_OVERLAY, true
         );
+    }
+
+    @Override
+    public void onRemoved(UpgradeContext context) {
+        Player player = context.player();
+        if (player.level().isClientSide) return;
+
+        JetpackHandler handler = JetpackManager.getJetpackHandler(player);
+        handler.endHovering(false);
+        handler.flyingOnKeyRelease();
+        player.setNoGravity(false);
+
+        ModNetwork.sendToPlayer((ServerPlayer) player, new JetpackStateResetPacket());
     }
 
     @Override

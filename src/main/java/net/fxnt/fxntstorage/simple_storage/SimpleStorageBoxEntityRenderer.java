@@ -67,7 +67,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
                 ? Math.sqrt(player.distanceToSqr(context.position))
                 : Math.sqrt(player.distanceToSqr(context.contraption.entity.toGlobalVector(Vec3.atCenterOf(context.localPos), 1f)));
 
-        if (distance >= MAX_DISTANCE) {
+        if (distance >= getMaxDistance()) {
             poseStack.popPose();
             return;
         }
@@ -118,7 +118,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 
-        if (distance > MAX_DISTANCE && !isPonderScene) return;
+        if (distance > getMaxDistance() && !isPonderScene) return;
         if (isPonderScene) distance = 3f;
 
         BlockState blockState = blockEntity.getBlockState();
@@ -142,5 +142,4 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         poseStack.popPose();
     }
-
 }

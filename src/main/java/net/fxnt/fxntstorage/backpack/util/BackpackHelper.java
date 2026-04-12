@@ -8,7 +8,6 @@ import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
@@ -294,14 +293,11 @@ public class BackpackHelper {
             buf.writeBoolean(false);
         } else {
             buf.writeBoolean(true);
-            Item item = stack.getItem();
-            buf.writeVarInt(Item.getId(item));
-            buf.writeVarInt(stack.getCount()); // Needed for stacks > 127
-            CompoundTag compoundTag = null;
-            if (stack.hasTag()) {
-                compoundTag = stack.getOrCreateTag();
-            }
-            buf.writeNbt(compoundTag);
+            buf.writeVarInt(stack.getCount()); // VarInt for stacks > 127
+            // Use Forge's buf.writeItem which serializes ForgeCaps alongside standard NBT
+            ItemStack singleStack = stack.copy();
+            singleStack.setCount(1);
+            buf.writeItem(singleStack);
         }
     }
 
@@ -309,11 +305,11 @@ public class BackpackHelper {
         if (!buf.readBoolean()) {
             return ItemStack.EMPTY;
         } else {
-            int itemId = buf.readVarInt();
-            int itemCount = buf.readVarInt();
-            ItemStack itemstack = new ItemStack(Item.byId(itemId), itemCount);
-            itemstack.setTag(buf.readNbt());
-            return itemstack;
+            int count = buf.readVarInt();
+            // Use Forge's buf.readItem which restores ForgeCaps alongside standard NBT
+            ItemStack stack = buf.readItem();
+            stack.setCount(count);
+            return stack;
         }
     }
 

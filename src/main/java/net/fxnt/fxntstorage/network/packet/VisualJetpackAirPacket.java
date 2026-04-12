@@ -23,15 +23,13 @@ public record VisualJetpackAirPacket(int airRemaining) {
         context.get().enqueueWork(() -> {
             if (context.get().getDirection().getReceptionSide().isClient()) {
                 Minecraft client = Minecraft.getInstance();
-                client.execute(() -> {
-                    if (client.player != null) {
-                        if (packet.airRemaining() < 0) {
-                            client.player.getPersistentData().remove("VisualJetpackAir");
-                        } else {
-                            client.player.getPersistentData().putInt("VisualJetpackAir", packet.airRemaining());
-                        }
+                if (client.player != null) {
+                    if (packet.airRemaining() < 0) {
+                        client.player.getPersistentData().remove("VisualJetpackAir");
+                    } else {
+                        client.player.getPersistentData().putInt("VisualJetpackAir", packet.airRemaining());
                     }
-                });
+                }
             }
         });
         context.get().setPacketHandled(true);

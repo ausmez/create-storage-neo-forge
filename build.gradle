@@ -129,8 +129,8 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:platform-997634:6673724")
 
     // Every Compat
-    compileOnly fg.deobf("curse.maven:every-compat-628539:7153995")
-    compileOnly fg.deobf("curse.maven:selene-499980:7119907")
+    compileOnly fg.deobf("curse.maven:every-compat-628539:7860235")
+    compileOnly fg.deobf("curse.maven:selene-499980:7664875")
 
     // Construction Wand
     compileOnly fg.deobf("curse.maven:construction-wand-399558:4684054")
@@ -159,7 +159,7 @@ tasks.named('processResources', ProcessResources).configure {
             forge_version       : forge_version, forge_version_range: forge_version_range,
             loader_version_range: loader_version_range,
             mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-            mod_authors         : mod_authors, mod_description: mod_description,
+            mod_authors         : mod_authors, mod_description: mod_description, mod_url: mod_url, mod_icon: mod_icon
     ]
     inputs.properties replaceProperties
 

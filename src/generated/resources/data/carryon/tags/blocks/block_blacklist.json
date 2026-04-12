@@ -1,0 +1,9 @@
+{
+  "values": [
+    "#fxntstorage:backpack",
+    "#fxntstorage:storage_box",
+    "#fxntstorage:storage_network_block",
+    "fxntstorage:passer_block",
+    "fxntstorage:smart_passer_block"
+  ]
+}

@@ -108,6 +108,13 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.STORAGE_INTERFACE.get())
                 .add(ModBlocks.STORAGE_INTERFACE_FILTERED.get());
 
+        tag(ModTags.Blocks.CARRYON_BLACKLIST_BLOCK)
+                .addTag(ModTags.Blocks.BACKPACK)
+                .addTag(ModTags.Blocks.STORAGE_BOX)
+                .addTag(ModTags.Blocks.STORAGE_NETWORK_BLOCK)
+                .add(ModBlocks.PASSER_BLOCK.get())
+                .add(ModBlocks.SMART_PASSER_BLOCK.get());
+
         tag(BlockTags.MINEABLE_WITH_AXE)
                 .add(ModBlocks.CARDBOARD_STORAGE_BOX.get())
                 .addTag(ModTags.Blocks.SIMPLE_STORAGE_BOX)

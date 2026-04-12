@@ -2,7 +2,6 @@ package net.fxnt.fxntstorage.container;
 
 import com.simibubi.create.AllTags;
 import com.simibubi.create.foundation.block.IBE;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
@@ -90,7 +89,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
         return createTickerHelper(pBlockEntityType, ModBlockEntities.STORAGE_BOX_ENTITY.get(),
-                (pLevel1, pPos, pState1, pBlockEntity) -> pBlockEntity.tick(pLevel1, pPos, pState1));
+                (world, blockPos, blockState, entity) -> entity.tick(world, blockPos, blockState));
     }
 
     @Override
@@ -106,7 +105,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                 SortOrder order = (blockEntityTag.contains("SortOrder")) ? SortOrder.valueOf(blockEntityTag.getString("SortOrder")) : SortOrder.COUNT;
                 be.setSortOrder(order);
             }
-            be.forceNextTick();
+            be.initBlockState(pLevel);
         }
     }
 
@@ -215,7 +214,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext pContext) {
         CompoundTag tag = pContext.getItemInHand().getTag();
-        boolean voidUpgrade = tag != null && tag.getCompound("BlockEntityTag").getBoolean("voidUpgrade");
+        boolean voidUpgrade = tag != null && tag.getCompound("BlockEntityTag").getBoolean("VoidUpgrade");
         return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()).setValue(VOID_UPGRADE, voidUpgrade);
     }
 

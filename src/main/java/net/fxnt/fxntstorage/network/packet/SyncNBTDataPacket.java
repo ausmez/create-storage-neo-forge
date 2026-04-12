@@ -28,28 +28,26 @@ public record SyncNBTDataPacket(ItemStack stack) {
         context.get().enqueueWork(() -> {
             if (context.get().getDirection().getReceptionSide().isClient()) {
                 Minecraft client = Minecraft.getInstance();
-                client.execute(() -> {
-                    if (client.player != null) {
-                        if (client.player.containerMenu instanceof BackpackMenu menu) {
-                            switch (menu.type) {
-                                case ITEM -> {
-                                    ItemStack selectedItem = client.player.getMainHandItem();
-                                    if (selectedItem.getItem() instanceof BackpackItem) {
-                                        selectedItem.setTag(packet.stack().getTag());
-                                    }
+                if (client.player != null) {
+                    if (client.player.containerMenu instanceof BackpackMenu menu) {
+                        switch (menu.type) {
+                            case ITEM -> {
+                                ItemStack selectedItem = client.player.getMainHandItem();
+                                if (selectedItem.getItem() instanceof BackpackItem) {
+                                    selectedItem.setTag(packet.stack().getTag());
                                 }
-                                case WORN -> {
-                                    ItemStack wornItem = BackpackHelper.getEquippedBackpackStack(client.player);
-                                    if (wornItem.getItem() instanceof BackpackItem) {
-                                        wornItem.setTag(packet.stack().getTag());
-                                    }
-                                }
-                                default -> {}
                             }
-                            menu.setTag(packet.stack().getTag());
+                            case WORN -> {
+                                ItemStack wornItem = BackpackHelper.getEquippedBackpackStack(client.player);
+                                if (wornItem.getItem() instanceof BackpackItem) {
+                                    wornItem.setTag(packet.stack().getTag());
+                                }
+                            }
+                            default -> {}
                         }
+                        menu.setTag(packet.stack().getTag());
                     }
-                });
+                }
             }
         });
         context.get().setPacketHandled(true);

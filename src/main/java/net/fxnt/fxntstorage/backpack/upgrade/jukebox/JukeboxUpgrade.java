@@ -132,15 +132,11 @@ public class JukeboxUpgrade extends AbstractUpgrade {
         ItemStack slotItem = menu.slots.get(slotIndex).getItem();
 
         if (slotIndex == discSlotIndex) {
-            boolean moved = menu.moveStackToBackpack(slotItem) || menu.moveStackToPlayerInventory(slotItem);
+            boolean moved = menu.moveStackToPlayerInventory(slotItem);
             if (!moved) return Optional.empty();
 
-            if (context.level().isClientSide()) {
-                stopPlayback(context);
-            } else {
-                stopPlaybackServer(context);
-                menu.updateBackpackDataFromContainer();
-            }
+            Slot discSlot = menu.getSlot(discSlotIndex);
+            discSlot.set(ItemStack.EMPTY);
 
             return Optional.of(ItemStack.EMPTY);
         }

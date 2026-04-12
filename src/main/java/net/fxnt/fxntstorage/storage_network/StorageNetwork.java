@@ -51,6 +51,11 @@ public class StorageNetwork {
     }
 
     public void tick() {
+        if (level == null) {
+            refreshStorageNetwork();
+            return;
+        }
+
         checkBoxes(); // Check if boxes removed every tick
 
         if (tickCount++ < ConfigManager.ServerConfig.SIMPLE_STORAGE_NETWORK_UPDATE_TIME.get()) return;
@@ -335,7 +340,7 @@ public class StorageNetwork {
 
         @Override
         public ItemStack insertItem(int slot, ItemStack itemStack, boolean simulate) {
-            if (slot >= boxes.size())
+            if (slot< 0 || slot >= boxes.size())
                 return itemStack;
             if (itemStack.isEmpty())
                 return ItemStack.EMPTY;

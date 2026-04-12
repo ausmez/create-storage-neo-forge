@@ -8,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,8 +23,8 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
         if (targetBE == null) {
             return false;
         } else {
-            IItemHandler targetInv = targetBE.getCapability(ForgeCapabilities.ITEM_HANDLER, direction).resolve().orElse(null);
-            SimpleStorageBoxEntity simpleStorageBoxEntity = ((SimpleStorageBoxEntity) targetBE);
+            if (!(targetBE instanceof SimpleStorageBoxEntity ssbe)) return false;
+            IItemHandler targetInv = ssbe.getItemHandler();
 
             if (targetInv == null) {
                 return false;
@@ -47,14 +46,14 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
                 }
 
                 int totalToInsert = 0;
-                if (simpleStorageBoxEntity.filterTest(ref)) {
-                    if (simpleStorageBoxEntity.voidUpgrade) return true;
+                if (ssbe.filterTest(ref)) {
+                    if (ssbe.voidUpgrade) return true;
 
                     for (ItemStack itemStack : items) {
                         if (itemStack != null && !itemStack.isEmpty()) totalToInsert += itemStack.getCount();
                     }
 
-                    return totalToInsert + simpleStorageBoxEntity.storedAmount <= simpleStorageBoxEntity.maxItemCapacity;
+                    return totalToInsert + ssbe.storedAmount <= ssbe.maxItemCapacity;
                 }
 
                 return false;

@@ -153,7 +153,10 @@ public class BackpackMenu extends AbstractContainerMenu {
                         (idx, val) -> container.setUpgradeSetting(UpgradeDataSync.Field.TOOLSWAP_PREFER_SILKTOUCH, val))
                 .withInteger(UpgradeDataSync.Field.EXPANDED_PANELS,
                         container::getExpandedPanelsBitmask,
-                        (idx, val) -> container.setExpandedPanelsBitmask(val))
+                        (idx, val) -> {
+                            container.setExpandedPanelsBitmask(val);
+                            onUpgradeSlotChanged();
+                        })
                 .build();
         addDataSlots(upgradeSync);
 
@@ -853,17 +856,20 @@ public class BackpackMenu extends AbstractContainerMenu {
         ServerPlayer sp = (ServerPlayer) player;
 
         BackpackSlotLayout.SlotSection section = layout.getSectionForSlot(startIndex);
+        boolean isTools = "Tools".equals(section.getName());
+        boolean isItems = "Items".equals(section.getName());
 
         // Create a map to track all items (with or without NBT)
         Map<Util.ItemWithNBT, Integer> itemCompMap = new HashMap<>();
+        Map<Util.ItemWithNBT, ItemStack> templateStacks = new HashMap<>();
 
         // Add all items in the container from startIndex to endIndex into the map
         for (int i = startIndex; i < endIndex; i++) {
             ItemStack stack = getSlot(i).getItem();
             if (!stack.isEmpty()) {
-                CompoundTag tag = stack.getTag();
-                Util.ItemWithNBT key = new Util.ItemWithNBT(stack.getItem(), tag);
+                Util.ItemWithNBT key = new Util.ItemWithNBT(stack.getItem(), stack.getTag());
                 itemCompMap.merge(key, stack.getCount(), Integer::sum);
+                templateStacks.putIfAbsent(key, stack);
             }
         }
 
@@ -894,7 +900,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         NonNullList<ItemStack> compactedList = NonNullList.withSize(endIndex - startIndex, ItemStack.EMPTY);
 
         // Special handling for tool slots
-        if (section.getName().equals("Tools")) {
+        if (isTools) {
             List<Class<? extends TieredItem>> toolOrder =
                     List.of(SwordItem.class, PickaxeItem.class, AxeItem.class, ShovelItem.class, HoeItem.class);
 
@@ -909,9 +915,8 @@ public class BackpackMenu extends AbstractContainerMenu {
                 if (best != null) {
                     Util.ItemWithNBT key = best.getKey();
 
-                    ItemStack stack = new ItemStack(key.item(), 1);
-                    CompoundTag tag = key.tag();
-                    if (tag != null && !tag.isEmpty()) stack.setTag(tag.copy());
+                    ItemStack stack = templateStacks.get(key).copy();
+                    stack.setCount(1);
                     compactedList.set(t, stack);
 
                     int remaining = best.getValue() - 1;
@@ -924,22 +929,20 @@ public class BackpackMenu extends AbstractContainerMenu {
         }
 
         // Fill general slots starting after reserved
-        int idx = (section.getName().equals("Tools") ? 5 : 0);
+        int idx = (isTools ? 5 : 0);
         for (Map.Entry<Util.ItemWithNBT, Integer> entry : sortedItems) {
             Util.ItemWithNBT key = entry.getKey();
-            Item item = key.item();
-            CompoundTag tag = key.tag();
+            ItemStack template = templateStacks.get(key);
             int totalCount = entry.getValue();
 
-            ItemStack tempStack = new ItemStack(item, 1);
-            int maxStackSize = (section.getName().equals("Items"))
-                    ? stackMultiplier * tempStack.getMaxStackSize()
-                    : tempStack.getMaxStackSize();
+            int maxStackSize = (isItems)
+                    ? stackMultiplier * template.getMaxStackSize()
+                    : template.getMaxStackSize();
 
             while (totalCount > 0 && idx < compactedList.size()) {
                 int stackSize = Math.min(totalCount, maxStackSize);
-                ItemStack stack = new ItemStack(item, stackSize);
-                if (tag != null && !tag.isEmpty()) stack.setTag(tag.copy());
+                ItemStack stack = template.copy();
+                stack.setCount(stackSize);
                 compactedList.set(idx++, stack);
                 totalCount -= stackSize;
             }
@@ -949,8 +952,8 @@ public class BackpackMenu extends AbstractContainerMenu {
                 for (int t = 0; t < 5 && totalCount > 0; t++) {
                     if (compactedList.get(t).isEmpty()) {
                         int stackSize = Math.min(totalCount, maxStackSize);
-                        ItemStack stack = new ItemStack(item, stackSize);
-                        if (tag != null && !tag.isEmpty()) stack.setTag(tag.copy());
+                        ItemStack stack = template.copy();
+                        stack.setCount(stackSize);
                         compactedList.set(t, stack);
                         totalCount -= stackSize;
                     }

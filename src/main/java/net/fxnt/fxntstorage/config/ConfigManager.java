@@ -321,25 +321,14 @@ public class ConfigManager {
     }
 
     private static boolean validateBlacklist(final Object obj) {
-        if (!(obj instanceof String item)) return false;
+        if (!(obj instanceof String item) || item.isBlank()) return false;
 
-        // Check if item is a valid block entry
-        if (ConfigManager.validateBlock(obj)) return true;
-
-        // Check for wildcard entry
         if (item.endsWith(":*")) {
             String namespace = item.substring(0, item.length() - 2);
-
-            // Check namespace is a valid format
-            if (namespace.isEmpty()) return false;
-            if (!namespace.matches("^[a-z0-9_.-]+$")) return false;
-
-            // Check if namespace exists in registry
-            return ForgeRegistries.ITEMS.getKeys().stream()
-                    .anyMatch(key -> key.getNamespace().equals(namespace));
+            return !namespace.isEmpty() && namespace.matches("^[a-z0-9_.-]+$");
         }
 
-        return false;
+        return true;
     }
 
     public static void migrateSettings(CompoundTag settings, int oldVersion) {

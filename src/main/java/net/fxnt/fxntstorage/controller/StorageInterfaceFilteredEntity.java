@@ -139,7 +139,8 @@ public class StorageInterfaceFilteredEntity extends StorageInterfaceEntity {
 
             // Precompute the slots that pass the filter
             for (int i = 0; i < source.getSlots(); i++) {
-                if (filter.test(source.getStackInSlot(i)) || (source.getStackInSlot(i).isEmpty() && includeEmpty)) {
+                ItemStack stack = source.getStackInSlot(i);
+                if (filter.test(stack) || (stack.isEmpty() && includeEmpty)) {
                     filteredSlots.add(i);
                 }
             }
