@@ -18,7 +18,7 @@ import java.util.Objects;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
-public class SimpleStorageBoxMenu extends AbstractContainerMenu {
+public class SimpleStorageBoxMenu extends AbstractContainerMenu implements ISimpleStorageBoxMenu {
     public final SimpleStorageBoxEntity blockEntity;
     public final Player player;
 
@@ -64,6 +64,18 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu {
             this.addSlot(new Slot(playerInventory, i, xOffset + i * Util.SLOT_SIZE, yOffset));
         }
     }
+
+    @Override
+    public ItemStack getFilterItem() { return blockEntity.filterItem; }
+
+    @Override
+    public int getStoredAmount() { return blockEntity.getStoredAmount(); }
+
+    @Override
+    public int getMaxItemCapacity() { return blockEntity.getMaxItemCapacity(); }
+
+    @Override
+    public boolean getVoidUpgrade() { return blockEntity.hasVoidUpgrade(); }
 
     @Override
     public boolean stillValid(Player player) {

@@ -1,7 +1,6 @@
 package net.fxnt.fxntstorage.init;
 
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.compat.CarryOnCompat;
 import net.fxnt.fxntstorage.compat.InventorySorterCompat;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModList;
@@ -20,7 +19,6 @@ public class ModCompats {
 
     @SubscribeEvent
     public static void enqueueCompatMessages(final InterModEnqueueEvent event) {
-        event.enqueueWork(() -> isModLoaded(CARRY_ON, CarryOnCompat::sendIMC));
         event.enqueueWork(() -> isModLoaded(INVENTORY_SORTER, InventorySorterCompat::sendIMC));
     }
 

@@ -4,6 +4,7 @@ import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.fxnt.fxntstorage.network.packet.SetMountedStorageDirtyPacket;
+import net.fxnt.fxntstorage.simple_storage.ISimpleStorageBoxMenu;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -27,7 +28,7 @@ import java.util.function.Consumer;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
-public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu {
+public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implements ISimpleStorageBoxMenu {
     private final Container container;
     private final CompoundTag nbt;
     private final Player player;

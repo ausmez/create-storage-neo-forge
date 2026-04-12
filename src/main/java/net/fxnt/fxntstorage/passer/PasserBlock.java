@@ -61,11 +61,9 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         if (this.isSmart) {
-            BlockEntityType<?> type = ModBlockEntities.SMART_PASSER_ENTITY.get();
-            return new PasserSmartEntity(type, pPos, pState);
+            return new PasserSmartEntity(ModBlockEntities.SMART_PASSER_ENTITY.get(), pPos, pState);
         } else {
-            BlockEntityType<?> type = ModBlockEntities.PASSER_ENTITY.get();
-            return new PasserEntity(type, pPos, pState);
+            return new PasserEntity(ModBlockEntities.PASSER_ENTITY.get(), pPos, pState);
         }
     }
 

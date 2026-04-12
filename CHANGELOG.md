@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.2.5 - 2026-04-12
+
+## Bug Fixes
+- Fixed the Jetpack hover keybind applying flight logic even when no backpack or upgrade was equipped. (#51)
+- Fixed a crash when v1.3.0+ of the Construction Stick mod is present. (#52) [NeoForge]
+- Fixed a crash when opening Create GUIs while wearing a backpack in a Curios back slot. (#53)
+- Fixed ForgeCaps being removed when sorting inventory items in Storage Box and Backpack menus. (#54) [Forge]
+- Fixed Storage Boxes mounted on contraptions briefly showing the wrong fill level after dismounting.
+- Fixed Storage Boxes on moving contraptions not updating their visual state (fill level / void indicator).
+- Fixed the scrollbar on Storage Box and Backpack menus not fully scrolling to the bottom.
+- Fixed render distance config for Storage Boxes and Simple Storage Boxes not updating until game restart.
+- Fixed Jetpack hover mode persisting when the upgrade was removed or disabled mid-flight.
+- Fixed Jetpack sometimes not restoring gravity correctly when upgrade was unequipped or deactivated.
+- Fixed unnecessary movement packets being sent to the server when no Jetpack upgrade is equipped.
+- Fixed Ore Mining keybind activating without a valid backpack or upgrade.
+- Fixed Ore Mining upgrade preview triggering when player is not holding an appropriate mining tool.
+- Fixed void upgrades not activating correctly when storage was full.
+- Fixed rare item loss issue with Create Packager integration with Create: Storage items.
+- Fixed item sorting not syncing correctly with container inventories.
+- Fixed the Feeder upgrade feeding Suspicious Stew to the player with both beneficial and harmful effects.
+- Music discs now move correctly when quick-moving between upgrade panel and inventory.
+- Music disc slot no longer appears empty on panel first open.
+- Backpack note particles now appear in the correct position when worn on the player.
+- Fixed Every Compat (Wood Good) textures failing to generate with newer Moonlight versions (v2.29.26+).
+- Fixed log warnings about missing mixin classes when optional mods are not installed.
+- Fixed an issue where the Carry On mod did not blacklist Create: Storage blocks from being picked up. [NeoForge]
+- Fixed goggle overlay on Simple Storage Boxes to only show when looking at the front display.
+
+## Changes
+- Added a tooltip to the filtered item on the Simple Storage Box UI.
+- Improved compatibility with the Configured mod (Refill upgrade blacklist config now works correctly).
+- Construction Stick now fully supports placing blocks directly from the item section of a worn backpack.
+- Removed an unused debug keybind (F10).
+- Improved Storage Box tick performance (fewer checks each tick).
+- Improved sorting system and reduced duplicate logic code behind the scenes.
+- Simple Storage Boxes mounted on contraptions now show the custom name in the UI (if one is set).
+- Cleaned up various internal systems for better maintainability.
+- General UI and rendering cleanup.
+
+---
+
 ## 1.2.4 - 2026-03-29
 
 ## Bug Fixes

@@ -2,8 +2,10 @@ package net.fxnt.fxntstorage.compat.constructionstick;
 
 import mrbysco.constructionstick.api.IContainerHandler;
 import mrbysco.constructionstick.basics.StickUtil;
+import mrbysco.constructionstick.containers.ContainerTrace;
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -16,11 +18,18 @@ public class HandlerBackpack implements IContainerHandler {
     }
 
     @Override
-    public int countItems(Player player, ItemStack itemStack, ItemStack inventoryStack) {
+    public int getSignature(Player player, ItemStack itemStack) {
+        return itemStack.hashCode();
+    }
+
+    @Override
+    public int countItems(Player player, ContainerTrace trace, ItemStack itemStack, ItemStack inventoryStack) {
         BackpackContainer container = BackpackContainer.Cache.getOrCreateWornBackpack(player, inventoryStack);
+        BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
         int count = 0;
 
-        for (ItemStack stack : container.getItems()) {
+        for (int i : layout.items().range()) {
+            ItemStack stack = container.getStackInSlot(i);
             if (StickUtil.stackEquals(stack, itemStack)) {
                 count += stack.getCount();
             }
@@ -30,11 +39,13 @@ public class HandlerBackpack implements IContainerHandler {
     }
 
     @Override
-    public int useItems(Player player, ItemStack itemStack, ItemStack inventoryStack, int count) {
+    public int useItems(Player player, ContainerTrace trace, ItemStack itemStack, ItemStack inventoryStack, int count) {
         BackpackContainer container = BackpackContainer.Cache.getOrCreateWornBackpack(player, inventoryStack);
+        BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
         boolean changed = false;
 
-        for (ItemStack stack : container.getItems()) {
+        for (int i : layout.items().range()) {
+            ItemStack stack = container.getStackInSlot(i);
             if (StickUtil.stackEquals(stack, itemStack)) {
                 int toTake = Math.min(count, stack.getCount());
                 stack.shrink(toTake);

@@ -51,21 +51,29 @@ public class ParticleHelper {
     }
 
     public static void jukeboxParticles(Player player) {
-        Vec3 localOffset = new Vec3(0, 0.5, -0.3);
+        double yaw = player.yBodyRot * (Math.PI / 180);
+        double cosYaw = Math.cos(yaw);
+        double sinYaw = Math.sin(yaw);
 
-        float yaw = player.yBodyRot * ((float) Math.PI / 180); // Convert to radians
-        Vec3 rotatedOffset = new Vec3(
-                localOffset.x * Math.cos(yaw) - localOffset.z * Math.sin(yaw),
-                localOffset.y + 0.65,
-                localOffset.x * Math.sin(yaw) + localOffset.z * Math.cos(yaw)
-        );
+        // Local-space spawn position on the player's back.
+        // x: bounded random across backpack width (~0.28 blocks)
+        // y: random within the torso/backpack height range
+        // z: back surface of the player body, behind the center
+        double localX = (player.level().random.nextDouble() - 0.5) * 0.28;
+        double localY = 1.05 + player.level().random.nextDouble() * 0.3;
+        double localZ = -0.38;
 
-        double xOffset = player.level().random.nextGaussian() * 0.15;
-        double yOffset = player.level().random.nextGaussian() * 0.20;
-        double zOffset = player.level().random.nextGaussian() * 0.15;
+        // Rotate the horizontal offset to world space using body yaw
+        double worldX = localX * cosYaw - localZ * sinYaw;
+        double worldZ = localX * sinYaw + localZ * cosYaw;
 
-        Vec3 particlePos = player.position().add(rotatedOffset);
-        if (player.level() instanceof ServerLevel serverLevel)
-            serverLevel.sendParticles(ParticleTypes.NOTE, particlePos.x(), particlePos.y() + 0.5, particlePos.z(), 1, xOffset, yOffset, zOffset, serverLevel.random.nextDouble());
+        Vec3 particlePos = player.position().add(worldX, localY, worldZ);
+
+        if (player.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.NOTE,
+                    particlePos.x(), particlePos.y(), particlePos.z(),
+                    1, 0.0, 0.05, 0.0,
+                    serverLevel.random.nextDouble());
+        }
     }
 }

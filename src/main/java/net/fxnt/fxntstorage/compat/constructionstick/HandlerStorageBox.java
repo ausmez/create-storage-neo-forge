@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.compat.constructionstick;
 
 import mrbysco.constructionstick.api.IContainerHandler;
 import mrbysco.constructionstick.basics.StickUtil;
+import mrbysco.constructionstick.containers.ContainerTrace;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.minecraft.core.NonNullList;
@@ -16,11 +17,16 @@ public class HandlerStorageBox implements IContainerHandler {
     public boolean matches(Player player, ItemStack itemStack, ItemStack inventoryStack) {
         return inventoryStack != null && inventoryStack.getCount() == 1
                 && (Block.byItem(inventoryStack.getItem()) instanceof StorageBox
-                    || Block.byItem(inventoryStack.getItem()) instanceof SimpleStorageBox);
+                || Block.byItem(inventoryStack.getItem()) instanceof SimpleStorageBox);
     }
 
     @Override
-    public int countItems(Player player, ItemStack itemStack, ItemStack inventoryStack) {
+    public int getSignature(Player player, ItemStack itemStack) {
+        return itemStack.hashCode();
+    }
+
+    @Override
+    public int countItems(Player player, ContainerTrace trace, ItemStack itemStack, ItemStack inventoryStack) {
         int count = 0;
 
         for (ItemStack stack : getItemList(inventoryStack)) {
@@ -33,7 +39,7 @@ public class HandlerStorageBox implements IContainerHandler {
     }
 
     @Override
-    public int useItems(Player player, ItemStack itemStack, ItemStack inventoryStack, int count) {
+    public int useItems(Player player, ContainerTrace trace, ItemStack itemStack, ItemStack inventoryStack, int count) {
         NonNullList<ItemStack> itemList = getItemList(inventoryStack);
         boolean changed = false;
 

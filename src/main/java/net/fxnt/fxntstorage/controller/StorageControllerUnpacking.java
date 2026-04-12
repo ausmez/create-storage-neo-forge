@@ -32,9 +32,9 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
         if (targetBE == null) {
             return false;
         } else {
-            StorageControllerEntity storageControllerEntity = ((StorageControllerEntity) targetBE);
+            if (!(targetBE instanceof StorageControllerEntity sce)) return false;
 
-            final StorageNetwork storageNetwork = storageControllerEntity.getConnectedNetwork();
+            final StorageNetwork storageNetwork = sce.getConnectedNetwork();
 
             if (!simulate) {
                 for (ItemStack itemStack : items) {
@@ -99,7 +99,7 @@ public enum StorageControllerUnpacking implements UnpackingHandler {
                         }
                     }
 
-                    ScrollValueBehaviour behaviour = storageControllerEntity.getBehaviour(ScrollOptionBehaviour.TYPE);
+                    ScrollValueBehaviour behaviour = sce.getBehaviour(ScrollOptionBehaviour.TYPE);
                     if (behaviour == null || behaviour.getValue() == 0) {
                         if (!storageFound && !emptyBoxes.isEmpty()) {
                             ItemStorage box = emptyBoxes.removeFirst();

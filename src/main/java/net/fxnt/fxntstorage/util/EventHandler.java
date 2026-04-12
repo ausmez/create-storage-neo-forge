@@ -14,20 +14,11 @@ import net.fxnt.fxntstorage.backpack.upgrade.torch.TorchDeployerManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.controller.StorageController;
-import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.CrossbowChargedPacket;
-import net.fxnt.fxntstorage.network.packet.StorageNetworkHighlightPacket;
-import net.fxnt.fxntstorage.network.packet.StorageNetworkSyncPacket;
 import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
-import net.fxnt.fxntstorage.storage_network.StorageNetwork;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -35,12 +26,8 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
@@ -67,50 +54,6 @@ import java.util.function.Predicate;
 @EventBusSubscriber(modid = FXNTStorage.MOD_ID)
 public class EventHandler {
     private static final BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
-
-    @SubscribeEvent
-    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        Player player = event.getEntity();
-        Level level = event.getLevel();
-        BlockPos pos = event.getPos();
-        BlockState state = level.getBlockState(pos);
-        Block block = state.getBlock();
-
-        // Storage Controller
-        if (block instanceof StorageController controller) {
-            if (!controller.hitFront(state, event.getHitVec())) return;
-            if (player.getMainHandItem().is(Tags.Items.TOOLS_WRENCH) && player.isShiftKeyDown()) return;
-
-            BlockEntity be = level.getBlockEntity(pos);
-            if (!(be instanceof StorageControllerEntity controllerEntity)) return;
-
-            boolean isControllerConnected = state.getValue(StorageController.CONNECTED);
-            if (isControllerConnected) {
-                if (!level.isClientSide) {
-                    if (player.getMainHandItem().is(Tags.Items.TOOLS_WRENCH)) {
-                        boolean enabled = controllerEntity.toggleHighlight((ServerPlayer) player);
-
-                        StorageNetwork network = controllerEntity.getConnectedNetwork();
-                        Set<BlockPos> components = network.getComponents();
-
-                        if (enabled)
-                            PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new StorageNetworkSyncPacket(pos, components));
-                        PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new StorageNetworkHighlightPacket(pos, enabled));
-
-                        player.displayClientMessage(
-                                Component.translatable(enabled ? "fxntstorage.storage_controller.highlight_enabled" : "fxntstorage.storage_controller.highlight_disabled")
-                                        .withStyle(ChatFormatting.YELLOW),
-                                true
-                        );
-                    } else {
-                        controllerEntity.transferItemsFromPlayer(player);
-                    }
-                }
-                event.setCanceled(true);
-                event.setCancellationResult(InteractionResult.SUCCESS);
-            }
-        }
-    }
 
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
@@ -150,9 +93,9 @@ public class EventHandler {
 
         if (UpgradeHelper.hasActiveUpgrade(container, UpgradeType.FLIGHT)) {
             jetpackHandler.execute();
-        } else {
+        } else if (jetpackHandler.isCleanupNeeded()) {
             // Account for deactivating flight upgrade while hovering
-            jetpackHandler.endHovering(false);
+            player.setNoGravity(false);
             jetpackHandler.fadeOutVisualAirOverlay();
         }
 
@@ -178,7 +121,9 @@ public class EventHandler {
         }
 
         JetpackManager.addPlayer(event.getEntity());
-        stopJukeboxIfPlaying((ServerPlayer) event.getEntity());
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            stopJukeboxIfPlaying(serverPlayer);
+        }
     }
 
     @SubscribeEvent

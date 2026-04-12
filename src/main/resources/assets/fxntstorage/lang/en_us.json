@@ -11,7 +11,11 @@
   "block.fxntstorage.brass_storage_box": "Brass Storage Box",
   "block.fxntstorage.hardened_storage_box": "Hardened Storage Box",
 
-  "container.fxntstorage.simple_storage_box_title": "Simple Storage Box",
+  "container.fxntstorage.simple_storage_box.stored": "Stored",
+  "container.fxntstorage.simple_storage_box.capacity": "Capacity",
+  "container.fxntstorage.simple_storage_box.void": "Void Mode",
+  "container.fxntstorage.enabled": "Enabled",
+  "container.fxntstorage.disabled": "Disabled",
 
   "block.fxntstorage.oak_simple_storage_box": "Simple Oak Storage Box",
   "block.fxntstorage.spruce_simple_storage_box": "Simple Spruce Storage Box",
@@ -89,6 +93,7 @@
   "block.fxntstorage.pale_oak_storage_trim": "Pale Oak Storage Trim",
 
   "tooltip.fxntstorage.sortBy": "Sort by",
+  "tooltip.fxntstorage.sortBy.text": "Middle-click a slot to sort items.",
   "tooltip.fxntstorage.upgrade_deactivated": "DEACTIVATED",
   "tooltip.fxntstorage.holdForContents": "Hold [%s] to View Contents",
   "tooltip.fxntstorage.holdForControls": "Hold [%s] for Controls",
@@ -190,12 +195,10 @@
 
   "fxntstorage.storage_box_void_upgrade_exists": "This storage box already contains a void upgrade",
   "fxntstorage.storage_box_capacity_upgrade_max": "This storage box has reached maximum capacity",
-  "fxntstorage.shape_cache.cleared": "Create: Storage shape cache cleared",
 
   "hotKey.fxntstorage.category": "Create: Storage",
   "hotKey.fxntstorage.toggle_backpack": "Open/Close Backpack (while wearing)",
   "hotKey.fxntstorage.toggle_jetpack_hover": "Toggle Jetpack Upgrade Hover Mode",
-  "hotKey.fxntstorage.clear_backpack_shape_cache": "Clear Backpack Shape Cache",
   "hotKey.fxntstorage.fly_jetpack": "Fly Jetpack",
   "hotKey.fxntstorage.oremine_any_block": "Ore Mine Any Block (when held)",
 

@@ -8,15 +8,17 @@ import com.simibubi.create.content.contraptions.Contraption;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.foundation.codec.CreateCodecs;
+import com.simibubi.create.foundation.utility.CreateLang;
+import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.container.StorageBoxEntity;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
 import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,6 +29,7 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -116,7 +119,12 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
             Vec3 currentPos = contraption.entity.toGlobalVector(localPosVec, 0);
             return this.isMenuValid(player, contraption, currentPos);
         };
-        Component menuName = this.getMenuName(info, contraption);
+        CompoundTag nbt = info.nbt();
+        Component customName = (nbt != null && nbt.contains("CustomName", Tag.TAG_STRING))
+                ? BlockEntity.parseCustomNameSafe(nbt.getString("CustomName"), player.registryAccess())
+                : null;
+        Component blockName = customName != null ? customName : info.state().getBlock().getName();
+        Component menuName = CreateLang.translateDirect("contraptions.moving_container", blockName);
         Consumer<Player> onClose = p -> {
             Vec3 newPos = contraption.entity.toGlobalVector(localPosVec, 0);
             this.playClosingSound(level, newPos);
@@ -148,6 +156,13 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
             storageBoxEntity.applyInventoryToBlock(this.wrapped);
         }
 
+        EnumProperties.StorageUsed fillLevel = calculateFillLevel();
+        BlockState currentState = level.getBlockState(pos);
+        if (currentState.hasProperty(StorageBox.STORAGE_USED)
+                && currentState.getValue(StorageBox.STORAGE_USED) != fillLevel) {
+            level.setBlock(pos, currentState.setValue(StorageBox.STORAGE_USED, fillLevel), Block.UPDATE_CLIENTS);
+        }
+
         currentContraption = null;
     }
 
@@ -156,12 +171,14 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
         if (!this.isItemValid(slot, stack))
             return stack;
 
-        ItemStack amount = super.insertItem(slot, stack, simulate);
-        if (slot == wrapped.getSlots() - 1 && !amount.isEmpty() && voidUpgrade) {
-            return ItemStack.EMPTY;
+        ItemStack remainder = super.insertItem(slot, stack, simulate);
+        if (!simulate) {
+            if (!remainder.isEmpty() && voidUpgrade && calculatePercentageUsed() >= 100f) {
+                remainder = ItemStack.EMPTY;
+            }
+            markDirty();
         }
-        markDirty();
-        return amount;
+        return remainder;
     }
 
     @Override
@@ -206,34 +223,7 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
     }
 
     private EnumProperties.StorageUsed calculateFillLevel() {
-        int totalSlots = wrapped.getSlots();
-        boolean allSlotsFull = true;
-
-        int filledSlots = 0;
-        for (int i = 0; i < wrapped.getSlots(); i++) {
-            ItemStack slot = wrapped.getStackInSlot(i);
-            if (!slot.isEmpty()) {
-                filledSlots++;
-                if (slot.getCount() < slot.getMaxStackSize()) {
-                    allSlotsFull = false;
-                }
-            } else {
-                allSlotsFull = false;
-            }
-        }
-        int emptySlots = totalSlots - filledSlots;
-
-        EnumProperties.StorageUsed newStorageUsed = EnumProperties.StorageUsed.EMPTY;
-
-        if (allSlotsFull) {
-            newStorageUsed = EnumProperties.StorageUsed.FULL;
-        } else if (emptySlots == 0) {
-            newStorageUsed = EnumProperties.StorageUsed.SLOTS_FILLED;
-        } else if (filledSlots > 0) {
-            newStorageUsed = EnumProperties.StorageUsed.HAS_ITEMS;
-        }
-
-        return newStorageUsed;
+        return EnumProperties.calculateFillLevel(wrapped, wrapped.getSlots());
     }
 
     public void updateClientStorageData(MovementContext context) {
@@ -245,8 +235,8 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
         context.blockEntityData.putFloat("PercentageUsed", percentUsed);
         context.blockEntityData.putString("SortOrder", sortOrder.name());
         context.blockEntityData.putBoolean("VoidUpgrade", voidUpgrade);
-        context.state.setValue(StorageBox.STORAGE_USED, fillLevel);
-        context.state.setValue(StorageBox.VOID_UPGRADE, voidUpgrade);
+        context.state = context.state.setValue(StorageBox.STORAGE_USED, fillLevel);
+        context.state = context.state.setValue(StorageBox.VOID_UPGRADE, voidUpgrade);
 
         PacketDistributor.sendToPlayersTrackingEntity(context.contraption.entity, new SyncMountedStoragePacket(context.contraption.entity.getId(), context.localPos, fillLevel, context.blockEntityData));
         markClean();

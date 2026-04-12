@@ -4,10 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.simibubi.create.foundation.block.IBE;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModDataComponents;
-import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -42,7 +40,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.WeakHashMap;
 
 @SuppressWarnings("deprecation")
@@ -60,6 +57,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         long lastClickTime;
         BlockPos lastBlockPos;
     }
+
     private static final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
 
     private final int slotCount;
@@ -106,21 +104,16 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-        return createTickerHelper(pBlockEntityType, ModBlockEntities.STORAGE_BOX_ENTITY.get(),
-                (pLevel1, pPos, pState1, pBlockEntity) -> pBlockEntity.tick(pLevel1, pPos, pState1));
+    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        return createTickerHelper(blockEntityType, ModBlockEntities.STORAGE_BOX_ENTITY.get(),
+                (world, blockPos, blockState, entity) -> entity.tick(world, blockPos, blockState));
     }
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof StorageBoxEntity be) {
-            if (stack.has(DataComponents.CUSTOM_NAME)) {
-                be.setCustomName(stack.getHoverName());
-            }
-            SortOrder order = Optional.ofNullable(stack.get(ModDataComponents.INVENTORY_SORT_ORDER)).orElse(SortOrder.COUNT);
-            be.setSortOrder(order);
-            be.forceNextTick();
+            be.initBlockState(level);
         }
     }
 

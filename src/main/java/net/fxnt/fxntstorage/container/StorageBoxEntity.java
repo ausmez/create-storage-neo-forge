@@ -14,7 +14,6 @@ import net.createmod.catnip.math.AngleHelper;
 import net.createmod.catnip.math.VecHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
@@ -55,6 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static net.fxnt.fxntstorage.container.StorageBox.STORAGE_USED;
 import static net.fxnt.fxntstorage.container.StorageBox.VOID_UPGRADE;
 
 public class StorageBoxEntity extends SmartBlockEntity implements Container, MenuProvider, Nameable, ThresholdSwitchObservable {
@@ -62,7 +62,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     private int tickCount = 0;
 
     private Component customName;
-    private int storedAmount = -1;
+    private int storedAmount = 0;
     private float percentageUsed = 0;
     boolean voidUpgrade;
 
@@ -72,7 +72,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     private final ItemStackHandler itemHandler = createItemHandler();
     private SortOrder sortOrder;
 
-    private record StorageStats(int stored, int capacity) {
+    private record StorageStats(int stored, int capacity, EnumProperties.StorageUsed fillLevel) {
         float percentage() {
             return capacity == 0 ? 0f : (stored * 100f) / capacity;
         }
@@ -160,10 +160,6 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         return customName;
     }
 
-    public void setCustomName(Component customName) {
-        this.customName = customName;
-    }
-
     @Override
     public Component getDisplayName() {
         return customName != null ? customName : getBlockState().getBlock().getName();
@@ -193,6 +189,9 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
         for (int i = 0; i < itemStacks.size(); i++) {
             itemHandler.setStackInSlot(i, itemStacks.get(i));
+        }
+        for (int i = itemStacks.size(); i < itemHandler.getSlots(); i++) {
+            itemHandler.setStackInSlot(i, ItemStack.EMPTY);
         }
     }
 
@@ -247,7 +246,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     }
 
     public List<ItemStack> getStacks() {
-        List<ItemStack> stacks = new ArrayList<>(List.of());
+        List<ItemStack> stacks = new ArrayList<>();
         for (int i = 0; i < itemHandler.getSlots(); ++i) {
             stacks.add(itemHandler.getStackInSlot(i));
         }
@@ -257,6 +256,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     protected void applyImplicitComponents(DataComponentInput componentInput) {
         super.applyImplicitComponents(componentInput);
+        this.customName = componentInput.getOrDefault(DataComponents.CUSTOM_NAME, null);
         this.sortOrder = componentInput.getOrDefault(ModDataComponents.INVENTORY_SORT_ORDER, SortOrder.COUNT);
         setVoidUpgrade(componentInput.getOrDefault(ModDataComponents.VOID_UPGRADE, false));
         readInventory(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
@@ -322,13 +322,29 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     private StorageStats calculateStats() {
         int stored = 0;
         int capacity = 0;
+        boolean allSlotsFull = true;
+        int filledSlots = 0;
 
         for (int i = 0; i < itemHandler.getSlots(); i++) {
             ItemStack stack = itemHandler.getStackInSlot(i);
             stored += stack.getCount();
             capacity += stack.isEmpty() ? 64 : stack.getMaxStackSize();
+            if (!stack.isEmpty()) {
+                filledSlots++;
+                if (stack.getCount() < stack.getMaxStackSize()) allSlotsFull = false;
+            } else {
+                allSlotsFull = false;
+            }
         }
-        return new StorageStats(stored, capacity);
+
+        int emptySlots = itemHandler.getSlots() - filledSlots;
+        EnumProperties.StorageUsed fillLevel;
+        if (allSlotsFull) fillLevel = EnumProperties.StorageUsed.FULL;
+        else if (emptySlots == 0) fillLevel = EnumProperties.StorageUsed.SLOTS_FILLED;
+        else if (filledSlots > 0) fillLevel = EnumProperties.StorageUsed.HAS_ITEMS;
+        else fillLevel = EnumProperties.StorageUsed.EMPTY;
+
+        return new StorageStats(stored, capacity, fillLevel);
     }
 
     private int calculateStoredAmount() {
@@ -360,58 +376,33 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         }
     }
 
-    public void forceNextTick() {
-        tickCount = 999;
+    public void initBlockState(Level level) {
+        BlockState newState = getBlockState().setValue(STORAGE_USED, calculateStats().fillLevel());
+        level.setBlock(worldPosition, newState, Block.UPDATE_ALL);
+        level.sendBlockUpdated(worldPosition, newState, newState, Block.UPDATE_ALL);
     }
 
     public void tick(Level pLevel, BlockPos pPos, BlockState pState) {
         if (!pLevel.isClientSide) {
-
             if (tickCount++ < ConfigManager.ServerConfig.STORAGE_BOX_UPDATE_TIME.get()) return;
             tickCount = 0;
-
-            BlockState currentState = this.getBlockState();
 
             int oldStoredAmount = this.storedAmount;
             float oldPercentageUsed = this.percentageUsed;
 
-            this.storedAmount = calculateStoredAmount();
-            this.percentageUsed = calculatePercentageUsed();
+            StorageStats stats = calculateStats();
+            this.storedAmount = stats.stored();
+            this.percentageUsed = stats.percentage();
 
-            if (this.storedAmount != oldStoredAmount || this.percentageUsed != oldPercentageUsed) {
-                this.setChanged();
-                pLevel.sendBlockUpdated(pPos, pState, currentState, Block.UPDATE_CLIENTS);
-            }
+            boolean statsChanged = this.storedAmount != oldStoredAmount || this.percentageUsed != oldPercentageUsed;
+            boolean fillLevelChanged = pState.getValue(StorageBox.STORAGE_USED) != stats.fillLevel();
 
-            int totalSlots = itemHandler.getSlots();
-            boolean allSlotsFull = true;
-            int filledSlots = 0;
+            if (statsChanged) this.setChanged();
 
-            for (int i = 0; i < slotCount; i++) {
-                ItemStack slot = itemHandler.getStackInSlot(i);
-                if (!slot.isEmpty()) {
-                    filledSlots++;
-                    if (slot.getCount() < slot.getMaxStackSize()) {
-                        allSlotsFull = false;
-                    }
-                } else {
-                    allSlotsFull = false;
-                }
-            }
-            int emptySlots = totalSlots - filledSlots;
-
-            EnumProperties.StorageUsed newStorageUsed = EnumProperties.StorageUsed.EMPTY;
-
-            if (allSlotsFull) {
-                newStorageUsed = EnumProperties.StorageUsed.FULL;
-            } else if (emptySlots == 0) {
-                newStorageUsed = EnumProperties.StorageUsed.SLOTS_FILLED;
-            } else if (filledSlots > 0) {
-                newStorageUsed = EnumProperties.StorageUsed.HAS_ITEMS;
-            }
-
-            if (currentState.getValue(StorageBox.STORAGE_USED) != newStorageUsed) {
-                pLevel.setBlock(pPos, currentState.setValue(StorageBox.STORAGE_USED, newStorageUsed), Block.UPDATE_CLIENTS);
+            if (fillLevelChanged) {
+                pLevel.setBlock(pPos, pState.setValue(StorageBox.STORAGE_USED, stats.fillLevel()), Block.UPDATE_CLIENTS);
+            } else if (statsChanged) {
+                pLevel.sendBlockUpdated(pPos, pState, pState, Block.UPDATE_CLIENTS);
             }
         }
         super.tick();
@@ -454,11 +445,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
                 remainder = ItemStack.EMPTY;
             }
 
-            if (remainder.getCount() <= itemInHand.getCount()) {
-                pPlayer.setItemInHand(InteractionHand.MAIN_HAND, remainder);
-            } else {
-                pPlayer.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-            }
+            pPlayer.setItemInHand(InteractionHand.MAIN_HAND, remainder);
         }
         this.setChanged();
     }
@@ -470,9 +457,9 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
             ItemStack stackInSlot = itemHandler.getStackInSlot(i);
 
             if (!stackInSlot.isEmpty()) {
-                if (!ItemStack.isSameItemSameComponents(itemHandler.getStackInSlot(i), filterItem)) continue;
+                if (!ItemStack.isSameItemSameComponents(stackInSlot, filterItem)) continue;
 
-                int maxStack = Math.min(itemHandler.getStackInSlot(i).getMaxStackSize(), itemHandler.getStackInSlot(i).getCount());
+                int maxStack = Math.min(stackInSlot.getMaxStackSize(), stackInSlot.getCount());
                 int amountToExtract = (pPlayer.isShiftKeyDown()) ? maxStack : 1;
                 ItemStack toExtract = stackInSlot.copyWithCount(amountToExtract);
 
@@ -484,7 +471,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         this.setChanged();
     }
 
-    private boolean filterTest(ItemStack stack) {
+    boolean filterTest(ItemStack stack) {
         if (stack.is(ModTags.Items.STORAGE_BOX_ITEM))
             return false;
         return filtering.test(stack);

@@ -4,7 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.client.menu.slot.JukeboxDiscSlot;
-import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ClientSettings;
@@ -58,21 +57,6 @@ public class JukeboxUpgrade extends AbstractUpgrade {
                 UpgradeDataSync.Field.JUKEBOX_PLAYING, false,
                 UpgradeDataSync.Field.JUKEBOX_MUTED, false
         );
-    }
-
-    @Override
-    public boolean clicked(UpgradeContext context) {
-        BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
-
-        if (layout.jukeboxDiscs().contains(context.slotId())) {
-            Slot slot = context.player().containerMenu.slots.get(context.slotId());
-            ItemStack existing = slot.getItem();
-
-            if (!existing.isEmpty() && existing.has(DataComponents.JUKEBOX_PLAYABLE)) {
-                onRemoved(context);
-            }
-        }
-        return false;
     }
 
     @Override
@@ -140,12 +124,8 @@ public class JukeboxUpgrade extends AbstractUpgrade {
             boolean moved = menu.moveStackToPlayerInventory(slotItem);
             if (!moved) return Optional.empty();
 
-            if (context.level().isClientSide()) {
-                stopPlayback(context);
-            } else {
-                stopPlaybackServer(context);
-                menu.updateBackpackDataFromContainer();
-            }
+            Slot discSlot = menu.getSlot(discSlotIndex);
+            discSlot.set(ItemStack.EMPTY);
 
             return Optional.of(ItemStack.EMPTY);
         }

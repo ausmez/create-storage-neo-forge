@@ -13,6 +13,7 @@ public class PacketHandler {
 
         // ClientboundPacket
         registrar.playToClient(JetpackFuelSyncPacket.TYPE, JetpackFuelSyncPacket.STREAM_CODEC, JetpackFuelSyncPacket::handle);
+        registrar.playToClient(JetpackStateResetPacket.TYPE, JetpackStateResetPacket.STREAM_CODEC, JetpackStateResetPacket::handle);
         registrar.playToClient(JukeboxClientPacket.TYPE, JukeboxClientPacket.STREAM_CODEC, JukeboxClientPacket::handle);
         registrar.playToClient(OreMiningPreviewPacket.TYPE, OreMiningPreviewPacket.STREAM_CODEC, OreMiningPreviewPacket::handle);
         registrar.playToClient(SetCarriedPacket.TYPE, SetCarriedPacket.STREAM_CODEC, SetCarriedPacket::handle);

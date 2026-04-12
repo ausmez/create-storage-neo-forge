@@ -22,7 +22,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FenceBlock;
 
 public class RendererHelper {
-    public static final Double MAX_DISTANCE = AllConfigs.client().filterItemRenderDistance.get(); // Use Create config for max render distance
+    // Use Create config for max render distance - read at call time so config changes take effect without restart
+    public static double getMaxDistance() { return AllConfigs.client().filterItemRenderDistance.get(); }
 
     public static void renderLine(String text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int color, int packedLight) {
         Font font = Minecraft.getInstance().font;
@@ -75,8 +76,9 @@ public class RendererHelper {
         final int START = 255;
         final int END = 50;
 
-        double clamped = Math.min(distance, MAX_DISTANCE);
-        double factor = clamped / MAX_DISTANCE;
+        double maxDistance = getMaxDistance();
+        double clamped = Math.min(distance, maxDistance);
+        double factor = clamped / maxDistance;
 
         int val = (int) (START + (END - START) * factor);
 

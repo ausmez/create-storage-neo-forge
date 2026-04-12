@@ -10,7 +10,7 @@ import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.foundation.codec.CreateCodecs;
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.fxnt.fxntstorage.FXNTStorage;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
+import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.init.ModTags;
@@ -20,6 +20,7 @@ import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -169,7 +170,11 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             Vec3 currentPos = contraption.entity.toGlobalVector(localPosVec, 0);
             return this.isMenuValid(player, contraption, currentPos);
         };
-        Component blockName = Component.translatable("container.fxntstorage.simple_storage_box_title");
+        CompoundTag nbt = info.nbt();
+        Component customName = (nbt != null && nbt.contains("CustomName", Tag.TAG_STRING))
+                ? BlockEntity.parseCustomNameSafe(nbt.getString("CustomName"), player.registryAccess())
+                : null;
+        Component blockName = customName != null ? customName : info.state().getBlock().getName();
         Component menuName = CreateLang.translateDirect("contraptions.moving_container", blockName);
         Consumer<Player> onClose = p -> {
             Vec3 newPos = contraption.entity.toGlobalVector(localPosVec, 0);

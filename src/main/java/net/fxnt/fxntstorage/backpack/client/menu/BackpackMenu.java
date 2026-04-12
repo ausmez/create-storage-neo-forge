@@ -154,7 +154,10 @@ public class BackpackMenu extends AbstractContainerMenu {
                         (idx, val) -> container.setUpgradeSetting(UpgradeDataSync.Field.TOOLSWAP_PREFER_SILKTOUCH, val))
                 .withInteger(UpgradeDataSync.Field.EXPANDED_PANELS,
                         container::getExpandedPanelsBitmask,
-                        (idx, val) -> container.setExpandedPanelsBitmask(val))
+                        (idx, val) -> {
+                            container.setExpandedPanelsBitmask(val);
+                            onUpgradeSlotChanged();
+                        })
                 .build();
         addDataSlots(upgradeSync);
 

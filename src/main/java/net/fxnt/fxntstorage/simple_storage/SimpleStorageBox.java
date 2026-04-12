@@ -1,12 +1,11 @@
 package net.fxnt.fxntstorage.simple_storage;
 
 import com.mojang.serialization.MapCodec;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
+import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,7 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.WeakHashMap;
 
 public class SimpleStorageBox extends BaseEntityBlock {
@@ -46,6 +44,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
         long lastAttackTime;
         BlockPos lastBlockPos;
     }
+
     private final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
 
     public SimpleStorageBox(Properties pProperties) {
@@ -62,26 +61,22 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
+    public BlockEntity newBlockEntity(BlockPos blockPos, BlockState blockState) {
         BlockEntityType<?> type = ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get();
-        return new SimpleStorageBoxEntity(type, pPos, pState);
+        return new SimpleStorageBoxEntity(type, blockPos, blockState);
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return createTickerHelper(blockEntityType, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (type, world, pos, entity) -> {
-            if (entity instanceof SimpleStorageBoxEntity) {
-                entity.serverTick(type);
-            }
-        });
+        return createTickerHelper(blockEntityType, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(),
+                (world, blockPos, blockState, entity) -> entity.serverTick(world, blockPos, blockState));
     }
 
     @Override
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!oldState.is(this)) level.invalidateCapabilities(pos);
-        ((SimpleStorageBoxEntity) Objects.requireNonNull(level.getBlockEntity(pos))).forceTick();
     }
 
     @Override
@@ -95,10 +90,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof SimpleStorageBoxEntity be) {
-            if (stack.has(DataComponents.CUSTOM_NAME)) {
-                be.getDisplayName();
-            }
-            be.forceTick();
+            be.initBlockState(level);
         }
     }
 

@@ -3,7 +3,6 @@ plugins {
     id 'maven-publish'
     id 'idea'
     id 'net.neoforged.moddev' version '2.0.80'
-    id "org.sonarqube" version "7.1.0.6387"
 }
 
 version = "$mod_version+mc-$minecraft_version-$mod_loader"
@@ -119,7 +118,6 @@ dependencies {
 
     // JEI
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    compileOnly "curse.maven:configured-457570:${configured_id}"
     // EMI
     compileOnly "dev.emi:emi-neoforge:${emi_version}"
     // REI
@@ -144,26 +142,23 @@ dependencies {
     runtimeOnly "curse.maven:platform-997634:${platform_id}"
 
     // Every Compat
-    compileOnly "curse.maven:every-compat-628539:7164637"
-    compileOnly "curse.maven:selene-499980:7162694"
+    compileOnly "curse.maven:every-compat-628539:${everycomp_version}"
+    compileOnly "curse.maven:selene-499980:${moonlight_version}"
 
     // Construction Stick
-    compileOnly "curse.maven:construction-sticks-1156098:6828918"
+    compileOnly "curse.maven:construction-sticks-1156098:7687867" // 1.3.0
 
     // Other mods to include at runtime during development/testing
     runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
-    runtimeOnly "curse.maven:jade-324717:${jade_id}"
+    runtimeOnly "curse.maven:jade-324717:7545219"
     runtimeOnly "curse.maven:jade-addons-583345:${jadeaddon_id}"
-    runtimeOnly "curse.maven:carry-on-274259:5649344"
-    runtimeOnly "curse.maven:catalogue-459701:5893750"
-    runtimeOnly "curse.maven:xaeros-world-map-317780:7416972"
-    runtimeOnly "curse.maven:xaeros-minimap-263420:7412188"
-    runtimeOnly "curse.maven:appleskin-248787:6616291"
+    runtimeOnly "curse.maven:carry-on-274259:7393892"
+    runtimeOnly "curse.maven:catalogue-459701:6926815"
+    runtimeOnly "curse.maven:xaeros-world-map-317780:7598481"
+    runtimeOnly "curse.maven:xaeros-minimap-263420:7598595"
+    runtimeOnly "curse.maven:appleskin-248787:7854442"
     runtimeOnly "curse.maven:irisshaders-455508:6661598"
     runtimeOnly "curse.maven:sodium-394468:6382651"
-
-    runtimeOnly "curse.maven:kubejs-238086:7278501"
-    runtimeOnly "curse.maven:rhino-416294:7104526"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

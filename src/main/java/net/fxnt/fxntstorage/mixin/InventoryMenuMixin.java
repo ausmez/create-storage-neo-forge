@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
@@ -16,16 +17,21 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(value = AbstractContainerMenu.class)
+@Mixin(AbstractContainerMenu.class)
 public abstract class InventoryMenuMixin {
 
-    @Shadow @Final public NonNullList<Slot> slots;
+    @Shadow
+    @Final
+    public NonNullList<Slot> slots;
 
     @Shadow
     protected abstract boolean moveItemStackTo(ItemStack stack, int startIndex, int endIndex, boolean reverseOrder);
 
     @Inject(method = "clicked", at = @At("HEAD"), cancellable = true)
     private void fxnt$interceptBackpackShiftClick(int slotId, int button, ClickType clickType, Player player, CallbackInfo ci) {
+        // Only intercept clicks on InventoryMenu.
+        if (!(player.containerMenu instanceof InventoryMenu)) return;
+        if (this.slots.size() < InventoryMenu.USE_ROW_SLOT_END) return; // guard against automation
         if (clickType != ClickType.QUICK_MOVE) return;
         if (slotId < 0 || slotId >= this.slots.size()) return;
 
@@ -41,23 +47,11 @@ public abstract class InventoryMenuMixin {
 
         boolean fromHotbar = slot.getContainerSlot() < 9;
 
-        // Dynamically find the menu slot range for the target area so we don't
-        // need to hardcode indices (which vary when Curios adds extra slots).
-        int targetStart = Integer.MAX_VALUE;
-        int targetEnd = -1;
-        for (int i = 0; i < this.slots.size(); i++) {
-            Slot s = this.slots.get(i);
-            if (!(s.container instanceof Inventory)) continue;
-            boolean sIsHotbar = s.getContainerSlot() < 9;
-            if (fromHotbar != sIsHotbar) {
-                if (i < targetStart) targetStart = i;
-                if (i + 1 > targetEnd) targetEnd = i + 1;
-            }
-        }
+        // Use hardcoded vanilla InventoryMenu ranges to avoid any slot-count mismatch
+        int targetStart = fromHotbar ? InventoryMenu.INV_SLOT_START : InventoryMenu.USE_ROW_SLOT_START;
+        int targetEnd = fromHotbar ? InventoryMenu.INV_SLOT_END : InventoryMenu.USE_ROW_SLOT_END;
 
         ci.cancel();
-
-        if (targetStart == Integer.MAX_VALUE) return;
 
         moveItemStackTo(item, targetStart, targetEnd, false);
 

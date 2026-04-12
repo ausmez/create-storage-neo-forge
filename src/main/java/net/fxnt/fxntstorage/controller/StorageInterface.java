@@ -40,10 +40,7 @@ public class StorageInterface extends BaseEntityBlock implements EntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return level.isClientSide() ? null : createTickerHelper(blockEntityType, ModBlockEntities.STORAGE_INTERFACE_ENTITY.get(), (l, p, s, entity) -> {
-            if (entity instanceof StorageInterfaceEntity) {
-                entity.serverTick(l, p, s);
-            }
-        });
+        return createTickerHelper(blockEntityType, ModBlockEntities.STORAGE_INTERFACE_ENTITY.get(),
+                (world, blockPos, blockState, entity) -> entity.serverTick(world, blockPos, blockState));
     }
 }

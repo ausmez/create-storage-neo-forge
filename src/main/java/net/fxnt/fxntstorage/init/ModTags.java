@@ -23,6 +23,7 @@ public class ModTags {
         public static final TagKey<Block> SYMMETRY_WAND_BLACKLIST = blockTag("symmetry_wand_blacklist");
         public static final TagKey<Block> WRENCH_PICKUP = blockTag(Create.ID, "wrench_pickup");
         public static final TagKey<Block> TOMS_STORAGE_INV_CONN_SKIP = blockTag(ModCompats.TOMS_STORAGE, "inventory_connector_skip");
+        public static final TagKey<Block> CARRYON_BLACKLIST_BLOCK = blockTag(ModCompats.CARRY_ON, "block_blacklist");
 
         private static TagKey<Block> blockTag(String name) {
             return BlockTags.create(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, name));

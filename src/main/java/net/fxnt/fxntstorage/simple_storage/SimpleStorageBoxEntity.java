@@ -6,7 +6,7 @@ import com.simibubi.create.foundation.utility.CreateLang;
 import io.netty.buffer.Unpooled;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.container.util.EnumProperties;
+import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.client.Minecraft;
@@ -39,6 +39,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.common.util.Lazy;
@@ -77,9 +79,16 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     public boolean isPlayerInteraction = false;
     private boolean storageSlotChanged = false;
     private boolean upgradeSlotChanged = false;
+    private boolean blockStateNeedsUpdate = false;
 
     private final ItemStackHandler itemHandler = createItemHandler(SLOT_COUNT);
     private final Lazy<IItemHandlerModifiable> lazyItemHandler = Lazy.of(() -> itemHandler);
+
+    private record StorageStats(int stored, int capacity, EnumProperties.StorageUsed fillLevel) {
+        float percentage() {
+            return capacity == 0 ? 0f : (stored * 100f) / capacity;
+        }
+    }
 
     public SimpleStorageBoxEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
@@ -181,16 +190,36 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         return this.voidUpgrade;
     }
 
+    private StorageStats calculateStats() {
+        int stored = itemHandler.getStackInSlot(0).getCount();
+        int stackSize = filterItem.isEmpty() ? ITEM_STACK_SIZE : filterItem.getMaxStackSize();
+        int capacity = (BASE_CAPACITY << getCapacityUpgrades()) * stackSize;
+
+        EnumProperties.StorageUsed fillLevel = EnumProperties.StorageUsed.EMPTY;
+        if (stored >= capacity) fillLevel = EnumProperties.StorageUsed.FULL;
+        else if (stored > 0) fillLevel = EnumProperties.StorageUsed.HAS_ITEMS;
+
+        return new StorageStats(stored, capacity, fillLevel);
+    }
+
+    private int calculateStoredAmount() {
+        return calculateStats().stored();
+    }
+
+    private int calculateMaxCapacity() {
+        return calculateStats().capacity();
+    }
+
+    public float calculatePercentageUsed() {
+        return calculateStats().percentage();
+    }
+
     public int getStoredAmount() {
-        this.storedAmount = this.itemHandler.getStackInSlot(0).getCount();
-        return this.storedAmount;
+        return calculateStoredAmount();
     }
 
     public int getMaxItemCapacity() {
-        int capacity = BASE_CAPACITY << getCapacityUpgrades();
-        int stackSize = filterItem.isEmpty() ? 64 : filterItem.getMaxStackSize();
-
-        this.maxItemCapacity = capacity * stackSize;
+        this.maxItemCapacity = calculateMaxCapacity();
         return this.maxItemCapacity;
     }
 
@@ -361,50 +390,49 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    public void forceTick() {
-        tickCount = 999;
+    public void initBlockState(Level level) {
+        setFilter(getItemHandler().getStackInSlot(0));
+        BlockState newState = getBlockState().setValue(SimpleStorageBox.STORAGE_USED, calculateStats().fillLevel());
+        level.setBlock(worldPosition, newState , Block.UPDATE_ALL);
+        level.sendBlockUpdated(worldPosition, newState, newState, Block.UPDATE_ALL);
     }
 
-    public void serverTick(Level level) {
+    public void serverTick(Level level, BlockPos blockPos, BlockState blockState) {
         if (level.isClientSide) return;
 
-        // Update StoredAmount and MaxItemCapacity
-        if (upgradeSlotChanged)
-            getMaxItemCapacity();
-        if (storageSlotChanged) {
-            getStoredAmount();
-
-            ItemStack slot0 = this.itemHandler.getStackInSlot(0);
-
-            // Set filterItem to items inside to prevent wrong items being inserted
-            if (!slot0.isEmpty() && !ItemStack.isSameItemSameComponents(slot0, filterItem) && filterItem.isEmpty()) {
-                setFilter(slot0);
-            }
+        // Compute stats once when a slot changes, update the cached fields immediately
+        // so the item handler always sees current capacity, then reset the dirty flags.
+        // blockStateNeedsUpdate carries the intent through to the timer gate so the
+        // visual block state update is deferred without re-running calculateStats().
+        if (upgradeSlotChanged || storageSlotChanged) {
+            StorageStats stats = calculateStats();
+            this.storedAmount = stats.stored();
+            this.maxItemCapacity = stats.capacity();
+            upgradeSlotChanged = storageSlotChanged = false;
+            blockStateNeedsUpdate = true;
         }
 
         if (tickCount++ < ConfigManager.ServerConfig.STORAGE_BOX_UPDATE_TIME.get()) return;
         tickCount = 0;
 
-        if (storageSlotChanged || upgradeSlotChanged) {
-            updateBlockState(level);
-            storageSlotChanged = upgradeSlotChanged = false;
+        if (blockStateNeedsUpdate) {
+            updateBlockState(level, blockPos, blockState);
+            blockStateNeedsUpdate = false;
         }
     }
 
-    private void updateBlockState(Level level) {
-        BlockState currentState = getBlockState();
-
-        EnumProperties.StorageUsed status = EnumProperties.StorageUsed.EMPTY;
-
+    private void updateBlockState(Level level, BlockPos blockPos, BlockState blockState) {
+        EnumProperties.StorageUsed status;
         if (storedAmount >= maxItemCapacity) status = EnumProperties.StorageUsed.FULL;
         else if (storedAmount > 0) status = EnumProperties.StorageUsed.HAS_ITEMS;
+        else status = EnumProperties.StorageUsed.EMPTY;
 
-        BlockState newState = currentState;
-        if (currentState.getValue(SimpleStorageBox.STORAGE_USED) != status)
-            newState = newState.setValue(SimpleStorageBox.STORAGE_USED, status);
+        BlockState newState = blockState.getValue(SimpleStorageBox.STORAGE_USED) != status
+                ? blockState.setValue(SimpleStorageBox.STORAGE_USED, status)
+                : blockState;
 
-        level.setBlock(worldPosition, newState, Block.UPDATE_ALL);
-        level.sendBlockUpdated(worldPosition, currentState, newState, Block.UPDATE_ALL);
+        level.setBlock(blockPos, newState, Block.UPDATE_ALL);
+        level.sendBlockUpdated(blockPos, blockState, newState, Block.UPDATE_ALL);
     }
 
     public void transferToStorage(Player pPlayer, Boolean transferAll) {
@@ -531,7 +559,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     // ThresholdSwitchObservable //
     @Override
     public int getMaxValue() {
-        return this.maxItemCapacity;
+        return calculateMaxCapacity();
     }
 
     @Override
@@ -541,7 +569,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     @Override
     public int getCurrentValue() {
-        return this.storedAmount;
+        return calculateStoredAmount();
     }
 
     @Override
@@ -561,13 +589,16 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         if (filterItem.isEmpty() || ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.OFF) return false;
 
+        Minecraft mc = Minecraft.getInstance();
+        if (!(mc.hitResult instanceof BlockHitResult blockHit) || blockHit.getType() != HitResult.Type.BLOCK) return false;
+        if (blockHit.getDirection() != getBlockState().getValue(SimpleStorageBox.FACING)) return false;
+
         boolean hasPotion = filterItem.has(DataComponents.POTION_CONTENTS);
         boolean hasEnchantments = (filterItem.has(DataComponents.ENCHANTMENTS) && !filterItem.get(DataComponents.ENCHANTMENTS).isEmpty()) || filterItem.has(DataComponents.STORED_ENCHANTMENTS);
         boolean hasTrim = filterItem.has(DataComponents.TRIM);
 
         if ((!hasPotion && !hasEnchantments && !hasTrim) && ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.ONLY_TAGGED) return false;
 
-        Minecraft mc = Minecraft.getInstance();
         List<Component> vanillaTooltip = filterItem.getTooltipLines(Item.TooltipContext.of(mc.level), mc.player, TooltipFlag.NORMAL);
 
         for (Component component : vanillaTooltip) {

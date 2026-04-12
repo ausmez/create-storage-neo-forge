@@ -8,6 +8,7 @@ import net.fxnt.fxntstorage.network.packet.KeyPressedPacket;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -190,7 +191,13 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     private Tooltip createSortTooltip() {
-        return Tooltip.create(Component.translatable("tooltip.fxntstorage.sortBy").append(Component.literal(" ")).append(currentSortOrder.name().toUpperCase(Locale.ROOT)));
+        return Tooltip.create(
+                Component.translatable("tooltip.fxntstorage.sortBy")
+                        .append(Component.literal(" "))
+                        .append(currentSortOrder.name().toUpperCase(Locale.ROOT))
+                        .append(Component.literal("\n"))
+                        .append(Component.translatable("tooltip.fxntstorage.sortBy.text").withStyle(ChatFormatting.DARK_GRAY))
+        );
     }
 
     protected void rebuildUpgradePanels() {

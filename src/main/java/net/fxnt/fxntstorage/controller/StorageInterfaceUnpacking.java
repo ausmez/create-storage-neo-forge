@@ -33,11 +33,11 @@ public enum StorageInterfaceUnpacking implements UnpackingHandler {
         if (targetBE == null) {
             return false;
         } else {
-            StorageInterfaceEntity storageInterfaceEntity = ((StorageInterfaceEntity) targetBE);
+            if (!(targetBE instanceof StorageInterfaceEntity sie)) return false;
 
-            if (storageInterfaceEntity.controller == null)
+            if (sie.controller == null)
                 return false;
-            final StorageNetwork storageNetwork = storageInterfaceEntity.controller.getConnectedNetwork();
+            final StorageNetwork storageNetwork = sie.controller.getConnectedNetwork();
 
             if (!simulate) {
                 for (ItemStack itemStack : items) {
@@ -46,10 +46,10 @@ public enum StorageInterfaceUnpacking implements UnpackingHandler {
 
                 return true;
             } else {
-                if (storageInterfaceEntity instanceof StorageInterfaceFilteredEntity sife) {
+                if (sie instanceof StorageInterfaceFilteredEntity sife) {
                     FilteringBehaviour filter = sife.getBehaviour(FilteringBehaviour.TYPE);
                     for (ItemStack item : items) {
-                        if (!filter.test(item)) return false;
+                        if (filter != null && !filter.test(item)) return false;
                     }
                 }
 
@@ -110,7 +110,7 @@ public enum StorageInterfaceUnpacking implements UnpackingHandler {
                         }
                     }
 
-                    ScrollValueBehaviour behaviour = storageInterfaceEntity.controller.getBehaviour(ScrollOptionBehaviour.TYPE);
+                    ScrollValueBehaviour behaviour = sie.controller.getBehaviour(ScrollOptionBehaviour.TYPE);
                     if (behaviour == null || behaviour.getValue() == 0) {
                         if (!storageFound && !emptyBoxes.isEmpty()) {
                             ItemStorage box = emptyBoxes.removeFirst();

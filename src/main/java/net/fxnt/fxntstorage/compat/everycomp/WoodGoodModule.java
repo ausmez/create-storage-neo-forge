@@ -17,16 +17,14 @@ import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMovementBehaviour;
 import net.mehvahdjukaar.every_compat.api.PaletteStrategies;
 import net.mehvahdjukaar.every_compat.api.SimpleEntrySet;
-import net.mehvahdjukaar.every_compat.api.SimpleModule;
+import net.mehvahdjukaar.every_compat.modules.EveryCompatModule;
 import net.mehvahdjukaar.moonlight.api.resources.pack.ResourceGenTask;
 import net.mehvahdjukaar.moonlight.api.set.wood.VanillaWoodTypes;
 import net.mehvahdjukaar.moonlight.api.set.wood.WoodType;
 import net.mehvahdjukaar.moonlight.api.util.Utils;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -35,7 +33,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class WoodGoodModule extends SimpleModule {
+public class WoodGoodModule extends EveryCompatModule {
 
     public final SimpleEntrySet<WoodType, Block> simple_storage_boxes;
     public final SimpleEntrySet<WoodType, Block> storage_trims;
@@ -43,21 +41,19 @@ public class WoodGoodModule extends SimpleModule {
     public WoodGoodModule(String modId) {
         super(modId, "cs", FXNTStorage.MOD_ID);
 
-        ResourceKey<CreativeModeTab> tab = FXNTStorage.REGISTRATE.getCreativeTab().getKey();
-
         // Using spruce because most textures re-color better than oak
         simple_storage_boxes = SimpleEntrySet.builder(WoodType.class, "simple_storage_box",
                         getModBlock("spruce_simple_storage_box"), () -> VanillaWoodTypes.SPRUCE,
                         w -> new SimpleStorageBox(Utils.copyPropertySafe(w.planks))
                 )
-                .addTextureM(modRes("block/casings/spruce_casing"), modRes("block/casings/spruce_casing_m"), PaletteStrategies.PLANKS_LOW_CONTRAST)
+                .addTextureM(modRes("block/casings/spruce_casing"), modRes("block/casings/spruce_casing_m"), PaletteStrategies.PLANKS_STANDARD)
                 .addTile(ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY)
                 .addTag(ModTags.Blocks.SIMPLE_STORAGE_BOX, Registries.BLOCK)
                 .addTag(AllTags.AllBlockTags.WRENCH_PICKUP.tag)
-                .addRecipe(modRes("template/spruce_simple_storage_box"))
+                .addRecipe(modRes("crafting_shaped/simple_storage_box/spruce_simple_storage_box"))
                 .addCustomItem(((woodType, block, properties) -> new SimpleStorageBoxItem(block, properties)))
                 .copyParentDrop()
-                .setTabKey(tab)
+                .setTab(FXNTStorage.REGISTRATE.getCreativeTab())
                 .build();
         this.addEntry(simple_storage_boxes);
 
@@ -65,14 +61,14 @@ public class WoodGoodModule extends SimpleModule {
                         getModBlock("spruce_storage_trim"), () -> VanillaWoodTypes.SPRUCE,
                         w -> new CasingBlock(Utils.copyPropertySafe(w.planks))
                 )
-                .addTextureM(modRes("block/casings/spruce_casing_connected"), modRes("block/casings/spruce_casing_connected_m"), PaletteStrategies.PLANKS_LOW_CONTRAST)
+                .addTextureM(modRes("block/casings/spruce_casing_connected"), modRes("block/casings/spruce_casing_connected_m"), PaletteStrategies.PLANKS_STANDARD)
                 .addTag(ModTags.Blocks.STORAGE_TRIM, Registries.BLOCK)
                 .addTag(BlockTags.MINEABLE_WITH_AXE, Registries.BLOCK)
                 .addTag(AllTags.AllBlockTags.CASING.tag, Registries.BLOCK)
                 .addTag(AllTags.AllItemTags.CASING.tag, Registries.ITEM)
-                .addRecipe(modRes("template/spruce_storage_trim"))
+                .addRecipe(modRes("crafting_shaped/storage_trim/spruce_storage_trim"))
                 .copyParentDrop()
-                .setTabKey(tab)
+                .setTab(FXNTStorage.REGISTRATE.getCreativeTab())
                 .build();
         this.addEntry(storage_trims);
     }

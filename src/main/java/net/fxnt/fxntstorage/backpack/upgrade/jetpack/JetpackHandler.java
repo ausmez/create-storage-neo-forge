@@ -78,6 +78,8 @@ public class JetpackHandler {
     private long lastPacketTime = 0;
     private int missedPackets = 0;
 
+    private boolean cleanupNeeded = false;
+
     private IBackpackContainer itemHandler;
 
     public JetpackHandler(Player player) {
@@ -86,6 +88,7 @@ public class JetpackHandler {
 
     public void execute() {
         if (player == null) return;
+        cleanupNeeded = true;
 
         if (player.isPassenger()) {
             isJumping = false;
@@ -290,6 +293,7 @@ public class JetpackHandler {
                     PacketDistributor.sendToPlayer((ServerPlayer) player, new VisualJetpackAirPacket(-1));
                 }
                 airGaugeCleared = true;
+                cleanupNeeded = false;
             }
         } else if (!grounded || !isJumping && !isHovering) {
             airGaugeLastCleared = 0;
@@ -700,6 +704,10 @@ public class JetpackHandler {
 
     public void flyingOnKeyRelease() {
         this.isJumping = false;
+    }
+
+    public boolean isCleanupNeeded() {
+        return cleanupNeeded;
     }
 
     public void resetState() {

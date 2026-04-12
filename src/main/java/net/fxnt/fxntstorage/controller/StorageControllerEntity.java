@@ -14,7 +14,6 @@ import net.createmod.catnip.math.AngleHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.storage_network.StorageNetwork;
 import net.fxnt.fxntstorage.storage_network.StorageNetworkIdentifier;
-import net.fxnt.fxntstorage.util.DoubleClickType;
 import net.fxnt.fxntstorage.util.Icons;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,10 +38,14 @@ public class StorageControllerEntity extends SmartBlockEntity {
     protected ScrollOptionBehaviour<FillEmptyStorage> fillEmptyStorage;
     private final Set<UUID> highlightPlayers = new HashSet<>();
 
+    private enum DoubleClickType {EMPTY_HAND, WITH_ITEM}
+
     private static class ClickData {
         long lastClickTime;
+        ItemStack lastItemStack;
         DoubleClickType lastClickType;
     }
+
     private final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
 
     private StorageNetwork storageNetwork;
@@ -76,17 +79,16 @@ public class StorageControllerEntity extends SmartBlockEntity {
         return storageNetwork != null ? storageNetwork.getItemHandler() : new EmptyItemHandler();
     }
 
-    public void serverTick(Level level, BlockPos blockPos) {
+    public void serverTick(Level level, BlockPos blockPos, BlockState state) {
         if (level.isClientSide) return;
 
         if (storageNetwork != null) {
             storageNetwork.tick();
 
-            BlockState blockState = getBlockState();
             boolean isConnected = !storageNetwork.getBoxes().isEmpty();
 
-            if (blockState.getValue(CONNECTED) != isConnected) {
-                level.setBlockAndUpdate(blockPos, blockState.setValue(CONNECTED, isConnected));
+            if (state.getValue(CONNECTED) != isConnected) {
+                level.setBlockAndUpdate(blockPos, state.setValue(CONNECTED, isConnected));
             }
         }
     }
@@ -98,21 +100,32 @@ public class StorageControllerEntity extends SmartBlockEntity {
 
         long currentTime = player.level().getGameTime();
         ClickData data = CLICK_DATA.computeIfAbsent(player, p -> new ClickData());
-        boolean isDoubleClick = currentTime - data.lastClickTime < 10
-                && data.lastClickType == DoubleClickType.EMPTY_HAND;
+        boolean isDoubleClick = currentTime - data.lastClickTime < 10;
 
         if (handItem.isEmpty()) {
             if (isDoubleClick) {
-                transferAllItemsFromPlayer(player);
+                if (data.lastClickType == DoubleClickType.EMPTY_HAND) {
+                    transferAllItemsFromPlayer(player);
+                } else { // DoubleClick.WITH_ITEM
+                    if (!data.lastItemStack.isEmpty()) {
+                        for (ItemStack stack : player.getInventory().items) {
+                            if (ItemStack.isSameItemSameComponents(stack, data.lastItemStack)) {
+                                doTransferItemsFromPlayer(player, stack);
+                            }
+                        }
+                    }
+                }
                 data.lastClickTime = 0;
+                data.lastItemStack = ItemStack.EMPTY;
             } else {
                 data.lastClickTime = currentTime;
             }
             data.lastClickType = DoubleClickType.EMPTY_HAND;
         } else {
-            doTransferItemsFromPlayer(player, handItem);
+            data.lastItemStack = handItem.copyWithCount(1);
             data.lastClickType = DoubleClickType.WITH_ITEM;
             data.lastClickTime = currentTime;
+            doTransferItemsFromPlayer(player, handItem);
         }
     }
 

@@ -3,21 +3,25 @@ package net.fxnt.fxntstorage.util;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataManager;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataSync;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SuspiciousStewEffects;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
+import java.util.*;
 
 public class Util {
 
@@ -113,13 +117,6 @@ public class Util {
         }
     }
 
-    public static CompoundTag getOrCreateSubTag(CompoundTag root, String key) {
-        if (!root.contains(key, Tag.TAG_COMPOUND)) {
-            root.put(key, new CompoundTag());
-        }
-        return root.getCompound(key);
-    }
-
     public static boolean isEdible(@NotNull ItemStack food, LivingEntity player) {
         if (!food.has(DataComponents.FOOD))
             return false;
@@ -143,7 +140,7 @@ public class Util {
         SuspiciousStewEffects stewEffects = food.get(DataComponents.SUSPICIOUS_STEW_EFFECTS);
         if (stewEffects != null) {
             for (SuspiciousStewEffects.Entry entry : stewEffects.effects()) {
-                return entry.effect().value().getCategory().equals(MobEffectCategory.HARMFUL);
+                if (entry.effect().value().getCategory().equals(MobEffectCategory.HARMFUL)) return true;
             }
         }
 
@@ -154,5 +151,69 @@ public class Util {
                 return true;
         }
         return false;
+    }
+
+    public static void sortStorageItems(AbstractContainerMenu menu, ServerPlayer player, int startIndex, int endIndex, SortOrder sortOrder, int containerSlotCount) {
+        Map<ItemWithComponent, Integer> itemCompMap = new HashMap<>();
+
+        for (int i = startIndex; i < endIndex; i++) {
+            ItemStack stack = menu.getSlot(i).getItem();
+            if (!stack.isEmpty()) {
+                DataComponentPatch patch = stack.getComponentsPatch();
+                ItemWithComponent key = new ItemWithComponent(stack.getItem(), patch);
+                itemCompMap.merge(key, stack.getCount(), Integer::sum);
+            }
+        }
+
+        List<Map.Entry<ItemWithComponent, Integer>> sortedItems = new ArrayList<>(itemCompMap.entrySet());
+
+        switch (sortOrder) {
+            case SortOrder.MOD:
+                sortedItems.sort(Comparator
+                        .comparing((Map.Entry<ItemWithComponent, Integer> entry) -> BuiltInRegistries.ITEM.getKey(entry.getKey().item()).toString())
+                        .thenComparing(entry -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())
+                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));
+                break;
+            case SortOrder.NAME:
+                sortedItems.sort(Comparator
+                        .comparing((Map.Entry<ItemWithComponent, Integer> entry) -> entry.getKey().item().getName(new ItemStack(entry.getKey().item())).getString())
+                        .thenComparing(entry -> entry.getKey().getCustomName())
+                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()));
+                break;
+            default:
+                sortedItems.sort(
+                        Map.Entry.<ItemWithComponent, Integer>comparingByValue().reversed()
+                                .thenComparing(entry -> entry.getKey().toString())
+                );
+        }
+
+        NonNullList<ItemStack> compactedList = NonNullList.withSize(endIndex - startIndex, ItemStack.EMPTY);
+        int idx = 0;
+
+        for (Map.Entry<ItemWithComponent, Integer> entry : sortedItems) {
+            ItemWithComponent key = entry.getKey();
+            Item item = key.item();
+            DataComponentPatch patch = key.patch();
+            int totalCount = entry.getValue();
+            int maxStackSize = new ItemStack(item, 1).getMaxStackSize();
+
+            while (totalCount > 0) {
+                int stackSize = Math.min(totalCount, maxStackSize);
+                ItemStack stack = new ItemStack(item, stackSize);
+                if (!patch.isEmpty()) stack.applyComponents(patch);
+                compactedList.set(idx, stack);
+                totalCount -= stackSize;
+                idx++;
+            }
+        }
+
+        for (int i = 0; i < compactedList.size(); i++) {
+            ItemStack stack = compactedList.get(i);
+            Slot slot = menu.getSlot(i + startIndex);
+            slot.set(stack);
+            if (i + startIndex < containerSlotCount) {
+                player.connection.send(new ClientboundContainerSetSlotPacket(menu.containerId, menu.getStateId(), i + startIndex, stack));
+            }
+        }
     }
 }
