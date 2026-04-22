@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage.controller;
 
 import com.mojang.serialization.MapCodec;
+import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -25,6 +26,15 @@ public class StorageInterfaceFiltered extends BaseEntityBlock {
     public StorageInterfaceFiltered(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState().setValue(FACING, Direction.SOUTH));
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock())) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof SmartBlockEntity sbe) sbe.destroy();
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override

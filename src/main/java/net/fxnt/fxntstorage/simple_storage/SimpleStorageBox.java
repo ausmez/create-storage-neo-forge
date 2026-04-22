@@ -6,6 +6,7 @@ import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -15,6 +16,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -24,6 +26,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -33,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.function.BiConsumer;
 
 public class SimpleStorageBox extends BaseEntityBlock {
     public static final MapCodec<SimpleStorageBox> CODEC = simpleCodec(SimpleStorageBox::new);
@@ -58,6 +63,20 @@ public class SimpleStorageBox extends BaseEntityBlock {
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
+    }
+
+    @Override
+    protected void onExplosionHit(BlockState state, Level level, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
+        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && level instanceof ServerLevel serverLevel) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            LootParams.Builder lootParams = new LootParams.Builder(serverLevel)
+                    .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
+                    .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
+                    .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity)
+                    .withOptionalParameter(LootContextParams.THIS_ENTITY, explosion.getDirectSourceEntity());
+            state.getDrops(lootParams).forEach(drop -> dropConsumer.accept(drop, pos));
+        }
+        state.onBlockExploded(level, pos, explosion);
     }
 
     @Override
@@ -97,12 +116,16 @@ public class SimpleStorageBox extends BaseEntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (player.isSpectator() || !hitFront(state, hitResult)) return InteractionResult.PASS;
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (level.isClientSide) {
+            if (player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && !player.isShiftKeyDown()) {
+                return InteractionResult.PASS;
+            }
+            return InteractionResult.SUCCESS;
+        }
 
         BlockEntity entity = level.getBlockEntity(pos);
         if (entity instanceof SimpleStorageBoxEntity simpleStorageBoxEntity) {
-
-            ItemStack handItem = player.getItemInHand(InteractionHand.MAIN_HAND);
+            ItemStack mainHandItem = player.getItemInHand(InteractionHand.MAIN_HAND);
 
             long currentTime = player.level().getGameTime();
             ClickData data = CLICK_DATA.computeIfAbsent(player, p -> new ClickData());
@@ -111,7 +134,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
 
             if (isDoubleClick) {
                 // Double Right-click
-                if (handItem.isEmpty() || ItemStack.isSameItemSameComponents(handItem, simpleStorageBoxEntity.filterItem)) {
+                if (mainHandItem.isEmpty() || ItemStack.isSameItemSameComponents(mainHandItem, simpleStorageBoxEntity.filterItem)) {
                     simpleStorageBoxEntity.transferToStorage(player, true);
                 }
                 data.lastClickTime = 0;
@@ -119,21 +142,21 @@ public class SimpleStorageBox extends BaseEntityBlock {
                 data.lastClickTime = currentTime;
                 data.lastBlockPos = simpleStorageBoxEntity.getBlockPos();
 
-                if (handItem.isEmpty()) {
+                if (mainHandItem.isEmpty()) {
                     if (player.isShiftKeyDown()) {
                         // If interacting with an empty hand while sneaking then open menu
                         player.openMenu(simpleStorageBoxEntity, pos);
                         return InteractionResult.CONSUME;
                     }
-                } else if (handItem.is(Tags.Items.TOOLS_WRENCH) && simpleStorageBoxEntity.getStoredAmount() == 0 && !simpleStorageBoxEntity.filterItem.isEmpty()) {
+                } else if (mainHandItem.is(Tags.Items.TOOLS_WRENCH) && simpleStorageBoxEntity.getStoredAmount() == 0 && !simpleStorageBoxEntity.filterItem.isEmpty()) {
                     // If box empty, holding wrench & has filter item then remove filter
                     simpleStorageBoxEntity.removeFilter();
                 } else {
                     // Prevent wrench from being placed in the filter
-                    if (!handItem.is(Tags.Items.TOOLS_WRENCH)) {
+                    if (!mainHandItem.is(Tags.Items.TOOLS_WRENCH)) {
                         // Set filter if item is not an upgrade or empty hand and no items exist and no filter exists
-                        if (!handItem.isEmpty() && !handItem.is(ModTags.Items.STORAGE_BOX_UPGRADE) && simpleStorageBoxEntity.getStoredAmount() == 0 && simpleStorageBoxEntity.filterItem.isEmpty()) {
-                            simpleStorageBoxEntity.setFilter(handItem);
+                        if (!mainHandItem.isEmpty() && !mainHandItem.is(ModTags.Items.STORAGE_BOX_UPGRADE) && simpleStorageBoxEntity.getStoredAmount() == 0 && simpleStorageBoxEntity.filterItem.isEmpty()) {
+                            simpleStorageBoxEntity.setFilter(mainHandItem);
                         }
 
                         // Transfer items from player to box
@@ -144,6 +167,10 @@ public class SimpleStorageBox extends BaseEntityBlock {
             }
 
             simpleStorageBoxEntity.setChanged();
+
+            if (!isDoubleClick && mainHandItem.isEmpty()) {
+                return InteractionResult.PASS;
+            }
         }
         return InteractionResult.PASS;
     }

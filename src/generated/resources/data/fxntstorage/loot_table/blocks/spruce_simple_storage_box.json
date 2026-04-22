@@ -11,36 +11,18 @@
               "type": "minecraft:item",
               "conditions": [
                 {
-                  "condition": "minecraft:all_of",
-                  "terms": [
-                    {
-                      "condition": "minecraft:survives_explosion"
-                    },
-                    {
-                      "condition": "fxntstorage:block_entity_save_components"
-                    }
-                  ]
+                  "condition": "fxntstorage:block_entity_save_components"
                 }
               ],
               "functions": [
                 {
-                  "function": "minecraft:copy_name",
-                  "source": "block_entity"
-                },
-                {
-                  "function": "minecraft:copy_components",
-                  "source": "block_entity"
+                  "function": "fxntstorage:copy_block_entity_data"
                 }
               ],
               "name": "fxntstorage:spruce_simple_storage_box"
             },
             {
               "type": "minecraft:item",
-              "conditions": [
-                {
-                  "condition": "minecraft:survives_explosion"
-                }
-              ],
               "name": "fxntstorage:spruce_simple_storage_box"
             }
           ]

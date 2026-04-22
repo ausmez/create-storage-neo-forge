@@ -14,17 +14,21 @@ import net.fxnt.fxntstorage.backpack.upgrade.torch.TorchDeployerManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.container.StorageBox;
+import net.fxnt.fxntstorage.container.StorageBoxEntity;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.CrossbowChargedPacket;
 import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.CrossbowItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -38,6 +42,7 @@ import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.ExplosionEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -64,6 +69,37 @@ public class EventHandler {
         if (!BackpackHelper.isWearingBackpack(player)) return;
 
         UpgradeEventDispatcher.dispatchLeftClickBlock(player, event.getHand(), event.getPos());
+    }
+
+    @SubscribeEvent
+    public static void onRightClickStorageBox(PlayerInteractEvent.RightClickBlock event) {
+        Player player = event.getEntity();
+        if (player.isSpectator()) return;
+        if (!player.isShiftKeyDown()) return;
+        if (!player.getMainHandItem().isEmpty()) return;
+
+        var pos = event.getPos();
+        var level = player.level();
+        var state = level.getBlockState(pos);
+
+        if (state.getBlock() instanceof StorageBox) {
+            if (state.getValue(StorageBox.FACING) != event.getHitVec().getDirection()) return;
+        } else if (state.getBlock() instanceof SimpleStorageBox) {
+            if (state.getValue(SimpleStorageBox.FACING) != event.getHitVec().getDirection()) return;
+        } else {
+            return;
+        }
+
+        // Open GUI on the main-hand pass; cancel both hands to prevent off-hand block placement
+        if (event.getHand() == InteractionHand.MAIN_HAND && !level.isClientSide) {
+            var entity = level.getBlockEntity(pos);
+            if (entity instanceof StorageBoxEntity sbe) {
+                player.openMenu(sbe, pos);
+            } else if (entity instanceof SimpleStorageBoxEntity ssbe) {
+                player.openMenu(ssbe, pos);
+            }
+        }
+        event.setCanceled(true);
     }
 
     @SubscribeEvent
@@ -172,6 +208,7 @@ public class EventHandler {
     @SubscribeEvent
     public static void onServerLeave(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            playersUsingBackpackArrows.remove(player.getUUID());
             JetpackManager.removePlayer(player);
             JukeboxHandler.stopPlayer(player);
             TorchDeployerManager.removePlayer(player);
@@ -188,6 +225,17 @@ public class EventHandler {
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
         playersUsingBackpackArrows.clear();
+    }
+
+    @SubscribeEvent
+    public static void onExplosionDetonate(ExplosionEvent.Detonate event) {
+        event.getAffectedEntities().removeIf(entity -> {
+            if (!(entity instanceof ItemEntity itemEntity)) return false;
+            Item item = itemEntity.getItem().getItem();
+            return item instanceof BlockItem blockItem &&
+                    (blockItem.getBlock() instanceof StorageBox ||
+                            blockItem.getBlock() instanceof SimpleStorageBox);
+        });
     }
 
     @SubscribeEvent
@@ -223,9 +271,6 @@ public class EventHandler {
                 return;
 
             ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
-            IBackpackContainer backpackContainer = BackpackContainer.Cache.getOrCreateWornBackpack(player, backpack);
-            IItemHandler itemHandler = backpackContainer.getItemHandler();
-
             ItemStack shootable = event.getProjectileWeaponItemStack();
             Predicate<ItemStack> predicate = weapon.getAllSupportedProjectiles(shootable);
 
@@ -240,6 +285,8 @@ public class EventHandler {
 
             // Only provide arrows from backpack if no arrows found in inventory
             if (!hasArrowsInInventory) {
+                IItemHandler itemHandler = BackpackContainer.Cache.getForCapability(backpack).getItemHandler();
+
                 for (int i : layout.getItemsAndToolsRange()) {
                     ItemStack stack = itemHandler.getStackInSlot(i);
 

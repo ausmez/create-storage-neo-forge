@@ -37,11 +37,13 @@ public class ModBlockEntitySaveComponents implements LootItemCondition {
             return false;
         }
 
-        // Check if the block entity has a custom name
         CompoundTag tag = blockEntity.saveWithoutMetadata(lootContext.getLevel().registryAccess());
-        if (tag.contains("CustomName")) {
-            return true;
-        }
+
+        if (tag.contains("CustomName")) return true;
+
+        // Check if a Create FilteringBehaviour filter is set
+        CompoundTag filterTag = tag.getCompound("Filter");
+        if (!filterTag.isEmpty()) return true;
 
         // Check if the block entity has items
         if (tag.contains("Items", Tag.TAG_COMPOUND)) {

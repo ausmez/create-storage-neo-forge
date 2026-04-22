@@ -40,6 +40,7 @@ public class KeybindHandler {
 
     private static boolean flykeyWasDown = false;
     private static boolean minekeyWasDown = false;
+    private static boolean minePreviewActive = false;
 
     public static void resetFlyKeyState() {
         flykeyWasDown = false;
@@ -78,14 +79,28 @@ public class KeybindHandler {
 
             // === ORE MINING KEY ===
             boolean minekeyIsDown = ORE_MINE_ANY_BLOCK.isDown();
+            boolean hasTool = isToolItem(player.getMainHandItem());
+            boolean hasUpgrade = isSurvival && isWearingBackpack
+                    && UpgradeHelper.hasActiveUpgrade(backpackContainer.getItemHandler(), UpgradeType.OREMINING);
 
-            if (minekeyIsDown != minekeyWasDown && isSurvival && isWearingBackpack && isToolItem(player.getMainHandItem())
-                    && UpgradeHelper.hasActiveUpgrade(backpackContainer.getItemHandler(), UpgradeType.OREMINING)) {
-                Optional<BlockPos> pos =
-                        mc.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK
-                                ? Optional.of(hit.getBlockPos())
-                                : Optional.empty();
-                PacketDistributor.sendToServer(new KeyPressedPacket(Util.MINE_ALL_BLOCKS, minekeyIsDown, pos));
+            if (hasUpgrade) {
+                if (!minePreviewActive && minekeyIsDown && !minekeyWasDown && hasTool) {
+                    // Key just pressed with a tool — activate preview
+                    Optional<BlockPos> pos =
+                            mc.hitResult instanceof BlockHitResult hit && hit.getType() == HitResult.Type.BLOCK
+                                    ? Optional.of(hit.getBlockPos())
+                                    : Optional.empty();
+                    PacketDistributor.sendToServer(new KeyPressedPacket(Util.MINE_ALL_BLOCKS, true, pos));
+                    minePreviewActive = true;
+                } else if (minePreviewActive && (!minekeyIsDown || !hasTool)) {
+                    // Key released, or main hand switched to a non-tool while key held — deactivate preview
+                    PacketDistributor.sendToServer(new KeyPressedPacket(Util.MINE_ALL_BLOCKS, false, Optional.empty()));
+                    minePreviewActive = false;
+                }
+            } else if (minePreviewActive) {
+                // Lost upgrade or conditions while preview was active
+                PacketDistributor.sendToServer(new KeyPressedPacket(Util.MINE_ALL_BLOCKS, false, Optional.empty()));
+                minePreviewActive = false;
             }
             minekeyWasDown = minekeyIsDown;
 

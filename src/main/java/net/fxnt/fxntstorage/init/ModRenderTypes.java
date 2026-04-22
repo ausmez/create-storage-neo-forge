@@ -20,7 +20,7 @@ public class ModRenderTypes extends RenderType {
             256, false, false,
             CompositeState.builder()
                     .setShaderState(new ShaderStateShard(GameRenderer::getRendertypeLinesShader))
-                    .setLineState(new LineStateShard(OptionalDouble.of(6.0)))
+                    .setLineState(new LineStateShard(OptionalDouble.of(4.0)))
                     .setLayeringState(NO_LAYERING)
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                     .setWriteMaskState(COLOR_DEPTH_WRITE)
@@ -35,7 +35,7 @@ public class ModRenderTypes extends RenderType {
             256, false, false,
             CompositeState.builder()
                     .setShaderState(new ShaderStateShard(GameRenderer::getRendertypeLinesShader))
-                    .setLineState(new LineStateShard(OptionalDouble.of(6.0)))
+                    .setLineState(new LineStateShard(OptionalDouble.of(4.0)))
                     .setLayeringState(NO_LAYERING)
                     .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                     .setWriteMaskState(COLOR_WRITE)

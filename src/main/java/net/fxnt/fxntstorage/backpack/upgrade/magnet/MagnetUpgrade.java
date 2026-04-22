@@ -89,6 +89,7 @@ public class MagnetUpgrade extends AbstractUpgrade {
             // RIGHT CLICK: clear slot
             if (context.button() == 1 && !existingIsFilter) {
                 slot.set(ItemStack.EMPTY);
+                context.container().setDataChanged();
                 return true;
             }
 
@@ -96,6 +97,7 @@ public class MagnetUpgrade extends AbstractUpgrade {
             if (existingIsFilter && carried.isEmpty()) {
                 context.player().containerMenu.setCarried(existing);
                 slot.set(ItemStack.EMPTY);
+                context.container().setDataChanged();
                 return true;
             }
 
@@ -108,6 +110,7 @@ public class MagnetUpgrade extends AbstractUpgrade {
                     context.player().containerMenu.setCarried(existing);
                     slot.set(carried);
                 }
+                context.container().setDataChanged();
                 return true;
             }
 

@@ -99,7 +99,12 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
-                if (slot < VOID_UPGRADE_SLOT) storageSlotChanged = true;
+                if (slot < VOID_UPGRADE_SLOT) {
+                    storageSlotChanged = true;
+                    if (filterItem.isEmpty() && !this.stacks.getFirst().isEmpty()) {
+                        setFilter(this.stacks.getFirst());
+                    }
+                }
                 if (slot >= VOID_UPGRADE_SLOT) upgradeSlotChanged = true;
             }
 
@@ -393,7 +398,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     public void initBlockState(Level level) {
         setFilter(getItemHandler().getStackInSlot(0));
         BlockState newState = getBlockState().setValue(SimpleStorageBox.STORAGE_USED, calculateStats().fillLevel());
-        level.setBlock(worldPosition, newState , Block.UPDATE_ALL);
+        level.setBlock(worldPosition, newState, Block.UPDATE_ALL);
         level.sendBlockUpdated(worldPosition, newState, newState, Block.UPDATE_ALL);
     }
 
@@ -587,17 +592,20 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     @OnlyIn(Dist.CLIENT)
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        if (filterItem.isEmpty() || ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.OFF) return false;
+        if (filterItem.isEmpty() || ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.OFF)
+            return false;
 
         Minecraft mc = Minecraft.getInstance();
-        if (!(mc.hitResult instanceof BlockHitResult blockHit) || blockHit.getType() != HitResult.Type.BLOCK) return false;
+        if (!(mc.hitResult instanceof BlockHitResult blockHit) || blockHit.getType() != HitResult.Type.BLOCK)
+            return false;
         if (blockHit.getDirection() != getBlockState().getValue(SimpleStorageBox.FACING)) return false;
 
         boolean hasPotion = filterItem.has(DataComponents.POTION_CONTENTS);
         boolean hasEnchantments = (filterItem.has(DataComponents.ENCHANTMENTS) && !filterItem.get(DataComponents.ENCHANTMENTS).isEmpty()) || filterItem.has(DataComponents.STORED_ENCHANTMENTS);
         boolean hasTrim = filterItem.has(DataComponents.TRIM);
 
-        if ((!hasPotion && !hasEnchantments && !hasTrim) && ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.ONLY_TAGGED) return false;
+        if ((!hasPotion && !hasEnchantments && !hasTrim) && ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.ONLY_TAGGED)
+            return false;
 
         List<Component> vanillaTooltip = filterItem.getTooltipLines(Item.TooltipContext.of(mc.level), mc.player, TooltipFlag.NORMAL);
 

@@ -93,6 +93,7 @@ public class FeederUpgrade extends AbstractUpgrade {
             // RIGHT CLICK: clear slot
             if (context.button() == 1 && !existingIsFilter) {
                 slot.set(ItemStack.EMPTY);
+                context.container().setDataChanged();
                 return true;
             }
 
@@ -100,6 +101,7 @@ public class FeederUpgrade extends AbstractUpgrade {
             if (existingIsFilter && carried.isEmpty()) {
                 context.player().containerMenu.setCarried(existing);
                 slot.set(ItemStack.EMPTY);
+                context.container().setDataChanged();
                 return true;
             }
 
@@ -112,6 +114,7 @@ public class FeederUpgrade extends AbstractUpgrade {
                     context.player().containerMenu.setCarried(existing);
                     slot.set(carried);
                 }
+                context.container().setDataChanged();
                 return true;
             }
 
@@ -168,7 +171,7 @@ public class FeederUpgrade extends AbstractUpgrade {
             BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
             FilterItemStack filter = FilterItemStack.of(itemHandler.getStackInSlot(layout.feederFilter().getStartIndex()));
 
-            for (int i : layout.getItemsAndToolsRange()) {
+            for (int i : layout.items().range()) {
                 ItemStack food = itemHandler.getStackInSlot(i);
                 if (!filter.isEmpty()) {
                     if (!filter.test(level, food))
@@ -196,7 +199,7 @@ public class FeederUpgrade extends AbstractUpgrade {
                         boolean itemPlaced = false;
                         int firstEmptyStack = -1;
 
-                        for (int j = 0; j < itemHandler.getSlots(); j++) {
+                        for (int j : layout.items().range()) {
                             ItemStack stack = itemHandler.getStackInSlot(j);
 
                             if (stack.isEmpty() && firstEmptyStack < 0) {

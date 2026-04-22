@@ -19,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -93,11 +94,13 @@ public class OreMiningUpgrade extends AbstractUpgrade {
 
         List<ItemStack> drops = new ArrayList<>();
         ItemStack tool = player.getMainHandItem();
+        boolean hasToolInHand = !tool.isEmpty();
 
+        int totalXp = 0;
         int blocksMined = 0;
 
         for (BlockPos pos : vein) {
-            if (tool.isEmpty()) break;
+            if (hasToolInHand && tool.isEmpty()) break;
 
             BlockState state = level.getBlockState(pos);
             if (level.isEmptyBlock(pos)) continue;
@@ -115,10 +118,16 @@ public class OreMiningUpgrade extends AbstractUpgrade {
             drops.addAll(blockDrops);
 
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-            state.onDestroyedByPlayer(level, pos, player, true, level.getFluidState(pos));
+            state.getBlock().playerWillDestroy(level, pos, state, player);
+            state.getBlock().spawnAfterBreak(state, (ServerLevel) level, origin, tool, false);
+
+            totalXp += EnchantmentHelper.processBlockExperience((ServerLevel) level, tool,
+                    state.getExpDrop(level, pos, blockEntity, player, tool));
 
             if (state.getDestroySpeed(level, pos) >= 0.0F) {
-                tool.getItem().mineBlock(tool, level, state, pos, player);
+                if (hasToolInHand) {
+                    tool.getItem().mineBlock(tool, level, state, pos, player);
+                }
                 if (!player.getAbilities().instabuild) {
                     player.causeFoodExhaustion(0.2F);
                 }
@@ -156,6 +165,8 @@ public class OreMiningUpgrade extends AbstractUpgrade {
         for (ItemStack drop : condensed) {
             Block.popResource(level, origin, drop);
         }
+
+        if (totalXp > 0) targetState.getBlock().popExperience((ServerLevel) level, origin, totalXp);
 
         if (!FMLEnvironment.production) {
             Component msg = Component.literal("Successfully mined §a" + blocksMined + "§r out of §a" + vein.size() + "§r");

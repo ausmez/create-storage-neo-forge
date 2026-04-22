@@ -90,6 +90,7 @@ public class FXNTStorage {
         ModMenuTypes.register(modEventBus);
         ModDataComponents.register(modEventBus);
         ModLootConditionTypes.register(modEventBus);
+        ModLootFunctionTypes.register(modEventBus);
         ModAttachmentTypes.register(modEventBus);
 
         UpgradeRegistry.register();

@@ -9,6 +9,7 @@ import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,6 +21,7 @@ import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.*;
@@ -32,6 +34,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -41,6 +45,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.function.BiConsumer;
 
 @SuppressWarnings("deprecation")
 public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity> {
@@ -79,6 +84,20 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
     public int getSlotCount() {
         return slotCount;
+    }
+
+    @Override
+    protected void onExplosionHit(BlockState state, Level level, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
+        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && level instanceof ServerLevel serverLevel) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            LootParams.Builder lootParams = new LootParams.Builder(serverLevel)
+                    .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
+                    .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
+                    .withOptionalParameter(LootContextParams.BLOCK_ENTITY, blockEntity)
+                    .withOptionalParameter(LootContextParams.THIS_ENTITY, explosion.getDirectSourceEntity());
+            state.getDrops(lootParams).forEach(drop -> dropConsumer.accept(drop, pos));
+        }
+        state.onBlockExploded(level, pos, explosion);
     }
 
     @Override
@@ -150,7 +169,12 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (player.isSpectator() || !hitFront(state, hitResult))
             return InteractionResult.PASS;
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (level.isClientSide) {
+            if (player.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && !player.isShiftKeyDown()) {
+                return InteractionResult.PASS;
+            }
+            return InteractionResult.SUCCESS;
+        }
 
             /*
                 Single-click: insert 1 stack from main hand
@@ -163,7 +187,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         BlockEntity entity = level.getBlockEntity(pos);
 
         if (entity instanceof StorageBoxEntity storageBoxEntity) {
-            ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
+            ItemStack mainHandItem = player.getItemInHand(InteractionHand.MAIN_HAND);
 
             long currentTime = player.level().getGameTime();
             ClickData data = CLICK_DATA.computeIfAbsent(player, p -> new ClickData());
@@ -172,12 +196,12 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
             if (isDoubleClick) {
                 // Double Right-click
-                if (itemInHand.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
+                if (mainHandItem.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
                     storageBoxEntity.transferToStorage(state, player, true);
                 }
             } else {
                 // Single Right-Click
-                if (itemInHand.is(Tags.Items.TOOLS_WRENCH)) {
+                if (mainHandItem.is(Tags.Items.TOOLS_WRENCH)) {
                     // Right-Click with Create Wrench in hand will toggle void mode
                     storageBoxEntity.toggleVoidUpgrade();
                     return InteractionResult.SUCCESS;
@@ -189,13 +213,17 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                     return InteractionResult.CONSUME;
                 }
 
-                if (!itemInHand.isEmpty()) {
+                if (!mainHandItem.isEmpty()) {
                     // Current item in player hand will be inserted into container
                     storageBoxEntity.transferToStorage(state, player, false);
                 }
             }
             data.lastClickTime = currentTime;
             data.lastBlockPos = storageBoxEntity.getBlockPos();
+
+            if (!isDoubleClick && mainHandItem.isEmpty()) {
+                return InteractionResult.PASS;
+            }
         }
 
         return InteractionResult.sidedSuccess(false);
@@ -234,7 +262,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext pContext) {
-        boolean voidUpgrade = pContext.getItemInHand().getComponents().has(ModDataComponents.VOID_UPGRADE);
+        boolean voidUpgrade = pContext.getItemInHand().getComponents().getOrDefault(ModDataComponents.VOID_UPGRADE, false);
         return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()).setValue(VOID_UPGRADE, voidUpgrade);
     }
 

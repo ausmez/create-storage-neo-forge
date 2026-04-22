@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import net.fxnt.fxntstorage.cache.PasserShapeCache;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -103,6 +104,15 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
             pLevel.setBlock(pPos, pState.cycle(POWERED), Block.UPDATE_CLIENTS);
         }
         super.tick(pState, pLevel, pPos, pRandom);
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock())) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof SmartBlockEntity sbe) sbe.destroy();
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override
