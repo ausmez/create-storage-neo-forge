@@ -110,7 +110,12 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
-                if (slot < VOID_UPGRADE_SLOT) storageSlotChanged = true;
+                if (slot < VOID_UPGRADE_SLOT) {
+                    storageSlotChanged = true;
+                    if (filterItem.isEmpty() && !this.stacks.get(0).isEmpty()) {
+                        setFilter(this.stacks.get(0));
+                    }
+                }
                 if (slot >= VOID_UPGRADE_SLOT) upgradeSlotChanged = true;
             }
 

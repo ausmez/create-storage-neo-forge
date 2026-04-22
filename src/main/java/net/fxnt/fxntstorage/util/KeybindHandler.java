@@ -38,6 +38,7 @@ public class KeybindHandler {
 
     private static boolean flykeyWasDown = false;
     private static boolean minekeyWasDown = false;
+    private static boolean minePreviewActive = false;
 
     public static void resetFlyKeyState() {
         flykeyWasDown = false;
@@ -78,14 +79,25 @@ public class KeybindHandler {
 
                 // === ORE MINING KEY ===
                 boolean minekeyIsDown = ORE_MINE_ANY_BLOCK.isDown();
+                boolean canPreview = isSurvival && isWearingBackpack && isToolItem(player.getMainHandItem())
+                        && UpgradeHelper.hasActiveUpgrade(backpackContainer.getItemHandler(), UpgradeType.OREMINING);
 
-                if (minekeyIsDown != minekeyWasDown && isSurvival && isWearingBackpack && isToolItem(player.getMainHandItem())
-                        && UpgradeHelper.hasActiveUpgrade(backpackContainer.getItemHandler(), UpgradeType.OREMINING)) {
-                    BlockPos pos = null;
-                    if (mc.hitResult instanceof BlockHitResult blockHit && blockHit.getType().equals(HitResult.Type.BLOCK)) {
-                        pos = blockHit.getBlockPos();
+                if (minekeyIsDown != minekeyWasDown) {
+                    if (minekeyIsDown && canPreview) {
+                        BlockPos pos = null;
+                        if (mc.hitResult instanceof BlockHitResult blockHit && blockHit.getType().equals(HitResult.Type.BLOCK)) {
+                            pos = blockHit.getBlockPos();
+                        }
+                        ModNetwork.sendToServer(new KeyPressedPacket(Util.MINE_ALL_BLOCKS, true, pos));
+                        minePreviewActive = true;
+                    } else if (!minekeyIsDown && minePreviewActive) {
+                        ModNetwork.sendToServer(new KeyPressedPacket(Util.MINE_ALL_BLOCKS, false, null));
+                        minePreviewActive = false;
                     }
-                    ModNetwork.sendToServer(new KeyPressedPacket(Util.MINE_ALL_BLOCKS, minekeyIsDown, pos));
+                } else if (minekeyIsDown && minePreviewActive && !canPreview) {
+                    // Key still held but player switched to a non-tool item — cancel the preview
+                    ModNetwork.sendToServer(new KeyPressedPacket(Util.MINE_ALL_BLOCKS, false, null));
+                    minePreviewActive = false;
                 }
                 minekeyWasDown = minekeyIsDown;
 

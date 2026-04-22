@@ -16,11 +16,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -94,11 +96,16 @@ public class OreMiningUpgrade extends AbstractUpgrade {
 
         List<ItemStack> drops = new ArrayList<>();
         ItemStack tool = player.getMainHandItem();
+        boolean hasToolInHand = !tool.isEmpty();
 
+        int fortuneLevel = EnchantmentHelper.getTagEnchantmentLevel(Enchantments.BLOCK_FORTUNE, tool);
+        int silkTouchLevel = EnchantmentHelper.getTagEnchantmentLevel(Enchantments.SILK_TOUCH, tool);
+
+        int totalXp = 0;
         int blocksMined = 0;
 
         for (BlockPos pos : vein) {
-            if (tool.isEmpty()) break;
+            if (hasToolInHand && tool.isEmpty()) break;
 
             BlockState state = level.getBlockState(pos);
             if (level.isEmptyBlock(pos)) continue;
@@ -116,10 +123,15 @@ public class OreMiningUpgrade extends AbstractUpgrade {
             drops.addAll(blockDrops);
 
             level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-            state.onDestroyedByPlayer(level, pos, player, true, level.getFluidState(pos));
+            state.getBlock().playerWillDestroy(level, pos, state, player);
+            state.getBlock().spawnAfterBreak(state, (ServerLevel) level, origin, tool, false);
+
+            totalXp += state.getBlock().getExpDrop(state, level, level.getRandom(), pos, fortuneLevel, silkTouchLevel);
 
             if (state.getDestroySpeed(level, pos) >= 0.0F) {
-                tool.getItem().mineBlock(tool, level, state, pos, player);
+                if (hasToolInHand) {
+                    tool.getItem().mineBlock(tool, level, state, pos, player);
+                }
                 if (!player.getAbilities().instabuild) {
                     player.causeFoodExhaustion(0.2F);
                 }
@@ -156,6 +168,10 @@ public class OreMiningUpgrade extends AbstractUpgrade {
 
         for (ItemStack drop : condensed) {
             Block.popResource(level, origin, drop);
+        }
+
+        if (totalXp > 0) {
+            ExperienceOrb.award((ServerLevel) level, Vec3.atCenterOf(origin), totalXp);
         }
 
         if (!FMLEnvironment.production) {
@@ -268,8 +284,8 @@ public class OreMiningUpgrade extends AbstractUpgrade {
                             state -> state.oresOnly()
                                     ? modLoc("textures/gui/sprites/check.png")
                                     : serverMineOresOnly
-                                    ? modLoc("textures/gui/sprites/cross.png")
-                                    : modLoc("textures/gui/sprites/tilde.png"),
+                                      ? modLoc("textures/gui/sprites/cross.png")
+                                      : modLoc("textures/gui/sprites/tilde.png"),
                             state -> state.oresOnly()
                                     ? Component.translatable("tooltip.fxntstorage.backpack_oremining_upgrade.panel.mine_ores_only").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_oremining_upgrade.panel.mine_ores_only.description").withStyle(ChatFormatting.DARK_GRAY))
                                     : mineOresOnlyTooltip,

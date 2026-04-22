@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage.passer;
 
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import net.fxnt.fxntstorage.cache.PasserShapeCache;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -93,6 +94,15 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
             pLevel.setBlock(pPos, pState.cycle(POWERED), Block.UPDATE_CLIENTS);
         }
         super.tick(pState, pLevel, pPos, pRandom);
+    }
+
+    @Override
+    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
+        if (!pState.is(pNewState.getBlock())) {
+            BlockEntity be = pLevel.getBlockEntity(pPos);
+            if (be instanceof SmartBlockEntity sbe) sbe.destroy();
+        }
+        super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);
     }
 
     @Override

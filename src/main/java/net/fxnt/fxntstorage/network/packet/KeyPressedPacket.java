@@ -69,11 +69,16 @@ public record KeyPressedPacket(byte hotkey, boolean pressed, @Nullable BlockPos 
                                 .getCompound(ConfigManager.FXNTSTORAGE_SETTINGS_TAG)
                                 .putBoolean("MineAllBlocks", packet.pressed());
 
+                        if (!packet.pressed()) {
+                            ModNetwork.sendToPlayer(player, new OreMiningPreviewPacket(new ArrayList<>()));
+                            return;
+                        }
+
+                        if (packet.pos() == null) return;
+
                         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
                         BackpackContainer container = new BackpackContainer(player, backpack);
                         UpgradeDataManager manager = UpgradeDataManager.loadFromItem(backpack);
-
-                        if (packet.pos() == null) return;
 
                         boolean isUpgradeActive = UpgradeHelper.hasActiveUpgrade(container.getItemHandler(), UpgradeType.OREMINING);
                         boolean isMineOresOnly = manager.getSetting(UpgradeDataSync.Field.OREMINING_ORES_ONLY);
@@ -81,7 +86,7 @@ public record KeyPressedPacket(byte hotkey, boolean pressed, @Nullable BlockPos 
                         boolean isServerPreviewAllowed = ConfigManager.ServerConfig.ORE_MINING_PREVIEW_ORE_VEIN.get();
                         boolean isStartBlockAnOre = player.level().getBlockState(packet.pos()).is(Tags.Blocks.ORES);
 
-                        if (isUpgradeActive && isPreviewOreVeinsAllowed && isServerPreviewAllowed && packet.pressed()) {
+                        if (isUpgradeActive && isPreviewOreVeinsAllowed && isServerPreviewAllowed) {
                             List<BlockPos> vein = OreMiningUpgrade.findVein(
                                     player,
                                     player.level(),

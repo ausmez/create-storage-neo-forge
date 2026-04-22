@@ -7,6 +7,7 @@ import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -19,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -61,6 +63,27 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                 .setValue(VOID_UPGRADE, false)
         );
         this.slotCount = slotCount;
+    }
+
+    @Override
+    public boolean dropFromExplosion(Explosion explosion) {
+        return false;
+    }
+
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
+        if (level instanceof ServerLevel) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity != null) {
+                ItemStack drop = new ItemStack(this);
+                CompoundTag nbt = blockEntity.saveWithoutMetadata();
+                if (!nbt.isEmpty()) {
+                    drop.addTagElement("BlockEntityTag", nbt);
+                }
+                Block.popResource(level, pos, drop);
+            }
+        }
+        super.onBlockExploded(state, level, pos, explosion);
     }
 
     @Override
@@ -129,7 +152,12 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pPlayer.isSpectator() || pHand == InteractionHand.OFF_HAND || !hitFront(pState, pHit))
             return InteractionResult.PASS;
-        if (pLevel.isClientSide) return InteractionResult.SUCCESS;
+        if (pLevel.isClientSide) {
+            if (pPlayer.getItemInHand(InteractionHand.MAIN_HAND).isEmpty() && !pPlayer.isShiftKeyDown()) {
+                return InteractionResult.PASS;
+            }
+            return InteractionResult.SUCCESS;
+        }
 
             /*
                 Single-click: insert 1 stack from main hand
@@ -142,7 +170,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         BlockEntity entity = pLevel.getBlockEntity(pPos);
 
         if (entity instanceof StorageBoxEntity storageBoxEntity) {
-            ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
+            ItemStack mainHandItem = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
 
             long currentTime = pPlayer.level().getGameTime();
             ClickData data = CLICK_DATA.computeIfAbsent(pPlayer, p -> new ClickData());
@@ -151,12 +179,12 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
             if (isDoubleClick) {
                 // Double Right-click
-                if (itemInHand.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
+                if (mainHandItem.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
                     storageBoxEntity.transferToStorage(pState, pPlayer, true);
                 }
             } else {
                 // Single Right-Click
-                if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag)) {
+                if (mainHandItem.is(AllTags.AllItemTags.WRENCH.tag)) {
                     // Right-Click with Create Wrench in hand will toggle void mode
                     storageBoxEntity.toggleVoidUpgrade();
                     return InteractionResult.SUCCESS;
@@ -168,13 +196,17 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
                     return InteractionResult.CONSUME;
                 }
 
-                if (!itemInHand.isEmpty()) {
+                if (!mainHandItem.isEmpty()) {
                     // Current item in player hand will be inserted into container
                     storageBoxEntity.transferToStorage(pState, pPlayer, false);
                 }
             }
             data.lastClickTime = currentTime;
             data.lastBlockPos = storageBoxEntity.getBlockPos();
+
+            if (!isDoubleClick && mainHandItem.isEmpty()) {
+                return InteractionResult.PASS;
+            }
         }
 
         return InteractionResult.sidedSuccess(false);

@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.controller;
 
+import com.simibubi.create.foundation.block.IBE;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,6 +25,12 @@ public class StorageInterfaceFiltered extends BaseEntityBlock {
     public StorageInterfaceFiltered(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState().setValue(FACING, Direction.SOUTH));
+    }
+
+    @Override
+    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pMovedByPiston) {
+        IBE.onRemove(pState, pLevel, pPos, pNewState);
+        super.onRemove(pState, pLevel, pPos, pNewState, pMovedByPiston);
     }
 
     @Override
@@ -67,5 +74,4 @@ public class StorageInterfaceFiltered extends BaseEntityBlock {
         }
         return 0;
     }
-
 }

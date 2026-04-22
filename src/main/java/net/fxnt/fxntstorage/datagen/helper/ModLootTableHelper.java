@@ -9,7 +9,6 @@ import net.minecraft.world.level.storage.loot.entries.AlternativesEntry;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.CopyNameFunction;
 import net.minecraft.world.level.storage.loot.functions.CopyNbtFunction;
-import net.minecraft.world.level.storage.loot.predicates.AllOfCondition;
 import net.minecraft.world.level.storage.loot.predicates.ExplosionCondition;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 
@@ -21,15 +20,11 @@ public class ModLootTableHelper {
                         .withPool(LootPool.lootPool()
                                 .add(AlternativesEntry.alternatives(
                                         LootItem.lootTableItem(block)
-                                                .when(AllOfCondition.allOf(
-                                                        ExplosionCondition.survivesExplosion(),
-                                                        ModBlockEntitySaveTag.builder()
-                                                ))
+                                                .when(ModBlockEntitySaveTag.builder())
                                                 .apply(CopyNameFunction.copyName(CopyNameFunction.NameSource.BLOCK_ENTITY))
                                                 .apply(CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY)
                                                         .copy("{}", "BlockEntityTag")),
                                         LootItem.lootTableItem(block)
-                                                .when(ExplosionCondition.survivesExplosion())
                                 ))
                         ));
     }

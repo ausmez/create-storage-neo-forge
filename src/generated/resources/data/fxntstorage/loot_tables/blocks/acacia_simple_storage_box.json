@@ -11,15 +11,7 @@
               "type": "minecraft:item",
               "conditions": [
                 {
-                  "condition": "minecraft:all_of",
-                  "terms": [
-                    {
-                      "condition": "minecraft:survives_explosion"
-                    },
-                    {
-                      "condition": "fxntstorage:block_entity_save_tag"
-                    }
-                  ]
+                  "condition": "fxntstorage:block_entity_save_tag"
                 }
               ],
               "functions": [
@@ -43,11 +35,6 @@
             },
             {
               "type": "minecraft:item",
-              "conditions": [
-                {
-                  "condition": "minecraft:survives_explosion"
-                }
-              ],
               "name": "fxntstorage:acacia_simple_storage_box"
             }
           ]

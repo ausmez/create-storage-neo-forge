@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.6 - 2026-04-22
+
+## Changes
+- Storage Boxes and Simple Storage Boxes will now always drop with contents intact when destroyed by an explosion, and are immune to any additional explosions.
+
+## Bug Fixes
+- Fixed Feeder upgrade attempting to insert food remainder items (e.g. bowls, bottles) into slots other than item slots.
+- Fixed item duplication when removing a Create filter from the Feeder or Magnet upgrade filter slot.
+- Fixed Storage Box and Simple Storage Box not opening the GUI when sneaking with an empty main hand and a placeable item in the off-hand.
+- Fixed Storage Box filter not being saved when the box is broken. [NeoForge]
+- Fixed Simple Storage Box not setting its filter when the first item is inserted via automation.
+- Fixed List/Attribute/Package filters being destroyed when breaking a Smart Passer or Filtered Storage Interface.
+- Fixed Ore Mining upgrade suppressing XP drops from blocks. (#55)
+- Fixed Ore Mining upgrade preview persisting when the player switches to a non-tool item while holding the preview key.
+- Fixed EMI incorrectly reporting backpack ingredients as unavailable when opening the crafting table GUI, due to a stale client-side container cache.
+- Fixed the bow/crossbow appearing to charge when the backpack is out of arrows. [NeoForge]
+- Fixed a rare issue where disconnecting mid-draw could cause the next bow shot to silently consume an arrow from the backpack.
+
+---
+
 ## 1.2.5 - 2026-04-12
 
 ## Bug Fixes

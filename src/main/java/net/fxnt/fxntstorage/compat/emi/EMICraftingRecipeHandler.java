@@ -23,10 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EMICraftingRecipeHandler extends CraftingRecipeHandler {
-    private final Player player = Minecraft.getInstance().player;
 
     @Override
     public List<Slot> getInputSources(CraftingMenu handler) {
+        Player player = Minecraft.getInstance().player;
         if (player == null) return new ArrayList<>();
 
         List<Slot> slots = new ArrayList<>(handler.slots.stream().filter(slot -> slot.mayPickup(player)).toList());
@@ -38,11 +38,8 @@ public class EMICraftingRecipeHandler extends CraftingRecipeHandler {
             BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
             for (int i : layout.items().range()) {
-                ItemStack stack = itemHandler.getStackInSlot(i);
-                if (!stack.isEmpty()) {
-                    Slot fakeSlot = new SlotItemHandler(itemHandler, i, 0, 0);
-                    fakeSlot.set(stack);
-                    slots.add(fakeSlot);
+                if (!itemHandler.getStackInSlot(i).isEmpty()) {
+                    slots.add(new SlotItemHandler(itemHandler, i, 0, 0));
                 }
             }
         }
