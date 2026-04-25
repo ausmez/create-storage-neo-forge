@@ -4,6 +4,7 @@ import com.mojang.serialization.MapCodec;
 import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModTags;
+import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -14,8 +15,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
@@ -29,7 +30,6 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
@@ -176,21 +176,22 @@ public class SimpleStorageBox extends BaseEntityBlock {
     }
 
     @Override
-    public void attack(BlockState blockState, Level level, BlockPos blockPos, Player player) {
+    protected void attack(BlockState state, Level level, BlockPos pos, Player player) {
         if (player.isSpectator() || level.isClientSide) return;
 
-        BlockHitResult hit = rayTraceEyes(level, player, blockPos);
-        if (hit.getType() != HitResult.Type.BLOCK || !hit.getBlockPos().equals(blockPos)) return;
-        if (!hitFront(blockState, hit)) return;
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        Direction face = Util.getAttackedBlockFace(state, level, pos, player, blockEntity);
+        if (face != state.getValue(FACING)) return;
 
-        BlockEntity blockEntity = level.getBlockEntity(blockPos);
+        if (!(blockEntity instanceof SimpleStorageBoxEntity ssbe)) return;
+
         Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
-        if (blockEntity instanceof SimpleStorageBoxEntity storageBoxEntity && !(item instanceof AxeItem)) {
+        if (!(item instanceof PickaxeItem || item instanceof AxeItem)) {
             ClickData data = CLICK_DATA.computeIfAbsent(player, p -> new ClickData());
             long currentTime = level.getGameTime();
 
             if (currentTime - data.lastAttackTime > 1) {
-                storageBoxEntity.transferFromStorage(player);
+                ssbe.transferFromStorage(player);
                 data.lastAttackTime = currentTime;
             }
         }
@@ -201,13 +202,6 @@ public class SimpleStorageBox extends BaseEntityBlock {
         return blockState.getValue(FACING) == side;
     }
 
-    public static BlockHitResult rayTraceEyes(Level level, Player player, BlockPos blockPos) {
-        Vec3 eyePos = player.getEyePosition(1);
-        Vec3 lookVector = player.getViewVector(1);
-        Vec3 endPos = eyePos.add(lookVector.scale(eyePos.distanceTo(Vec3.atCenterOf(blockPos)) + 1));
-        ClipContext context = new ClipContext(eyePos, endPos, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player);
-        return level.clip(context);
-    }
 
     @Override
     public RenderShape getRenderShape(BlockState pState) {

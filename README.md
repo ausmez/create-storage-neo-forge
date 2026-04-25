@@ -217,14 +217,15 @@ the Passer by enabling items to be filtered and transferring up to 64 items at o
 
 ## Compatibility
 
-| Mod                          | Support                                              |
-|------------------------------|------------------------------------------------------|
-| **Create**                   | Required — deep integration throughout               |
-| **Packager / Stock Keeper**  | Full integration for logistics networks              |
-| **JEI / EMI / REI**          | Recipe transfer from backpack inventory              |
-| **Curios**                   | Backpack back-slot support                           |
-| **Every Compat (Wood Good)** | Modded wood types for Simple Storage Boxes and Trims |
-| **Construction Wand/Sticks** | Backpack and Storage Box block placement support     |
+| Mod                          | Support                                                    |
+|------------------------------|------------------------------------------------------------|
+| **Create**                   | Required — deep integration throughout                     |
+| **Packager / Stock Keeper**  | Full integration for logistics networks                    |
+| **JEI / EMI / REI**          | Recipe transfer from backpack inventory                    |
+| **Curios**                   | Backpack back-slot support                                 |
+| **Every Compat (Wood Good)** | Modded wood types for Simple Storage Boxes and Trims       |
+| **Construction Wand/Sticks** | Backpack and Storage Box block placement support           |
+| **Create Aeronautics**       | Full support for all components on assembled contraptions  |
 
 ---
 

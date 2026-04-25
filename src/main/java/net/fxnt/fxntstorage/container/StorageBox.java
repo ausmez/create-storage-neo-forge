@@ -6,6 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.simibubi.create.foundation.block.IBE;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.fxnt.fxntstorage.init.ModDataComponents;
+import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -20,7 +21,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -60,6 +60,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
     private static class ClickData {
         long lastClickTime;
+        long lastAttackTime;
         BlockPos lastBlockPos;
     }
 
@@ -138,10 +139,12 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        IBE.onRemove(state, level, pos, newState);
-        super.onRemove(state, level, pos, newState, movedByPiston);
-        if (!state.is(newState.getBlock()))
+        if (!state.is(newState.getBlock())) {
+            if (!movedByPiston)
+                IBE.onRemove(state, level, pos, newState);
             level.invalidateCapabilities(pos);
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override
@@ -230,11 +233,12 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     }
 
     @Override
-    public void attack(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer) {
-        BlockHitResult hit = rayTraceEyes(pLevel, pPlayer, pPos);
-        if (hit.getType() != HitResult.Type.BLOCK || !hit.getBlockPos().equals(pPos) || !hitFront(pState, hit)) {
-            return;
-        }
+    protected void attack(BlockState state, Level level, BlockPos pos, Player player) {
+        if (player.isSpectator() || level.isClientSide) return;
+
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        Direction face = Util.getAttackedBlockFace(state, level, pos, player, blockEntity);
+        if (face != state.getValue(FACING)) return;
 
         /*
             Single-click: extract 1 item from container (matching filter) or from the first non-empty slot available
@@ -243,10 +247,17 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
             Double-click: <nothing>
             Double-click (sneaking): <nothing>
         */
-        StorageBoxEntity blockEntity = (StorageBoxEntity) pLevel.getBlockEntity(pPos);
-        Item item = pPlayer.getItemInHand(InteractionHand.MAIN_HAND).getItem();
-        if (blockEntity != null && !(item instanceof PickaxeItem || item instanceof AxeItem)) {
-            blockEntity.transferFromStorage(pPlayer);
+        if (!(blockEntity instanceof StorageBoxEntity sbe)) return;
+
+        Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
+        if (!(item instanceof PickaxeItem || item instanceof AxeItem)) {
+            ClickData data = CLICK_DATA.computeIfAbsent(player, p -> new ClickData());
+            long currentTime = level.getGameTime();
+
+            if (currentTime - data.lastAttackTime > 1) {
+                sbe.transferFromStorage(player);
+                data.lastAttackTime = currentTime;
+            }
         }
     }
 
@@ -292,11 +303,4 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         return 0;
     }
 
-    public static BlockHitResult rayTraceEyes(Level level, Player player, BlockPos blockPos) {
-        Vec3 eyePos = player.getEyePosition(1);
-        Vec3 lookVector = player.getViewVector(1);
-        Vec3 endPos = eyePos.add(lookVector.scale(eyePos.distanceTo(Vec3.atCenterOf(blockPos)) + 1));
-        ClipContext context = new ClipContext(eyePos, endPos, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player);
-        return level.clip(context);
-    }
 }

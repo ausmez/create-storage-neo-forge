@@ -3,6 +3,9 @@ package net.fxnt.fxntstorage.util;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataManager;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataSync;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.compat.sable.SableCompat;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
@@ -12,6 +15,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
@@ -19,7 +24,16 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.SuspiciousStewEffects;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -216,4 +230,51 @@ public class Util {
             }
         }
     }
+
+    public static Direction getAttackedBlockFace(BlockState state, Level level, BlockPos pos, Player player, @Nullable BlockEntity blockEntity) {
+        double reach = player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE) + 1.0;
+
+        VoxelShape shape = state.getShape(level, pos);
+
+        Vec3 eye = player.getEyePosition(1.0f);
+        Vec3 end = eye.add(player.getViewVector(1.0f).scale(reach));
+
+        if (blockEntity != null) {
+            AABB bounds = (shape.isEmpty() ? Shapes.block().bounds() : shape.bounds()).move(pos);
+            Direction sub = SableCompat.getAttackedFaceInSubLevel(blockEntity, bounds, reach, player);
+            if (sub != null) return sub;
+        }
+
+        BlockHitResult hit = shape.clip(eye, end, pos);
+
+        return hit != null ? hit.getDirection() : null;
+    }
+
+    public static Direction nearestBlockFace(Vec3 point, AABB bounds) {
+        Direction best = Direction.UP;
+        double minDist = Double.MAX_VALUE;
+
+        for (Direction dir : Direction.values()) {
+            double plane = 0;
+            double coord = 0;
+
+            switch (dir) {
+                case DOWN -> { plane = bounds.minY; coord = point.y; }
+                case UP -> { plane = bounds.maxY; coord = point.y; }
+                case NORTH -> { plane = bounds.minZ; coord = point.z; }
+                case SOUTH -> { plane = bounds.maxZ; coord = point.z; }
+                case WEST -> { plane = bounds.minX; coord = point.x; }
+                case EAST -> { plane = bounds.maxX; coord = point.x; }
+            }
+
+            double dist = Math.abs(coord - plane);
+            if (dist < minDist) {
+                minDist = dist;
+                best = dir;
+            }
+        }
+
+        return best;
+    }
+
 }

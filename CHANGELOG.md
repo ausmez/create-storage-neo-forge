@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.7 - 2026-04-25
+
+## Changes
+- Improved compatibility with Create Aeronautics — all components now function correctly on simulated contraptions.
+- Improved hit-side detection for Storage Boxes and Simple Storage Boxes to prevent loading chunks unnecessarily, reducing lag spikes and temporary freezes.
+
+## Bug Fixes
+- Fixed a duplication issue with Create filters on Smart Passers, Filtered Storage Interfaces, and Storage Boxes when disassembling simulated contraptions.
+- Fixed an interaction issue with Storage and Simple Storage Boxes that prevented item extraction while part of a simulated contraption.
+- Fixed rendering issues affecting Storage and Simple Storage Boxes when used on simulated contraptions.
+
+---
+
 ## 1.2.6 - 2026-04-22
 
 ## Changes

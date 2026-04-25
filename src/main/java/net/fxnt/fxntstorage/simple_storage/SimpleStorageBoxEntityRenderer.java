@@ -5,6 +5,7 @@ import com.mojang.math.Axis;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.contraptions.render.ContraptionMatrices;
 import net.createmod.catnip.gui.AbstractSimiScreen;
+import net.fxnt.fxntstorage.compat.sable.SableCompat;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -59,7 +60,10 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null) return;
+        if (player == null) {
+            poseStack.popPose();
+            return;
+        }
 
         double distance = context.position != null
                 ? Math.sqrt(player.distanceToSqr(context.position))
@@ -93,11 +97,10 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
     @Override
     public void render(SimpleStorageBoxEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
-        boolean isPonderScene;
-
         Minecraft mc = Minecraft.getInstance();
         Screen currentScreen = mc.screen;
-        isPonderScene = currentScreen instanceof AbstractSimiScreen;
+        boolean isPonderScene = currentScreen instanceof AbstractSimiScreen;
+        boolean inSubLevel = SableCompat.isInPlotGrid(blockEntity);
 
         Player player = mc.player;
         if (player == null) return;
@@ -114,8 +117,8 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 
-        if (distance > getMaxDistance() && !isPonderScene) return;
-        if (isPonderScene) distance = 3f;
+        if (distance > getMaxDistance() && !isPonderScene && !inSubLevel) return;
+        if (isPonderScene || inSubLevel) distance = 5f;
 
         BlockState blockState = blockEntity.getBlockState();
         Direction side = blockState.getValue(HorizontalDirectionalBlock.FACING);

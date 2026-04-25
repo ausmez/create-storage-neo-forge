@@ -7,6 +7,7 @@ import com.simibubi.create.content.contraptions.render.ContraptionMatrices;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringRenderer;
 import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import net.createmod.catnip.gui.AbstractSimiScreen;
+import net.fxnt.fxntstorage.compat.sable.SableCompat;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -54,7 +55,10 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null) return;
+        if (player == null) {
+            poseStack.popPose();
+            return;
+        }
 
         double distance = context.position != null
                 ? Math.sqrt(player.distanceToSqr(context.position))
@@ -87,11 +91,10 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
 
     @Override
     protected void renderSafe(StorageBoxEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
-        boolean isPonderScene;
-
         Minecraft mc = Minecraft.getInstance();
         Screen currentScreen = mc.screen;
-        isPonderScene = currentScreen instanceof AbstractSimiScreen;
+        boolean isPonderScene = currentScreen instanceof AbstractSimiScreen;
+        boolean inSubLevel = SableCompat.isInPlotGrid(blockEntity);
 
         Player player = mc.player;
         if (player == null) return;
@@ -106,8 +109,8 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 
-        if (distance > getMaxDistance() && !isPonderScene) return;
-        if (isPonderScene) distance = 3f;
+        if (distance > getMaxDistance() && !isPonderScene && !inSubLevel) return;
+        if (isPonderScene || inSubLevel) distance = 5f;
 
         BlockState blockState = blockEntity.getBlockState();
         Direction side = blockState.getValue(HorizontalDirectionalBlock.FACING);

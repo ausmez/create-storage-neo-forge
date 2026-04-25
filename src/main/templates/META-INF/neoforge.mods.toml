@@ -52,22 +52,15 @@ ordering = "AFTER"
 side = "BOTH"
 
 [[dependencies.${ mod_id }]]
-modId = "everycomp"
-type = "optional"
-versionRange = "[1,)"
-ordering = "NONE"
-side = "BOTH"
-
-[[dependencies.${ mod_id }]]
-modId = "moonlight"
-type = "optional"
-versionRange = "[1,)"
-ordering = "NONE"
-side = "BOTH"
-
-[[dependencies.${ mod_id }]]
 modId = "constructionstick"
 type = "optional"
 versionRange = "[1.3.0,)"
 ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${ mod_id }]]
+modId = "sable"
+type = "optional"
+versionRange = "[1.1.0,)"
+ordering = "AFTER"
 side = "BOTH"
