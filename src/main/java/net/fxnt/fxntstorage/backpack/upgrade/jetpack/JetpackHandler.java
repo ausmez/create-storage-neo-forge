@@ -735,5 +735,6 @@ public class JetpackHandler {
         lastValidVelocity = Vec3.ZERO;
         predictedFuelRemaining = 0;
         lastFuelSync = 0;
+        receivedFlyingPacketThisAirSession = false;
     }
 }
