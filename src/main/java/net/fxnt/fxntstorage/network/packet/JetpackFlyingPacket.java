@@ -10,13 +10,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record JetpackFlyingPacket(boolean flying, boolean hovering) implements CustomPacketPayload {
+public record JetpackFlyingPacket(boolean flying) implements CustomPacketPayload {
     public static final Type<JetpackFlyingPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "jetpack_flying"));
 
     public static final StreamCodec<FriendlyByteBuf, JetpackFlyingPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, JetpackFlyingPacket::flying,
-            ByteBufCodecs.BOOL, JetpackFlyingPacket::hovering,
             JetpackFlyingPacket::new
     );
 
@@ -28,7 +27,7 @@ public record JetpackFlyingPacket(boolean flying, boolean hovering) implements C
     public void handle(final IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                JetpackManager.getJetpackHandler(player).processPlayerFlyingPacket(flying(), hovering());
+                JetpackManager.getJetpackHandler(player).processPlayerFlyingPacket(flying());
             }
         });
     }
