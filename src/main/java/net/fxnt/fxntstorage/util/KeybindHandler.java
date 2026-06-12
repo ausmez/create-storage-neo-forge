@@ -39,19 +39,11 @@ public class KeybindHandler {
     public static final KeyMapping FLY_JETPACK = new KeyMapping("hotKey.fxntstorage.fly_jetpack", GLFW.GLFW_KEY_SPACE, KEY_CATEGORY_FXNTSTORAGE);
 
     private static boolean flykeyWasDown = false;
-    private static boolean flyModeActive = false;
-    private static long lastFlyKeyPressTime = 0;
-    private static final long DOUBLE_TAP_THRESHOLD = 300;
     private static boolean minekeyWasDown = false;
     private static boolean minePreviewActive = false;
 
     public static void resetFlyKeyState() {
         flykeyWasDown = false;
-        flyModeActive = false;
-    }
-
-    public static boolean isFlyModeActive() {
-        return flyModeActive;
     }
 
     @EventBusSubscriber(modid = FXNTStorage.MOD_ID, value = Dist.CLIENT)
@@ -112,26 +104,10 @@ public class KeybindHandler {
             }
             minekeyWasDown = minekeyIsDown;
 
-            // === FLY JETPACK KEY (double-tap to activate) ===
+            // === FLY JETPACK KEY (hold to fly) ===
             boolean flykeyIsDown = FLY_JETPACK.isDown();
 
-            if (flykeyIsDown && !flykeyWasDown) {
-                long now = System.currentTimeMillis();
-                if (now - lastFlyKeyPressTime < DOUBLE_TAP_THRESHOLD) {
-                    if (!flyModeActive) {
-                        flyModeActive = true;
-                    }
-                }
-                lastFlyKeyPressTime = now;
-            }
-
-            if (flyModeActive && player.onGround()) {
-                flyModeActive = false;
-                PacketDistributor.sendToServer(new JetpackFlyingPacket(false));
-                JetpackManager.getJetpackHandler(player).processPlayerFlyingPacket(false);
-            }
-
-            if (flyModeActive && isSurvival && isWearingBackpack
+            if (isSurvival && isWearingBackpack
                     && UpgradeHelper.hasActiveUpgrade(backpackContainer.getItemHandler(), UpgradeType.FLIGHT)) {
                 if (flykeyIsDown != flykeyWasDown) {
                     PacketDistributor.sendToServer(new JetpackFlyingPacket(flykeyIsDown));

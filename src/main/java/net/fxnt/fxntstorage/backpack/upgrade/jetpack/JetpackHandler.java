@@ -714,6 +714,7 @@ public class JetpackHandler {
 
     public void flyingOnKeyPress() {
         this.isJumping = true;
+        this.receivedFlyingPacketThisAirSession = true;
     }
 
     public void flyingOnKeyRelease() {
