@@ -19,18 +19,23 @@ public class JukeboxDiscSlot extends SlotItemHandler {
     private final Player player;
     private final BackpackMenu.BackpackType backpackType;
     private final BlockPos blockPos;
+    private final int contraptionId;
 
     private final BooleanSupplier hasUpgrade;
     private final BooleanSupplier isPanelExpanded;
     private final Runnable updateContainerData;
     private final Runnable stopClientPlayback;
 
-    public JukeboxDiscSlot(IBackpackContainer backpack, int index, int xPosition, int yPosition, Player player, BackpackMenu.BackpackType backpackType, @Nullable BlockPos blockPos, BooleanSupplier hasUpgrade, BooleanSupplier isPanelExpanded, Runnable updateContainerData, Runnable stopClientPlayback) {
+    public JukeboxDiscSlot(IBackpackContainer backpack, int index, int xPosition, int yPosition,
+                           Player player, BackpackMenu.BackpackType backpackType, @Nullable BlockPos blockPos,
+                           int contraptionId, BooleanSupplier hasUpgrade, BooleanSupplier isPanelExpanded,
+                           Runnable updateContainerData, Runnable stopClientPlayback) {
         super(backpack.getItemHandler(), index, xPosition, yPosition);
         this.backpack = backpack;
         this.player = player;
         this.backpackType = backpackType;
         this.blockPos = blockPos;
+        this.contraptionId = contraptionId;
         this.hasUpgrade = hasUpgrade;
         this.isPanelExpanded = isPanelExpanded;
         this.updateContainerData = updateContainerData;
@@ -45,6 +50,17 @@ public class JukeboxDiscSlot extends SlotItemHandler {
     @Override
     public int getMaxStackSize() {
         return 1;
+    }
+
+    @Override
+    public void set(@NotNull ItemStack stack) {
+        if (!player.level().isClientSide()) {
+            ItemStack current = getItem();
+            if (!current.isEmpty() && !stack.isEmpty()) {
+                handleStopPlayback();
+            }
+        }
+        super.set(stack);
     }
 
     @Override
@@ -74,6 +90,9 @@ public class JukeboxDiscSlot extends SlotItemHandler {
                 JukeboxHandler.stopPlayer((ServerPlayer) player);
             } else if (backpackType == BackpackMenu.BackpackType.BLOCK && blockPos != null) {
                 JukeboxHandler.stopBlock(player.level(), blockPos);
+            } else if (backpackType == BackpackMenu.BackpackType.CONTRAPTION
+                    && contraptionId >= 0 && player instanceof ServerPlayer sp) {
+                JukeboxHandler.stopEntity(sp, contraptionId);
             }
             updateContainerData.run();
         } else {

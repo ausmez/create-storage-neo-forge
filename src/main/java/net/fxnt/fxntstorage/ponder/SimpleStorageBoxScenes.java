@@ -1,5 +1,7 @@
 package net.fxnt.fxntstorage.ponder;
 
+import com.simibubi.create.AllBlocks;
+import com.simibubi.create.content.logistics.funnel.FunnelBlockEntity;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.api.element.ElementLink;
@@ -17,6 +19,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
@@ -24,7 +27,7 @@ import net.neoforged.fml.ModList;
 import java.util.Arrays;
 import java.util.List;
 
-import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBox.STORAGE_USED;
+import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBox.*;
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.CAPACITY_UPGRADE_SLOT_START;
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.SLOT_COUNT;
 
@@ -142,18 +145,24 @@ public class SimpleStorageBoxScenes {
         scene.world().showSection(util.select().column(2, 2), Direction.DOWN);
         scene.idle(10);
 
-        scene.overlay().showText(50).text("The front panel displays the item count and percentage used").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
+        scene.overlay().showText(50)
+                .text("The front panel displays the item count and percentage used")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.15, -0.05, 0));
         scene.idle(60);
 
-        scene.overlay().showControls(util.vector().blockSurface(sSBox, Direction.NORTH), Pointing.RIGHT, 80).rightClick().withItem(gold);
-        scene.overlay().showText(80).text("Items can be inserted directly by right-clicking the front panel...").placeNearTarget().pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.25, 0.25, 0));
+        scene.overlay().showText(80)
+                .text("Items can be inserted directly by right-clicking the front panel...")
+                .placeNearTarget()
+                .pointAt(util.vector().blockSurface(sSBox, Direction.NORTH).add(-0.25, 0.25, 0));
         scene.idle(10);
+        scene.overlay().showControls(util.vector().blockSurface(sSBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(gold);
         scene.world().modifyBlockEntity(sSBox, SimpleStorageBoxEntity.class, (t) -> {
             t.setFilter(gold);
             t.getItemHandler().setStackInSlot(0, gold.copyWithCount(64));
         });
-        scene.world().modifyBlock(sSBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.getDefaultState()
-                .setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
+        scene.world().modifyBlock(sSBox, s -> s.setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
         scene.idle(80);
 
         scene.world().showSection(belt, Direction.EAST);
@@ -212,7 +221,7 @@ public class SimpleStorageBoxScenes {
 
     public static void upgrades(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("simple_storage_upgrades", "Simple Storage Box Upgrades");
+        scene.title("simple_storage_upgrades", "Void & Capacity Upgrades");
         scene.configureBasePlate(0, 0, 5);
         scene.showBasePlate();
         scene.idle(5);
@@ -227,18 +236,27 @@ public class SimpleStorageBoxScenes {
         scene.world().showSection(util.select().layers(1, 2), Direction.DOWN);
         scene.idle(10);
 
-        scene.overlay().showText(70).text("Void and Capacity Upgrades are available for Simple Storage Boxes").attachKeyFrame().placeNearTarget();
+        scene.overlay().showText(70)
+                .text("Void and Capacity Upgrades are available for Simple Storage Boxes").
+                attachKeyFrame()
+                .placeNearTarget();
         scene.idle(80);
-        scene.overlay().showText(70).text("Upgrades are applied by using the item on the front panel...").placeNearTarget();
+        scene.overlay().showText(70)
+                .text("Upgrades are applied by using the item on the front panel...")
+                .placeNearTarget();
         scene.idle(80);
-        scene.overlay().showText(105).text("...or adding via the interface accessed by right-clicking while sneaking").placeNearTarget();
+        scene.overlay().showText(105)
+                .text("...or adding via the interface accessed by right-clicking while sneaking")
+                .placeNearTarget();
         scene.idle(115);
 
         scene.overlay().showControls(util.vector().blockSurface(leftBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(vUpgrade);
-        scene.overlay().showText(65).text("Void Upgrade will void (delete) any item added beyond the max capacity").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(leftBox, Direction.WEST));
+        scene.overlay().showText(65)
+                .text("Void Upgrade will void (delete) any item added beyond the max capacity")
+                .attachKeyFrame()
+                .placeNearTarget().pointAt(util.vector().blockSurface(leftBox, Direction.WEST));
         scene.idle(40);
-        scene.world().modifyBlock(leftBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.get().defaultBlockState()
-                .setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
+        scene.world().modifyBlock(leftBox, s -> s.setValue(VOID_UPGRADE, true), false);
         scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, (t) -> {
             t.getItemHandler().setStackInSlot(3, vUpgrade);
             t.voidUpgrade = true;
@@ -248,10 +266,11 @@ public class SimpleStorageBoxScenes {
         scene.idle(50);
 
         scene.overlay().showControls(util.vector().blockSurface(rightBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(cUpgrade);
-        scene.overlay().showText(65).text("Capacity Upgrade will double the storage for each upgrade").placeNearTarget().pointAt(util.vector().blockSurface(rightBox, Direction.WEST));
+        scene.overlay().showText(65)
+                .text("Capacity Upgrade will double the storage for each upgrade")
+                .placeNearTarget().pointAt(util.vector().blockSurface(rightBox, Direction.WEST));
         scene.idle(40);
-        scene.world().modifyBlock(rightBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.get().defaultBlockState()
-                .setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
+        scene.world().modifyBlock(rightBox, s -> s.setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(rightBox, SimpleStorageBoxEntity.class, (t) -> {
             for (int i = CAPACITY_UPGRADE_SLOT_START; i < SLOT_COUNT; i++) {
                 t.getItemHandler().setStackInSlot(i, cUpgrade);
@@ -262,6 +281,159 @@ public class SimpleStorageBoxScenes {
         scene.idle(50);
 
         scene.overlay().showText(70).text("A total of 9 Capacity Upgrades and 1 Void Upgrade can be added").placeNearTarget();
+
+        scene.markAsFinished();
+    }
+
+    public static void compacting(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+        scene.title("simple_storage_compacting", "Compacting Upgrade");
+        scene.configureBasePlate(0, 0, 5);
+        scene.showBasePlate();
+        scene.idle(5);
+
+        BlockPos box = util.grid().at(2, 2, 2);
+        ItemStack nugget = new ItemStack(Items.IRON_NUGGET);
+        ItemStack ingot = new ItemStack(Items.IRON_INGOT);
+        ItemStack block = new ItemStack(Blocks.IRON_BLOCK);
+        ItemStack upgrade = ModItems.STORAGE_BOX_COMPACTING_UPGRADE.asStack();
+
+        scene.world().modifyBlock(box, s -> s.setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
+        scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, t -> {
+            t.setFilter(nugget);
+            t.getItemHandler().setStackInSlot(0, nugget.copyWithCount(2048));
+        });
+
+        scene.world().showSection(util.select().column(2, 2), Direction.DOWN);
+        scene.idle(10);
+
+        scene.overlay().showText(70)
+                .text("Compacting Upgrade converts stored items into crafting tiers")
+                .attachKeyFrame()
+                .placeNearTarget();
+        scene.idle(80);
+        scene.overlay().showText(70)
+                .text("Upgrade is applied by using the item on the front panel...")
+                .placeNearTarget();
+        scene.idle(80);
+
+        scene.overlay().showControls(util.vector().blockSurface(box, Direction.NORTH), Pointing.RIGHT, 10).rightClick().withItem(upgrade);
+        scene.idle(10);
+        scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, t -> {
+            t.getItemHandler().setStackInSlot(3, upgrade);
+            t.compactingUpgrade = true;
+            t.onCompactingUpgradeInstalled();
+        });
+
+        scene.overlay().showText(70)
+                .text("...or adding via the interface accessed by right-clicking while sneaking")
+                .placeNearTarget();
+        scene.idle(80);
+
+        scene.overlay().showText(70)
+                .text("When a valid compacting chain exists, items are available at every tier")
+                .placeNearTarget();
+        scene.idle(80);
+
+        scene.overlay().showText(50)
+                .text("Hold CTRL + scroll while looking at the front display...")
+                .pointAt(util.vector().blockSurface(box, Direction.NORTH).add(-0.25, 0, 0))
+                .attachKeyFrame()
+                .placeNearTarget();
+        scene.idle(40);
+        scene.overlay().showControls(util.vector().blockSurface(box, Direction.NORTH), Pointing.RIGHT, 15).scroll().whileCTRL();
+        scene.idle(30);
+        scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, b -> b.compactingSelectedTier = 1);
+        scene.overlay().showText(65)
+                .text("...to choose which compacting tier is displayed")
+                .pointAt(util.vector().blockSurface(box, Direction.NORTH).add(-0.5, 0, 0))
+                .placeNearTarget();
+        scene.idle(40);
+        scene.overlay().showControls(util.vector().blockSurface(box, Direction.NORTH), Pointing.RIGHT, 15).scroll().whileCTRL();
+        scene.idle(30);
+        scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, b -> b.compactingSelectedTier = 2);
+        scene.idle(60);
+
+        scene.overlay().showText(65)
+                .text("The item displayed is the item available to players for extraction")
+                .placeNearTarget();
+        scene.idle(40);
+
+        scene.overlay().showControls(util.vector().blockSurface(box, Direction.NORTH), Pointing.RIGHT, 20).leftClick();
+        scene.world().modifyBlock(box, s -> s.setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
+        ElementLink<EntityElement> itemEntity = scene.world().createItemEntity(util.vector().centerOf(2, 2, 1), new Vec3(0, 0, 0), nugget.copyWithCount(64));
+        scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, t ->
+                t.getItemHandler().setStackInSlot(0, nugget.copyWithCount(t.getItemHandler().getStackInSlot(0).getCount() - 64))
+        );
+        scene.idle(60);
+
+        scene.overlay().showText(60)
+                .text("The Compacting Wheel keybind can also be used to quickly select a tier")
+                .placeNearTarget();
+        scene.idle(70);
+
+        scene.world().modifyEntity(itemEntity, Entity::discard);
+
+        Selection belt = util.select().fromTo(1, 1, 2, 0, 1, 2);
+        Selection shaft = util.select().fromTo(0, 1, 3, 0, 1, 5);
+        BlockPos funnel = util.grid().at(1, 2, 2);
+        BlockPos largeCog = util.grid().at(1, 0, 5);
+
+        scene.world().showSection(belt, Direction.EAST);
+        scene.world().showSection(util.select().position(funnel), Direction.EAST);
+        scene.world().showSection(shaft, Direction.NORTH);
+        scene.world().showSection(util.select().position(largeCog), Direction.UP);
+
+        scene.idle(10);
+
+        scene.overlay().showText(60)
+                .text("Automated extraction will always prefer the highest available tier")
+                .attachKeyFrame()
+                .placeNearTarget();
+        scene.idle(70);
+
+        scene.world().setKineticSpeed(util.select().position(largeCog), -16);
+        scene.world().setKineticSpeed(shaft, 32);
+        scene.world().setKineticSpeed(belt, 32);
+
+        for (int i = 0; i < 4; i++) {
+            scene.world().createItemOnBelt(util.grid().at(1, 1, 2), Direction.EAST, block);
+            scene.world().flapFunnel(funnel, true);
+            scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, e -> {
+                ItemStack slot0 = e.getItemHandler().getStackInSlot(0);
+                e.getItemHandler().setStackInSlot(0, slot0.copyWithCount(Math.max(0, slot0.getCount() - 81)));
+            });
+            scene.idle(16);
+        }
+        scene.world().hideSection(util.select().position(funnel), Direction.UP);
+        scene.idle(40);
+
+        scene.world().setBlock(funnel, AllBlocks.BRASS_BELT_FUNNEL.getDefaultState()
+                .setValue(FACING, Direction.WEST), false);
+
+        scene.world().showSection(util.select().position(funnel), Direction.DOWN);
+        scene.idle(30);
+
+        scene.overlay().showText(60)
+                .text("Use filters when automation requires a specific tier for extraction")
+                .pointAt(util.vector().blockSurface(funnel, Direction.WEST).add(0.6, 0.3, 0.3))
+                .attachKeyFrame()
+                .placeNearTarget();
+        scene.overlay().showFilterSlotInput(util.vector().blockSurface(funnel, Direction.WEST).add(0.6, 0.3, 0), 30);
+        scene.idle(40);
+        scene.world().setFilterData(util.select().position(funnel), FunnelBlockEntity.class, ingot);
+        scene.idle(40);
+
+        for (int i = 0; i < 4; i++) {
+            scene.world().createItemOnBelt(util.grid().at(1, 1, 2), Direction.EAST, ingot.copyWithCount(64));
+            scene.world().flapFunnel(funnel, true);
+            scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, e -> {
+                ItemStack slot0 = e.getItemHandler().getStackInSlot(0);
+                e.getItemHandler().setStackInSlot(0, slot0.copyWithCount(Math.max(0, slot0.getCount() - 384)));
+            });
+            scene.idle(16);
+        }
+        scene.idle(40);
 
         scene.markAsFinished();
     }

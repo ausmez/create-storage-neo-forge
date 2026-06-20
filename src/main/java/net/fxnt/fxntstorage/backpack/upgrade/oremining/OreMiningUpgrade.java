@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.backpack.upgrade.oremining;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.client.menu.button.ItemSpriteButton;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
@@ -213,7 +212,6 @@ public class OreMiningUpgrade extends AbstractUpgrade {
                 .toList();
     }
 
-
     public static class OreMiningPanel implements UpgradePanel {
         private final List<ItemSpriteButton<OreMiningState>> stateButtons = new ArrayList<>();
 
@@ -270,7 +268,7 @@ public class OreMiningUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new ItemSpriteButton<>(
-                            panelX + 4, panelY + 32, 18, 18,
+                            panelX + 3, panelY + 31, 18, 18,
                             initialState,
                             state -> state.oresOnly()
                                     ? modLoc("check")
@@ -287,7 +285,7 @@ public class OreMiningUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new ItemSpriteButton<>(
-                            panelX + 26, panelY + 32, 18, 18,
+                            panelX + 22, panelY + 31, 18, 18,
                             initialState,
                             state -> state.oresPreview()
                                     ? modLoc("check")
@@ -312,15 +310,6 @@ public class OreMiningUpgrade extends AbstractUpgrade {
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            graphics.blit(
-                    PANEL_TEXTURE,
-                    panelX - 3, panelY + 8,
-                    0, 0,
-                    PANEL_EXPANDED_WIDTH,
-                    PANEL_EXPANDED_HEIGHT,
-                    128, 128
-            );
         }
 
         @Override

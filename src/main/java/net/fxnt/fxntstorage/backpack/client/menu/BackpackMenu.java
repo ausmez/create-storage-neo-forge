@@ -3,17 +3,21 @@ package net.fxnt.fxntstorage.backpack.client.menu;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.AllTags;
+import com.simibubi.create.api.contraption.storage.item.MountedItemStorage;
+import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.backpack.BackpackEntity;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
-import net.fxnt.fxntstorage.backpack.client.menu.slot.BackpackSlot;
-import net.fxnt.fxntstorage.backpack.client.menu.slot.ToolSlot;
-import net.fxnt.fxntstorage.backpack.client.menu.slot.UpgradeSlot;
+import net.fxnt.fxntstorage.backpack.client.menu.slot.*;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.mounted.BackpackMountedStorage;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
+import net.fxnt.fxntstorage.backpack.upgrade.crafting.BackpackCraftingContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopUpgrade;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
@@ -34,10 +38,16 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -59,13 +69,22 @@ public class BackpackMenu extends AbstractContainerMenu {
     private boolean ctrlKeyDown = false;
     @Nullable
     protected BlockPos blockPos;
+    protected int contraptionId = -1;
 
     private Runnable upgradeSlotListener = null;
     private final BackpackType type;
 
-    public enum BackpackType {ITEM, WORN, BLOCK}
+    @Nullable
+    private BackpackCraftingContainer craftingContainer;
+    @Nullable
+    private ResultContainer craftingResultContainer;
+    @Nullable
+    private Slot craftingResultSlot;
 
-    private record MenuContext(IBackpackContainer container, BackpackType type, @Nullable BlockPos pos) {
+    public enum BackpackType {ITEM, WORN, BLOCK, CONTRAPTION}
+
+    private record MenuContext(IBackpackContainer container, BackpackType type, @Nullable BlockPos pos,
+                               int contraptionId) {
     }
 
     public BackpackMenu(int containerId, Inventory inv, FriendlyByteBuf buf) {
@@ -74,6 +93,7 @@ public class BackpackMenu extends AbstractContainerMenu {
 
     private BackpackMenu(MenuType<?> menuType, int containerId, Inventory inv, MenuContext ctx) {
         this(menuType, containerId, inv, ctx.container(), ctx.type(), ctx.pos());
+        this.contraptionId = ctx.contraptionId();
     }
 
     private static MenuContext context(Inventory inv, FriendlyByteBuf buf) {
@@ -84,18 +104,32 @@ public class BackpackMenu extends AbstractContainerMenu {
                 BackpackContainer container = new BackpackContainer(
                         inv.player, inv.player.getItemInHand(InteractionHand.MAIN_HAND)
                 );
-                yield new MenuContext(container, type, null);
+                yield new MenuContext(container, type, null, -1);
             }
             case WORN -> {
                 BackpackContainer container = BackpackContainer.Cache.getOrCreateWornBackpack(
                         inv.player, BackpackHelper.getEquippedBackpackStack(inv.player)
                 );
-                yield new MenuContext(container, type, null);
+                yield new MenuContext(container, type, null, -1);
             }
             case BLOCK -> {
                 BlockPos pos = buf.readBlockPos();
                 BackpackEntity be = (BackpackEntity) inv.player.level().getBlockEntity(pos);
-                yield new MenuContext(be, type, pos);
+                yield new MenuContext(be, type, pos, -1);
+            }
+            case CONTRAPTION -> {
+                int contraptionId = buf.readInt();
+                BlockPos localPos = buf.readBlockPos();
+                int stackMultiplier = buf.readInt();
+                BackpackMountedStorage storage = null;
+                Entity entity = inv.player.level().getEntity(contraptionId);
+                if (entity instanceof AbstractContraptionEntity contraptionEntity) {
+                    MountedItemStorage s = contraptionEntity.getContraption().getStorage()
+                            .getAllItemStorages().get(localPos);
+                    if (s instanceof BackpackMountedStorage bms) storage = bms;
+                }
+                if (storage == null) storage = BackpackMountedStorage.createEmpty(stackMultiplier);
+                yield new MenuContext(storage, type, null, contraptionId);
             }
         };
     }
@@ -126,6 +160,7 @@ public class BackpackMenu extends AbstractContainerMenu {
                     return switch (type) {
                         case WORN -> JukeboxHandler.isPlayerPlaying((ServerPlayer) player);
                         case BLOCK -> blockPos != null && JukeboxHandler.isBlockPlaying(player.level(), blockPos);
+                        case CONTRAPTION -> contraptionId >= 0 && JukeboxHandler.isEntityPlaying(contraptionId);
                         default -> false;
                     };
                 })
@@ -134,6 +169,7 @@ public class BackpackMenu extends AbstractContainerMenu {
                     return switch (type) {
                         case WORN -> JukeboxHandler.isPlayerMuted((ServerPlayer) player);
                         case BLOCK -> blockPos != null && JukeboxHandler.isBlockMuted(player.level(), blockPos);
+                        case CONTRAPTION -> contraptionId >= 0 && JukeboxHandler.isEntityMuted(contraptionId);
                         default -> false;
                     };
                 })
@@ -153,9 +189,9 @@ public class BackpackMenu extends AbstractContainerMenu {
                         () -> container.getUpgradeSetting(UpgradeDataSync.Field.TOOLSWAP_PREFER_SILKTOUCH),
                         (idx, val) -> container.setUpgradeSetting(UpgradeDataSync.Field.TOOLSWAP_PREFER_SILKTOUCH, val))
                 .withInteger(UpgradeDataSync.Field.EXPANDED_PANELS,
-                        container::getExpandedPanelsBitmask,
+                        () -> UpgradeType.toPanelSyncValue(container.getExpandedPanel()),
                         (idx, val) -> {
-                            container.setExpandedPanelsBitmask(val);
+                            container.setExpandedPanel(UpgradeType.fromPanelSyncValue(val));
                             onUpgradeSlotChanged();
                         })
                 .build();
@@ -163,6 +199,7 @@ public class BackpackMenu extends AbstractContainerMenu {
 
         initSlots();
         updateBackpackDataFromContainer();
+        recomputeCraftingResult();
     }
 
     @Override
@@ -191,6 +228,12 @@ public class BackpackMenu extends AbstractContainerMenu {
             );
             if (upgrade.clicked(ctx))
                 return;
+        }
+
+        if (pClickType == ClickType.PICKUP && craftingResultSlot != null
+                && pSlotId == craftingResultSlot.index) {
+            craftResultToCarried(pPlayer);
+            return;
         }
 
         // Handle SWAP click type (F key for offhand, number keys for hotbar)
@@ -294,10 +337,8 @@ public class BackpackMenu extends AbstractContainerMenu {
                 ItemStack carried = this.getCarried();
 
                 if (slotItem.isEmpty()) {
-                    // Placing carried into empty slot
                     if (!carried.isEmpty() && slot.mayPlace(carried)) {
-                        slot.setByPlayer(carried);
-                        setCarried(ItemStack.EMPTY);
+                        setCarried(slot.safeInsert(carried));
                     }
                 } else if (slot.mayPickup(player)) {
                     if (carried.isEmpty()) {
@@ -577,6 +618,11 @@ public class BackpackMenu extends AbstractContainerMenu {
                             && Container.stillValidBlockEntity(be, player, 0);
                 }
             }
+            case CONTRAPTION -> {
+                Entity entity = player.level().getEntity(contraptionId);
+                if (!(entity instanceof AbstractContraptionEntity cce)) return false;
+                return !cce.isRemoved() && player.distanceToSqr(cce) < 8 * 8;
+            }
         }
         return false;
     }
@@ -605,6 +651,8 @@ public class BackpackMenu extends AbstractContainerMenu {
         ItemStack itemStack = slot.getItem();
 
         if (!(itemStack.getItem() instanceof UpgradeItem)) return;
+        if (itemStack.getItem().equals(ModItems.BACKPACK_CRAFTING_UPGRADE.get())) return;
+        if (itemStack.getItem().equals(ModItems.BACKPACK_WORKSHOP_UPGRADE.get())) return;
 
         UpgradeType toggledType = UpgradeType.fromItem(itemStack.getItem());
         boolean wasActive = toggledType != null
@@ -634,8 +682,21 @@ public class BackpackMenu extends AbstractContainerMenu {
         upgradeSync.updateFromSuppliers();
     }
 
+    @Override
+    public void broadcastChanges() {
+        if (!player.level().isClientSide) {
+            upgradeSync.setLocalIntValue(UpgradeDataSync.Field.WORKSHOP_PROCESSING,
+                    WorkshopUpgrade.getSyncValue(container));
+        }
+        super.broadcastChanges();
+    }
+
     public boolean isUpgradeSettingEnabled(UpgradeDataSync.Field setting) {
         return upgradeSync.getBoolean(setting);
+    }
+
+    public int getUpgradeSyncValue(UpgradeDataSync.Field setting) {
+        return upgradeSync.getInteger(setting);
     }
 
     public void initSlots() {
@@ -709,7 +770,7 @@ public class BackpackMenu extends AbstractContainerMenu {
                 container.clearPanelExpanded(removedType);
                 if (player.level().isClientSide) {
                     upgradeSync.setLocalIntValue(UpgradeDataSync.Field.EXPANDED_PANELS,
-                            container.getExpandedPanelsBitmask());
+                            UpgradeType.toPanelSyncValue(container.getExpandedPanel()));
                 }
             }
         }
@@ -736,6 +797,104 @@ public class BackpackMenu extends AbstractContainerMenu {
 
     public boolean moveStackToPlayerInventory(ItemStack stack) {
         return moveItemStack(stack, layout.getTotalSlots(), layout.getTotalSlots() + 36, true);
+    }
+
+    public boolean moveStackToStorageThenPlayer(ItemStack stack) {
+        boolean moved = moveItemStack(stack, layout.items().getStartIndex(), layout.items().getEndIndex(), false);
+        if (!stack.isEmpty()) {
+            moved |= moveStackToPlayerInventory(stack);
+        }
+        return moved;
+    }
+
+    // ======= CRAFTING UPGRADE =======
+    public void registerCraftingComponents(BackpackCraftingContainer craftingContainer,
+                                           ResultContainer resultContainer, Slot resultSlot) {
+        this.craftingContainer = craftingContainer;
+        this.craftingResultContainer = resultContainer;
+        this.craftingResultSlot = resultSlot;
+    }
+
+    @Nullable
+    public BackpackCraftingContainer getCraftingContainer() {
+        return craftingContainer;
+    }
+
+    @Nullable
+    public Slot getCraftingResultSlot() {
+        return craftingResultSlot;
+    }
+
+    public List<Slot> getCraftingMatrixSlots() {
+        List<Slot> matrix = new ArrayList<>(BackpackCraftingContainer.WIDTH * BackpackCraftingContainer.HEIGHT);
+        for (Slot slot : this.slots) {
+            if (slot instanceof CraftingGridSlot) matrix.add(slot);
+        }
+        matrix.sort(Comparator.comparingInt(Slot::getContainerSlot));
+        return matrix;
+    }
+
+    public boolean isCraftingPanelReady() {
+        return hasActiveUpgrade(UpgradeType.CRAFTING) && isPanelExpanded(UpgradeType.CRAFTING);
+    }
+
+    private void craftResultToCarried(Player player) {
+        Slot slot = craftingResultSlot;
+        if (slot == null || !slot.mayPickup(player)) return;
+
+        ItemStack result = slot.getItem();
+        if (result.isEmpty()) return;
+
+        ItemStack carried = getCarried();
+        if (!carried.isEmpty()) {
+            if (!ItemStack.isSameItemSameComponents(carried, result)) return;
+            if (carried.getCount() + result.getCount() > carried.getMaxStackSize()) return;
+        }
+
+        ItemStack crafted = result.copy();
+        if (slot instanceof CraftingResultSlot crs) {
+            crs.accountQuickCraft(crafted, crafted.getCount());
+        }
+        slot.onTake(player, crafted); // consumes ingredients and recomputes the result
+
+        if (carried.isEmpty()) {
+            setCarried(crafted);
+        } else {
+            carried.grow(crafted.getCount());
+            setCarried(carried);
+        }
+    }
+
+    public void onCraftingGridChanged() {
+        container.setDataChanged();
+        recomputeCraftingResult();
+    }
+
+    public void recomputeCraftingResult() {
+        if (craftingContainer == null || craftingResultContainer == null || craftingResultSlot == null) return;
+        Level level = player.level();
+        if (level.isClientSide || !(player instanceof ServerPlayer serverPlayer)) return;
+        if (level.getServer() == null) return;
+
+        CraftingInput input = craftingContainer.asCraftInput();
+        ItemStack result = ItemStack.EMPTY;
+        Optional<RecipeHolder<CraftingRecipe>> optional = level.getServer()
+                .getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, level);
+        if (optional.isPresent()) {
+            RecipeHolder<CraftingRecipe> holder = optional.get();
+            if (craftingResultContainer.setRecipeUsed(level, serverPlayer, holder)) {
+                ItemStack assembled = holder.value().assemble(input, level.registryAccess());
+                if (assembled.isItemEnabled(level.enabledFeatures())) {
+                    result = assembled;
+                }
+            }
+        }
+
+        int resultSlotIndex = craftingResultSlot.index;
+        craftingResultContainer.setItem(0, result);
+        setRemoteSlot(resultSlotIndex, result);
+        serverPlayer.connection.send(new ClientboundContainerSetSlotPacket(
+                containerId, incrementStateId(), resultSlotIndex, result));
     }
 
     public SortOrder getSortOrder() {
@@ -790,8 +949,8 @@ public class BackpackMenu extends AbstractContainerMenu {
         container.togglePanelExpanded(upgradeType);
         if (player.level().isClientSide) {
             upgradeSync.setLocalIntValue(UpgradeDataSync.Field.EXPANDED_PANELS,
-                    container.getExpandedPanelsBitmask());
-            if (type == BackpackType.BLOCK) {
+                    UpgradeType.toPanelSyncValue(container.getExpandedPanel()));
+            if (type == BackpackType.BLOCK || type == BackpackType.CONTRAPTION) {
                 PacketDistributor.sendToServer(new SetActivePanelPacket(upgradeType));
             }
         }
@@ -960,5 +1119,13 @@ public class BackpackMenu extends AbstractContainerMenu {
 
     public void setStateId(int stateId) {
         this.stateId = stateId;
+    }
+
+    public int getContraptionId() {
+        return contraptionId;
+    }
+
+    public void setContraptionId(int id) {
+        this.contraptionId = id;
     }
 }

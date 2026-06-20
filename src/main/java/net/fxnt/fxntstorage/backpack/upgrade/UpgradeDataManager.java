@@ -4,36 +4,40 @@ import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class UpgradeDataManager {
-    private int expandedPanels = 0;
+    // The single upgrade whose panel is currently expanded, or null when none is open
+    @Nullable
+    private UpgradeType expandedPanel = null;
     private final Map<String, Boolean> booleanSettings = new HashMap<>();
 
     public UpgradeDataManager() {
     }
 
     public boolean isPanelExpanded(UpgradeType type) {
-        return type.isPanelExpandedInMask(expandedPanels);
+        return expandedPanel == type;
     }
 
     public void togglePanel(UpgradeType type) {
-        expandedPanels = type.toggleInMask(expandedPanels);
+        expandedPanel = (expandedPanel == type) ? null : type;
     }
 
     public void clearPanel(UpgradeType type) {
-        expandedPanels = type.clearInMask(expandedPanels);
+        if (expandedPanel == type) expandedPanel = null;
     }
 
-    public int getExpandedPanelsBitmask() {
-        return expandedPanels;
+    @Nullable
+    public UpgradeType getExpandedPanel() {
+        return expandedPanel;
     }
 
-    public void setExpandedPanelsBitmask(int mask) {
-        this.expandedPanels = mask;
+    public void setExpandedPanel(@Nullable UpgradeType type) {
+        this.expandedPanel = type;
     }
 
     public boolean getSetting(UpgradeDataSync.Field field, boolean defaultValue) {
@@ -58,13 +62,13 @@ public class UpgradeDataManager {
     }
 
     public void clear() {
-        expandedPanels = 0;
+        expandedPanel = null;
         booleanSettings.clear();
     }
 
     // Copy from another manager
     public void copyFrom(UpgradeDataManager other) {
-        this.expandedPanels = other.expandedPanels;
+        this.expandedPanel = other.expandedPanel;
         this.booleanSettings.clear();
         this.booleanSettings.putAll(other.booleanSettings);
     }
@@ -72,8 +76,8 @@ public class UpgradeDataManager {
     public static UpgradeDataManager loadFromItem(ItemStack stack) {
         UpgradeDataManager manager = new UpgradeDataManager();
 
-        int rawPanel = stack.getOrDefault(ModDataComponents.BACKPACK_ACTIVE_PANELS, 0);
-        manager.expandedPanels = Math.max(0, rawPanel);
+        manager.expandedPanel = UpgradeType.fromBaseName(
+                stack.getOrDefault(ModDataComponents.BACKPACK_ACTIVE_PANELS, ""));
 
         for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
             DataComponentType<Boolean> component = ModDataComponents.getComponentForField(field);
@@ -87,7 +91,11 @@ public class UpgradeDataManager {
     }
 
     public void saveToItem(ItemStack stack) {
-        stack.set(ModDataComponents.BACKPACK_ACTIVE_PANELS, expandedPanels);
+        if (expandedPanel != null) {
+            stack.set(ModDataComponents.BACKPACK_ACTIVE_PANELS, expandedPanel.getId());
+        } else {
+            stack.remove(ModDataComponents.BACKPACK_ACTIVE_PANELS);
+        }
 
         for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
             DataComponentType<Boolean> component = ModDataComponents.getComponentForField(field);
@@ -104,8 +112,8 @@ public class UpgradeDataManager {
     public static UpgradeDataManager loadFromNBT(CompoundTag tag) {
         UpgradeDataManager manager = new UpgradeDataManager();
 
-        if (tag.contains("ExpandedPanels")) {
-            manager.expandedPanels = tag.getInt("ExpandedPanels");
+        if (tag.contains("ExpandedPanel")) {
+            manager.expandedPanel = UpgradeType.fromBaseName(tag.getString("ExpandedPanel"));
         }
 
         if (tag.contains("UpgradeSettings")) {
@@ -119,7 +127,9 @@ public class UpgradeDataManager {
     }
 
     public void saveToNBT(CompoundTag tag, Set<UpgradeType> installedTypes) {
-        tag.putInt("ExpandedPanels", expandedPanels);
+        if (expandedPanel != null) {
+            tag.putString("ExpandedPanel", expandedPanel.getId());
+        }
 
         CompoundTag settingsTag = new CompoundTag();
         for (UpgradeType type : installedTypes) {

@@ -1,5 +1,6 @@
 {
   "values": [
+    "fxntstorage:reserve_storage_box",
     "fxntstorage:cardboard_storage_box",
     "fxntstorage:storage_box",
     "fxntstorage:weathered_storage_box",

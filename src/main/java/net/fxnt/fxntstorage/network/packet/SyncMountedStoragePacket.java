@@ -4,6 +4,7 @@ import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.container.StorageBox;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedMenu;
 import net.minecraft.core.BlockPos;
@@ -47,24 +48,42 @@ public record SyncMountedStoragePacket(int contraptionId, BlockPos localPos, Enu
                 if (entity instanceof AbstractContraptionEntity contraptionEntity) {
                     StructureTemplate.StructureBlockInfo blockInfo = contraptionEntity.getContraption().getBlocks().get(localPos());
                     CompoundTag newNbt = blockInfo.nbt();
+                    if (newNbt == null) return;
+
                     CompoundTag nbt = nbt();
                     BlockState oldState = blockInfo.state();
                     BlockState newState;
 
-                    newNbt.putInt("StoredAmount", nbt.getInt("StoredAmount"));
-                    newNbt.putBoolean("VoidUpgrade", nbt.getBoolean("VoidUpgrade"));
-                    newNbt.putInt("MaxItemCapacity", nbt.getInt("MaxItemCapacity"));
-
-                    if (oldState.getBlock() instanceof SimpleStorageBox) { // SimpleStorageBox
-                        if (nbt.contains("FilterItem", CompoundTag.TAG_COMPOUND)) {
-                            newNbt.put("FilterItem", nbt.getCompound("FilterItem"));
-                        }
-                        newState = oldState.setValue(SimpleStorageBox.STORAGE_USED, fillLevel());
-                    } else { // StorageBox
+                    if (oldState.getBlock() instanceof ReserveStorageBox) {
+                        newNbt.putFloat("ReservePercent", nbt.getFloat("ReservePercent"));
+                        newNbt.putString("ReserveSlotStatus", nbt.getString("ReserveSlotStatus"));
+                        newNbt.putInt("StoredAmount", nbt.getInt("StoredAmount"));
                         newNbt.putFloat("PercentageUsed", nbt.getFloat("PercentageUsed"));
                         newState = oldState
-                                .setValue(StorageBox.STORAGE_USED, fillLevel())
-                                .setValue(StorageBox.VOID_UPGRADE, nbt.getBoolean("VoidUpgrade"));
+                                .setValue(ReserveStorageBox.STORAGE_USED, fillLevel());
+                    } else {
+                        newNbt.putInt("StoredAmount", nbt.getInt("StoredAmount"));
+                        newNbt.putBoolean("VoidUpgrade", nbt.getBoolean("VoidUpgrade"));
+                        newNbt.putInt("MaxItemCapacity", nbt.getInt("MaxItemCapacity"));
+
+                        if (oldState.getBlock() instanceof SimpleStorageBox) {
+                            if (nbt.contains("FilterItem", CompoundTag.TAG_COMPOUND)) {
+                                newNbt.put("FilterItem", nbt.getCompound("FilterItem"));
+                            }
+                            newNbt.putBoolean("CompactingUpgrade", nbt.getBoolean("CompactingUpgrade"));
+                            newNbt.putInt("CompactingSelectedTier", nbt.getInt("CompactingSelectedTier"));
+                            boolean compacting = nbt.getBoolean("CompactingUpgrade");
+                            boolean voidUpg = nbt.getBoolean("VoidUpgrade");
+                            newState = oldState
+                                    .setValue(SimpleStorageBox.STORAGE_USED, fillLevel())
+                                    .setValue(SimpleStorageBox.COMPACTING, compacting)
+                                    .setValue(SimpleStorageBox.VOID_UPGRADE, voidUpg);
+                        } else { // StorageBox
+                            newNbt.putFloat("PercentageUsed", nbt.getFloat("PercentageUsed"));
+                            newState = oldState
+                                    .setValue(StorageBox.STORAGE_USED, fillLevel())
+                                    .setValue(StorageBox.VOID_UPGRADE, nbt.getBoolean("VoidUpgrade"));
+                        }
                     }
 
                     // Update FilterItem icon if player has menu open

@@ -6,8 +6,10 @@ import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.contraptions.render.ContraptionMatrices;
 import net.createmod.catnip.gui.AbstractSimiScreen;
 import net.fxnt.fxntstorage.compat.sable.SableCompat;
+import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -41,6 +43,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         if (tag == null || state == null) return;
 
         boolean hasVoidUpgrade = tag.getBoolean("VoidUpgrade");
+        boolean hasCompUpgrade = tag.getBoolean("CompactingUpgrade");
 
         int amount = tag.getInt("StoredAmount");
         int totalSpace = tag.getInt("MaxItemCapacity");
@@ -78,17 +81,49 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         int color = getColorForDistance(distance);
 
         BlockPos lightPos = context.contraption.entity.blockPosition().offset(context.localPos).relative(side);
-        int lightLevel = LevelRenderer.getLightColor(context.world, lightPos);
+        int envLight = LevelRenderer.getLightColor(context.world, lightPos);
+        int textLight = emissiveLight(envLight);
+        int itemLight = emissiveItemLight(envLight);
 
-        renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
-        renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
-
+        ItemStack filterItem = ItemStack.EMPTY;
         if (tag.contains("FilterItem")) {
-            ItemStack filterItem = tag.getCompound("FilterItem").isEmpty()
+            filterItem = tag.getCompound("FilterItem").isEmpty()
                     ? ItemStack.EMPTY
                     : ItemStack.parseOptional(context.contraption.entity.level().registryAccess(), tag.getCompound("FilterItem"));
+        }
+
+        if (hasCompUpgrade) {
+            CompactingChain chain = null;
+            if (!filterItem.isEmpty()) {
+                if (CompactingRecipeHelper.isEmpty() && mc.level != null) {
+                    CompactingRecipeHelper.rebuild(mc.level.getRecipeManager(), mc.level.registryAccess());
+                }
+                chain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+            }
+            if (chain != null) {
+                int selected = Math.min(tag.getInt("CompactingSelectedTier"), chain.tiers() - 1);
+                String displayCount = getCountForSlot(chain, selected, amount);
+                renderLine(displayCount, -1f, poseStack, buffer, color, textLight);
+                renderLine(line2, -4f, poseStack, buffer, color, textLight);
+                renderPips(chain.tiers(), selected, poseStack, buffer, textLight - 32);
+                renderItem(itemRenderer, chain.itemForSlot(selected), poseStack, buffer, itemLight,
+                        ModItems.STORAGE_BOX_COMPACTING_UPGRADE.asStack());
+            } else {
+                renderLine(line1, -1f, poseStack, buffer, color, textLight);
+                renderLine(line2, -4f, poseStack, buffer, color, textLight);
+                if (!filterItem.isEmpty()) {
+                    renderItem(itemRenderer, filterItem, poseStack, buffer, itemLight,
+                            ModItems.STORAGE_BOX_COMPACTING_UPGRADE.asStack());
+                }
+            }
+        } else {
+            renderLine(line1, -1f, poseStack, buffer, color, textLight);
+            renderLine(line2, -4f, poseStack, buffer, color, textLight);
+
             if (!filterItem.isEmpty() || hasVoidUpgrade) {
-                renderItem(itemRenderer, filterItem, poseStack, buffer, lightLevel, hasVoidUpgrade);
+                ItemStack upgradeIcon = hasVoidUpgrade
+                        ? ModItems.STORAGE_BOX_VOID_UPGRADE.asStack() : ItemStack.EMPTY;
+                renderItem(itemRenderer, filterItem, poseStack, buffer, itemLight, upgradeIcon);
             }
         }
 
@@ -129,16 +164,77 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         poseStack.translate(0f, 0f, 0.5f - 0.95f / 16f);
 
         int color = getColorForDistance(distance);
-        int lightLevel = LevelRenderer.getLightColor(level, blockEntity.getBlockPos());
+        int envLight = LevelRenderer.getLightColor(level, blockEntity.getBlockPos());
+        int textLight = emissiveLight(envLight);
+        int itemLight = emissiveItemLight(envLight);
 
-        renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
-        renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
+        if (blockEntity.compactingUpgrade) {
+            ItemStack displayItem;
+            String displayCount;
 
-        ItemStack filterItem = blockEntity.getFilterItem();
-        if (!filterItem.isEmpty() || blockEntity.voidUpgrade) {
-            renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, lightLevel, blockEntity.voidUpgrade);
+            if (blockEntity.compactingChain != null) {
+                CompactingChain chain = blockEntity.compactingChain;
+                int selected = Math.min(blockEntity.compactingSelectedTier, chain.tiers() - 1);
+                displayItem = chain.itemForSlot(selected);
+                displayCount = getCountForSlot(chain, selected, amount);
+                renderPips(chain.tiers(), selected, poseStack, buffer, textLight-32);
+            } else {
+                displayItem = blockEntity.getFilterItem();
+                displayCount = line1;
+            }
+
+            renderLine(displayCount, -1.4f, poseStack, buffer, color, textLight);
+            renderLine(line2, -4.1f, poseStack, buffer, color, textLight);
+            renderItem(Minecraft.getInstance().getItemRenderer(), displayItem, poseStack, buffer, itemLight,
+                    ModItems.STORAGE_BOX_COMPACTING_UPGRADE.asStack());
+        } else {
+            renderLine(line1, -1.4f, poseStack, buffer, color, textLight);
+            renderLine(line2, -4.1f, poseStack, buffer, color, textLight);
+
+            ItemStack filterItem = blockEntity.getFilterItem();
+            if (!filterItem.isEmpty() || blockEntity.voidUpgrade || blockEntity.compactingUpgrade) {
+                ItemStack upgradeIcon = blockEntity.voidUpgrade
+                        ? ModItems.STORAGE_BOX_VOID_UPGRADE.asStack()
+                        : ItemStack.EMPTY;
+                renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, itemLight, upgradeIcon);
+            }
         }
 
         poseStack.popPose();
     }
+
+    private static void renderPips(int tiers, int selected, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        Font font = Minecraft.getInstance().font;
+        String pip = "■"; // ■ BLACK SQUARE
+        int pipPx = font.width(pip);
+        int gapPx = 3;
+        float totalPx = tiers * pipPx + (tiers - 1) * gapPx;
+
+        float scale = 0.55f / 64f;
+
+        poseStack.pushPose();
+        poseStack.translate(0f, 0.4f / 16f, 0f);
+        poseStack.scale(scale, -scale, 1f);
+
+        float x = -totalPx / 2f;
+        for (int i = 0; i < tiers; i++) {
+            int pipColor = i == selected ? 0xFFFFFF : 0x444444;
+            font.drawInBatch(pip, x, 0, pipColor, false,
+                    poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, packedLight);
+            x += pipPx + gapPx;
+        }
+        poseStack.popPose();
+    }
+
+    private static String getCountForSlot(CompactingChain chain, int slotIdx, int t0Stored) {
+        if (chain.tiers() == 2) {
+            return slotIdx == 0 ? Util.formatNumber(chain.t1Count(t0Stored)) : Util.formatNumber(t0Stored);
+        }
+        return switch (slotIdx) {
+            case 0 -> Util.formatNumber(chain.t2Count(t0Stored));
+            case 1 -> Util.formatNumber(chain.t1Count(t0Stored));
+            default -> Util.formatNumber(t0Stored);
+        };
+    }
+
 }

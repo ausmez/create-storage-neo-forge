@@ -36,11 +36,6 @@
       ]
     },
     "fixed": {
-      "rotation": [
-        0,
-        180,
-        0
-      ],
       "translation": [
         0,
         2.25,

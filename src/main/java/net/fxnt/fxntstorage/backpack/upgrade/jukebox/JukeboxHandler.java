@@ -16,6 +16,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JukeboxHandler {
     private static final Map<UUID, PlayerPlayback> playerSounds = new ConcurrentHashMap<>();
     private static final Map<BlockKey, BlockPlayback> blockSounds = new ConcurrentHashMap<>();
+    private static final Map<Integer, EntityPlayback> entitySounds = new ConcurrentHashMap<>();
+
+    public record EntityPlayback(int entityId, ResourceLocation song, boolean muted) {
+        public EntityPlayback toggleMuted() {
+            return new EntityPlayback(entityId, song, !muted);
+        }
+    }
 
     public record PlayerPlayback(UUID playerId, ResourceLocation song, boolean muted) {
         public PlayerPlayback toggleMuted() {
@@ -40,7 +47,7 @@ public class JukeboxHandler {
         JukeboxBuffHandler.applyMusicBuffsFromPlayer(player, song);
         PacketDistributor.sendToPlayer(player,
                 new JukeboxClientPacket(JukeboxClientPacket.Action.PLAY, JukeboxClientPacket.Source.PLAYER,
-                        Optional.empty(), Optional.of(playback.song()), playback.muted()));
+                        Optional.empty(), Optional.of(playback.song()), playback.muted(), Optional.empty()));
     }
 
     public static void stopPlayer(ServerPlayer player) {
@@ -50,7 +57,7 @@ public class JukeboxHandler {
             JukeboxBuffHandler.removePlayerBuff(player, removed.song);
             PacketDistributor.sendToPlayer(player,
                     new JukeboxClientPacket(JukeboxClientPacket.Action.STOP, JukeboxClientPacket.Source.PLAYER,
-                            Optional.empty(), Optional.empty(), false));
+                            Optional.empty(), Optional.empty(), false, Optional.empty()));
         }
     }
 
@@ -79,7 +86,7 @@ public class JukeboxHandler {
 
         JukeboxBuffHandler.applyMusicBuffsFromBlock(player, song);
         PacketDistributor.sendToPlayersNear(level, null, pos.getX(), pos.getY(), pos.getZ(), ConfigManager.ServerConfig.JUKEBOX_BUFFS_RANGE.get(),
-                new JukeboxClientPacket(JukeboxClientPacket.Action.PLAY, JukeboxClientPacket.Source.BLOCK, Optional.of(playback.pos()), Optional.of(playback.song()), false));
+                new JukeboxClientPacket(JukeboxClientPacket.Action.PLAY, JukeboxClientPacket.Source.BLOCK, Optional.of(playback.pos()), Optional.of(playback.song()), false, Optional.empty()));
     }
 
     public static void stopBlock(Level level, BlockPos pos) {
@@ -88,7 +95,7 @@ public class JukeboxHandler {
 
         if (removed != null) {
             PacketDistributor.sendToPlayersNear((ServerLevel) level, null, pos.getX(), pos.getY(), pos.getZ(), ConfigManager.ServerConfig.JUKEBOX_BUFFS_RANGE.get(),
-                    new JukeboxClientPacket(JukeboxClientPacket.Action.STOP, JukeboxClientPacket.Source.BLOCK, Optional.of(pos), Optional.empty(), false));
+                    new JukeboxClientPacket(JukeboxClientPacket.Action.STOP, JukeboxClientPacket.Source.BLOCK, Optional.of(pos), Optional.empty(), false, Optional.empty()));
         }
     }
 
@@ -105,6 +112,35 @@ public class JukeboxHandler {
             return blockSounds.get(key).muted();
         }
         return false;
+    }
+
+    public static void playEntity(ServerPlayer listener, int entityId, ResourceLocation song) {
+        stopEntity(listener, entityId);
+        EntityPlayback playback = new EntityPlayback(entityId, song, false);
+        entitySounds.put(entityId, playback);
+        PacketDistributor.sendToPlayer(listener,
+                new JukeboxClientPacket(JukeboxClientPacket.Action.PLAY, JukeboxClientPacket.Source.ENTITY,
+                        Optional.empty(), Optional.of(song), false, Optional.of(entityId)));
+    }
+
+    public static void stopEntity(ServerPlayer listener, int entityId) {
+        entitySounds.remove(entityId);
+        PacketDistributor.sendToPlayer(listener,
+                new JukeboxClientPacket(JukeboxClientPacket.Action.STOP, JukeboxClientPacket.Source.ENTITY,
+                        Optional.empty(), Optional.empty(), false, Optional.of(entityId)));
+    }
+
+    public static boolean isEntityPlaying(int entityId) {
+        return entitySounds.containsKey(entityId);
+    }
+
+    public static boolean isEntityMuted(int entityId) {
+        EntityPlayback pb = entitySounds.get(entityId);
+        return pb != null && pb.muted();
+    }
+
+    public static void toggleEntityMuted(int entityId) {
+        entitySounds.computeIfPresent(entityId, (id, pb) -> pb.toggleMuted());
     }
 
     public static void syncBlocksToPlayers(ServerPlayer player) {
@@ -132,7 +168,8 @@ public class JukeboxHandler {
                             JukeboxClientPacket.Source.BLOCK,
                             Optional.of(pos),
                             Optional.of(playback.song()),
-                            playback.muted()
+                            playback.muted(),
+                            Optional.empty()
                     ));
         }
     }

@@ -18,7 +18,7 @@ public class ItemStackMixin {
     public static Codec<ItemStack> CODEC;
 
     @Unique
-    private static int MAX_COUNT = 1048576;
+    private static int MAX_COUNT = 1048576 * 81;
 
     @Inject(
             method = "<clinit>",

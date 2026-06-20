@@ -4,13 +4,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.simibubi.create.content.kinetics.simpleRelays.AbstractSimpleShaftBlock;
 import com.simibubi.create.infrastructure.config.AllConfigs;
-import net.fxnt.fxntstorage.init.ModItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -23,14 +23,40 @@ import net.minecraft.world.level.block.FenceBlock;
 
 public class RendererHelper {
     // Use Create config for max render distance - read at call time so config changes take effect without restart
-    public static double getMaxDistance() { return AllConfigs.client().filterItemRenderDistance.get(); }
+    public static double getMaxDistance() {
+        return AllConfigs.client().filterItemRenderDistance.get();
+    }
+
+    // Minimum packed-light value per component so text/items look emissive; 128 = level 8 (out of 15).
+    private static final int EMISSIVE_BASE = 224;
+    private static final int EMISSIVE_BASE_ITEM = 192;
+
+    public static int emissiveLight(int envPackedLight) {
+        return emissiveLight(envPackedLight, EMISSIVE_BASE);
+    }
+
+    public static int emissiveLight(int envPackedLight, int base) {
+        int sky = (envPackedLight >> 16) & 0xFFFF;
+        int block = envPackedLight & 0xFFFF;
+        // Use the strongest source for both components so shader packs see neutral white
+        int value = Math.max(Math.max(sky, block), base);
+        return (value << 16) | value;
+    }
+
+    public static int emissiveItemLight(int envPackedLight) {
+        return emissiveLight(envPackedLight, EMISSIVE_BASE_ITEM);
+    }
 
     public static void renderLine(String text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int color, int packedLight) {
+        renderLine(text, yOffset, poseStack, buffer, color, packedLight, 1f);
+    }
+
+    public static void renderLine(String text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int color, int packedLight, float scale) {
         Font font = Minecraft.getInstance().font;
 
         poseStack.pushPose();
         poseStack.translate(0f, yOffset / 16f, 0f);
-        poseStack.scale(1 / 64f, -1 / 64f, 1f);
+        poseStack.scale(scale / 64f, -scale / 64f, 1f);
 
         float x = -font.width(text) / 2f;
 
@@ -38,7 +64,20 @@ public class RendererHelper {
         poseStack.popPose();
     }
 
-    public static void renderItem(ItemRenderer itemRenderer, ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, int packedLight, boolean voidUpgrade) {
+    public static void renderLine(Component text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int packedLight, float scale) {
+        Font font = Minecraft.getInstance().font;
+
+        poseStack.pushPose();
+        poseStack.translate(0f, yOffset / 16f, 0f);
+        poseStack.scale(scale / 64f, -scale / 64f, 1f);
+
+        float x = -font.width(text) / 2f;
+
+        font.drawInBatch(text, x, 0, 0xFFFFFF, false, poseStack.last().pose(), buffer, Font.DisplayMode.NORMAL, 0, packedLight);
+        poseStack.popPose();
+    }
+
+    public static void renderItem(ItemRenderer itemRenderer, ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, int packedLight, ItemStack upgrade) {
         Level level = Minecraft.getInstance().level;
         poseStack.pushPose();
         poseStack.translate(0f, 0.175f, 0f);
@@ -56,7 +95,7 @@ public class RendererHelper {
         itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
         poseStack.popPose();
 
-        if (voidUpgrade) {
+        if (!upgrade.isEmpty()) {
             poseStack.pushPose();
             poseStack.translate(0f, 0.5f, 0f);
             poseStack.mulPose(Axis.YP.rotationDegrees(180));
@@ -65,16 +104,15 @@ public class RendererHelper {
             scale = 0.25f + (1 / 64f);
             poseStack.scale(scale, scale, scale);
 
-            ItemStack icon = new ItemStack(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
-            itemRenderer.renderStatic(icon, ItemDisplayContext.FIXED, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
+            itemRenderer.renderStatic(upgrade, ItemDisplayContext.FIXED, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
 
             poseStack.popPose();
         }
     }
 
     public static int getColorForDistance(double distance) {
-        final int START = 255;
-        final int END = 50;
+        final int START = 192;
+        final int END = 32;
 
         double maxDistance = getMaxDistance();
         double clamped = Math.min(distance, maxDistance);

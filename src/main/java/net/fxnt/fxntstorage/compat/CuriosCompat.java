@@ -1,8 +1,12 @@
 package net.fxnt.fxntstorage.compat;
 
 import net.fxnt.fxntstorage.backpack.BackpackItem;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeEventDispatcher;
+import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxHandler;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.init.ModBlocks;
+import net.fxnt.fxntstorage.init.ModTags;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
@@ -13,6 +17,7 @@ import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.CuriosCapability;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.SlotResult;
+import top.theillusivec4.curios.api.event.CurioChangeEvent;
 import top.theillusivec4.curios.api.event.DropRulesEvent;
 import top.theillusivec4.curios.api.type.capability.ICurio;
 import top.theillusivec4.curios.api.type.capability.ICuriosItemHandler;
@@ -31,6 +36,23 @@ public class CuriosCompat {
                 ModBlocks.BRASS_BACKPACK.get().asItem(),
                 ModBlocks.HARDENED_BACKPACK.get().asItem()
         );
+    }
+
+    public static void onCurioChange(CurioChangeEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (!event.getIdentifier().equals("back")) return;
+
+        ItemStack oldStack = event.getFrom();
+        ItemStack newStack = event.getTo();
+
+        if (oldStack.is(ModTags.Items.BACKPACK_ITEM) && !newStack.is(ModTags.Items.BACKPACK_ITEM)) {
+            if (JukeboxHandler.isPlayerPlaying(player)) JukeboxHandler.stopPlayer(player);
+            UpgradeEventDispatcher.dispatchBackpackUnequipped(player, oldStack);
+        }
+
+        if (!oldStack.is(ModTags.Items.BACKPACK_ITEM) && newStack.is(ModTags.Items.BACKPACK_ITEM)) {
+            UpgradeEventDispatcher.dispatchBackpackEquipped(player, newStack);
+        }
     }
 
     public static void keepBackpack(DropRulesEvent event) {

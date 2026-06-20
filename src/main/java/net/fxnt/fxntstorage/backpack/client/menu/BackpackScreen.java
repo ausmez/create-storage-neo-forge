@@ -3,7 +3,13 @@ package net.fxnt.fxntstorage.backpack.client.menu;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.client.menu.slot.UpgradeSlot;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopRecipeHelper;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopUpgrade;
+import net.fxnt.fxntstorage.compat.emi.EMICompat;
+import net.fxnt.fxntstorage.compat.rei.REICompat;
 import net.fxnt.fxntstorage.network.packet.KeyPressedPacket;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.fxnt.fxntstorage.util.SortOrder;
@@ -18,6 +24,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -47,9 +54,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     private static final int TEXTURE_WIDTH = 282;
 
     // Panel dimensions
-    private static final int PANEL_EXPANDED_WIDTH = 76;
-    private static final int PANEL_COLLAPSED_WIDTH = 32;
-    private static final int PANEL_EXPANDED_HEIGHT = 49;
+    private static final int PANEL_EXPANDED_HEIGHT = 47;
     private static final int PANEL_COLLAPSED_HEIGHT = 32;
     private static final int PANEL_TAB_WIDTH = 18;
     private static final int PANEL_TAB_HEIGHT = 20;
@@ -139,7 +144,6 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             super(x, y, width, height, message, onPress, Button.DEFAULT_NARRATION);
             this.stack = stack;
             this.scale = scale;
-            this.setTooltip(Tooltip.create(message));
         }
 
         @Override
@@ -225,7 +229,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             ItemStack upgradeItem = menu.getSlot(i).getItem();
             UpgradeType upgradeType = UpgradeType.fromItem(upgradeItem.getItem());
 
-            if (upgradeItem.isEmpty() || upgradeType == null || !upgradeType.hasPanel())
+            if (upgradeItem.isEmpty() || upgradeType == null || !upgradeType.hasPanel()
+                    || upgradeType.isPlayerOnly() && menu.getBackpackType().equals(BackpackMenu.BackpackType.CONTRAPTION))
                 continue;
 
             IUpgrade upgrade = UpgradeRegistry.get(upgradeType);
@@ -238,14 +243,10 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             state.relativeTabY = 11 + (panelIndex * (PANEL_TAB_HEIGHT + PANEL_TAB_SPACING));
             state.tabY = topPos + state.relativeTabY;
 
-            Component tooltip = Component.translatable("tooltip.fxntstorage.upgrade_tab." + upgradeType.getId())
-                    .append(Component.literal(" "))
-                    .append(Component.translatable("tooltip.fxntstorage.upgrade_tab.settings"));
-
             state.tabButton = new IconButton(
                     leftPos + imageWidth, state.tabY,
                     PANEL_TAB_WIDTH, PANEL_TAB_HEIGHT,
-                    tooltip,
+                    Component.translatable("tooltip.fxntstorage.upgrade_tab." + upgradeType.getId()),
                     button -> togglePanel(state),
                     upgradeType.getActiveStack(),
                     1.0f
@@ -254,7 +255,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             upgradePanels.add(state);
             addRenderableWidget(state.tabButton);
 
-            // Restore expanded state: any panel whose bit is set in the container bitmask
+            // Restore expanded state
             if (menu.isPanelExpanded(upgradeType)) {
                 restoreExpandedPanel(state);
             }
@@ -272,9 +273,21 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             expandPanel(state);
         }
         menu.container.saveSettings();
+
+        if (FXNTStorage.EMI_LOADED) {
+            EMICompat.onCraftingPanelToggled();
+        }
+        if (FXNTStorage.REI_LOADED) {
+            REICompat.onCraftingPanelToggled();
+        }
     }
 
     private void expandPanel(PanelState state) {
+        for (PanelState other : upgradePanels) {
+            if (other != state && other.expanded) {
+                collapsePanelVisual(other);
+            }
+        }
         restoreExpandedPanel(state);
         menu.togglePanelExpanded(state.type);
     }
@@ -306,15 +319,13 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     }
 
     private void collapsePanel(PanelState state) {
-        state.expanded = false;
-
-        Tooltip tooltip = Tooltip.create(Component.translatable("tooltip.fxntstorage.upgrade_tab." + state.type.getId())
-                .append(Component.literal(" "))
-                .append(Component.translatable("tooltip.fxntstorage.upgrade_tab.settings")));
-        state.tabButton.setTooltip(tooltip);
-
+        collapsePanelVisual(state);
         menu.togglePanelExpanded(state.type);
+    }
 
+    private void collapsePanelVisual(PanelState state) {
+        state.expanded = false;
+        state.tabButton.setTooltip(null);
         removeWidgets(state.panel.getWidgets());
 
         repositionTabs();
@@ -328,7 +339,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
             for (PanelState other : upgradePanels) {
                 if (other.index < panel.index && other.expanded) {
-                    finalTabY += 8 + PANEL_EXPANDED_HEIGHT - PANEL_COLLAPSED_HEIGHT;
+                    finalTabY += 8 + other.panel.getExpandedHeight() - PANEL_COLLAPSED_HEIGHT;
                 }
             }
 
@@ -346,9 +357,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     private void updatePanelSlotPosition(PanelState state) {
         List<Slot> slots = menu.getUpgradeSlots(state.type);
         if (state.expanded) {
-            for (Slot slot : slots) {
-                slot.y = state.relativeTabY + 23;
-            }
+            state.panel.layoutSlots(slots, imageWidth, state.relativeTabY);
         } else {
             for (Slot slot : slots) {
                 slot.y = -2000;
@@ -485,6 +494,38 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
                 SCROLL_THUMB_WIDTH, SCROLL_THUMB_HEIGHT, TEXTURE_WIDTH, currentGuiConfig.height);
     }
 
+    private void renderContraptionInactiveUpgradeOverlay(GuiGraphics graphics) {
+        if (menu.getBackpackType() != BackpackMenu.BackpackType.CONTRAPTION) return;
+        for (int i : menu.layout.upgrades().range()) {
+            Slot slot = menu.getSlot(i);
+
+            ItemStack stack = slot.getItem();
+            if (stack.isEmpty()) continue;
+
+            UpgradeType upgradeType = UpgradeType.fromItem(stack.getItem());
+            if (upgradeType == null || !upgradeType.isPlayerOnly()) continue;
+
+            int slotX = slot.x;
+            int slotY = slot.y;
+            graphics.fill(RenderType.guiOverlay(), slotX, slotY, slotX + 16, slotY + 16, 0x88AA0000);
+        }
+    }
+
+    private void renderWorkshopUnusedHeldSlotOverlay(GuiGraphics graphics) {
+        List<Slot> slots = menu.getUpgradeSlots(UpgradeType.WORKSHOP);
+        if (slots.size() <= WorkshopUpgrade.HELD_SLOT) return;
+
+        Slot heldSlot = slots.get(WorkshopUpgrade.HELD_SLOT);
+        if (heldSlot.y < -100) return; // panel collapsed / slot parked off-screen
+
+        Slot machineSlot = slots.get(WorkshopUpgrade.MACHINE_SLOT);
+        if (!WorkshopRecipeHelper.isPress(machineSlot.getItem())) return;
+
+        int slotX = heldSlot.x;
+        int slotY = heldSlot.y;
+        graphics.fill(RenderType.guiOverlay(), slotX, slotY, slotX + 16, slotY + 16, 0x88AA0000);
+    }
+
     private void renderLockedHotbarSlotOverlay(GuiGraphics graphics) {
         if (menu.getBackpackType() != BackpackMenu.BackpackType.ITEM) return;
         Minecraft mc = Minecraft.getInstance();
@@ -504,15 +545,14 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             if (panel.expanded) {
                 // Render expanded panel background
                 graphics.blit(PANEL_TEXTURE, panelX - 3, panelY,
-                        0, 0, PANEL_EXPANDED_WIDTH, PANEL_EXPANDED_HEIGHT, 128, 128);
-
-                // Let the upgrade render its content
+                        panel.panel.getTextureU(), panel.panel.getTextureV(),
+                        panel.panel.getExpandedWidth(), panel.panel.getExpandedHeight(), 256, 256);
                 panel.panel.render(graphics, mouseX, mouseY);
 
             } else {
                 // Render collapsed tab
                 graphics.blit(PANEL_TEXTURE, panelX - 3, panelY,
-                        0, PANEL_EXPANDED_HEIGHT, PANEL_COLLAPSED_WIDTH, PANEL_COLLAPSED_HEIGHT, 128, 128);
+                        0, PANEL_EXPANDED_HEIGHT, 24, 24, 256, 256);
             }
         }
     }
@@ -520,6 +560,11 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     private void handlePanelRenderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
         for (PanelState panel : upgradePanels) {
             panel.panel.renderTooltip(font, graphics, mouseX, mouseY, hoveredSlot);
+
+            if (panel.tabButton.isMouseOver(mouseX, mouseY)) {
+                MutableComponent tooltip = Component.translatable("tooltip.fxntstorage.upgrade_tab." + panel.type.getId());
+                graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+            }
         }
     }
 
@@ -529,12 +574,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         graphics.drawString(font, playerInventoryTitle,
                 PLAYER_INVENTORY_SLOTS_MIN_X, layout.inventorySlotsMinZ - 11, 0x404040, false);
 
-        for (PanelState panel : upgradePanels) {
-            if (panel.expanded) {
-                graphics.drawString(font, Component.translatable("tooltip.fxntstorage.upgrade_tab." + panel.type.getId()),
-                        288, panel.tabY - topPos + 6, 0x404040, false);
-            }
-        }
+        renderContraptionInactiveUpgradeOverlay(graphics);
+        renderWorkshopUnusedHeldSlotOverlay(graphics);
     }
 
     @Override
@@ -580,8 +621,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             poseStack.scale(scale, scale, 1.0F);
         }
 
-        float textX = (x + 19 - 2 - (font.width(countText) * scale)) / scale;
-        float textY = (y + 6 + 3 + (1 / (scale * scale) - 1)) / scale;
+        float textX = (x + 17 - (font.width(countText) * scale)) / scale;
+        float textY = (y + 9 + (1 / (scale * scale) - 1)) / scale;
         guiGraphics.drawString(font, countText, textX, textY, 16777215, true);
 
         poseStack.popPose();
@@ -609,7 +650,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
     private void updateThumbPosition(double adjustedMouseY) {
         int maxScroll = layout.containerSlotsHeight - SCROLL_THUMB_HEIGHT - 2;
-        scrollThumbY = (int) Math.min(Math.max(adjustedMouseY, 0), maxScroll);
+        scrollThumbY = (int) Math.clamp(adjustedMouseY, 0, maxScroll);
 
         int row = (int) Math.round(((double) scrollThumbY) / maxScroll * (totalRows - containerRows));
         setTopRow(topVisibleRow, row);
@@ -781,23 +822,35 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     @NotNull
     @ApiStatus.OverrideOnly
     public List<Rect2i> getExclusionZones() {
-        List<Rect2i> zones = new ArrayList<>();
+        if (upgradePanels.isEmpty())
+            return List.of();
+
+        int panelX = leftPos + imageWidth;
+        int minTop = Integer.MAX_VALUE;
+        int maxBottom = Integer.MIN_VALUE;
+        int maxWidth = 0;
 
         for (PanelState panel : upgradePanels) {
-            int panelX = leftPos + imageWidth;
-            int panelY = panel.tabY;
+            int top = panel.tabY - 2;
+            int width = panel.expanded ? panel.panel.getExpandedWidth() - 3 : PANEL_TAB_WIDTH + 2;
+            int height = panel.expanded ? panel.panel.getExpandedHeight() : PANEL_TAB_HEIGHT + 3;
 
-            if (panel.expanded) {
-                zones.add(new Rect2i(panelX, panelY - 2, PANEL_EXPANDED_WIDTH - 3, PANEL_EXPANDED_HEIGHT));
-            } else {
-                zones.add(new Rect2i(panelX, panelY - 1, PANEL_TAB_WIDTH + 2, PANEL_TAB_HEIGHT + 2));
-            }
+            minTop = Math.min(minTop, top);
+            maxBottom = Math.max(maxBottom, top + height);
+            maxWidth = Math.max(maxWidth, width);
         }
 
-        return zones;
+        return List.of(new Rect2i(panelX, minTop, maxWidth, maxBottom - minTop));
     }
 
     private record GuiTextureConfig(ResourceLocation texture, int height, int rows) {
+    }
+
+    public static boolean isHoveredUpgradeSlotInContraption() {
+        Minecraft mc = Minecraft.getInstance();
+        if (!(mc.screen instanceof BackpackScreen screen)) return false;
+        if (screen.getMenu().getBackpackType() != BackpackMenu.BackpackType.CONTRAPTION) return false;
+        return screen.hoveredSlot instanceof UpgradeSlot;
     }
 
     private static class LayoutPositions {

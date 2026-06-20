@@ -4,16 +4,16 @@
   "category": "misc",
   "key": {
     "#": {
-      "item": "create:brass_sheet"
+      "item": "create:brass_ingot"
     },
     "B": {
       "item": "fxntstorage:backpack_blank_upgrade"
     },
+    "C": {
+      "item": "create:cogwheel"
+    },
     "F": {
       "item": "create:encased_fan"
-    },
-    "I": {
-      "item": "create:iron_sheet"
     },
     "N": {
       "item": "create:nozzle"
@@ -21,19 +21,19 @@
     "P": {
       "item": "create:propeller"
     },
-    "T": {
-      "item": "create:netherite_backtank"
+    "S": {
+      "item": "create:shaft"
     },
     "V": {
       "item": "create:copper_valve_handle"
     }
   },
   "pattern": [
-    " #V# ",
-    "#PIP#",
-    "#TBT#",
-    "#FIF#",
-    " #N# "
+    " P P ",
+    "F#V#F",
+    " SBS ",
+    " #C# ",
+    "  N  "
   ],
   "result": {
     "count": 1,

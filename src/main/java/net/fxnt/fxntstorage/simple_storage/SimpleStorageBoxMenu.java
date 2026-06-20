@@ -78,6 +78,20 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu implements ISimp
     public boolean getVoidUpgrade() { return blockEntity.hasVoidUpgrade(); }
 
     @Override
+    public int getDisplayedStoredAmount() { return blockEntity.getDisplayedStoredAmount(); }
+
+    @Override
+    public int getDisplayedMaxCapacity() { return blockEntity.getDisplayedMaxCapacity(); }
+
+    @Override
+    public ItemStack getDisplayedItem() {
+        if (blockEntity.hasCompactingUpgrade() && blockEntity.compactingChain != null) {
+            return blockEntity.compactingChain.itemForSlot(0);
+        }
+        return getFilterItem();
+    }
+
+    @Override
     public boolean stillValid(Player player) {
         return !blockEntity.isRemoved()
                 && Container.stillValidBlockEntity(blockEntity, player, 0);
@@ -95,18 +109,8 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu implements ISimp
         if (slotId >= 0 && slotId < playerStartSlot) {
             ItemStack itemStack = slots.get(slotId).getItem();
             if (itemStack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
-                // Calculate new capacity
-                int upgrades = blockEntity.getCapacityUpgrades();
-                if (upgrades > 0) {
-                    int storedAmount = blockEntity.getStoredAmount();
-                    int stackSize = ITEM_STACK_SIZE;
-                    if (!blockEntity.filterItem.isEmpty()) {
-                        stackSize = blockEntity.filterItem.getMaxStackSize();
-                    }
-                    int capacityCheck = (BASE_CAPACITY << upgrades - 1) * stackSize;
-                    if (capacityCheck < storedAmount) {
-                        return;
-                    }
+                if (!blockEntity.canRemoveCapacityUpgrade()) {
+                    return;
                 }
                 blockEntity.setUpgradeSlotChanged(true);
             }
@@ -127,6 +131,9 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu implements ISimp
         // If click player slot, if upgrade then move to upgrade slot, otherwise, don't allow inserting items
         if (index < playerStartSlot) {
             // Clicked on upgrade slot
+            if (slotStack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get()) && !blockEntity.canRemoveCapacityUpgrade()) {
+                return ItemStack.EMPTY;
+            }
             int playerSlot = player.getInventory().getSlotWithRemainingSpace(slotStack);
             if (playerSlot == -1) {
                 playerSlot = player.getInventory().getFreeSlot();
@@ -138,16 +145,15 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu implements ISimp
                 } else {
                     playerStack.grow(1);
                 }
-                slotStack.shrink(1);
-                blockEntity.setChanged();
+                this.slots.get(index).set(ItemStack.EMPTY);
                 player.getInventory().setChanged();
                 return ItemStack.EMPTY;
             }
 
         } else {
             // Clicked Player Slot
-            if (slotStack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())) {
-                // Move to void slot
+            if (slotStack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get()) || slotStack.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())) {
+                // Move to utility slot
                 if (!this.slots.getFirst().hasItem()) {
                     this.slots.getFirst().set(slotStack.copyWithCount(1));
                     slotStack.shrink(1);

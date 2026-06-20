@@ -3,6 +3,8 @@ package net.fxnt.fxntstorage.item.upgrades;
 import com.simibubi.create.foundation.item.TooltipHelper;
 import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.fxnt.fxntstorage.util.Util;
@@ -71,8 +73,11 @@ public class UpgradeItem extends Item {
             case Util.TORCHDEPLOYER_UPGRADE:
             case Util.JUKEBOX_UPGRADE:
             case Util.HEALTH_UPGRADE:
+            case Util.CRAFTING_UPGRADE:
+            case Util.WORKSHOP_UPGRADE:
             case Util.STORAGE_BOX_VOID_UPGRADE:
             case Util.STORAGE_BOX_CAPACITY_UPGRADE:
+            case Util.STORAGE_BOX_COMPACTING_UPGRADE:
                 addUpgradeDetails(pTooltipComponents);
                 break;
             case Util.FLIGHT_UPGRADE:
@@ -91,12 +96,23 @@ public class UpgradeItem extends Item {
         String placeholder = "";
         String translateKey = ("tooltip." + FXNTStorage.MOD_ID + "." + name).replaceAll("_deactivated$", "");
 
+        UpgradeType upgradeType = UpgradeType.fromBaseName(getBaseUpgradeName());
+        if (upgradeType != null && upgradeType.isPlayerOnly() && BackpackScreen.isHoveredUpgradeSlotInContraption()) {
+            text.add(Component.translatable("tooltip.fxntstorage.upgrade_inactive").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD));
+        }
+
         text.add(Component.translatable("tooltip.fxntstorage.holdForDescription", (Screen.hasShiftDown()) ? "§fShift" : "§7Shift").withStyle(ChatFormatting.DARK_GRAY));
 
         if (Screen.hasShiftDown()) {
             // Add summary component
             text.add(Component.empty());
-            text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary"), FontHelper.Palette.STANDARD_CREATE));
+            if (name.equals(Util.CRAFTING_UPGRADE) || name.equals(Util.WORKSHOP_UPGRADE)) {
+                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary1"), FontHelper.Palette.STANDARD_CREATE));
+                text.add(Component.empty());
+                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary2"), FontHelper.Palette.STANDARD_CREATE));
+            } else {
+                text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".summary"), FontHelper.Palette.STANDARD_CREATE));
+            }
             text.add(Component.empty());
 
             if (Objects.equals(name.replaceAll("_deactivated$", ""), Util.MAGNET_UPGRADE) ||
@@ -124,13 +140,17 @@ public class UpgradeItem extends Item {
             }
 
             // Add a final condition/behavior for toggling the upgrade
-            if (!name.equals(Util.STORAGE_BOX_CAPACITY_UPGRADE) && !name.equals(Util.STORAGE_BOX_VOID_UPGRADE)) {
+            if (!name.equals(Util.STORAGE_BOX_CAPACITY_UPGRADE) && !name.equals(Util.STORAGE_BOX_COMPACTING_UPGRADE)
+                    && !name.equals(Util.STORAGE_BOX_VOID_UPGRADE) && !name.equals(Util.CRAFTING_UPGRADE)
+                    && !name.equals(Util.WORKSHOP_UPGRADE)) {
                 text.addAll(TooltipHelper.cutTextComponent(Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.condition"), FontHelper.Palette.ALL_GRAY));
                 text.addAll(TooltipHelper.cutTextComponent(
                         Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.behaviour"),
                         FontHelper.Palette.STANDARD_CREATE.primary(), FontHelper.Palette.STANDARD_CREATE.highlight(), 1));
                 text.add(Component.empty());
             }
+
+            if (name.equals(Util.STORAGE_BOX_COMPACTING_UPGRADE)) text.add(Component.empty());
 
             // Finally add any subtext components
             text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".subtext"), FontHelper.Palette.GRAY_AND_GOLD.highlight(), FontHelper.Palette.GRAY_AND_GOLD.highlight()));
@@ -142,6 +162,11 @@ public class UpgradeItem extends Item {
     private void addFlightUpgradeDetails(List<Component> tooltipComponents) {
         List<Component> text = new ArrayList<>();
         String translateKey = ("tooltip." + FXNTStorage.MOD_ID + "." + name).replaceAll("_deactivated$", "");
+
+        UpgradeType upgradeType = UpgradeType.fromBaseName(getBaseUpgradeName());
+        if (upgradeType != null && upgradeType.isPlayerOnly() && BackpackScreen.isHoveredUpgradeSlotInContraption()) {
+            text.add(Component.translatable("tooltip.fxntstorage.upgrade_inactive").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD));
+        }
 
         text.add(Component.translatable("tooltip.fxntstorage.holdForDescription", (Screen.hasShiftDown()) ? "§fShift" : "§7Shift").withStyle(ChatFormatting.DARK_GRAY));
         text.add(Component.translatable("tooltip.fxntstorage.holdForControls", (Screen.hasControlDown()) ? "§fCtrl" : "§7Ctrl").withStyle(ChatFormatting.DARK_GRAY));
@@ -158,7 +183,8 @@ public class UpgradeItem extends Item {
                     Component.translatable("tooltip." + FXNTStorage.MOD_ID + ".upgrade_item_toggle.behaviour"),
                     FontHelper.Palette.STANDARD_CREATE.primary(), FontHelper.Palette.STANDARD_CREATE.highlight(), 1));
 
-            if (!Screen.hasControlDown()) text.add(Component.empty());
+            text.add(Component.empty());
+            text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".subtext"), FontHelper.Palette.GRAY_AND_GOLD.highlight(), FontHelper.Palette.GRAY_AND_GOLD.highlight()));
         }
 
         if (Screen.hasControlDown()) {

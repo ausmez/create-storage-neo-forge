@@ -15,11 +15,11 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import java.util.Optional;
 
 public record JukeboxClientPacket(Action action, Source source, Optional<BlockPos> pos, Optional<ResourceLocation> song,
-                                  boolean muted) implements CustomPacketPayload {
+                                  boolean muted, Optional<Integer> entityId) implements CustomPacketPayload {
 
     public enum Action {PLAY, STOP}
 
-    public enum Source {PLAYER, BLOCK}
+    public enum Source {PLAYER, BLOCK, ENTITY}
 
     public static final Type<JukeboxClientPacket> TYPE = new Type<>(FXNTStorage.modLoc("jukebox_client"));
 
@@ -29,6 +29,7 @@ public record JukeboxClientPacket(Action action, Source source, Optional<BlockPo
             ByteBufCodecs.optional(BlockPos.STREAM_CODEC), JukeboxClientPacket::pos,
             ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC), JukeboxClientPacket::song,
             ByteBufCodecs.BOOL, JukeboxClientPacket::muted,
+            ByteBufCodecs.optional(ByteBufCodecs.INT), JukeboxClientPacket::entityId,
             JukeboxClientPacket::new
     );
 
@@ -49,29 +50,36 @@ public record JukeboxClientPacket(Action action, Source source, Optional<BlockPo
     }
 
     private void handlePlay(Player player) {
-        if (source() == Source.PLAYER) {
-            if (ClientJukeboxHandler.isPlayerPlaying(player)) return;
-            song().ifPresent(jukeboxSong -> {
-                ClientJukeboxHandler.PlayerPlayback playback = new ClientJukeboxHandler.PlayerPlayback(player.getUUID(), null, jukeboxSong, muted());
-                ClientJukeboxHandler.playPlayer(playback);
-            });
-
-        } else {
-            pos().ifPresent(blockPos -> {
+        switch (source()) {
+            case PLAYER -> {
+                if (ClientJukeboxHandler.isPlayerPlaying(player)) return;
+                song().ifPresent(song -> {
+                    ClientJukeboxHandler.PlayerPlayback pb = new ClientJukeboxHandler.PlayerPlayback(player.getUUID(), null, song, muted());
+                    ClientJukeboxHandler.playPlayer(pb);
+                });
+            }
+            case BLOCK -> pos().ifPresent(blockPos -> {
                 if (ClientJukeboxHandler.isBlockPlaying(blockPos)) return;
-                song().ifPresent(jukeboxSong -> {
-                    ClientJukeboxHandler.BlockPlayback playback = new ClientJukeboxHandler.BlockPlayback(blockPos, null, player.level().dimension(), jukeboxSong, muted());
-                    ClientJukeboxHandler.playBlock(playback);
+                song().ifPresent(song -> {
+                    ClientJukeboxHandler.BlockPlayback pb = new ClientJukeboxHandler.BlockPlayback(blockPos, null, player.level().dimension(), song, muted());
+                    ClientJukeboxHandler.playBlock(pb);
+                });
+            });
+            case ENTITY -> entityId().ifPresent(id -> {
+                if (ClientJukeboxHandler.isEntityPlaying(id)) return;
+                song().ifPresent(song -> {
+                    ClientJukeboxHandler.EntityContraptionPlayback pb = new ClientJukeboxHandler.EntityContraptionPlayback(id, null, song, muted());
+                    ClientJukeboxHandler.playEntity(pb);
                 });
             });
         }
     }
 
     private void handleStop(Player player) {
-        if (source() == Source.PLAYER) {
-            ClientJukeboxHandler.stopPlayer(player.getUUID());
-        } else {
-            pos().ifPresent(ClientJukeboxHandler::stopBlock);
+        switch (source()) {
+            case PLAYER -> ClientJukeboxHandler.stopPlayer(player.getUUID());
+            case BLOCK -> pos().ifPresent(ClientJukeboxHandler::stopBlock);
+            case ENTITY -> entityId().ifPresent(ClientJukeboxHandler::stopEntity);
         }
     }
 }

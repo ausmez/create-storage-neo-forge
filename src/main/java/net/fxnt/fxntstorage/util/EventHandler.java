@@ -48,7 +48,6 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.network.PacketDistributor;
-import top.theillusivec4.curios.api.event.CurioChangeEvent;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -95,8 +94,8 @@ public class EventHandler {
             var entity = level.getBlockEntity(pos);
             if (entity instanceof StorageBoxEntity sbe) {
                 player.openMenu(sbe, pos);
-            } else if (entity instanceof SimpleStorageBoxEntity ssbe) {
-                player.openMenu(ssbe, pos);
+            } else if (entity instanceof SimpleStorageBoxEntity simpleStorageBox) {
+                player.openMenu(simpleStorageBox, pos);
             }
         }
         event.setCanceled(true);
@@ -407,25 +406,6 @@ public class EventHandler {
         }
 
         // Backpack was equipped in the check slot
-        if (!isBackpack(oldStack) && isBackpack(newStack)) {
-            UpgradeEventDispatcher.dispatchBackpackEquipped(player, newStack);
-        }
-    }
-
-    @SubscribeEvent
-    public static void onCurioChange(CurioChangeEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!event.getIdentifier().equals("back")) return;
-
-        ItemStack oldStack = event.getFrom();
-        ItemStack newStack = event.getTo();
-
-        // Backpack removed from a back slot
-        if (isBackpack(oldStack) && !isBackpack(newStack)) {
-            stopJukeboxIfPlaying(player);
-            UpgradeEventDispatcher.dispatchBackpackUnequipped(player, oldStack);
-        }
-
         if (!isBackpack(oldStack) && isBackpack(newStack)) {
             UpgradeEventDispatcher.dispatchBackpackEquipped(player, newStack);
         }

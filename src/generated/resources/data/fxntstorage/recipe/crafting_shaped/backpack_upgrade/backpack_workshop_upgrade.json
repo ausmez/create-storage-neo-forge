@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "F": {
+      "item": "create:flywheel"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "R": {
+      "item": "create:redstone_link"
+    },
+    "X": {
+      "item": "create:depot"
+    }
+  },
+  "pattern": [
+    " R ",
+    "IBI",
+    "FXF"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:backpack_workshop_upgrade"
+  }
+}

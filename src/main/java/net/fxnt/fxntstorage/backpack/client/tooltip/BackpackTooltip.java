@@ -4,9 +4,12 @@ import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.container.StorageBoxItem;
+import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModTags;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxEntity;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxItem;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -38,9 +41,18 @@ public class BackpackTooltip implements TooltipComponent {
     private void loadComponentData(ItemStack stack) {
         if (stack.has(DataComponents.CONTAINER)) {
             ArrayList<ItemStack> list = new ArrayList<>();
-            List<ItemStack> contents = Optional.ofNullable(stack.get(DataComponents.CONTAINER))
-                    .orElse(ItemContainerContents.EMPTY)
-                    .stream().toList();
+            List<ItemStack> contents = new ArrayList<>();
+            ItemContainerContents inventory = stack.get(DataComponents.CONTAINER);
+
+            if (stack.is(ModBlocks.RESERVE_STORAGE_BOX.asItem())) {
+                for (int i = 0; i < ReserveStorageBoxEntity.getGhostSlotOffset(); i++) {
+                    contents.add(inventory.getStackInSlot(i));
+                }
+            } else {
+                contents = Optional.ofNullable(stack.get(DataComponents.CONTAINER))
+                        .orElse(ItemContainerContents.EMPTY)
+                        .stream().toList();
+            }
 
             for (ItemStack item : contents) {
                 if (item.is(ModTags.Items.BACKPACK_UPGRADE) || item.is(ModTags.Items.STORAGE_BOX_UPGRADE)) continue;
@@ -77,7 +89,6 @@ public class BackpackTooltip implements TooltipComponent {
                 }
                 if (capUpgrades.getCount() > 0) this.upgrades.add(capUpgrades);
             }
-
         }
 
         if (stack.has(ModDataComponents.BACKPACK_UPGRADES)) {
@@ -93,7 +104,7 @@ public class BackpackTooltip implements TooltipComponent {
         if ((item instanceof BackpackItem || item instanceof SimpleStorageBoxItem) && upgrades.isEmpty() && storage.isEmpty()) {
             tooltipText.add(Component.translatable("tooltip.fxntstorage.no_inventory_or_upgrades").withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
         }
-        if (item instanceof StorageBoxItem && storage.isEmpty()) {
+        if ((item instanceof StorageBoxItem || item instanceof ReserveStorageBoxItem) && storage.isEmpty()) {
             tooltipText.add(Component.translatable("tooltip.fxntstorage.no_inventory").withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
         }
     }

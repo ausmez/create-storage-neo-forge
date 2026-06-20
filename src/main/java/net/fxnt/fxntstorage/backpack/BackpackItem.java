@@ -113,8 +113,8 @@ public class BackpackItem extends BlockItem {
 
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
+    @OnlyIn(Dist.CLIENT)
     public @NotNull Optional<TooltipComponent> getTooltipImage(ItemStack pStack) {
         if (Screen.hasControlDown() && !Screen.hasShiftDown()) {
             return Optional.of(new BackpackTooltip(pStack));

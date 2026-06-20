@@ -135,7 +135,10 @@ dependencies {
             runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
             runtimeOnly "curse.maven:configured-457570:${configured_id}"
         }; break
-        case "EMI": runtimeOnly "dev.emi:emi-neoforge:${emi_version}"; break
+        case "EMI": {
+            runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
+            runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}" // For mechanical crafter recipes
+        }; break
         case "REI": {
             runtimeOnly "me.shedaniel:RoughlyEnoughItems-neoforge:${rei_version}"
             runtimeOnly "curse.maven:architectury-api-419699:${architectury_id}"
@@ -158,10 +161,12 @@ dependencies {
     compileOnly "dev.ryanhcode.sable-companion:sable-companion-common-${minecraft_version}:${sable_companion_version}"
     compileOnly "dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}"
 
+    // Waila / Jade
+    implementation "maven.modrinth:jade:${jade_version}"
+
     // Other mods to include at runtime during development/testing
     runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
-    runtimeOnly "curse.maven:jade-324717:7545219"
-    runtimeOnly "curse.maven:jade-addons-583345:${jadeaddon_id}"
+    runtimeOnly "maven.modrinth:jade-addons-forge:${jadeaddon_version}"
     runtimeOnly "curse.maven:carry-on-274259:7393892"
     runtimeOnly "curse.maven:catalogue-459701:6926815"
     runtimeOnly "curse.maven:xaeros-world-map-317780:7598481"

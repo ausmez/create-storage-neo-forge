@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.backpack.upgrade.jukebox;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.client.menu.slot.JukeboxDiscSlot;
@@ -36,7 +35,6 @@ import java.util.function.Consumer;
 
 import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 
-
 public class JukeboxUpgrade extends AbstractUpgrade {
 
     public JukeboxUpgrade() {
@@ -62,14 +60,17 @@ public class JukeboxUpgrade extends AbstractUpgrade {
     @Override
     public List<Slot> createSlots(UpgradeContext context) {
         BackpackMenu menu = context.menu();
+        int contraptionId = menu.getBackpackType() == BackpackMenu.BackpackType.CONTRAPTION
+                ? menu.getContraptionId() : -1;
         return List.of(
                 new JukeboxDiscSlot(
                         menu.container,
                         menu.layout.jukeboxDiscs().getStartIndex(),
-                        275, 34,
+                        274, 34,
                         context.player(),
                         context.backpackType(),
                         context.blockPos(),
+                        contraptionId,
                         () -> menu.hasUpgrade(UpgradeType.JUKEBOX),
                         () -> menu.isPanelExpanded(UpgradeType.JUKEBOX),
                         menu::updateBackpackDataFromContainer,
@@ -146,26 +147,23 @@ public class JukeboxUpgrade extends AbstractUpgrade {
 
     @Override
     protected void tickActive(UpgradeContext context) {
-        boolean buffsEnabled = ConfigManager.ServerConfig.JUKEBOX_BUFFS_ENABLED.get();
-
-        if (context.backpackType() == BackpackMenu.BackpackType.BLOCK) {
-            if (context.level().getGameTime() % 40 != 0)
-                return;
-
+        if (context.backpackType() == BackpackMenu.BackpackType.BLOCK || context.backpackType() == BackpackMenu.BackpackType.CONTRAPTION) {
             JukeboxUpgradeHelper.getMusicDisc(null, context.level(), context.blockPos())
                     .ifPresent(musicDisc -> {
                         Level level = context.level();
                         BlockPos pos = context.blockPos();
+                        long gameTime = level.getGameTime();
 
-                        boolean isPlaying = JukeboxHandler.isBlockPlaying(level, pos);
-                        boolean notesEnabled = ConfigManager.ServerConfig.JUKEBOX_NOTES_ENABLED.get();
+                        if (!JukeboxHandler.isBlockPlaying(level, pos)) return;
 
-                        if (!isPlaying) return;
+                        if (ConfigManager.ServerConfig.JUKEBOX_NOTES_ENABLED.get()) {
+                            int particleInterval = level.random.nextInt(31) + 10;
+                            if (gameTime % particleInterval == 0)
+                                ParticleHelper.jukeboxParticles(level, pos);
+                        }
 
-                        if (notesEnabled)
-                            ParticleHelper.jukeboxParticles(level, pos);
-
-                        if (!buffsEnabled) return;
+                        if (!ConfigManager.ServerConfig.JUKEBOX_BUFFS_ENABLED.get()) return;
+                        if (gameTime % 40 != 0) return;
 
                         JukeboxPlayable playable = musicDisc.get(DataComponents.JUKEBOX_PLAYABLE);
                         if (playable == null) return;
@@ -178,18 +176,17 @@ public class JukeboxUpgrade extends AbstractUpgrade {
                         }
                     });
         } else if (context.backpackType() == BackpackMenu.BackpackType.WORN) {
-            if (context.player().getRandom().nextInt(20) != 0)
-                return;
-
             Player player = context.player();
             boolean isPlaying = JukeboxHandler.isPlayerPlaying((ServerPlayer) player);
             boolean isBackpackVisible = BackpackHelper.isWearingBackpack(player, true);
 
             if (!isBackpackVisible || !isPlaying) return;
-            boolean notesEnabled = ClientSettings.getBoolean(player.getUUID(), "JukeboxNotesEnabled");
 
-            if (notesEnabled)
-                ParticleHelper.jukeboxParticles(player);
+            if (ClientSettings.getBoolean(player.getUUID(), "JukeboxNotesEnabled")) {
+                int particleInterval = player.getRandom().nextInt(31) + 10;
+                if (player.level().getGameTime() % particleInterval == 0)
+                    ParticleHelper.jukeboxParticles(player);
+            }
         }
     }
 
@@ -197,22 +194,32 @@ public class JukeboxUpgrade extends AbstractUpgrade {
     private void stopPlayback(UpgradeContext context) {
         if (!context.isClientSide()) return;
 
-        if (context.backpackType().equals(BackpackMenu.BackpackType.WORN)) {
-            ClientJukeboxHandler.stopPlayer(context.player().getUUID());
-            PacketDistributor.sendToServer(new JukeboxServerPacket(
-                    JukeboxServerPacket.Action.STOP,
-                    JukeboxServerPacket.Source.PLAYER,
-                    Optional.empty()
-            ));
-        } else {
-            if (context.blockPos() != null) {
-                ClientJukeboxHandler.stopBlock(context.blockPos());
+        switch (context.backpackType()) {
+            case WORN -> {
+                ClientJukeboxHandler.stopPlayer(context.player().getUUID());
                 PacketDistributor.sendToServer(new JukeboxServerPacket(
-                        JukeboxServerPacket.Action.STOP,
-                        JukeboxServerPacket.Source.BLOCK,
-                        Optional.ofNullable(context.blockPos())
-                ));
+                        JukeboxServerPacket.Action.STOP, JukeboxServerPacket.Source.PLAYER,
+                        Optional.empty(), Optional.empty()));
             }
+            case BLOCK -> {
+                if (context.blockPos() != null) {
+                    ClientJukeboxHandler.stopBlock(context.blockPos());
+                    PacketDistributor.sendToServer(new JukeboxServerPacket(
+                            JukeboxServerPacket.Action.STOP, JukeboxServerPacket.Source.BLOCK,
+                            Optional.of(context.blockPos()), Optional.empty()));
+                }
+            }
+            case CONTRAPTION -> {
+                BackpackMenu menu = context.menu();
+                if (menu == null) break;
+                int entityId = menu.getContraptionId();
+                if (entityId < 0) break;
+                ClientJukeboxHandler.stopEntity(entityId);
+                PacketDistributor.sendToServer(new JukeboxServerPacket(
+                        JukeboxServerPacket.Action.STOP, JukeboxServerPacket.Source.ENTITY,
+                        Optional.empty(), Optional.of(entityId)));
+            }
+            default -> {}
         }
     }
 
@@ -220,12 +227,13 @@ public class JukeboxUpgrade extends AbstractUpgrade {
         if (context.isClientSide()) return;
 
         Player player = context.player();
-        if (context.backpackType() == BackpackMenu.BackpackType.WORN
-                && player instanceof ServerPlayer sp) {
+        if (context.backpackType() == BackpackMenu.BackpackType.WORN && player instanceof ServerPlayer sp) {
             JukeboxHandler.stopPlayer(sp);
-        } else if (context.backpackType() == BackpackMenu.BackpackType.BLOCK
-                && context.blockPos() != null) {
+        } else if (context.backpackType() == BackpackMenu.BackpackType.BLOCK && context.blockPos() != null) {
             JukeboxHandler.stopBlock(context.level(), context.blockPos());
+        } else if (context.backpackType() == BackpackMenu.BackpackType.CONTRAPTION && player instanceof ServerPlayer sp) {
+            BackpackMenu menu = context.menu();
+            if (menu != null) JukeboxHandler.stopEntity(sp, menu.getContraptionId());
         }
     }
 
@@ -270,17 +278,22 @@ public class JukeboxUpgrade extends AbstractUpgrade {
         private JukeboxState getState() {
             boolean playing = switch (context.backpackType()) {
                 case WORN -> ClientJukeboxHandler.isPlayerPlaying(context.player());
-                case BLOCK -> context.blockPos() != null
-                        && ClientJukeboxHandler.isBlockPlaying(context.blockPos());
+                case BLOCK -> context.blockPos() != null && ClientJukeboxHandler.isBlockPlaying(context.blockPos());
+                case CONTRAPTION -> {
+                    BackpackMenu m = context.menu();
+                    yield m != null && ClientJukeboxHandler.isEntityPlaying(m.getContraptionId());
+                }
                 default -> false;
             };
             boolean muted = switch (context.backpackType()) {
                 case WORN -> ClientJukeboxHandler.isPlayerMuted(context.player());
-                case BLOCK -> context.blockPos() != null
-                        && ClientJukeboxHandler.isBlockMuted(context.blockPos());
+                case BLOCK -> context.blockPos() != null && ClientJukeboxHandler.isBlockMuted(context.blockPos());
+                case CONTRAPTION -> {
+                    BackpackMenu m = context.menu();
+                    yield m != null && ClientJukeboxHandler.isEntityMuted(m.getContraptionId());
+                }
                 default -> false;
             };
-
             return new JukeboxState(playing, muted);
         }
 
@@ -290,7 +303,7 @@ public class JukeboxUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new SpriteButton<>(
-                            panelX + 26, panelY + 32, 18, 18,
+                            panelX + 22, panelY + 31, 18, 18,
                             initialState,
                             state -> state.playing() ? JUKEBOX_STOP : JUKEBOX_PLAY,
                             state -> state.playing()
@@ -302,7 +315,7 @@ public class JukeboxUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new SpriteButton<>(
-                            panelX + 48, panelY + 32, 18, 18,
+                            panelX + 41, panelY + 31, 18, 18,
                             initialState,
                             state -> state.muted() ? JUKEBOX_MUTED : JUKEBOX_UNMUTED,
                             state -> state.muted()
@@ -323,15 +336,6 @@ public class JukeboxUpgrade extends AbstractUpgrade {
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            graphics.blit(
-                    PANEL_TEXTURE,
-                    panelX - 3, panelY + 8,
-                    0, 0,
-                    PANEL_EXPANDED_WIDTH,
-                    PANEL_EXPANDED_HEIGHT,
-                    128, 128
-            );
         }
 
         @Override
@@ -361,20 +365,24 @@ public class JukeboxUpgrade extends AbstractUpgrade {
                 case WORN -> {
                     ClientJukeboxHandler.stopPlayer(context.player().getUUID());
                     PacketDistributor.sendToServer(new JukeboxServerPacket(
-                            JukeboxServerPacket.Action.TOGGLE_PLAYING,
-                            JukeboxServerPacket.Source.PLAYER,
-                            Optional.empty()
-                    ));
+                            JukeboxServerPacket.Action.TOGGLE_PLAYING, JukeboxServerPacket.Source.PLAYER,
+                            Optional.empty(), Optional.empty()));
                 }
                 case BLOCK -> {
                     if (context.blockPos() != null) {
                         ClientJukeboxHandler.stopBlock(context.blockPos());
                         PacketDistributor.sendToServer(new JukeboxServerPacket(
-                                JukeboxServerPacket.Action.TOGGLE_PLAYING,
-                                JukeboxServerPacket.Source.BLOCK,
-                                Optional.ofNullable(context.blockPos())
-                        ));
+                                JukeboxServerPacket.Action.TOGGLE_PLAYING, JukeboxServerPacket.Source.BLOCK,
+                                Optional.of(context.blockPos()), Optional.empty()));
                     }
+                }
+                case CONTRAPTION -> {
+                    int entityId = menu.getContraptionId();
+                    if (entityId < 0) break;
+                    ClientJukeboxHandler.stopEntity(entityId);
+                    PacketDistributor.sendToServer(new JukeboxServerPacket(
+                            JukeboxServerPacket.Action.TOGGLE_PLAYING, JukeboxServerPacket.Source.ENTITY,
+                            Optional.empty(), Optional.of(entityId)));
                 }
             }
         }
@@ -387,21 +395,28 @@ public class JukeboxUpgrade extends AbstractUpgrade {
 
             menu.toggleUpgradeSetting(UpgradeDataSync.Field.JUKEBOX_MUTED);
 
-            if (context.backpackType().equals(BackpackMenu.BackpackType.WORN)) {
-                ClientJukeboxHandler.toggleMutePlayer(context.player());
-                PacketDistributor.sendToServer(new JukeboxServerPacket(
-                        JukeboxServerPacket.Action.TOGGLE_MUTED,
-                        JukeboxServerPacket.Source.PLAYER,
-                        Optional.empty()
-                ));
-            } else {
-                if (context.blockPos() != null) {
-                    ClientJukeboxHandler.toggleMuteBlock(context.blockPos());
+            switch (context.backpackType()) {
+                case WORN -> {
+                    ClientJukeboxHandler.toggleMutePlayer(context.player());
                     PacketDistributor.sendToServer(new JukeboxServerPacket(
-                            JukeboxServerPacket.Action.TOGGLE_MUTED,
-                            JukeboxServerPacket.Source.BLOCK,
-                            Optional.ofNullable(context.blockPos())
-                    ));
+                            JukeboxServerPacket.Action.TOGGLE_MUTED, JukeboxServerPacket.Source.PLAYER,
+                            Optional.empty(), Optional.empty()));
+                }
+                case BLOCK -> {
+                    if (context.blockPos() != null) {
+                        ClientJukeboxHandler.toggleMuteBlock(context.blockPos());
+                        PacketDistributor.sendToServer(new JukeboxServerPacket(
+                                JukeboxServerPacket.Action.TOGGLE_MUTED, JukeboxServerPacket.Source.BLOCK,
+                                Optional.of(context.blockPos()), Optional.empty()));
+                    }
+                }
+                case CONTRAPTION -> {
+                    int entityId = menu.getContraptionId();
+                    if (entityId < 0) break;
+                    ClientJukeboxHandler.toggleMuteEntity(entityId);
+                    PacketDistributor.sendToServer(new JukeboxServerPacket(
+                            JukeboxServerPacket.Action.TOGGLE_MUTED, JukeboxServerPacket.Source.ENTITY,
+                            Optional.empty(), Optional.of(entityId)));
                 }
             }
         }

@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "entries": [
+        {
+          "type": "minecraft:alternatives",
+          "children": [
+            {
+              "type": "minecraft:item",
+              "conditions": [
+                {
+                  "condition": "fxntstorage:block_entity_save_components"
+                }
+              ],
+              "functions": [
+                {
+                  "function": "fxntstorage:copy_block_entity_data"
+                }
+              ],
+              "name": "fxntstorage:reserve_storage_box"
+            },
+            {
+              "type": "minecraft:item",
+              "name": "fxntstorage:reserve_storage_box"
+            }
+          ]
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "fxntstorage:blocks/reserve_storage_box"
+}

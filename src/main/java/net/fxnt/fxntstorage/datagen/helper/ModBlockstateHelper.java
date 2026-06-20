@@ -11,6 +11,7 @@ import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageInterface;
 import net.fxnt.fxntstorage.controller.StorageInterfaceFiltered;
 import net.fxnt.fxntstorage.passer.PasserBlock;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -84,6 +85,9 @@ public class ModBlockstateHelper {
         String path = BuiltInRegistries.BLOCK.getKey(planks).getPath();
         String woodType = path.substring(0, path.indexOf("_planks"));
 
+//        if (!prov.models().existingFileHelper.exists(modLoc("block/storage_box_void"), PackType.CLIENT_RESOURCES))
+//            ModModelHelper.storageBoxLight(prov);
+
         ModModelHelper.simpleStorageBox(prov, woodType); // Generate blockModel
 
         MultiPartBlockStateBuilder builder = prov.getMultipartBuilder(ctx.get());
@@ -107,6 +111,15 @@ public class ModBlockstateHelper {
                         .end();
             }
         }
+//        for (Direction dir : Direction.Plane.HORIZONTAL) {
+//            builder.part()
+//                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/storage_box_void")))
+//                    .rotationY(getRotationForDirection(dir))
+//                    .addModel()
+//                    .condition(StorageBox.FACING, Direction.byName(dir.getName()))
+//                    .condition(SimpleStorageBox.VOID_UPGRADE, true)
+//                    .end();
+//        }
     }
 
     public static NonNullBiConsumer<DataGenContext<Block, CasingBlock>, RegistrateBlockstateProvider> storageTrim(String name) {
@@ -182,11 +195,11 @@ public class ModBlockstateHelper {
 
     public static NonNullBiConsumer<DataGenContext<Block, StorageInterfaceFiltered>, RegistrateBlockstateProvider> storageInterfaceFiltered() {
         return (ctx, prov) -> prov.simpleBlock(ctx.get(),
-                    prov.models().cubeBottomTop("storage_interface_filtered",
-                            modLoc("block/storage_interface_filtered"),
-                            ResourceLocation.fromNamespaceAndPath("create", "block/dark_metal_block"),
-                            modLoc("block/storage_controller_top")
-                    ).texture("particle", modLoc("block/storage_interface_top")));
+                prov.models().cubeBottomTop("storage_interface_filtered",
+                        modLoc("block/storage_interface_filtered"),
+                        ResourceLocation.fromNamespaceAndPath("create", "block/dark_metal_block"),
+                        modLoc("block/storage_controller_top")
+                ).texture("particle", modLoc("block/storage_interface_top")));
     }
 
     public static NonNullBiConsumer<DataGenContext<Block, PasserBlock>, RegistrateBlockstateProvider> passerBlock(boolean isSmart) {
@@ -222,6 +235,41 @@ public class ModBlockstateHelper {
                             .with(BlockStateProperties.FACING, dir)
                             .addModels(model.build());
                 }
+            }
+        };
+    }
+
+    public static NonNullBiConsumer<DataGenContext<Block, ReserveStorageBox>, RegistrateBlockstateProvider> reserveStorageBox() {
+        return (ctx, prov) -> {
+
+            // Generate block light overlay models if they don't exist
+            if (!prov.models().existingFileHelper.exists(modLoc("block/storage_box_void"), PackType.CLIENT_RESOURCES))
+                ModModelHelper.storageBoxLight(prov);
+
+            // Generate blockstate
+            MultiPartBlockStateBuilder builder = prov.getMultipartBuilder(ctx.get());
+            String basePath = "block/reserve_";
+
+            BiConsumer<String, Consumer<MultiPartBlockStateBuilder.PartBuilder>> addDirectionalParts = (modelName, config) -> {
+                for (Direction dir : Direction.Plane.HORIZONTAL) {
+                    MultiPartBlockStateBuilder.PartBuilder part = builder.part()
+                            .modelFile(prov.models().getExistingFile(prov.modLoc(modelName)))
+                            .rotationY(getRotationForDirection(dir))
+                            .addModel()
+                            .condition(StorageBox.FACING, dir);
+                    config.accept(part);
+                    part.end();
+                }
+            };
+
+            // Base block
+            addDirectionalParts.accept(basePath + "storage_box", part -> {
+            });
+
+            // Storage Box used levels
+            for (EnumProperties.StorageUsed state : EnumProperties.StorageUsed.values()) {
+                addDirectionalParts.accept("block/storage_box_" + state.getSerializedName(),
+                        part -> part.condition(StorageBox.STORAGE_USED, state));
             }
         };
     }

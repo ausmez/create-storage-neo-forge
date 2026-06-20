@@ -63,7 +63,6 @@ public class ModModelHelper {
                     .translation(0, 14.5F, 0)
                     .end()
                     .transform(ItemDisplayContext.FIXED)
-                    .rotation(0, 180, 0)
                     .translation(0, 2.25F, 0)
                     .end()
                     .end();

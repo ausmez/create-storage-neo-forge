@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.network.packet;
 
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxUpgradeHelper;
 import net.minecraft.core.BlockPos;
@@ -12,6 +13,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.JukeboxPlayable;
 import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -19,11 +21,12 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import javax.annotation.Nullable;
 import java.util.Optional;
 
-public record JukeboxServerPacket(Action action, Source source, Optional<BlockPos> pos) implements CustomPacketPayload {
+public record JukeboxServerPacket(Action action, Source source, Optional<BlockPos> pos,
+                                  Optional<Integer> entityId) implements CustomPacketPayload {
 
     public enum Action {PLAY, STOP, TOGGLE_PLAYING, TOGGLE_MUTED}
 
-    public enum Source {PLAYER, BLOCK}
+    public enum Source {PLAYER, BLOCK, ENTITY}
 
     public static final Type<JukeboxServerPacket> TYPE = new Type<>(FXNTStorage.modLoc("jukebox_server"));
 
@@ -31,6 +34,7 @@ public record JukeboxServerPacket(Action action, Source source, Optional<BlockPo
             NeoForgeStreamCodecs.enumCodec(Action.class), JukeboxServerPacket::action,
             NeoForgeStreamCodecs.enumCodec(Source.class), JukeboxServerPacket::source,
             ByteBufCodecs.optional(BlockPos.STREAM_CODEC), JukeboxServerPacket::pos,
+            ByteBufCodecs.optional(ByteBufCodecs.INT), JukeboxServerPacket::entityId,
             JukeboxServerPacket::new
     );
 
@@ -54,44 +58,43 @@ public record JukeboxServerPacket(Action action, Source source, Optional<BlockPo
     }
 
     private void handlePlay(ServerPlayer player) {
-        if (source() == Source.PLAYER) {
-            playMusic(player, null);
-        } else {
-            pos().ifPresent(blockPos -> playMusic(player, blockPos));
+        switch (source()) {
+            case PLAYER -> playMusic(player, null);
+            case BLOCK -> pos().ifPresent(pos -> playMusic(player, pos));
+            case ENTITY -> entityId().ifPresent(id -> playMusicForEntity(player, id));
         }
     }
 
     private void handleStop(ServerPlayer player) {
-        if (source() == Source.PLAYER) {
-            JukeboxHandler.stopPlayer(player);
-        } else {
-            pos().ifPresent(blockPos -> JukeboxHandler.stopBlock(player.level(), blockPos));
+        switch (source()) {
+            case PLAYER -> JukeboxHandler.stopPlayer(player);
+            case BLOCK -> pos().ifPresent(pos -> JukeboxHandler.stopBlock(player.level(), pos));
+            case ENTITY -> entityId().ifPresent(id -> JukeboxHandler.stopEntity(player, id));
         }
     }
 
     private void handleTogglePlaying(ServerPlayer player) {
-        if (source() == Source.PLAYER) {
-            if (JukeboxHandler.isPlayerPlaying(player)) {
-                JukeboxHandler.stopPlayer(player);
-            } else {
-                playMusic(player, null);
+        switch (source()) {
+            case PLAYER -> {
+                if (JukeboxHandler.isPlayerPlaying(player)) JukeboxHandler.stopPlayer(player);
+                else playMusic(player, null);
             }
-        } else {
-            pos().ifPresent(blockPos -> {
-                if (JukeboxHandler.isBlockPlaying(player.serverLevel(), blockPos)) {
-                    JukeboxHandler.stopBlock(player.level(), blockPos);
-                } else {
-                    playMusic(player, blockPos);
-                }
+            case BLOCK -> pos().ifPresent(pos -> {
+                if (JukeboxHandler.isBlockPlaying(player.serverLevel(), pos)) JukeboxHandler.stopBlock(player.level(), pos);
+                else playMusic(player, pos);
+            });
+            case ENTITY -> entityId().ifPresent(id -> {
+                if (JukeboxHandler.isEntityPlaying(id)) JukeboxHandler.stopEntity(player, id);
+                else playMusicForEntity(player, id);
             });
         }
     }
 
     private void handleToggleMuted(ServerPlayer player) {
-        if (source() == Source.PLAYER) {
-            JukeboxHandler.togglePlayerMuted(player);
-        } else {
-            pos().ifPresent(blockPos -> JukeboxHandler.toggleBlockMuted(player, blockPos));
+        switch (source()) {
+            case PLAYER -> JukeboxHandler.togglePlayerMuted(player);
+            case BLOCK -> pos().ifPresent(pos -> JukeboxHandler.toggleBlockMuted(player, pos));
+            case ENTITY -> entityId().ifPresent(JukeboxHandler::toggleEntityMuted);
         }
     }
 
@@ -100,13 +103,20 @@ public record JukeboxServerPacket(Action action, Source source, Optional<BlockPo
             JukeboxPlayable playable = musicDisc.get(DataComponents.JUKEBOX_PLAYABLE);
             if (playable != null) {
                 ResourceLocation songId = playable.song().key().location();
-
-                if (blockPos == null) {
-                    JukeboxHandler.playPlayer(player, songId);
-                } else {
-                    JukeboxHandler.playBlock(player, blockPos, songId);
-                }
+                if (blockPos == null) JukeboxHandler.playPlayer(player, songId);
+                else JukeboxHandler.playBlock(player, blockPos, songId);
             }
         });
+    }
+
+    private void playMusicForEntity(ServerPlayer player, int entityId) {
+        if (!(player.containerMenu instanceof BackpackMenu menu)) return;
+        if (menu.getContraptionId() != entityId) return;
+        BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
+        ItemStack disc = menu.container.getItemHandler().getStackInSlot(layout.jukeboxDiscs().getStartIndex());
+        if (disc.isEmpty()) return;
+        JukeboxPlayable playable = disc.get(DataComponents.JUKEBOX_PLAYABLE);
+        if (playable == null) return;
+        JukeboxHandler.playEntity(player, entityId, playable.song().key().location());
     }
 }

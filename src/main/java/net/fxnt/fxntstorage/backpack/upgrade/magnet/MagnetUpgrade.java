@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.backpack.upgrade.magnet;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.filter.FilterItem;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
@@ -61,7 +60,7 @@ public class MagnetUpgrade extends AbstractUpgrade {
         return List.of(new MagnetFilterSlot(
                 menu.container,
                 menu.layout.magnetFilter().getStartIndex(),
-                275, 58,
+                274, 58,
                 () -> menu.hasUpgrade(UpgradeType.MAGNET),
                 () -> menu.isPanelExpanded(UpgradeType.MAGNET)
         ));
@@ -278,7 +277,7 @@ public class MagnetUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new ItemSpriteButton<>(
-                            panelX + 26, panelY + 32, 18, 18,
+                            panelX + 22, panelY + 31, 18, 18,
                             initialState,
                             state -> state.ignoreFan() ? modLoc("cross") : modLoc("check"),
                             state -> state.ignoreFan()
@@ -298,15 +297,6 @@ public class MagnetUpgrade extends AbstractUpgrade {
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            graphics.blit(
-                    PANEL_TEXTURE,
-                    panelX - 3, panelY + 8,
-                    0, 0,
-                    PANEL_EXPANDED_WIDTH,
-                    PANEL_EXPANDED_HEIGHT,
-                    128, 128
-            );
         }
 
         @Override

@@ -4,6 +4,7 @@ import com.simibubi.create.api.contraption.storage.item.MountedItemStorage;
 import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedStorage;
+import net.fxnt.fxntstorage.reserve_storage.mounted.ReserveStorageBoxMountedStorage;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedStorage;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -41,6 +42,8 @@ public record SetMountedStorageDirtyPacket(int entityId, BlockPos localPos) impl
                         simpleStorageBox.markDirty();
                     } else if (storage instanceof StorageBoxMountedStorage storageBox) {
                         storageBox.markDirty();
+                    } else if (storage instanceof ReserveStorageBoxMountedStorage reserveStorageBox) {
+                        reserveStorageBox.markDirty();
                     }
                 }
             }

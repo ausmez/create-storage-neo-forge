@@ -3,7 +3,6 @@ package net.fxnt.fxntstorage.compat.emi;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.handler.EmiCraftContext;
 import dev.emi.emi.handler.InventoryRecipeHandler;
-import dev.emi.emi.platform.EmiClient;
 import dev.emi.emi.registry.EmiRecipeFiller;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
@@ -54,20 +53,17 @@ public class EMIInventoryRecipeHandler extends InventoryRecipeHandler {
         List<ItemStack> stacks = EmiRecipeFiller.getStacks(this, recipe, context.getScreen(), context.getAmount());
         if (stacks != null) {
             Minecraft.getInstance().setScreen(context.getScreen());
-            if (!EmiClient.onServer) {
-                return EmiRecipeFiller.clientFill(this, recipe, context.getScreen(), stacks, context.getDestination());
-            } else {
-                List<Integer> recipeList = new ArrayList<>();
-                for (int i = 0; i < stacks.size(); i++) {
-                    if (!stacks.get(i).isEmpty())
-                        recipeList.add(i + 1);
-                }
-                PacketDistributor.sendToServer(new TransferRecipePacket(recipe.getId(), recipeList, context.getAmount() > 1, switch (context.getDestination()) {
-                    case NONE -> 0;
-                    case CURSOR -> 1;
-                    case INVENTORY -> 2;
-                }));
+
+            List<Integer> recipeList = new ArrayList<>();
+            for (int i = 0; i < stacks.size(); i++) {
+                if (!stacks.get(i).isEmpty())
+                    recipeList.add(i + 1);
             }
+            PacketDistributor.sendToServer(new TransferRecipePacket(recipe.getId(), recipeList, context.getAmount() > 1, switch (context.getDestination()) {
+                case NONE -> 0;
+                case CURSOR -> 1;
+                case INVENTORY -> 2;
+            }));
             return true;
         }
         return false;

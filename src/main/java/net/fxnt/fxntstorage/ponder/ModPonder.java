@@ -34,6 +34,7 @@ public class ModPonder {
             HELPER.addToTag(CREATE_STORAGE)
                     .add(ModBlocks.STORAGE_BOX)
                     .add(ModBlocks.SIMPLE_STORAGE_BOX_OAK)
+                    .add(ModBlocks.RESERVE_STORAGE_BOX)
                     .add(ModBlocks.PASSER_BLOCK)
                     .add(ModBlocks.SMART_PASSER_BLOCK)
                     .add(ModBlocks.STORAGE_CONTROLLER)
@@ -41,7 +42,8 @@ public class ModPonder {
                     .add(ModBlocks.STORAGE_INTERFACE_FILTERED)
                     .add(ModBlocks.STORAGE_TRIM_OAK)
                     .add(ModItems.STORAGE_BOX_VOID_UPGRADE)
-                    .add(ModItems.STORAGE_BOX_CAPACITY_UPGRADE);
+                    .add(ModItems.STORAGE_BOX_CAPACITY_UPGRADE)
+                    .add(ModItems.STORAGE_BOX_COMPACTING_UPGRADE);
         }
     }
 
@@ -54,6 +56,10 @@ public class ModPonder {
                     .addStoryBoard("storagebox/intro", StorageBoxScenes::intro, CREATE_STORAGE)
                     .addStoryBoard("storagebox/interact", StorageBoxScenes::interact, CREATE_STORAGE)
                     .addStoryBoard("storagebox/filter", StorageBoxScenes::filter, CREATE_STORAGE);
+
+            HELPER.forComponents(ModBlocks.RESERVE_STORAGE_BOX)
+                    .addStoryBoard("reservestoragebox/intro", ReserveStorageBoxScenes::intro, CREATE_STORAGE)
+                    .addStoryBoard("reservestoragebox/contraption", ReserveStorageBoxScenes::treeFarm, CREATE_STORAGE);
 
             List<ResourceLocation> simpleStorageBoxes = BuiltInRegistries.BLOCK.stream()
                     .filter(block -> {
@@ -73,7 +79,8 @@ public class ModPonder {
                 builder.addStoryBoard("simplestoragebox/intro", SimpleStorageBoxScenes::intro, CREATE_STORAGE);
             }
             builder.addStoryBoard("simplestoragebox/interact", SimpleStorageBoxScenes::interact, CREATE_STORAGE)
-                    .addStoryBoard("simplestoragebox/upgrades", SimpleStorageBoxScenes::upgrades, CREATE_STORAGE);
+                    .addStoryBoard("simplestoragebox/upgrades", SimpleStorageBoxScenes::upgrades, CREATE_STORAGE)
+                    .addStoryBoard("simplestoragebox/interact", SimpleStorageBoxScenes::compacting, CREATE_STORAGE);
 
             HELPER.forComponents(ModBlocks.PASSER_BLOCK)
                     .addStoryBoard("passerblock/intro", PasserBlockScenes::intro, CREATE_STORAGE);

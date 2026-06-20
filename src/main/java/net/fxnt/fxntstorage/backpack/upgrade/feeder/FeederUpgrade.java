@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.backpack.upgrade.feeder;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.simibubi.create.content.logistics.filter.FilterItem;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.content.logistics.filter.PackageFilterItem;
@@ -67,7 +66,7 @@ public class FeederUpgrade extends AbstractUpgrade {
         return List.of(new FeederFilterSlot(
                 menu.container,
                 menu.layout.feederFilter().getStartIndex(),
-                275, 58,
+                274, 58,
                 () -> menu.hasUpgrade(UpgradeType.FEEDER),
                 () -> menu.isPanelExpanded(UpgradeType.FEEDER)
         ));
@@ -305,7 +304,7 @@ public class FeederUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new SpriteButton<>(
-                            panelX + 26, panelY + 32, 18, 18,
+                            panelX + 22, panelY + 31, 18, 18,
                             initialState,
                             state -> state.allowChorus() ? CHORUS_ON : CHORUS_OFF,
                             state -> state.allowChorus()
@@ -317,7 +316,7 @@ public class FeederUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new SpriteButton<>(
-                            panelX + 48, panelY + 32, 18, 18,
+                            panelX + 41, panelY + 31, 18, 18,
                             initialState,
                             state -> state.displayMessage() ? MSG_ON : MSG_OFF,
                             state -> state.displayMessage()
@@ -335,15 +334,6 @@ public class FeederUpgrade extends AbstractUpgrade {
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            graphics.blit(
-                    PANEL_TEXTURE,
-                    panelX - 3, panelY + 8,
-                    0, 0,
-                    PANEL_EXPANDED_WIDTH,
-                    PANEL_EXPANDED_HEIGHT,
-                    128, 128
-            );
         }
 
         @Override

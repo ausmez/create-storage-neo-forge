@@ -64,7 +64,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         BlockPos lastBlockPos;
     }
 
-    private static final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
+    private final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
 
     private final int slotCount;
 
@@ -89,7 +89,7 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
 
     @Override
     protected void onExplosionHit(BlockState state, Level level, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
-        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && level instanceof ServerLevel serverLevel) {
+        if (!state.isAir() && level instanceof ServerLevel serverLevel) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             LootParams.Builder lootParams = new LootParams.Builder(serverLevel)
                     .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
@@ -189,40 +189,40 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
              */
         BlockEntity entity = level.getBlockEntity(pos);
 
-        if (entity instanceof StorageBoxEntity storageBoxEntity) {
+        if (entity instanceof StorageBoxEntity blockEntity) {
             ItemStack mainHandItem = player.getItemInHand(InteractionHand.MAIN_HAND);
 
             long currentTime = player.level().getGameTime();
             ClickData data = CLICK_DATA.computeIfAbsent(player, p -> new ClickData());
             boolean isDoubleClick = currentTime - data.lastClickTime < 10
-                    && data.lastBlockPos == storageBoxEntity.getBlockPos();
+                    && data.lastBlockPos == blockEntity.getBlockPos();
 
             if (isDoubleClick) {
                 // Double Right-click
-                if (mainHandItem.isEmpty() && !storageBoxEntity.getFilter().getFilter().isEmpty()) {
-                    storageBoxEntity.transferToStorage(state, player, true);
+                if (mainHandItem.isEmpty() && !blockEntity.getFilter().getFilter().isEmpty()) {
+                    blockEntity.transferToStorage(state, player, true);
                 }
             } else {
                 // Single Right-Click
                 if (mainHandItem.is(Tags.Items.TOOLS_WRENCH)) {
                     // Right-Click with Create Wrench in hand will toggle void mode
-                    storageBoxEntity.toggleVoidUpgrade();
+                    blockEntity.toggleVoidUpgrade();
                     return InteractionResult.SUCCESS;
                 }
 
                 if (player.isShiftKeyDown()) {
                     // Single Right-click while sneaking will open container GUI screen
-                    player.openMenu(storageBoxEntity, pos);
+                    player.openMenu(blockEntity, pos);
                     return InteractionResult.CONSUME;
                 }
 
                 if (!mainHandItem.isEmpty()) {
                     // Current item in player hand will be inserted into container
-                    storageBoxEntity.transferToStorage(state, player, false);
+                    blockEntity.transferToStorage(state, player, false);
                 }
             }
             data.lastClickTime = currentTime;
-            data.lastBlockPos = storageBoxEntity.getBlockPos();
+            data.lastBlockPos = blockEntity.getBlockPos();
 
             if (!isDoubleClick && mainHandItem.isEmpty()) {
                 return InteractionResult.PASS;
@@ -264,10 +264,6 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
     @Nullable
     public static Direction getDirectionFacing(BlockState state) {
         if (!(state.getBlock() instanceof StorageBox)) return null;
-        return ((StorageBox) state.getBlock()).getFacing(state);
-    }
-
-    protected Direction getFacing(BlockState state) {
         return state.getValue(FACING);
     }
 
@@ -302,5 +298,4 @@ public class StorageBox extends BaseEntityBlock implements IBE<StorageBoxEntity>
         }
         return 0;
     }
-
 }

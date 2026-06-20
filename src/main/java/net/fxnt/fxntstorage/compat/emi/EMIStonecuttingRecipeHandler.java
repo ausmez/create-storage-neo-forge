@@ -5,7 +5,6 @@ import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.recipe.handler.EmiCraftContext;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.handler.StonecuttingRecipeHandler;
-import dev.emi.emi.platform.EmiClient;
 import dev.emi.emi.registry.EmiRecipeFiller;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
@@ -58,20 +57,17 @@ public class EMIStonecuttingRecipeHandler extends StonecuttingRecipeHandler {
         if (stacks != null) {
             Minecraft mc = Minecraft.getInstance();
             mc.setScreen(context.getScreen());
-            if (!EmiClient.onServer) {
-                return EmiRecipeFiller.clientFill(this, recipe, context.getScreen(), stacks, context.getDestination());
-            } else {
-                List<Integer> recipeList = new ArrayList<>();
-                for (int i = 0; i < stacks.size(); i++) {
-                    if (!stacks.get(i).isEmpty())
-                        recipeList.add(i + 1);
-                }
-                PacketDistributor.sendToServer(new TransferRecipePacket(recipe.getId(), recipeList, context.getAmount() > 1, switch (context.getDestination()) {
-                    case NONE -> 0;
-                    case CURSOR -> 1;
-                    case INVENTORY -> 2;
-                }));
+
+            List<Integer> recipeList = new ArrayList<>();
+            for (int i = 0; i < stacks.size(); i++) {
+                if (!stacks.get(i).isEmpty())
+                    recipeList.add(i + 1);
             }
+            PacketDistributor.sendToServer(new TransferRecipePacket(recipe.getId(), recipeList, context.getAmount() > 1, switch (context.getDestination()) {
+                case NONE -> 0;
+                case CURSOR -> 1;
+                case INVENTORY -> 2;
+            }));
 
             EmiIngredient emiInput = recipe.getInputs().getFirst();
             Ingredient ingredient = Ingredient.of(

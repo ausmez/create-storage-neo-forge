@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.level.Level;
@@ -28,8 +29,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ClientJukeboxHandler {
     private static final Map<UUID, PlayerPlayback> playerSounds = new ConcurrentHashMap<>();
     private static final Map<BlockPos, BlockPlayback> blockSounds = new ConcurrentHashMap<>();
+    private static final Map<Integer, EntityContraptionPlayback> entitySounds = new ConcurrentHashMap<>();
     private static final float FADE_IN_SPEED = 1f / (10.0f * 20f);
     private static final float FADE_OUT_SPEED = 1f / (2.5f * 20f);
+
+    public record EntityContraptionPlayback(int entityId, @Nullable EntityContraptionSoundInstance sound,
+                                            ResourceLocation song, boolean muted) {
+        public EntityContraptionPlayback toggleMuted() {
+            if (sound != null) sound.setMuted(!muted);
+            return new EntityContraptionPlayback(entityId, sound, song, !muted);
+        }
+    }
 
     public record PlayerPlayback(UUID playerId, @Nullable EntitySoundInstance sound, ResourceLocation song,
                                  boolean muted) {
@@ -54,6 +64,7 @@ public class ClientJukeboxHandler {
     public static void init() {
         playerSounds.clear();
         blockSounds.clear();
+        entitySounds.clear();
     }
 
     public static void playPlayer(PlayerPlayback player) {
@@ -147,12 +158,57 @@ public class ClientJukeboxHandler {
         return pb != null && pb.muted();
     }
 
+    // ENTITY (contraption-mounted backpack)
+    public static void playEntity(EntityContraptionPlayback entity) {
+        int entityId = entity.entityId();
+        Minecraft mc = Minecraft.getInstance();
+        SoundManager sm = mc.getSoundManager();
+        EntityContraptionPlayback active = entitySounds.get(entityId);
+
+        if (active == null || active.sound() == null || !sm.isActive(active.sound())) {
+            stopEntity(entityId);
+            ClientLevel level = mc.level;
+            if (level == null) return;
+
+            Optional<Holder.Reference<JukeboxSong>> song = getSong(entity.song(), level);
+            song.ifPresent(holder -> {
+                JukeboxSong jukeboxSong = holder.value();
+                EntityContraptionSoundInstance newSound = new EntityContraptionSoundInstance(jukeboxSong, entityId, entity.muted());
+                sm.play(newSound);
+                mc.gui.setNowPlaying(jukeboxSong.description());
+                entitySounds.put(entityId, new EntityContraptionPlayback(entityId, newSound, entity.song(), entity.muted()));
+            });
+        }
+    }
+
+    public static void stopEntity(int entityId) {
+        EntityContraptionPlayback removed = entitySounds.remove(entityId);
+        if (removed != null && removed.sound() != null)
+            Minecraft.getInstance().getSoundManager().stop(removed.sound());
+    }
+
+    public static boolean isEntityPlaying(int entityId) {
+        return entitySounds.containsKey(entityId);
+    }
+
+    public static boolean isEntityMuted(int entityId) {
+        EntityContraptionPlayback pb = entitySounds.get(entityId);
+        return pb != null && pb.muted();
+    }
+
+    public static void toggleMuteEntity(int entityId) {
+        entitySounds.computeIfPresent(entityId, (id, pb) -> pb.toggleMuted());
+    }
+
     public static void stopAllMusic() {
         for (Map.Entry<UUID, PlayerPlayback> player : playerSounds.entrySet()) {
             stopPlayer(player.getKey());
         }
         for (Map.Entry<BlockPos, BlockPlayback> block : blockSounds.entrySet()) {
             stopBlock(block.getKey());
+        }
+        for (int entityId : entitySounds.keySet()) {
+            stopEntity(entityId);
         }
     }
 
@@ -233,6 +289,68 @@ public class ClientJukeboxHandler {
         public boolean canStartSilent() {
             return true;
         }
+    }
+
+    public static class EntityContraptionSoundInstance extends AbstractTickableSoundInstance {
+        private final int entityId;
+        private boolean muted;
+        private float biomeVolumeMultiplier = 1.0f;
+
+        public EntityContraptionSoundInstance(JukeboxSong song, int entityId, boolean muted) {
+            super(song.soundEvent().value(), SoundSource.RECORDS, RandomSource.create());
+            this.entityId = entityId;
+            this.looping = true;
+            this.delay = 0;
+            this.muted = muted;
+            this.volume = muted ? 0.0f : 1.0f;
+            this.pitch = 1.0f;
+            this.attenuation = Attenuation.LINEAR;
+
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level != null) {
+                Entity e = mc.level.getEntity(entityId);
+                if (e != null) {
+                    this.x = e.getX();
+                    this.y = e.getY();
+                    this.z = e.getZ();
+                }
+            }
+        }
+
+        public void setMuted(boolean muted) {
+            this.muted = muted;
+            this.volume = muted ? 0.0f : biomeVolumeMultiplier;
+        }
+
+        private void applyVolume() {
+            if (!muted) this.volume = biomeVolumeMultiplier;
+        }
+
+        @Override
+        public void tick() {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) { stop(); return; }
+
+            Entity e = mc.level.getEntity(entityId);
+            if (e == null || e.isRemoved()) { stop(); return; }
+
+            this.x = e.getX();
+            this.y = e.getY();
+            this.z = e.getZ();
+
+            if (!muted) {
+                boolean inPaleGarden = isInPaleGarden(mc.level, e.blockPosition());
+                float target = inPaleGarden ? 0.0f : 1.0f;
+                if (biomeVolumeMultiplier < target)
+                    biomeVolumeMultiplier = Math.min(target, biomeVolumeMultiplier + FADE_IN_SPEED);
+                else if (biomeVolumeMultiplier > target)
+                    biomeVolumeMultiplier = Math.max(target, biomeVolumeMultiplier - FADE_OUT_SPEED);
+                applyVolume();
+            }
+        }
+
+        @Override
+        public boolean canStartSilent() { return true; }
     }
 
     private static class BlockSoundInstance extends AbstractTickableSoundInstance {

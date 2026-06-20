@@ -81,6 +81,7 @@ public class BackpackBlock extends BaseEntityBlock {
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         if (level.getBlockEntity(pos) instanceof BackpackEntity be) {
+            be.saveExtraComponents(stack);
             be.readInventory(stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
             if (stack.has(DataComponents.CUSTOM_NAME))
                 be.setCustomName(stack.getHoverName());
@@ -117,9 +118,7 @@ public class BackpackBlock extends BaseEntityBlock {
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof BackpackEntity backPackEntity) {
-            player.openMenu(backPackEntity, buf -> {
-                buf.writeEnum(BackpackMenu.BackpackType.BLOCK).writeBlockPos(pos);
-            });
+            player.openMenu(backPackEntity, buf -> buf.writeEnum(BackpackMenu.BackpackType.BLOCK).writeBlockPos(pos));
         }
         return InteractionResult.CONSUME;
     }

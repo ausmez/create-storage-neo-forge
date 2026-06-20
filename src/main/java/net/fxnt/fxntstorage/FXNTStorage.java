@@ -2,8 +2,13 @@ package net.fxnt.fxntstorage;
 
 import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import com.simibubi.create.foundation.data.CreateRegistrate;
+import com.tterrag.registrate.providers.ProviderType;
 import net.createmod.ponder.foundation.PonderIndex;
+import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.client.renderer.BackpackBlockEntityRenderer;
+import net.fxnt.fxntstorage.backpack.client.renderer.BackpackItemModel;
+import net.fxnt.fxntstorage.backpack.client.renderer.BackpackItemRenderer;
 import net.fxnt.fxntstorage.backpack.client.renderer.BackpackRenderPlayer;
 import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackClientTooltip;
 import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackTooltip;
@@ -20,18 +25,25 @@ import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedScreen;
 import net.fxnt.fxntstorage.init.*;
 import net.fxnt.fxntstorage.network.PacketHandler;
 import net.fxnt.fxntstorage.ponder.CsPonderPlugin;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxEntityRenderer;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxScreen;
+import net.fxnt.fxntstorage.simple_storage.CompactingRecipeHelper;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxScreen;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedScreen;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -47,6 +59,8 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -54,6 +68,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -63,10 +78,13 @@ public class FXNTStorage {
     public static final String MOD_ID = "fxntstorage";
     public static final Logger LOGGER = LogManager.getLogger(FXNTStorage.class);
     public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(MOD_ID)
-            .defaultCreativeTab((ResourceKey<CreativeModeTab>) null);
+            .defaultCreativeTab((ResourceKey<CreativeModeTab>) null)
+            .addDataGenerator(ProviderType.LANG, ModLangProvider::provide);
     public static final int MAX_EFFECTS_PER_SONG = 3;
 
     public static final boolean CURIOS_LOADED = ModList.get().isLoaded(ModCompats.CURIOS);
+    public static final boolean EMI_LOADED = ModList.get().isLoaded(ModCompats.EMI);
+    public static final boolean REI_LOADED = ModList.get().isLoaded(ModCompats.REI);
 
     public FXNTStorage(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerConfig(ModConfig.Type.CLIENT, ConfigManager.ClientConfig.CLIENT_SPEC);
@@ -104,6 +122,7 @@ public class FXNTStorage {
 
     private static void loadCuriosCompat(IEventBus bus) {
         NeoForge.EVENT_BUS.addListener(CuriosCompat::keepBackpack);
+        NeoForge.EVENT_BUS.addListener(CuriosCompat::onCurioChange);
         bus.addListener(CuriosCompat::registerCapabilities);
     }
 
@@ -119,8 +138,9 @@ public class FXNTStorage {
     }
 
     private void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.RESERVE_STORAGE_BOX_ENTITY.get(), (e, d) -> e.getAutomationHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_BOX_ENTITY.get(), (e, d) -> e.getItemHandler());
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (e, d) -> e.getItemHandler());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), (e, d) -> e.getCapabilityHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.BACKPACK_ENTITY.get(), (e, d) -> e.getItemHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_CONTROLLER_ENTITY.get(), (e, d) -> e.getItemHandler());
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.STORAGE_INTERFACE_ENTITY.get(), (e, d) -> e.getItemHandler());
@@ -167,6 +187,14 @@ public class FXNTStorage {
         }
 
         @SubscribeEvent
+        public static void onRecipesUpdated(RecipesUpdatedEvent event) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level != null) {
+                CompactingRecipeHelper.rebuild(mc.level.getRecipeManager(), mc.level.registryAccess());
+            }
+        }
+
+        @SubscribeEvent
         public static void onAddLayers(EntityRenderersEvent.AddLayers event) {
             addPlayerLayer(event, PlayerSkin.Model.WIDE);
             addPlayerLayer(event, PlayerSkin.Model.SLIM);
@@ -186,7 +214,40 @@ public class FXNTStorage {
             event.registerBlockEntityRenderer(ModBlockEntities.SIMPLE_STORAGE_BOX_ENTITY.get(), SimpleStorageBoxEntityRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.SMART_PASSER_ENTITY.get(), SmartBlockEntityRenderer::new);
             event.registerBlockEntityRenderer(ModBlockEntities.STORAGE_INTERFACE_FILTERED_ENTITY.get(), SmartBlockEntityRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.BACKPACK_ENTITY.get(), BackpackBlockEntityRenderer::new);
+            event.registerBlockEntityRenderer(ModBlockEntities.RESERVE_STORAGE_BOX_ENTITY.get(), ReserveStorageBoxEntityRenderer::new);
             event.registerEntityRenderer(ModEntityTypes.MAGNET_PICKUP_ENTITY.get(), NoopRenderer::new);
+        }
+
+        @SubscribeEvent
+        public static void registerClientExtensions(RegisterClientExtensionsEvent event) {
+            IClientItemExtensions extension = new IClientItemExtensions() {
+                private BackpackItemRenderer renderer;
+
+                @Override
+                public @NotNull BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                    if (renderer == null) renderer = new BackpackItemRenderer();
+                    return renderer;
+                }
+            };
+
+            for (Item item : BuiltInRegistries.ITEM) {
+                if (item instanceof BackpackItem) {
+                    event.registerItem(extension, item);
+                }
+            }
+        }
+
+        @SubscribeEvent
+        public static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
+            for (Item item : BuiltInRegistries.ITEM) {
+                if (!(item instanceof BackpackItem)) continue;
+                ModelResourceLocation key = ModelResourceLocation.inventory(BuiltInRegistries.ITEM.getKey(item));
+                BakedModel original = event.getModels().get(key);
+                if (original != null && !(original instanceof BackpackItemModel)) {
+                    event.getModels().put(key, new BackpackItemModel(original));
+                }
+            }
         }
 
         @SubscribeEvent
@@ -196,6 +257,7 @@ public class FXNTStorage {
             event.register(ModMenuTypes.STORAGE_BOX_MENU.get(), StorageBoxScreen::createScreen);
             event.register(ModMenuTypes.STORAGE_BOX_MOUNTED_MENU.get(), StorageBoxMountedScreen::createScreen);
             event.register(ModMenuTypes.BACKPACK_MENU.get(), BackpackScreen::new);
+            event.register(ModMenuTypes.RESERVE_STORAGE_BOX_MENU.get(), ReserveStorageBoxScreen::new);
         }
 
         @SubscribeEvent
@@ -203,6 +265,7 @@ public class FXNTStorage {
             event.register(KeybindHandler.TOGGLE_BACKPACK_KEY);
             event.register(KeybindHandler.TOGGLE_JETPACK_HOVER_KEY);
             event.register(KeybindHandler.ORE_MINE_ANY_BLOCK);
+            event.register(KeybindHandler.COMPACTING_WHEEL_KEY);
         }
 
         @SubscribeEvent

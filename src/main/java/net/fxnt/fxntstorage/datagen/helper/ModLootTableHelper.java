@@ -11,16 +11,18 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 public class ModLootTableHelper {
 
     public static <T extends Block> NonNullBiConsumer<RegistrateBlockLootTables, T> copyComponents() {
-        return (tables, block) -> tables.add(block,
-                LootTable.lootTable()
-                        .withPool(LootPool.lootPool()
-                                .add(AlternativesEntry.alternatives(
-                                        LootItem.lootTableItem(block)
-                                                .when(ModBlockEntitySaveComponents.builder())
-                                                .apply(ModCopyBlockEntityData.builder()),
-                                        LootItem.lootTableItem(block)
-                                ))
-                        )
-        );
+        return (tables, block) -> tables.add(block, copyComponentsTable(block));
+    }
+
+    public static LootTable.Builder copyComponentsTable(Block block) {
+        return LootTable.lootTable()
+                .withPool(LootPool.lootPool()
+                        .add(AlternativesEntry.alternatives(
+                                LootItem.lootTableItem(block)
+                                        .when(ModBlockEntitySaveComponents.builder())
+                                        .apply(ModCopyBlockEntityData.builder()),
+                                LootItem.lootTableItem(block)
+                        ))
+                );
     }
 }

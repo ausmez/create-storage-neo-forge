@@ -35,6 +35,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static net.minecraft.world.item.crafting.RecipeType.STONECUTTING;
+
 public class JEIStonecuttingTransferHandler implements IRecipeTransferHandler<StonecutterMenu, RecipeHolder<StonecutterRecipe>> {
     private final IRecipeTransferHandlerHelper transferHelper;
     private final IStackHelper stackHelper;
@@ -153,7 +155,7 @@ public class JEIStonecuttingTransferHandler implements IRecipeTransferHandler<St
         for (ItemStack possibleInput : ingredient.getItems()) {
             SingleRecipeInput inv = new SingleRecipeInput(possibleInput);
             List<RecipeHolder<StonecutterRecipe>> matches = mc.level.getRecipeManager()
-                    .getRecipesFor(net.minecraft.world.item.crafting.RecipeType.STONECUTTING, inv, mc.level);
+                    .getRecipesFor(STONECUTTING, inv, mc.level);
             allMatchingRecipes.addAll(matches);
         }
 

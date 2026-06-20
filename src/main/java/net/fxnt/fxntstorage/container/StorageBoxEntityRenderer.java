@@ -72,17 +72,19 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         int color = getColorForDistance(distance);
 
         BlockPos lightPos = context.contraption.entity.blockPosition().offset(context.localPos).relative(side);
-        int lightLevel = LevelRenderer.getLightColor(context.world, lightPos);
+        int envLight = LevelRenderer.getLightColor(context.world, lightPos);
+        int textLight = emissiveLight(envLight);
+        int itemLight = emissiveItemLight(envLight);
 
-        renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
-        renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
+        renderLine(line1, -1f, poseStack, buffer, color, textLight);
+        renderLine(line2, -4f, poseStack, buffer, color, textLight);
 
         if (tag.contains("Filter")) {
             ItemStack filterItem = tag.getCompound("Filter").isEmpty()
                     ? ItemStack.EMPTY
                     : ItemStack.parseOptional(context.contraption.entity.level().registryAccess(), tag.getCompound("Filter"));
             if (!filterItem.isEmpty()) {
-                renderItem(mc.getItemRenderer(), filterItem, poseStack, buffer, lightLevel, false);
+                renderItem(mc.getItemRenderer(), filterItem, poseStack, buffer, itemLight, ItemStack.EMPTY);
             }
         }
 
@@ -115,9 +117,11 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         BlockState blockState = blockEntity.getBlockState();
         Direction side = blockState.getValue(HorizontalDirectionalBlock.FACING);
 
-        int lightLevel = LevelRenderer.getLightColor(level, blockEntity.getBlockPos());
+        int envLight = LevelRenderer.getLightColor(level, blockEntity.getBlockPos());
+        int textLight = emissiveLight(envLight);
+        int itemLight = emissiveItemLight(envLight);
 
-        FilteringRenderer.renderOnBlockEntity(blockEntity, partialTick, poseStack, buffer, lightLevel, packedOverlay);
+        FilteringRenderer.renderOnBlockEntity(blockEntity, partialTick, poseStack, buffer, itemLight, packedOverlay);
 
         poseStack.pushPose();
         poseStack.translate(0.5f, 0, 0.5f);
@@ -126,8 +130,8 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
 
         int color = getColorForDistance(distance);
 
-        renderLine(line1, 7f, poseStack, buffer, color, lightLevel);
-        renderLine(line2, 4f, poseStack, buffer, color, lightLevel);
+        renderLine(line1, 7f, poseStack, buffer, color, textLight);
+        renderLine(line2, 4f, poseStack, buffer, color, textLight);
 
         poseStack.popPose();
     }

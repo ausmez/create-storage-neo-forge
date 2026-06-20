@@ -24,8 +24,11 @@ public class PacketHandler {
         registrar.playToClient(SyncMountedStoragePacket.TYPE, SyncMountedStoragePacket.STREAM_CODEC, SyncMountedStoragePacket::handle);
         registrar.playToClient(SyncSlotCountPacket.TYPE, SyncSlotCountPacket.STREAM_CODEC, SyncSlotCountPacket::handle);
         registrar.playToClient(VisualJetpackAirPacket.TYPE, VisualJetpackAirPacket.STREAM_CODEC, VisualJetpackAirPacket::handle);
+        registrar.playToClient(WorkshopProcessingPacket.TYPE, WorkshopProcessingPacket.STREAM_CODEC, WorkshopProcessingPacket::handle);
+        registrar.playToClient(WorkshopSoundPacket.TYPE, WorkshopSoundPacket.STREAM_CODEC, WorkshopSoundPacket::handle);
 
         // ServerboundPacket
+        registrar.playToServer(CompactingTierScrollPacket.TYPE, CompactingTierScrollPacket.STREAM_CODEC, CompactingTierScrollPacket::handle);
         registrar.playToServer(CrossbowChargedPacket.TYPE, CrossbowChargedPacket.STREAM_CODEC, CrossbowChargedPacket::handle);
         registrar.playToServer(GhostItemPacket.TYPE, GhostItemPacket.STREAM_CODEC, GhostItemPacket::handle);
         registrar.playToServer(JetpackFlyingPacket.TYPE, JetpackFlyingPacket.STREAM_CODEC, JetpackFlyingPacket::handle);
@@ -33,6 +36,7 @@ public class PacketHandler {
         registrar.playToServer(KeyPressedPacket.TYPE, KeyPressedPacket.STREAM_CODEC, KeyPressedPacket::handle);
         registrar.playToServer(PickBlockUpgradePacket.TYPE, PickBlockUpgradePacket.STREAM_CODEC, PickBlockUpgradePacket::handle);
         registrar.playToServer(PlayerInputPacket.TYPE, PlayerInputPacket.STREAM_CODEC, PlayerInputPacket::handle);
+        registrar.playToServer(ReserveStorageBoxGhostPacket.TYPE, ReserveStorageBoxGhostPacket.STREAM_CODEC, ReserveStorageBoxGhostPacket::handle);
         registrar.playToServer(SetActivePanelPacket.TYPE, SetActivePanelPacket.STREAM_CODEC, SetActivePanelPacket::handle);
         registrar.playToServer(SetSortOrderPacket.TYPE, SetSortOrderPacket.STREAM_CODEC, SetSortOrderPacket::handle);
         registrar.playToServer(SetMountedStorageDirtyPacket.TYPE, SetMountedStorageDirtyPacket.STREAM_CODEC, SetMountedStorageDirtyPacket::handle);

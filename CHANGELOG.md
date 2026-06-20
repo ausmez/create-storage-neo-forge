@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.3.0 - 2026-06-20
+
+## New Features
+### Storage
+- **Reserve Barrel** – Stores items, keeping configured amounts in reserve, useful for tree farms or drills.
+### Jukebox Upgrade
+- **Phantom Ward** – Play Music Disc 13 to keep phantoms away - they'll abort their dive attack within 3 blocks of a protected player.
+### Simple Storage Box
+- **Compacting Upgrade** – New upgrade for the Simple Storage Box that compresses items into higher tiers. 
+  - Use Ctrl + Scroll (or compacting wheel keybind [Tab]) to select the displayed item.
+  - Check out the in-game Simple Storage Box ponder to see the Compacting Upgrade in action!
+### Backpack Upgrades
+- **Crafting Upgrade** – Craft items right from your backpack!
+- **Portable Workshop Upgrade** – A mini workshop you can take anywhere! Supports deploying, pressing, and polishing recipes, powered by air pressure (configurable RPM).
+
+## Changes
+
+- Backpacks can now be used on Create contraptions - including all inventory, tool slots, and upgrades.
+  - Player-only upgrades (all except Magnet, Jukebox, Crafting, and Portable Workshop) will show a dark red overlay when installed in a contraption-mounted backpack.
+- Jade support for Simple Storage Boxes, displaying max item capacity and number of capacity upgrades.
+- Backpack upgrade panels now open one at a time - opening a new one closes the last.
+- The Jetpack Upgrade now costs fewer resources to craft.
+
+## Bug Fixes
+
+- Fixed the Simple Storage Controller wrongly denying items when set to deny filling empty storage. (#68)
+- Storage Boxes and Simple Storage Boxes are no longer destroyed when hit by a Mace's Wind Burst - the storage box now drops properly. (#66)
+- Fixed Simple Storage Boxes occasionally creating extra "phantom" packages when used with the Create Packager. (#61)
+- Fixed an item-duplication/corruption bug when inserting into a Simple Storage Box via the Create Packager.
+- Fixed backpacks duplicating items when assembled and disassembled on a contraption. (#60/#65)
+- Fixed a crash that happens when the optional Curios mod was not installed. (#59)
+- Fixed the Jukebox upgrade continuing to play music after swapping out the disc.
+- Fixed Jukebox Upgrade note particles so they now appear more randomly.
+- Fixed backpack data from other mods being lost when placing the backpack as a block. (#57)
+- Fixed Storage Boxes losing their custom name when broken and picked back up.
+- Fixed Storage Boxes and Backpacks not showing custom name in menus when placed on a Create contraption.
+- Storage Boxes and Simple Storage Boxes can now only be accessed from the front display when mounted on a contraption.
+- Adjusted item and text rendering on Storage Boxes and Simple Storage Boxes when shaders are installed.
+- Fixed log spam when optional Vanilla Backport mod is not installed.
+- Fixed the ore mining upgrade preview showing all vein blocks even when the server doesn't allow mining them.
+- Fixed several places where text wasn't translatable.
+
+---
+
 ## 1.2.7 - 2026-04-25
 
 ## Changes

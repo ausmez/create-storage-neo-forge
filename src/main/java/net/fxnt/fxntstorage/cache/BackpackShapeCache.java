@@ -17,11 +17,6 @@ public class BackpackShapeCache {
         initializeShapes();
     }
 
-    public static void clearCache() {
-        shapes.clear();
-        initializeShapes();
-    }
-
     private static void initializeShapes() {
         // Initialize and store shapes based on direction
         shapes.put(Direction.NORTH, createShapeForDirection(Direction.NORTH));

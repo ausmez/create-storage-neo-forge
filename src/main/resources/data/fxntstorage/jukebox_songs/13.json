@@ -1,0 +1,10 @@
+{
+  "song": "minecraft:13",
+  "player_only": false,
+  "effects": [
+    {
+      "effect": "fxntstorage:phantom_ward",
+      "amplifier": 0
+    }
+  ]
+}

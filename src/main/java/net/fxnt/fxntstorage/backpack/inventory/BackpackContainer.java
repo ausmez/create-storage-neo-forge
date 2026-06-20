@@ -165,13 +165,13 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
     }
 
     @Override
-    public int getExpandedPanelsBitmask() {
-        return upgradeData.getExpandedPanelsBitmask();
+    public UpgradeType getExpandedPanel() {
+        return upgradeData.getExpandedPanel();
     }
 
     @Override
-    public void setExpandedPanelsBitmask(int mask) {
-        upgradeData.setExpandedPanelsBitmask(mask);
+    public void setExpandedPanel(UpgradeType type) {
+        upgradeData.setExpandedPanel(type);
         setDataChanged();
     }
 
@@ -288,7 +288,11 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
         }
 
         saveItemsToStack();
-        if (!(player.containerMenu instanceof BackpackMenu menu && menu.container == this)) {
+
+        boolean openMenuShowsThis = player.containerMenu instanceof BackpackMenu menu && menu.container == this;
+        boolean isCachedWornContainer =
+                player.getData(ModAttachmentTypes.WORN_BACKPACK_CONTAINER) == this;
+        if (!openMenuShowsThis && !isCachedWornContainer) {
             BackpackContainer.Cache.invalidateWornBackpack(player);
         }
     }

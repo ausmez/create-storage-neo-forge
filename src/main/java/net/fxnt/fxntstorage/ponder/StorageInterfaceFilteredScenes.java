@@ -111,6 +111,19 @@ public class StorageInterfaceFilteredScenes {
         scene.idle(10);
 
         for (int i = 0; i < 12; i++) {
+            if (i == 0) {
+                scene.overlay().showOutline(PonderPalette.OUTPUT, "extract", util.select().position(boxes.getFirst().pos()), 40);
+                scene.overlay().showOutline(PonderPalette.OUTPUT, "chest", util.select().fromTo(0, 1, 2, 0, 1, 3), 160);
+            }
+            if (i == 4) {
+                scene.idle(20);
+                scene.overlay().showOutline(PonderPalette.OUTPUT, "extract", util.select().position(boxes.get(1).pos()), 40);
+            }
+            if (i == 8) {
+                scene.idle(20);
+                scene.overlay().showOutline(PonderPalette.OUTPUT, "extract", util.select().position(boxes.get(2).pos()), 40);
+            }
+
             if (i >= 0) extractOne(scene, boxes.get(0).pos());  // copper
             if (i >= 4) extractOne(scene, boxes.get(1).pos());  // gold
             if (i >= 8) extractOne(scene, boxes.get(2).pos());  // cobble
@@ -187,6 +200,10 @@ public class StorageInterfaceFilteredScenes {
                 .pointAt(util.vector().blockSurface(sfi, Direction.NORTH).add(-0.1, -0.1, 0));
 
         for (int i = 1; i < 5; i++) {
+            if (i == 1) {
+                scene.overlay().showOutline(PonderPalette.INPUT, "insert", util.select().position(boxes.getFirst().pos()), 50);
+                scene.overlay().showOutline(PonderPalette.INPUT, "hopper", util.select().position(0, 2, 2), 50);
+            }
             populateBox(scene, boxes.getFirst(), i);
             scene.idle(10);
         }

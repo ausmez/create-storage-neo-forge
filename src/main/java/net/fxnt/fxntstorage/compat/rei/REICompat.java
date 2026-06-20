@@ -4,11 +4,16 @@ import me.shedaniel.rei.api.client.plugins.REIClientPlugin;
 import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
 import me.shedaniel.rei.api.client.registry.transfer.TransferHandlerRegistry;
 import me.shedaniel.rei.forge.REIPluginCommon;
+import me.shedaniel.rei.impl.client.gui.craftable.CraftableFilter;
 import net.fxnt.fxntstorage.init.ModTags;
 
 @SuppressWarnings("unused")
 @REIPluginCommon
 public class REICompat implements REIClientPlugin {
+
+    public static void onCraftingPanelToggled() {
+        CraftableFilter.INSTANCE.markDirty();
+    }
 
     @Override
     public void registerEntries(EntryRegistry registry) {
@@ -17,6 +22,7 @@ public class REICompat implements REIClientPlugin {
 
     @Override
     public void registerTransferHandlers(TransferHandlerRegistry registry) {
+        registry.register(new REIBackpackCraftingTransferHandler());
         registry.register(new REIStonecuttingTransferHandler());
     }
 }

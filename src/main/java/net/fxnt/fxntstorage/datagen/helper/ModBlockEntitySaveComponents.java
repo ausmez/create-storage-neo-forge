@@ -41,6 +41,8 @@ public class ModBlockEntitySaveComponents implements LootItemCondition {
 
         if (tag.contains("CustomName")) return true;
 
+        if (tag.contains("ExtraComponents")) return true;
+
         // Check if a Create FilteringBehaviour filter is set
         CompoundTag filterTag = tag.getCompound("Filter");
         if (!filterTag.isEmpty()) return true;

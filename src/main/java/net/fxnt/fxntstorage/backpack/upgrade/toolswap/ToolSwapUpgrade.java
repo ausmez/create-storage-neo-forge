@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.backpack.upgrade.toolswap;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.simibubi.create.AllItems;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
@@ -133,7 +132,7 @@ public class ToolSwapUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new SpriteButton<>(
-                            panelX + 4, panelY + 32, 18, 18,
+                            panelX + 3, panelY + 31, 18, 18,
                             initialState,
                             state -> state.preferSword() ? SWORD_ON : SWORD_OFF,
                             state -> state.preferSword()
@@ -146,7 +145,7 @@ public class ToolSwapUpgrade extends AbstractUpgrade {
 
             stateButtons.add(
                     new SpriteButton<>(
-                            panelX + 26, panelY + 32, 18, 18,
+                            panelX + 22, panelY + 31, 18, 18,
                             initialState,
                             state -> state.preferSilkTouch() ? SILK_ON : SILK_OFF,
                             state -> state.preferSilkTouch()
@@ -165,15 +164,6 @@ public class ToolSwapUpgrade extends AbstractUpgrade {
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            graphics.blit(
-                    PANEL_TEXTURE,
-                    panelX - 3, panelY + 8,
-                    0, 0,
-                    PANEL_EXPANDED_WIDTH,
-                    PANEL_EXPANDED_HEIGHT,
-                    128, 128
-            );
         }
 
         @Override

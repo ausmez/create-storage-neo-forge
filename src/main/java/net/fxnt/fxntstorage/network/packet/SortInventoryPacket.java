@@ -4,6 +4,7 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxMenu;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.network.FriendlyByteBuf;
@@ -46,6 +47,10 @@ public record SortInventoryPacket(byte invType, int slotStart, int slotEnd, Sort
 
                 // StorageBoxMounted sorting
                 if (player.containerMenu instanceof StorageBoxMountedMenu menu)
+                    menu.sortStorageItems(slotStart(), slotEnd(), sortOrder());
+
+                // ReserveStorageBox sorting
+                if (player.containerMenu instanceof ReserveStorageBoxMenu menu)
                     menu.sortStorageItems(slotStart(), slotEnd(), sortOrder());
             }
         });

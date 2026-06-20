@@ -7,9 +7,4 @@ public class PacifyPiglinsEffect extends MobEffect {
     public PacifyPiglinsEffect() {
         super(MobEffectCategory.BENEFICIAL, 0xC89B3C);
     }
-
-    @Override
-    public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
-        return false;
-    }
 }

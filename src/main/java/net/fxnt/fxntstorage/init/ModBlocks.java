@@ -10,6 +10,7 @@ import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
+import net.fxnt.fxntstorage.backpack.mounted.BackpackMovementBehaviour;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.container.StorageBoxItem;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMovementBehaviour;
@@ -19,10 +20,14 @@ import net.fxnt.fxntstorage.controller.StorageInterfaceFiltered;
 import net.fxnt.fxntstorage.datagen.helper.*;
 import net.fxnt.fxntstorage.passer.PasserBlock;
 import net.fxnt.fxntstorage.registry.SpriteShifts;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBox;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxItem;
+import net.fxnt.fxntstorage.reserve_storage.mounted.ReserveStorageBoxMovementBehaviour;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMovementBehaviour;
 import net.fxnt.fxntstorage.util.Util;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -38,11 +43,25 @@ public class ModBlocks {
         REGISTRATE.setCreativeTab(ModTabs.CREATIVE_MODE_TAB);
     }
 
+    public static final BlockEntry<ReserveStorageBox> RESERVE_STORAGE_BOX = REGISTRATE
+            .block("reserve_storage_box", ReserveStorageBox::new)
+            .lang("Reserve Barrel")
+            .initialProperties(() -> Blocks.BARREL)
+            .blockstate(ModBlockstateHelper.reserveStorageBox())
+            .loot(ModLootTableHelper.copyComponents())
+            .recipe(ModRecipeHelper.reserveStorageBox())
+            .tag(BlockTags.MINEABLE_WITH_AXE)
+            .tag(ModTags.Blocks.STORAGE_BOX)
+            .transform(mountedItemStorage(ModMountedStorageTypes.RESERVE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new ReserveStorageBoxMovementBehaviour()))
+            .item(ReserveStorageBoxItem::new)
+            .build()
+            .register();
+
     // STORAGE BOXES //
     public static final BlockEntry<StorageBox> CARDBOARD_STORAGE_BOX = REGISTRATE
             .block("cardboard_storage_box", properties -> new StorageBox(properties, Util.CARDBOARD_STORAGE_BOX_SIZE))
             .initialProperties(AllBlocks.CARDBOARD_BLOCK::get)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.storageBox("cardboard"))
@@ -57,8 +76,8 @@ public class ModBlocks {
 
     public static final BlockEntry<StorageBox> STORAGE_BOX = REGISTRATE
             .block("storage_box", properties -> new StorageBox(properties, Util.IRON_STORAGE_BOX_SIZE))
+            .lang("Industrial Iron Storage Box")
             .initialProperties(() -> Blocks.IRON_BLOCK)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new StorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.storageBox("industrial_iron"))
@@ -73,8 +92,8 @@ public class ModBlocks {
 
     public static final BlockEntry<StorageBox> WEATHERED_STORAGE_BOX = REGISTRATE
             .block("weathered_storage_box", properties -> new StorageBox(properties, Util.IRON_STORAGE_BOX_SIZE))
+            .lang("Weathered Iron Storage Box")
             .initialProperties(() -> Blocks.IRON_BLOCK)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
             .blockstate(ModBlockstateHelper.storageBox("weathered"))
             .loot(ModLootTableHelper.copyComponents())
@@ -90,7 +109,6 @@ public class ModBlocks {
     public static final BlockEntry<StorageBox> ANDESITE_STORAGE_BOX = REGISTRATE
             .block("andesite_storage_box", properties -> new StorageBox(properties, Util.ANDESITE_STORAGE_BOX_SIZE))
             .initialProperties(() -> Blocks.ANDESITE)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
             .blockstate(ModBlockstateHelper.storageBox("andesite"))
             .loot(ModLootTableHelper.copyComponents())
@@ -106,7 +124,6 @@ public class ModBlocks {
     public static final BlockEntry<StorageBox> COPPER_STORAGE_BOX = REGISTRATE
             .block("copper_storage_box", properties -> new StorageBox(properties, Util.COPPER_STORAGE_BOX_SIZE))
             .initialProperties(() -> Blocks.COPPER_BLOCK)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
             .blockstate(ModBlockstateHelper.storageBox("copper"))
             .loot(ModLootTableHelper.copyComponents())
@@ -122,7 +139,6 @@ public class ModBlocks {
     public static final BlockEntry<StorageBox> BRASS_STORAGE_BOX = REGISTRATE
             .block("brass_storage_box", properties -> new StorageBox(properties, Util.BRASS_STORAGE_BOX_SIZE))
             .initialProperties(AllBlocks.BRASS_BLOCK)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
             .blockstate(ModBlockstateHelper.storageBox("brass"))
             .loot(ModLootTableHelper.copyComponents())
@@ -138,7 +154,6 @@ public class ModBlocks {
     public static final BlockEntry<StorageBox> HARDENED_STORAGE_BOX = REGISTRATE
             .block("hardened_storage_box", properties -> new StorageBox(properties, Util.HARDENED_STORAGE_BOX_SIZE))
             .initialProperties(() -> Blocks.NETHERITE_BLOCK)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.STORAGE_BOX_MOUNTED))
             .blockstate(ModBlockstateHelper.storageBox("hardened"))
             .loot(ModLootTableHelper.copyComponents())
@@ -161,6 +176,8 @@ public class ModBlocks {
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.backpack())
             .tag(ModTags.Blocks.BACKPACK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.BACKPACK_MOUNTED))
+            .onRegister(movementBehaviour(new BackpackMovementBehaviour()))
             .item(BackpackItem::new)
             .model(ModModelHelper.backpackItem("industrial_iron"))
             .tag(ModTags.Items.BACKPACK_ITEM)
@@ -174,6 +191,8 @@ public class ModBlocks {
             .blockstate(ModBlockstateHelper.backpack("andesite"))
             .loot(ModLootTableHelper.copyComponents())
             .tag(ModTags.Blocks.BACKPACK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.BACKPACK_MOUNTED))
+            .onRegister(movementBehaviour(new BackpackMovementBehaviour()))
             .item(BackpackItem::new)
             .model(ModModelHelper.backpackItem("andesite"))
             .tag(ModTags.Items.BACKPACK_ITEM)
@@ -187,6 +206,8 @@ public class ModBlocks {
             .blockstate(ModBlockstateHelper.backpack("copper"))
             .loot(ModLootTableHelper.copyComponents())
             .tag(ModTags.Blocks.BACKPACK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.BACKPACK_MOUNTED))
+            .onRegister(movementBehaviour(new BackpackMovementBehaviour()))
             .item(BackpackItem::new)
             .model(ModModelHelper.backpackItem("copper"))
             .tag(ModTags.Items.BACKPACK_ITEM)
@@ -200,6 +221,8 @@ public class ModBlocks {
             .blockstate(ModBlockstateHelper.backpack("brass"))
             .loot(ModLootTableHelper.copyComponents())
             .tag(ModTags.Blocks.BACKPACK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.BACKPACK_MOUNTED))
+            .onRegister(movementBehaviour(new BackpackMovementBehaviour()))
             .item(BackpackItem::new)
             .model(ModModelHelper.backpackItem("brass"))
             .tag(ModTags.Items.BACKPACK_ITEM)
@@ -213,6 +236,8 @@ public class ModBlocks {
             .blockstate(ModBlockstateHelper.backpack("hardened"))
             .loot(ModLootTableHelper.copyComponents())
             .tag(ModTags.Blocks.BACKPACK)
+            .transform(mountedItemStorage(ModMountedStorageTypes.BACKPACK_MOUNTED))
+            .onRegister(movementBehaviour(new BackpackMovementBehaviour()))
             .item(BackpackItem::new)
             .model(ModModelHelper.backpackItem("hardened"))
             .tag(ModTags.Items.BACKPACK_ITEM)
@@ -223,6 +248,7 @@ public class ModBlocks {
     // STORAGE CONTROLLER BLOCKS //
     public static final BlockEntry<StorageController> STORAGE_CONTROLLER = REGISTRATE
             .block("storage_controller", StorageController::new)
+            .lang("Simple Storage Controller")
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .blockstate(ModBlockstateHelper.storageController())
             .recipe(ModRecipeHelper.storageController())
@@ -231,6 +257,7 @@ public class ModBlocks {
 
     public static final BlockEntry<StorageInterface> STORAGE_INTERFACE = REGISTRATE
             .block("storage_interface", StorageInterface::new)
+            .lang("Simple Storage Interface")
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .blockstate(ModBlockstateHelper.storageInterface())
             .recipe(ModRecipeHelper.storageInterface())
@@ -239,6 +266,7 @@ public class ModBlocks {
 
     public static final BlockEntry<StorageInterfaceFiltered> STORAGE_INTERFACE_FILTERED = REGISTRATE
             .block("storage_interface_filtered", StorageInterfaceFiltered::new)
+            .lang("Simple Storage Filtered Interface")
             .initialProperties(() -> Blocks.IRON_BLOCK)
             .properties(BlockBehaviour.Properties::noOcclusion)
             .blockstate(ModBlockstateHelper.storageInterfaceFiltered())
@@ -260,7 +288,6 @@ public class ModBlocks {
     public static final BlockEntry<PasserBlock> SMART_PASSER_BLOCK = REGISTRATE
             .block("smart_passer_block", properties -> new PasserBlock(properties, true))
             .initialProperties(() -> Blocks.IRON_BLOCK)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .properties(properties -> properties.strength(1.5f))
             .blockstate(ModBlockstateHelper.passerBlock(true))
             .recipe(ModRecipeHelper.passer(true))
@@ -272,7 +299,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_OAK = REGISTRATE
             .block("oak_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.OAK_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.OAK_PLANKS))
@@ -286,7 +312,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_SPRUCE = REGISTRATE
             .block("spruce_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.SPRUCE_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.SPRUCE_PLANKS))
@@ -300,7 +325,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_BIRCH = REGISTRATE
             .block("birch_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.BIRCH_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.BIRCH_PLANKS))
@@ -314,7 +338,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_JUNGLE = REGISTRATE
             .block("jungle_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.JUNGLE_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.JUNGLE_PLANKS))
@@ -328,7 +351,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_ACACIA = REGISTRATE
             .block("acacia_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.ACACIA_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.ACACIA_PLANKS))
@@ -342,7 +364,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_DARK_OAK = REGISTRATE
             .block("dark_oak_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.DARK_OAK_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.DARK_OAK_PLANKS))
@@ -356,7 +377,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_MANGROVE = REGISTRATE
             .block("mangrove_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.MANGROVE_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.MANGROVE_PLANKS))
@@ -370,7 +390,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_CHERRY = REGISTRATE
             .block("cherry_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.CHERRY_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.CHERRY_PLANKS))
@@ -384,7 +403,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_BAMBOO = REGISTRATE
             .block("bamboo_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.BAMBOO_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.BAMBOO_PLANKS))
@@ -398,7 +416,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_CRIMSON = REGISTRATE
             .block("crimson_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.CRIMSON_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.CRIMSON_PLANKS))
@@ -412,7 +429,6 @@ public class ModBlocks {
     public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_WARPED = REGISTRATE
             .block("warped_simple_storage_box", SimpleStorageBox::new)
             .initialProperties(() -> Blocks.WARPED_PLANKS)
-            .properties(BlockBehaviour.Properties::noOcclusion)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.WARPED_PLANKS))
@@ -427,7 +443,6 @@ public class ModBlocks {
             ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT) ? REGISTRATE
                     .block("pale_oak_simple_storage_box", SimpleStorageBox::new)
                     .initialProperties(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS::get)
-                    .properties(BlockBehaviour.Properties::noOcclusion)
                     .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
                     .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
                     .blockstate(ModBlockstateHelper.simpleStorageBox(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS))

@@ -11,6 +11,8 @@ import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
 public class ModCompats {
     public static final String CURIOS = "curios";
     public static final String CARRY_ON = "carryon";
+    public static final String EMI = "emi";
+    public static final String REI = "roughlyenoughitems";
     public static final String CONSTRUCTION_STICK = "constructionstick";
     public static final String EVERY_COMPAT = "everycomp";
     public static final String INVENTORY_SORTER = "inventorysorter";

@@ -53,7 +53,9 @@ public class ModTabs {
                 ModItems.BACKPACK_OREMINING_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_JUKEBOX_UPGRADE_DEACTIVATED.asItem(),
-                ModItems.BACKPACK_HEALTH_UPGRADE_DEACTIVATED.asItem()
+                ModItems.BACKPACK_HEALTH_UPGRADE_DEACTIVATED.asItem(),
+                ModItems.BACKPACK_CRAFTING_UPGRADE_DEACTIVATED.asItem(),
+                ModItems.BACKPACK_WORKSHOP_UPGRADE_DEACTIVATED.asItem()
         );
 
         private static Predicate<Item> exclusionPredicate() {
@@ -66,6 +68,7 @@ public class ModTabs {
             Map<ItemProviderEntry<?, ?>, ItemProviderEntry<?, ?>> simpleBeforeOrderings = Map.of(
                     ModItems.STORAGE_BOX_VOID_UPGRADE, ModBlocks.BACKPACK,
                     ModItems.STORAGE_BOX_CAPACITY_UPGRADE, ModBlocks.BACKPACK,
+                    ModItems.STORAGE_BOX_COMPACTING_UPGRADE, ModBlocks.BACKPACK,
                     ModItems.BACKPACK_BLANK_UPGRADE, ModBlocks.STORAGE_TRIM_OAK
             );
 

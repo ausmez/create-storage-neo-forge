@@ -37,9 +37,9 @@ public class ModDataComponents {
             builder -> builder.persistent(SortOrder.CODEC).networkSynchronized(SortOrder.STREAM_CODEC)
     );
 
-    public static final DataComponentType<Integer> BACKPACK_ACTIVE_PANELS = register(
+    public static final DataComponentType<String> BACKPACK_ACTIVE_PANELS = register(
             "backpack_active_panel",
-            builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT)
+            builder -> builder.persistent(Codec.STRING).networkSynchronized(ByteBufCodecs.STRING_UTF8)
     );
 
     public static final DataComponentType<Boolean> BACKPACK_PREFER_SWORD = register(

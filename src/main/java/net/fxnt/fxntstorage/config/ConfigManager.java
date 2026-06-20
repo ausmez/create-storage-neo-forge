@@ -65,6 +65,7 @@ public class ConfigManager {
         public static ModConfigSpec.ConfigValue<Integer> SIMPLE_STORAGE_NETWORK_RANGE;
         public static ModConfigSpec.ConfigValue<Integer> SIMPLE_STORAGE_NETWORK_UPDATE_TIME;
         public static ModConfigSpec.ConfigValue<Integer> STORAGE_BOX_UPDATE_TIME;
+        public static ModConfigSpec.IntValue WORKSHOP_KINETIC_SPEED;
 
         static {
             SERVER_BUILDER.comment("Jetpack Upgrade").push("jetpack_upgrade");
@@ -118,6 +119,14 @@ public class ConfigManager {
                     .translation("fxntstorage.configuration.healthBonusHealth")
                     .worldRestart()
                     .defineInRange("healthUpgradeBonus", 5, 0, 50);
+            SERVER_BUILDER.pop();
+
+            SERVER_BUILDER.comment("Workshop Upgrade").push("workshop_upgrade");
+            WORKSHOP_KINETIC_SPEED = SERVER_BUILDER
+                    .comment("The kinetic speed supplied to the Workshop Upgrade's machine.",
+                            "Controls how fast the deployer/press processes items.")
+                    .translation("fxntstorage.configuration.workshopKineticSpeed")
+                    .defineInRange("workshopKineticSpeed", 32, 1, 256);
             SERVER_BUILDER.pop();
 
             SERVER_BUILDER.comment("Ore Mining Upgrade").push("ore_mining_upgrade");
@@ -175,6 +184,8 @@ public class ConfigManager {
         public static ModConfigSpec.EnumValue<SimpleStorageGoggleOverlay> SIMPLE_STORAGE_GOGGLE_INFO;
         public static ModConfigSpec.ConfigValue<List<? extends String>> REFILL_BLACKLIST;
         public static ModConfigSpec.BooleanValue JUKEBOX_NOTES_ENABLED;
+        public static ModConfigSpec.BooleanValue WORKSHOP_FLYWHEEL_VISUALS;
+        public static ModConfigSpec.BooleanValue WORKSHOP_SOUNDS;
 
         public enum TorchDeployerLightSource {
             BLOCK_LIGHT,
@@ -238,6 +249,17 @@ public class ConfigManager {
                                     () -> "",
                                     ConfigManager::validateBlock)
             );
+            CLIENT_BUILDER.pop();
+
+            CLIENT_BUILDER.comment("Workshop Upgrade").push("workshop_upgrade");
+            WORKSHOP_FLYWHEEL_VISUALS = CLIENT_BUILDER
+                    .comment("Render the spinning flywheels on the backpack (worn and placed) when the Workshop Upgrade is installed.")
+                    .translation("fxntstorage.configuration.workshopFlywheelVisuals")
+                    .define("workshopFlywheelVisuals", true);
+            WORKSHOP_SOUNDS = CLIENT_BUILDER
+                    .comment("Play the press/deployer sounds when the Workshop Upgrade processes items.")
+                    .translation("fxntstorage.configuration.workshopSounds")
+                    .define("workshopSounds", true);
             CLIENT_BUILDER.pop();
 
             CLIENT_BUILDER.comment("Torch Deployer Upgrade").push("torch_deployer_upgrade");

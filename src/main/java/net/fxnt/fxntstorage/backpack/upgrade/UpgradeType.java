@@ -8,35 +8,35 @@ import java.util.function.Supplier;
 
 public enum UpgradeType {
     // Upgrades with slots (must be in BackpackLayout order)
-    JUKEBOX("jukebox", ModItems.BACKPACK_JUKEBOX_UPGRADE::get, ModItems.BACKPACK_JUKEBOX_UPGRADE_DEACTIVATED::get, true, 1),
-    MAGNET("magnet", ModItems.BACKPACK_MAGNET_UPGRADE::get, ModItems.BACKPACK_MAGNET_UPGRADE_DEACTIVATED::get, true, 2),
-    FEEDER("feeder", ModItems.BACKPACK_FEEDER_UPGRADE::get, ModItems.BACKPACK_FEEDER_UPGRADE_DEACTIVATED::get, true, 4),
+    JUKEBOX("jukebox", ModItems.BACKPACK_JUKEBOX_UPGRADE::get, ModItems.BACKPACK_JUKEBOX_UPGRADE_DEACTIVATED::get, true),
+    MAGNET("magnet", ModItems.BACKPACK_MAGNET_UPGRADE::get, ModItems.BACKPACK_MAGNET_UPGRADE_DEACTIVATED::get, true),
+    FEEDER("feeder", ModItems.BACKPACK_FEEDER_UPGRADE::get, ModItems.BACKPACK_FEEDER_UPGRADE_DEACTIVATED::get, true),
+    CRAFTING("crafting", ModItems.BACKPACK_CRAFTING_UPGRADE::get, ModItems.BACKPACK_CRAFTING_UPGRADE_DEACTIVATED::get, true),
+    WORKSHOP("workshop", ModItems.BACKPACK_WORKSHOP_UPGRADE::get, ModItems.BACKPACK_WORKSHOP_UPGRADE_DEACTIVATED::get, true),
 
     // Upgrades with panels but no slots
-    FLIGHT("flight", ModItems.BACKPACK_FLIGHT_UPGRADE::get, ModItems.BACKPACK_FLIGHT_UPGRADE_DEACTIVATED::get, true, 8),
-    OREMINING("oremining", ModItems.BACKPACK_OREMINING_UPGRADE::get, ModItems.BACKPACK_OREMINING_UPGRADE_DEACTIVATED::get, true, 16),
-    TOOLSWAP("toolswap", ModItems.BACKPACK_TOOLSWAP_UPGRADE::get, ModItems.BACKPACK_TOOLSWAP_UPGRADE_DEACTIVATED::get, true, 32),
+    FLIGHT("flight", ModItems.BACKPACK_FLIGHT_UPGRADE::get, ModItems.BACKPACK_FLIGHT_UPGRADE_DEACTIVATED::get, true),
+    OREMINING("oremining", ModItems.BACKPACK_OREMINING_UPGRADE::get, ModItems.BACKPACK_OREMINING_UPGRADE_DEACTIVATED::get, true),
+    TOOLSWAP("toolswap", ModItems.BACKPACK_TOOLSWAP_UPGRADE::get, ModItems.BACKPACK_TOOLSWAP_UPGRADE_DEACTIVATED::get, true),
 
     // Upgrade without panels or slots
-    FALLDAMAGE("falldamage", ModItems.BACKPACK_FALLDAMAGE_UPGRADE::get, ModItems.BACKPACK_FALLDAMAGE_UPGRADE_DEACTIVATED::get, false, 0),
-    HEALTH("health", ModItems.BACKPACK_HEALTH_UPGRADE::get, ModItems.BACKPACK_HEALTH_UPGRADE_DEACTIVATED::get, false, 0),
-    ITEMPICKUP("itempickup", ModItems.BACKPACK_ITEMPICKUP_UPGRADE::get, ModItems.BACKPACK_ITEMPICKUP_UPGRADE_DEACTIVATED::get, false, 0),
-    PICKBLOCK("pickblock", ModItems.BACKPACK_PICKBLOCK_UPGRADE::get, ModItems.BACKPACK_PICKBLOCK_UPGRADE_DEACTIVATED::get, false, 0),
-    REFILL("refill", ModItems.BACKPACK_REFILL_UPGRADE::get, ModItems.BACKPACK_REFILL_UPGRADE_DEACTIVATED::get, false, 0),
-    TORCHDEPLOYER("torchdeployer", ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE::get, ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE_DEACTIVATED::get, false, 0);
+    FALLDAMAGE("falldamage", ModItems.BACKPACK_FALLDAMAGE_UPGRADE::get, ModItems.BACKPACK_FALLDAMAGE_UPGRADE_DEACTIVATED::get, false),
+    HEALTH("health", ModItems.BACKPACK_HEALTH_UPGRADE::get, ModItems.BACKPACK_HEALTH_UPGRADE_DEACTIVATED::get, false),
+    ITEMPICKUP("itempickup", ModItems.BACKPACK_ITEMPICKUP_UPGRADE::get, ModItems.BACKPACK_ITEMPICKUP_UPGRADE_DEACTIVATED::get, false),
+    PICKBLOCK("pickblock", ModItems.BACKPACK_PICKBLOCK_UPGRADE::get, ModItems.BACKPACK_PICKBLOCK_UPGRADE_DEACTIVATED::get, false),
+    REFILL("refill", ModItems.BACKPACK_REFILL_UPGRADE::get, ModItems.BACKPACK_REFILL_UPGRADE_DEACTIVATED::get, false),
+    TORCHDEPLOYER("torchdeployer", ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE::get, ModItems.BACKPACK_TORCHDEPLOYER_UPGRADE_DEACTIVATED::get, false);
 
     private final String id;
     private final Supplier<Item> activeItem;
     private final Supplier<Item> deactivatedItem;
     private final boolean hasPanel;
-    private final int panelBit;
 
-    UpgradeType(String id, Supplier<Item> activeItem, Supplier<Item> deactivatedItem, boolean hasPanel, int panelBit) {
+    UpgradeType(String id, Supplier<Item> activeItem, Supplier<Item> deactivatedItem, boolean hasPanel) {
         this.id = id;
         this.activeItem = activeItem;
         this.deactivatedItem = deactivatedItem;
         this.hasPanel = hasPanel;
-        this.panelBit = panelBit;
     }
 
     public String getId() {
@@ -63,16 +63,13 @@ public enum UpgradeType {
         return hasPanel;
     }
 
-    public boolean isPanelExpandedInMask(int mask) {
-        return panelBit != 0 && (mask & panelBit) != 0;
+    public static int toPanelSyncValue(UpgradeType type) {
+        return type == null ? 0 : type.ordinal() + 1;
     }
 
-    public int toggleInMask(int mask) {
-        return panelBit != 0 ? (mask ^ panelBit) : mask;
-    }
-
-    public int clearInMask(int mask) {
-        return panelBit != 0 ? (mask & ~panelBit) : mask;
+    public static UpgradeType fromPanelSyncValue(int value) {
+        UpgradeType[] values = values();
+        return value >= 1 && value <= values.length ? values[value - 1] : null;
     }
 
     public static UpgradeType fromBaseName(String baseName) {
@@ -91,6 +88,10 @@ public enum UpgradeType {
             }
         }
         return null;
+    }
+
+    public boolean isPlayerOnly() {
+        return this != MAGNET && this != JUKEBOX && this != CRAFTING && this != WORKSHOP;
     }
 
     public boolean isThisUpgrade(Item item) {

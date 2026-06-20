@@ -4,6 +4,7 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.container.StorageBoxMenu;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxMenu;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -41,6 +42,10 @@ public record SetSortOrderPacket(SortOrder sortOrder) implements CustomPacketPay
 
                 if (player.containerMenu instanceof StorageBoxMountedMenu menu) {
                     menu.setSortOrder(sortOrder());
+                }
+
+                if (player.containerMenu instanceof ReserveStorageBoxMenu menu) {
+                    menu.applySortOrder(sortOrder());
                 }
             }
         });

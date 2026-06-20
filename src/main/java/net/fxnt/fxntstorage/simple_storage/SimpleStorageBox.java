@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -43,6 +44,8 @@ public class SimpleStorageBox extends BaseEntityBlock {
     public static final MapCodec<SimpleStorageBox> CODEC = simpleCodec(SimpleStorageBox::new);
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
+    public static final BooleanProperty COMPACTING = BooleanProperty.create("compacting");
+    public static final BooleanProperty VOID_UPGRADE = BooleanProperty.create("void_upgrade");
 
     private static class ClickData {
         long lastClickTime;
@@ -53,10 +56,12 @@ public class SimpleStorageBox extends BaseEntityBlock {
     private final Map<Player, ClickData> CLICK_DATA = new WeakHashMap<>();
 
     public SimpleStorageBox(Properties pProperties) {
-        super(pProperties.noOcclusion());
+        super(pProperties);
         this.registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)
+                .setValue(COMPACTING, false)
+                .setValue(VOID_UPGRADE, false)
         );
     }
 
@@ -67,7 +72,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
 
     @Override
     protected void onExplosionHit(BlockState state, Level level, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
-        if (!state.isAir() && explosion.getBlockInteraction() != Explosion.BlockInteraction.TRIGGER_BLOCK && level instanceof ServerLevel serverLevel) {
+        if (!state.isAir() && level instanceof ServerLevel serverLevel) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             LootParams.Builder lootParams = new LootParams.Builder(serverLevel)
                     .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
@@ -183,7 +188,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
         Direction face = Util.getAttackedBlockFace(state, level, pos, player, blockEntity);
         if (face != state.getValue(FACING)) return;
 
-        if (!(blockEntity instanceof SimpleStorageBoxEntity ssbe)) return;
+        if (!(blockEntity instanceof SimpleStorageBoxEntity simpleStorageBox)) return;
 
         Item item = player.getItemInHand(InteractionHand.MAIN_HAND).getItem();
         if (!(item instanceof PickaxeItem || item instanceof AxeItem)) {
@@ -191,7 +196,11 @@ public class SimpleStorageBox extends BaseEntityBlock {
             long currentTime = level.getGameTime();
 
             if (currentTime - data.lastAttackTime > 1) {
-                ssbe.transferFromStorage(player);
+                if (simpleStorageBox.compactingUpgrade && simpleStorageBox.compactingChain != null) {
+                    simpleStorageBox.transferFromStorage(player, simpleStorageBox.compactingSelectedTier);
+                } else {
+                    simpleStorageBox.transferFromStorage(player);
+                }
                 data.lastAttackTime = currentTime;
             }
         }
@@ -227,7 +236,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> pBuilder) {
         super.createBlockStateDefinition(pBuilder);
-        pBuilder.add(FACING, STORAGE_USED);
+        pBuilder.add(FACING, STORAGE_USED, COMPACTING, VOID_UPGRADE);
     }
 
     @Override

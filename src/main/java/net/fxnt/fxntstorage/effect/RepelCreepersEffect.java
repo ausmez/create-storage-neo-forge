@@ -7,9 +7,4 @@ public class RepelCreepersEffect extends MobEffect {
     public RepelCreepersEffect() {
         super(MobEffectCategory.BENEFICIAL, 0x13A90F);
     }
-
-    @Override
-    public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
-        return false;
-    }
 }

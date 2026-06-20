@@ -8,8 +8,10 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.monster.piglin.AbstractPiglin;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -102,6 +104,21 @@ public class JukeboxBuffHandler {
         if (player.hasEffect(ModEffects.REPEL_CREEPERS)) {
             event.setCanceled(true);
             creeper.setTarget(null);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPhantomTick(EntityTickEvent.Pre event) {
+        if (!(event.getEntity() instanceof Phantom phantom)) return;
+        if (phantom.level().isClientSide) return;
+
+        LivingEntity target = phantom.getTarget();
+        if (!(target instanceof Player player)) return;
+        if (!player.hasEffect(ModEffects.PHANTOM_WARD)) return;
+
+        // Abort swoop when phantom closes to within 3 blocks of a targeted player
+        if (phantom.distanceTo(player) <= 3.0f) {
+            phantom.setTarget(null);
         }
     }
 

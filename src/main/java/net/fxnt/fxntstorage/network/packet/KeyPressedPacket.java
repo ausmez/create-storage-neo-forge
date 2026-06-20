@@ -81,6 +81,7 @@ public record KeyPressedPacket(byte hotKey, boolean pressed, Optional<BlockPos> 
                             boolean isMineOresOnly = manager.getSetting(UpgradeDataSync.Field.OREMINING_ORES_ONLY);
                             boolean isPreviewOreVeinsAllowed = manager.getSetting(UpgradeDataSync.Field.OREMINING_PREVIEW_ORE_VEIN);
                             boolean isServerPreviewAllowed = ConfigManager.ServerConfig.ORE_MINING_PREVIEW_ORE_VEIN.get();
+                            boolean isServerOresOnlyOverride = ConfigManager.ServerConfig.ORE_MINING_ORES_ONLY.get();
                             boolean isStartBlockAnOre = player.level().getBlockState(blockPos).is(Tags.Blocks.ORES);
 
                             if (isUpgradeActive && isPreviewOreVeinsAllowed && isServerPreviewAllowed && pressed()) {
@@ -88,7 +89,7 @@ public record KeyPressedPacket(byte hotKey, boolean pressed, Optional<BlockPos> 
                                         player.level(),
                                         blockPos,
                                         player.level().getBlockState(blockPos),
-                                        isStartBlockAnOre || !isMineOresOnly,
+                                        !isServerOresOnlyOverride && (isStartBlockAnOre || !isMineOresOnly),
                                         64
                                 );
                                 PacketDistributor.sendToPlayer(player, new OreMiningPreviewPacket(vein));

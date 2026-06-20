@@ -11,25 +11,39 @@ import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageInterface;
 import net.fxnt.fxntstorage.controller.StorageInterfaceFiltered;
+import net.fxnt.fxntstorage.init.ModCompats;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
 import net.fxnt.fxntstorage.passer.PasserBlock;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
 
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 
 public class ModRecipeHelper {
+    private static final Set<String> VANILLA_BACKPORT_WOODS = Set.of("pale_oak");
+
+    private static RecipeOutput conditionalOutput(RegistrateRecipeProvider prov, Block planks, String woodType) {
+        ResourceLocation planksId = BuiltInRegistries.BLOCK.getKey(planks);
+        if (planksId.getNamespace().equals(ModCompats.VANILLA_BACKPORT) || VANILLA_BACKPORT_WOODS.contains(woodType)) {
+            return prov.withConditions(new ModLoadedCondition(ModCompats.VANILLA_BACKPORT));
+        }
+        return prov;
+    }
 
     public static NonNullBiConsumer<DataGenContext<Block, StorageBox>, RegistrateRecipeProvider> storageBox(Supplier<? extends Block> supplier) {
         return (ctx, prov) -> {
@@ -64,12 +78,7 @@ public class ModRecipeHelper {
         String path = BuiltInRegistries.BLOCK.getKey(planks).getPath();
         String woodType = path.substring(0, path.indexOf("_planks"));
 
-        ResourceLocation planksId = BuiltInRegistries.BLOCK.getKey(planks);
-        RecipeOutput output = prov;
-
-        if (planksId.getNamespace().equals("vanillabackport")) {
-            output = prov.withConditions(new ModLoadedCondition("vanillabackport"));
-        }
+        RecipeOutput output = conditionalOutput(prov, planks, woodType);
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
                 .define('A', AllItems.ANDESITE_ALLOY)
@@ -96,12 +105,7 @@ public class ModRecipeHelper {
         String path = BuiltInRegistries.BLOCK.getKey(planks).getPath();
         String woodType = path.substring(0, path.indexOf("_planks"));
 
-        ResourceLocation planksId = BuiltInRegistries.BLOCK.getKey(planks);
-        RecipeOutput output = prov;
-
-        if (planksId.getNamespace().equals("vanillabackport")) {
-            output = prov.withConditions(new ModLoadedCondition("vanillabackport"));
-        }
+        RecipeOutput output = conditionalOutput(prov, planks, woodType);
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get(), 4)
                 .define('A', AllItems.ANDESITE_ALLOY)
@@ -203,6 +207,20 @@ public class ModRecipeHelper {
                 .pattern("Z")
                 .group("storage_box")
                 .unlockedBy("has_andesite_alloy", RegistrateRecipeProvider.has(AllItems.ANDESITE_ALLOY))
+                .save(prov, modLoc("crafting_shaped/" + ctx.getName()));
+    }
+
+    public static NonNullBiConsumer<DataGenContext<Block, ReserveStorageBox>, RegistrateRecipeProvider> reserveStorageBox() {
+        return (ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                .define('C', Blocks.CHEST)
+                .define('D', AllBlocks.DISPLAY_BOARD)
+                .define('S', ItemTags.WOODEN_SLABS)
+                .define('W', ItemTags.PLANKS)
+                .pattern("WSW")
+                .pattern("WCW")
+                .pattern("WDW")
+                .group("storage_box")
+                .unlockedBy("has_industrial_iron", RegistrateRecipeProvider.has(AllBlocks.INDUSTRIAL_IRON_BLOCK))
                 .save(prov, modLoc("crafting_shaped/" + ctx.getName()));
     }
 }

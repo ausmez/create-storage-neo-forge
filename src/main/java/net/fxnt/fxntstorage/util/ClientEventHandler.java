@@ -2,6 +2,9 @@ package net.fxnt.fxntstorage.util;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.simibubi.create.AllSpecialTextures;
+import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
+import com.simibubi.create.content.contraptions.ContraptionHandler;
+import com.simibubi.create.content.contraptions.ContraptionHandlerClient;
 import net.createmod.catnip.outliner.Outliner;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
@@ -15,25 +18,30 @@ import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.ISortableStorageBox;
-import net.fxnt.fxntstorage.container.StorageBoxMenu;
-import net.fxnt.fxntstorage.container.mounted.StorageBoxMountedMenu;
 import net.fxnt.fxntstorage.controller.StorageControllerHighlight;
+import net.fxnt.fxntstorage.network.packet.CompactingTierScrollPacket;
 import net.fxnt.fxntstorage.network.packet.PickBlockUpgradePacket;
 import net.fxnt.fxntstorage.network.packet.PlayerInputPacket;
 import net.fxnt.fxntstorage.network.packet.SortInventoryPacket;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxMenu;
+import net.fxnt.fxntstorage.simple_storage.CompactingChain;
+import net.fxnt.fxntstorage.simple_storage.CompactingRecipeHelper;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.*;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -43,6 +51,8 @@ import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.lang.ref.WeakReference;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,6 +66,13 @@ public class ClientEventHandler {
 
     private static SlotRange getSlotRange(int slotId, int slotCount) {
         if (slotId < slotCount) return new SlotRange(0, slotCount);
+        if (slotId < slotCount + 27) return new SlotRange(slotCount, slotCount + 27);
+        return new SlotRange(slotCount + 27, slotCount + 36);
+    }
+
+    private static SlotRange getSlotRange(int slotId) {
+        int slotCount = ReserveStorageBoxMenu.TOTAL_CONTAINER_SLOTS;
+        if (slotId < slotCount) return new SlotRange(0, ReserveStorageBoxMenu.STORAGE_SLOT_COUNT);
         if (slotId < slotCount + 27) return new SlotRange(slotCount, slotCount + 27);
         return new SlotRange(slotCount + 27, slotCount + 36);
     }
@@ -125,8 +142,8 @@ public class ClientEventHandler {
 
         if (event.getAction() == InputConstants.PRESS &&
                 (player.containerMenu instanceof BackpackMenu
-                        || player.containerMenu instanceof StorageBoxMenu
-                        || player.containerMenu instanceof StorageBoxMountedMenu)) {
+                        || player.containerMenu instanceof ISortableStorageBox
+                        || player.containerMenu instanceof ReserveStorageBoxMenu)) {
             event.setCanceled(true); // Prevent any further processing (might yield undesired results)
 
             final Screen screen = mc.screen;
@@ -159,7 +176,99 @@ public class ClientEventHandler {
                         menu.getSortOrder())
                 );
             }
+            if (player.containerMenu instanceof ReserveStorageBoxMenu menu) {
+                if (slot.isFake()) return;
+                SlotRange range = getSlotRange(slot.index);
+                PacketDistributor.sendToServer(new SortInventoryPacket(
+                        Util.INV_TYPE_STORAGE_BOX,
+                        range.start,
+                        range.end,
+                        menu.getSortOrder())
+                );
+            }
         }
+    }
+
+    @SubscribeEvent
+    public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+        if (event.getScrollDeltaY() == 0) return;
+        if (!Screen.hasControlDown()) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null || mc.level == null) return;
+
+        int delta = event.getScrollDeltaY() > 0 ? -1 : 1;
+
+        // Static block entity case
+        if (mc.hitResult instanceof BlockHitResult blockHit && blockHit.getType() == HitResult.Type.BLOCK) {
+            BlockPos pos = blockHit.getBlockPos();
+            var state = mc.level.getBlockState(pos);
+            if (state.getBlock() instanceof SimpleStorageBox) {
+                Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+                if (blockHit.getDirection() == facing
+                        && mc.level.getBlockEntity(pos) instanceof SimpleStorageBoxEntity be
+                        && be.compactingUpgrade && be.compactingChain != null) {
+                    int newTier = Math.floorMod(be.compactingSelectedTier + delta, be.compactingChain.tiers());
+                    be.compactingSelectedTier = newTier;
+                    PacketDistributor.sendToServer(CompactingTierScrollPacket.forBlock(pos, newTier));
+                    event.setCanceled(true);
+                    return;
+                }
+            }
+        }
+
+        // Mounted (contraption) case
+        if (tryScrollMountedCompactingTier(mc, delta)) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static boolean tryScrollMountedCompactingTier(Minecraft mc, int delta) {
+        if (mc.player == null) return false;
+        var rayInputs = ContraptionHandlerClient.getRayInputs(mc.player);
+        Vec3 origin = rayInputs.getFirst();
+        Vec3 target = rayInputs.getSecond();
+        AABB aabb = new AABB(origin, target).inflate(16);
+
+        var contraptionsMap = ContraptionHandler.loadedContraptions.get(mc.level);
+        if (contraptionsMap == null) return false;
+
+        Collection<WeakReference<AbstractContraptionEntity>> contraptions = contraptionsMap.values();
+        for (WeakReference<AbstractContraptionEntity> ref : contraptions) {
+            AbstractContraptionEntity contraptionEntity = ref.get();
+            if (contraptionEntity == null) continue;
+            if (!contraptionEntity.getBoundingBox().intersects(aabb)) continue;
+
+            BlockHitResult rayResult = ContraptionHandlerClient.rayTraceContraption(origin, target, contraptionEntity);
+            if (rayResult == null) continue;
+
+            BlockPos localPos = rayResult.getBlockPos();
+            var blockInfo = contraptionEntity.getContraption().getBlocks().get(localPos);
+            if (blockInfo == null || !(blockInfo.state().getBlock() instanceof SimpleStorageBox)) continue;
+
+            Direction facing = blockInfo.state().getValue(HorizontalDirectionalBlock.FACING);
+            if (rayResult.getDirection() != facing) continue;
+
+            CompoundTag tag = blockInfo.nbt();
+            if (tag == null || !tag.getBoolean("CompactingUpgrade")) continue;
+
+            ItemStack filterItem = tag.contains("FilterItem")
+                    ? ItemStack.parseOptional(mc.level.registryAccess(), tag.getCompound("FilterItem"))
+                    : ItemStack.EMPTY;
+            if (filterItem.isEmpty()) continue;
+
+            if (CompactingRecipeHelper.isEmpty()) {
+                CompactingRecipeHelper.rebuild(mc.level.getRecipeManager(), mc.level.registryAccess());
+            }
+            CompactingChain chain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+            if (chain == null) continue;
+
+            int newTier = Math.floorMod(tag.getInt("CompactingSelectedTier") + delta, chain.tiers());
+            tag.putInt("CompactingSelectedTier", newTier);
+            PacketDistributor.sendToServer(CompactingTierScrollPacket.forMounted(localPos, newTier, contraptionEntity.getId()));
+            return true;
+        }
+        return false;
     }
 
     @SubscribeEvent

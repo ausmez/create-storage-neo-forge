@@ -22,7 +22,8 @@ public class UpgradeDataSync implements ContainerData {
         OREMINING_PREVIEW_ORE_VEIN(8, "oremining_preview_ore_vein"),
         TOOLSWAP_PREFER_SWORD(9, "toolswap_prefer_sword"),
         TOOLSWAP_PREFER_SILKTOUCH(10, "toolswap_prefer_silktouch"),
-        EXPANDED_PANELS(11, "expanded_panels");
+        EXPANDED_PANELS(11, "expanded_panels"),
+        WORKSHOP_PROCESSING(12, "workshop_processing");
 
         private final int index;
         private final String id;

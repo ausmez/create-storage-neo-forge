@@ -65,11 +65,11 @@ public class BackpackClientTooltip implements ClientTooltipComponent {
 
     private void renderContents(Font pFont, int pX, int pY, GuiGraphics pGuiGraphics) {
         if (!component.upgrades.isEmpty()) {
-            pY = renderTooltipText(pGuiGraphics, pX, pY, pFont, Component.literal("Upgrades:").withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
+            pY = renderTooltipText(pGuiGraphics, pX, pY, pFont, Component.translatable("tooltip.fxntstorage.upgrades").append(Component.literal(":")).withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
             pY = renderItemList(pFont, pX, pY, pGuiGraphics, component.upgrades, false);
         }
         if (!component.storage.isEmpty()) {
-            pY = renderTooltipText(pGuiGraphics, pX, pY, pFont, Component.literal("Inventory:").withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
+            pY = renderTooltipText(pGuiGraphics, pX, pY, pFont, Component.translatable("tooltip.fxntstorage.inventory").append(Component.literal(":")).withStyle(FontHelper.Palette.STANDARD_CREATE.highlight()));
             renderItemList(pFont, pX, pY, pGuiGraphics, component.storage, true);
         }
     }

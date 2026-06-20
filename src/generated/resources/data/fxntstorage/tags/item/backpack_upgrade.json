@@ -12,6 +12,8 @@
     "fxntstorage:backpack_torchdeployer_upgrade",
     "fxntstorage:backpack_jukebox_upgrade",
     "fxntstorage:backpack_health_upgrade",
+    "fxntstorage:backpack_crafting_upgrade",
+    "fxntstorage:backpack_workshop_upgrade",
     "#fxntstorage:backpack_upgrade_deactivated"
   ]
 }

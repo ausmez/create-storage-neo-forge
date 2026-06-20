@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.backpack.upgrade;
 
+import net.fxnt.fxntstorage.backpack.upgrade.crafting.CraftingUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.falldamage.FallDamageUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.feeder.FeederUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.health.MechanicalHeartUpgrade;
@@ -12,6 +13,7 @@ import net.fxnt.fxntstorage.backpack.upgrade.pickblock.PickBlockUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.refill.RefillUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.toolswap.ToolSwapUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.torch.TorchDeployerUpgrade;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopUpgrade;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +30,8 @@ public class UpgradeRegistry {
         }
 
         register(new FeederUpgrade());
+        register(new CraftingUpgrade());
+        register(new WorkshopUpgrade());
         register(new JetpackUpgrade());
         register(new JukeboxUpgrade());
         register(new MagnetUpgrade());

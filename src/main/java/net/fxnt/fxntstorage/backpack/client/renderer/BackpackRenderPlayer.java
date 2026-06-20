@@ -7,7 +7,14 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.client.model.BackpackModelBase;
 import net.fxnt.fxntstorage.backpack.client.model.BackpackModelPlayer;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopClientState;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopFlywheelPlacement;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopFlywheelRenderer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.init.ModDataComponents;
+import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -22,6 +29,8 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class BackpackRenderPlayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -72,6 +81,33 @@ public class BackpackRenderPlayer extends RenderLayer<AbstractClientPlayer, Play
 
         model.renderToBuffer(poseStack, vertexConsumer, packedLight, OverlayTexture.NO_OVERLAY);
 
+        if (hasActiveWorkshop(backpack) && ConfigManager.ClientConfig.WORKSHOP_FLYWHEEL_VISUALS.get()) {
+            renderFlywheels(poseStack, buffer, packedLight, livingEntity.getId());
+        }
+
+        poseStack.popPose();
+    }
+
+    private static final String WORKSHOP_ACTIVE_NAME =
+            ((UpgradeItem) UpgradeType.WORKSHOP.getActiveItem()).getUpgradeName();
+
+    private static boolean hasActiveWorkshop(ItemStack backpack) {
+        List<String> upgrades = backpack.get(ModDataComponents.BACKPACK_UPGRADES);
+        return upgrades != null && upgrades.contains(WORKSHOP_ACTIVE_NAME);
+    }
+
+    private void renderFlywheels(PoseStack poseStack, MultiBufferSource buffer, int packedLight, int entityId) {
+        boolean processing = WorkshopClientState.isProcessing(entityId);
+        float angle = WorkshopClientState.advanceAngle(entityId, WorkshopFlywheelRenderer.spinDegPerTick(processing));
+
+        VertexConsumer consumer = buffer.getBuffer(RenderType.solid());
+
+        poseStack.pushPose();
+        // Move into the backpack body's local space so the flywheels follow the pack as the body bends
+        model.modelPart.translateAndRotate(poseStack);
+        WorkshopFlywheelRenderer.renderPair(poseStack, consumer, packedLight, angle,
+                WorkshopFlywheelPlacement.WORN_OFFSET_X, WorkshopFlywheelPlacement.WORN_OFFSET_Y,
+                WorkshopFlywheelPlacement.WORN_OFFSET_Z, WorkshopFlywheelPlacement.WORN_SCALE);
         poseStack.popPose();
     }
 }

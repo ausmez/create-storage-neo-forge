@@ -5,6 +5,7 @@ import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import org.jetbrains.annotations.Nullable;
 
 public interface IBackpackContainer {
 
@@ -28,9 +29,10 @@ public interface IBackpackContainer {
 
     void clearPanelExpanded(UpgradeType type);
 
-    int getExpandedPanelsBitmask();
+    @Nullable
+    UpgradeType getExpandedPanel();
 
-    void setExpandedPanelsBitmask(int mask);
+    void setExpandedPanel(@Nullable UpgradeType type);
 
     boolean getUpgradeSetting(UpgradeDataSync.Field upgrade);
 

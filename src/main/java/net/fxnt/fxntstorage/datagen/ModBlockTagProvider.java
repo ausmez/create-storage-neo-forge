@@ -116,6 +116,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
         tag(BlockTags.MINEABLE_WITH_AXE)
                 .add(ModBlocks.CARDBOARD_STORAGE_BOX.get())
+                .add(ModBlocks.RESERVE_STORAGE_BOX.get())
                 .addTag(ModTags.Blocks.SIMPLE_STORAGE_BOX)
                 .addTag(ModTags.Blocks.STORAGE_TRIM);
 

@@ -13,6 +13,9 @@ public class BackpackSlotLayout {
     private final SlotSection jukeboxDiscs;
     private final SlotSection magnetFilter;
     private final SlotSection feederFilter;
+    private final SlotSection craftingMatrix;
+    private final SlotSection craftingResult;
+    private final SlotSection workshop;
 
     private final int totalSlots;
 
@@ -23,6 +26,10 @@ public class BackpackSlotLayout {
     private static final int JUKEBOX_SLOTS = 1;
     private static final int MAGNET_FILTER_SLOTS = 1;
     private static final int FEEDER_FILTER_SLOTS = 1;
+    private static final int CRAFTING_MATRIX_SLOTS = 9;
+    private static final int CRAFTING_RESULT_SLOTS = 1;
+    // Workshop upgrade: machine, deployer-held, flywheel, crafting input, crafting output.
+    private static final int WORKSHOP_SLOTS = 5;
     private static final int PLAYER_INV_SLOTS = 27;
     private static final int PLAYER_HOTBAR_SLOTS = 9;
 
@@ -35,6 +42,9 @@ public class BackpackSlotLayout {
                 .jukeboxDiscs(JUKEBOX_SLOTS)
                 .magnetFilter(MAGNET_FILTER_SLOTS)
                 .feederFilter(FEEDER_FILTER_SLOTS)
+                .craftingMatrix(CRAFTING_MATRIX_SLOTS)
+                .craftingResult(CRAFTING_RESULT_SLOTS)
+                .workshop(WORKSHOP_SLOTS)
                 .build();
     }
 
@@ -58,6 +68,15 @@ public class BackpackSlotLayout {
 
         this.feederFilter = new SlotSection("FeederFilter", offset, builder.feederFilter);
         offset += builder.feederFilter;
+
+        this.craftingMatrix = new SlotSection("CraftingMatrix", offset, builder.craftingMatrix);
+        offset += builder.craftingMatrix;
+
+        this.craftingResult = new SlotSection("CraftingResult", offset, builder.craftingResult);
+        offset += builder.craftingResult;
+
+        this.workshop = new SlotSection("Workshop", offset, builder.workshop);
+        offset += builder.workshop;
 
         this.totalSlots = offset;
     }
@@ -87,6 +106,18 @@ public class BackpackSlotLayout {
         return feederFilter;
     }
 
+    public SlotSection craftingMatrix() {
+        return craftingMatrix;
+    }
+
+    public SlotSection craftingResult() {
+        return craftingResult;
+    }
+
+    public SlotSection workshop() {
+        return workshop;
+    }
+
     public int getTotalSlots() {
         return totalSlots;
     }
@@ -108,6 +139,9 @@ public class BackpackSlotLayout {
         if (jukeboxDiscs.contains(slotIndex)) return jukeboxDiscs;
         if (magnetFilter.contains(slotIndex)) return magnetFilter;
         if (feederFilter.contains(slotIndex)) return feederFilter;
+        if (craftingMatrix.contains(slotIndex)) return craftingMatrix;
+        if (craftingResult.contains(slotIndex)) return craftingResult;
+        if (workshop.contains(slotIndex)) return workshop;
 
         if (playerInventory().contains(slotIndex)) return playerInventory();
         if (playerHotbar().contains(slotIndex)) return playerHotbar();
@@ -117,7 +151,7 @@ public class BackpackSlotLayout {
 
     // Gets all sections in order
     public List<SlotSection> getAllSections() {
-        return List.of(items, tools, upgrades, jukeboxDiscs, magnetFilter, feederFilter);
+        return List.of(items, tools, upgrades, jukeboxDiscs, magnetFilter, feederFilter, craftingMatrix, craftingResult, workshop);
     }
 
     // Represents a contiguous section of slots
@@ -249,6 +283,16 @@ public class BackpackSlotLayout {
             return SortRange.NONE;
         }
 
+        // Crafting slots - don't sort
+        if (craftingMatrix().contains(slotIndex) || craftingResult().contains(slotIndex)) {
+            return SortRange.NONE;
+        }
+
+        // Workshop slots - don't sort
+        if (workshop().contains(slotIndex)) {
+            return SortRange.NONE;
+        }
+
         // Player inventory
         if (playerInventory().contains(slotIndex)) {
             return new SortRange(playerInventory().getStartIndex(), playerInventory().getEndIndex(), SortType.PLAYER_INVENTORY);
@@ -309,6 +353,9 @@ public class BackpackSlotLayout {
         private int jukeboxSlots = 0;
         private int magnetFilter = 0;
         private int feederFilter = 0;
+        private int craftingMatrix = 0;
+        private int craftingResult = 0;
+        private int workshop = 0;
 
         public Builder items(int count) {
             this.itemSlots = count;
@@ -337,6 +384,21 @@ public class BackpackSlotLayout {
 
         public Builder feederFilter(int count) {
             this.feederFilter = count;
+            return this;
+        }
+
+        public Builder craftingMatrix(int count) {
+            this.craftingMatrix = count;
+            return this;
+        }
+
+        public Builder craftingResult(int count) {
+            this.craftingResult = count;
+            return this;
+        }
+
+        public Builder workshop(int count) {
+            this.workshop = count;
             return this;
         }
 

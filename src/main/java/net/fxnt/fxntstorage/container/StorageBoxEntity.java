@@ -152,7 +152,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
 
     @Override
     public Component getName() {
-        return customName != null ? customName : getBlockState().getBlock().getName();
+        return getDisplayName();
     }
 
     @Override
@@ -179,8 +179,8 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     public @Nullable AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
         if (pPlayer.isSpectator()) return null;
-        FriendlyByteBuf extraData = new FriendlyByteBuf(Unpooled.buffer());
-        extraData.writeBlockPos(this.worldPosition);
+        FriendlyByteBuf extraData = new FriendlyByteBuf(Unpooled.buffer())
+                .writeBlockPos(this.worldPosition);
         return new StorageBoxMenu(pContainerId, pPlayerInventory, extraData);
     }
 
@@ -256,7 +256,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     protected void applyImplicitComponents(DataComponentInput componentInput) {
         super.applyImplicitComponents(componentInput);
-        this.customName = componentInput.getOrDefault(DataComponents.CUSTOM_NAME, null);
+        componentInput.get(DataComponents.CUSTOM_NAME);
         this.sortOrder = componentInput.getOrDefault(ModDataComponents.INVENTORY_SORT_ORDER, SortOrder.COUNT);
         setVoidUpgrade(componentInput.getOrDefault(ModDataComponents.VOID_UPGRADE, false));
         readInventory(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
@@ -268,6 +268,7 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
         components.set(ModDataComponents.VOID_UPGRADE, this.voidUpgrade);
         components.set(ModDataComponents.INVENTORY_SORT_ORDER, this.sortOrder);
         components.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(this.getStacks()));
+        components.set(DataComponents.CUSTOM_NAME, this.customName);
     }
 
     public int getContainerSize() {

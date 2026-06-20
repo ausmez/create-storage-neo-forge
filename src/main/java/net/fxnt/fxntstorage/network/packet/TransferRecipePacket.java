@@ -1,10 +1,12 @@
 package net.fxnt.fxntstorage.network.packet;
 
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -74,10 +76,32 @@ public record TransferRecipePacket(ResourceLocation recipeId, List<Integer> reci
                 }
 
                 List<Slot> inputSlots;
+                Slot resultSlot;
                 switch (player.containerMenu) {
-                    case CraftingMenu openMenu -> inputSlots = openMenu.slots.subList(1, 10);
-                    case StonecutterMenu openMenu -> inputSlots = openMenu.slots.subList(0, 1);
-                    case InventoryMenu openMenu -> inputSlots = openMenu.slots.subList(1, 5);
+                    case BackpackMenu menu -> {
+                        // The backpack's own crafting-upgrade grid. Only fillable while the panel is open
+                        if (!menu.isCraftingPanelReady()) return;
+                        Slot craftingResult = menu.getCraftingResultSlot();
+                        if (craftingResult == null) return;
+                        inputSlots = menu.getCraftingMatrixSlots();
+                        resultSlot = craftingResult;
+                        // Source ingredients from the backpack actually being viewed (worn or placed),
+                        // not necessarily the equipped one
+                        container = menu.container;
+                        itemHandler = container.getItemHandler();
+                    }
+                    case CraftingMenu openMenu -> {
+                        inputSlots = openMenu.slots.subList(1, 10);
+                        resultSlot = openMenu.getSlot(0);
+                    }
+                    case StonecutterMenu openMenu -> {
+                        inputSlots = openMenu.slots.subList(0, 1);
+                        resultSlot = openMenu.getSlot(0);
+                    }
+                    case InventoryMenu openMenu -> {
+                        inputSlots = openMenu.slots.subList(1, 5);
+                        resultSlot = openMenu.getSlot(0);
+                    }
                     default -> {
                         return;
                     }
@@ -103,120 +127,105 @@ public record TransferRecipePacket(ResourceLocation recipeId, List<Integer> reci
                         player.displayClientMessage(Component.literal("§a" + maxCraftable + "§r maximum craftable"), false);
                 }
 
-                boolean twoByTwo = false;
-                boolean symmetrical = false;
-                if (recipe instanceof ShapedRecipe sr) {
-                    twoByTwo = sr.getHeight() <= 2 && sr.getWidth() <= 2
-                            && player.containerMenu instanceof InventoryMenu;
-                    symmetrical = net.minecraft.Util.isSymmetrical(sr.getWidth(), sr.getHeight(), sr.getIngredients());
-                }
+                if (recipe instanceof ShapedRecipe shaped) {
+                    int gridW = (player.containerMenu instanceof InventoryMenu) ? 2 : 3; // square grid
+                    int width = shaped.getWidth();
+                    int height = shaped.getHeight();
 
-                // Calculate centering offset for symmetrical recipes (only for 3x3 crafting)
-                int offsetX = 0;
-                int offsetY = 0;
-                boolean isShaped = recipe instanceof ShapedRecipe;
-                boolean doCenter = false;
+                    if (width > gridW || height > gridW) return;
 
-                if (!twoByTwo && isShaped && symmetrical) {
-                    ShapedRecipe sr = (ShapedRecipe) recipe;
-                    offsetX = (3 - sr.getWidth()) / 2;
-                    offsetY = (3 - sr.getHeight()) / 2;
-                    doCenter = true;
-                }
+                    int offsetX = (gridW - width) / 2;
+                    int offsetY = (gridW - height) / 2;
 
-                // Loop through each ingredient and place it in the corresponding slot
-                for (int ingredientIndex = 0; ingredientIndex < ingredients.size(); ingredientIndex++) {
-                    if (ingredientIndex >= recipeMap.size()) break;
+                    NonNullList<Ingredient> grid = shaped.getIngredients();
+                    for (int k = 0; k < grid.size(); k++) {
+                        Ingredient ingredient = grid.get(k);
+                        if (ingredient.isEmpty()) continue;
 
-                    Ingredient ingredient = ingredients.get(ingredientIndex);
-                    if (ingredient.isEmpty()) continue;
+                        int x = k % width + offsetX;
+                        int y = k / width + offsetY;
+                        int slotPosition = y * gridW + x;
+                        if (slotPosition < 0 || slotPosition >= inputSlots.size()) continue;
 
-                    // Base position is always from recipeMap (1-based -> 0-based)
-                    int gridSlotPosition = recipeMap.get(ingredientIndex) - 1;
-
-                    int slotPosition;
-
-                    if (twoByTwo) {
-                        // Map 3x3 indices to 2x2 indices
-                        switch (gridSlotPosition) {
-                            case 0 -> slotPosition = 0;
-                            case 1 -> slotPosition = 1;
-                            case 3 -> slotPosition = 2;
-                            case 4 -> slotPosition = 3;
-                            default -> {
-                                continue;
-                            }
-                        }
-                    } else if (doCenter) {
-                        // Centering for symmetrical shaped recipes on a 3x3 grid.
-                        // Convert from 3x3 coords, apply offset, convert back.
-                        int x = gridSlotPosition % 3;
-                        int y = gridSlotPosition / 3;
-                        x += offsetX;
-                        y += offsetY;
-                        slotPosition = y * 3 + x;
-                    } else {
-                        // Normal (non-symmetrical) 3x3 shaped or shapeless: use the map as-is
-                        slotPosition = gridSlotPosition;
-                    }
-
-                    if (slotPosition < 0 || slotPosition >= inputSlots.size()) continue;
-
-                    ItemStack collected = ItemStack.EMPTY;
-                    int remaining = maxCraftable;
-
-                    // Try player inventory
-                    for (int j = 0; j < playerInv.getContainerSize() && remaining > 0; j++) {
-                        ItemStack stack = playerInv.getItem(j);
-                        if (!stack.isEmpty() && ingredient.test(stack)) {
-                            int extractAmount = Math.min(stack.getCount(), remaining);
-                            ItemStack extracted = stack.split(extractAmount);
-
-                            if (collected.isEmpty()) collected = extracted.copy();
-                            else collected.grow(extracted.getCount());
-
-                            playerInv.setItem(j, stack);
-                            remaining -= extracted.getCount();
+                        if (!collectAndPlace(ingredient, slotPosition, maxCraftable, playerInv, itemHandler, inputSlots)) {
+                            return; // missing item(s)
                         }
                     }
+                } else {
+                    // Shapeless / non-shaped (incl. stonecutter): use the client-sent positions as-is.
+                    for (int ingredientIndex = 0; ingredientIndex < ingredients.size(); ingredientIndex++) {
+                        if (ingredientIndex >= recipeMap.size()) break;
 
-                    // Try backpack
-                    if (remaining > 0 && itemHandler != null) {
-                        BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
-                        for (int j = 0; j < layout.items().getEndIndex() && remaining > 0; j++) {
-                            ItemStack stack = itemHandler.getStackInSlot(j);
-                            if (!stack.isEmpty() && ingredient.test(stack)) {
-                                int extractAmount = Math.min(stack.getCount(), remaining);
-                                ItemStack extracted = stack.split(extractAmount);
+                        Ingredient ingredient = ingredients.get(ingredientIndex);
+                        if (ingredient.isEmpty()) continue;
 
-                                if (collected.isEmpty()) collected = extracted.copy();
-                                else collected.grow(extracted.getCount());
+                        int slotPosition = recipeMap.get(ingredientIndex) - 1; // 1-based -> 0-based
+                        if (slotPosition < 0 || slotPosition >= inputSlots.size()) continue;
 
-                                itemHandler.setStackInSlot(j, stack);
-                                remaining -= extracted.getCount();
-                            }
+                        if (!collectAndPlace(ingredient, slotPosition, maxCraftable, playerInv, itemHandler, inputSlots)) {
+                            return; // missing item(s)
                         }
                     }
-
-                    if (collected.isEmpty() || collected.getCount() < maxCraftable) {
-                        return; // missing item(s)
-                    }
-
-                    inputSlots.get(slotPosition).setByPlayer(collected);
                 }
 
                 AbstractContainerMenu handler = player.containerMenu;
-                Slot output = handler.getSlot(0); // Should always be the Result slot
                 if (action() == 1) {
-                    handler.clicked(output.getContainerSlot(), 0, ClickType.PICKUP, player);
+                    handler.clicked(resultSlot.index, 0, ClickType.PICKUP, player);
                 } else if (action() == 2) {
-                    handler.clicked(output.getContainerSlot(), 0, ClickType.QUICK_MOVE, player);
+                    handler.clicked(resultSlot.index, 0, ClickType.QUICK_MOVE, player);
                 }
 
                 player.containerMenu.broadcastChanges();
                 if (container != null) container.setDataChanged();
             }
         });
+    }
+
+    private boolean collectAndPlace(Ingredient ingredient, int slotPosition, int maxCraftable,
+                                    Inventory playerInv, @Nullable IItemHandlerModifiable itemHandler,
+                                    List<Slot> inputSlots) {
+        ItemStack collected = ItemStack.EMPTY;
+        int remaining = maxCraftable;
+
+        // Try player inventory
+        for (int j = 0; j < playerInv.getContainerSize() && remaining > 0; j++) {
+            ItemStack stack = playerInv.getItem(j);
+            if (!stack.isEmpty() && ingredient.test(stack)) {
+                int extractAmount = Math.min(stack.getCount(), remaining);
+                ItemStack extracted = stack.split(extractAmount);
+
+                if (collected.isEmpty()) collected = extracted.copy();
+                else collected.grow(extracted.getCount());
+
+                playerInv.setItem(j, stack);
+                remaining -= extracted.getCount();
+            }
+        }
+
+        // Try backpack
+        if (remaining > 0 && itemHandler != null) {
+            BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
+            for (int j = 0; j < layout.items().getEndIndex() && remaining > 0; j++) {
+                ItemStack stack = itemHandler.getStackInSlot(j);
+                if (!stack.isEmpty() && ingredient.test(stack)) {
+                    int extractAmount = Math.min(stack.getCount(), remaining);
+                    ItemStack extracted = stack.split(extractAmount);
+
+                    if (collected.isEmpty()) collected = extracted.copy();
+                    else collected.grow(extracted.getCount());
+
+                    itemHandler.setStackInSlot(j, stack);
+                    remaining -= extracted.getCount();
+                }
+            }
+        }
+
+        if (collected.isEmpty() || collected.getCount() < maxCraftable) {
+            return false; // missing item(s)
+        }
+
+        inputSlots.get(slotPosition).setByPlayer(collected);
+        return true;
     }
 
     private int getMaxCraftableItems(List<Ingredient> ingredients, Inventory inventory, @Nullable IItemHandler backpack) {

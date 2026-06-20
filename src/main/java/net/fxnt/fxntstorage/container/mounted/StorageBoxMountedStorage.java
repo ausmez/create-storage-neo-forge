@@ -15,8 +15,10 @@ import net.fxnt.fxntstorage.container.StorageBoxEntity;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
 import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
+import net.fxnt.fxntstorage.util.ContraptionInteractionContext;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -73,6 +75,9 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
         if (player.isSpectator()) return false;
 
         ItemStack itemInHand = player.getMainHandItem();
+        Direction side = ContraptionInteractionContext.INTERACTION_DIRECTION.get();
+        if (side == null) return false;
+        if (!side.equals(info.state().getValue(StorageBox.FACING))) return false;
 
         // Right-Click with Create Wrench in hand will toggle void mode
         if (itemInHand.is(Tags.Items.TOOLS_WRENCH) && info.nbt() != null) {
@@ -111,6 +116,8 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
                 return false;
             }
         }
+
+        if (!player.isShiftKeyDown()) return false;
 
         ServerLevel level = player.serverLevel();
         BlockPos localPos = info.pos();

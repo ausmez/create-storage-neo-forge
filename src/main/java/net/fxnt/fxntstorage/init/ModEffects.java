@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.init;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.effect.CalmEndermenEffect;
 import net.fxnt.fxntstorage.effect.PacifyPiglinsEffect;
+import net.fxnt.fxntstorage.effect.PhantomWardEffect;
 import net.fxnt.fxntstorage.effect.RepelCreepersEffect;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.effect.MobEffect;
@@ -17,6 +18,7 @@ public class ModEffects {
     public static final DeferredHolder<MobEffect, MobEffect> CALM_ENDERMEN = EFFECTS.register("calm_endermen", CalmEndermenEffect::new);
     public static final DeferredHolder<MobEffect, MobEffect> PACIFY_PIGLINS = EFFECTS.register("pacify_piglins", PacifyPiglinsEffect::new);
     public static final DeferredHolder<MobEffect, MobEffect> REPEL_CREEPERS = EFFECTS.register("repel_creepers", RepelCreepersEffect::new);
+    public static final DeferredHolder<MobEffect, MobEffect> PHANTOM_WARD = EFFECTS.register("phantom_ward", PhantomWardEffect::new);
 
     public static void register(IEventBus bus) {
         EFFECTS.register(bus);

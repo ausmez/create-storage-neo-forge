@@ -6,7 +6,7 @@ import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxHandler;
-import net.fxnt.fxntstorage.init.ModBlocks;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.FlywheelSpin;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
@@ -18,12 +18,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -48,10 +46,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @ParametersAreNonnullByDefault
 public class BackpackEntity extends BlockEntity implements IBackpackContainer, MenuProvider, Nameable {
@@ -73,6 +68,10 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     private Set<UpgradeType> cachedInstalledUpgradeTypes = new HashSet<>();
     private final UpgradeDataManager upgradeData = new UpgradeDataManager();
 
+    private DataComponentPatch savedExtraComponents = DataComponentPatch.EMPTY;
+    private boolean workshopProcessing;
+    private FlywheelSpin clientFlywheelSpin;
+
     public BackpackEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
         this.pos = pPos;
@@ -91,7 +90,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         return new ItemStackHandler(slotCount) {
             @Override
             public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-                if (isPlayerInteraction || slot < layout.items().getEndIndex())
+                if (isPlayerInteraction || layout.items().contains(slot))
                     return super.extractItem(slot, amount, simulate);
                 return ItemStack.EMPTY;
             }
@@ -102,13 +101,8 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
                     return false;
                 if (isPlayerInteraction)
                     return true;
-                if (slot == layout.jukeboxDiscs().getStartIndex() && upgrades.contains(Util.JUKEBOX_UPGRADE)) {
-                    int musicDiscSlot = layout.jukeboxDiscs().getStartIndex();
-                    return (stack.has(DataComponents.JUKEBOX_PLAYABLE)
-                            && itemHandler.getStackInSlot(musicDiscSlot).isEmpty()
-                            && slot == musicDiscSlot
-                    );
-                }
+                if (!layout.items().contains(slot))
+                    return false;
                 return hasEmptyOrNonMaxSlot(stack);
             }
 
@@ -160,24 +154,19 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
 
     @Override
     public @Nullable Component getCustomName() {
-        return customName;
+        return getDisplayName();
     }
 
     @Override
     public @NotNull Component getName() {
-        return this.getDisplayName();
+        return getDisplayName();
     }
 
-    @SuppressWarnings("deprecation")
     public @NotNull Component getDisplayName() {
-        if (this.customName != null) return this.customName;
-
-        Level blockLevel = this.level;
-        if (blockLevel != null) {
-            return this.block.getCloneItemStack(this.level, this.pos, this.getBlockState()).getHoverName();
-        } else {
-            return new ItemStack(ModBlocks.BACKPACK.get()).getHoverName();
-        }
+        ItemStack displayStack = new ItemStack(this.block.asItem());
+        if (!savedExtraComponents.isEmpty())
+            displayStack.applyComponents(savedExtraComponents);
+        return displayStack.getHoverName();
     }
 
     public void setData(int slotCount, int stackMultiplier) {
@@ -225,13 +214,13 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     }
 
     @Override
-    public int getExpandedPanelsBitmask() {
-        return upgradeData.getExpandedPanelsBitmask();
+    public UpgradeType getExpandedPanel() {
+        return upgradeData.getExpandedPanel();
     }
 
     @Override
-    public void setExpandedPanelsBitmask(int mask) {
-        upgradeData.setExpandedPanelsBitmask(mask);
+    public void setExpandedPanel(@Nullable UpgradeType type) {
+        upgradeData.setExpandedPanel(type);
         setChanged();
     }
 
@@ -286,6 +275,10 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         }
     }
 
+    public void saveExtraComponents(ItemStack stack) {
+        this.savedExtraComponents = stack.getComponentsPatch();
+    }
+
     private boolean hasEmptyOrNonMaxSlot(ItemStack pStack) {
         for (int i : layout.items().range()) {
             ItemStack stack = this.itemHandler.getStackInSlot(i);
@@ -324,7 +317,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         componentInput.getOrDefault(ModDataComponents.INVENTORY_SORT_ORDER, SortOrder.COUNT);
         readInventory(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
 
-        upgradeData.setExpandedPanelsBitmask(Math.max(0, componentInput.getOrDefault(ModDataComponents.BACKPACK_ACTIVE_PANELS, 0)));
+        upgradeData.setExpandedPanel(UpgradeType.fromBaseName(componentInput.getOrDefault(ModDataComponents.BACKPACK_ACTIVE_PANELS, "")));
         for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
             DataComponentType<Boolean> component = ModDataComponents.getComponentForField(field);
             if (component != null) {
@@ -338,10 +331,12 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
         super.collectImplicitComponents(components);
+        applyPatchToBuilder(components, savedExtraComponents);
         components.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, this.stackMultiplier);
         components.set(ModDataComponents.BACKPACK_UPGRADES, this.upgrades);
         components.set(ModDataComponents.INVENTORY_SORT_ORDER, this.sortOrder);
-        components.set(ModDataComponents.BACKPACK_ACTIVE_PANELS, upgradeData.getExpandedPanelsBitmask());
+        UpgradeType expandedPanel = upgradeData.getExpandedPanel();
+        components.set(ModDataComponents.BACKPACK_ACTIVE_PANELS, expandedPanel != null ? expandedPanel.getId() : "");
         components.set(DataComponents.CUSTOM_NAME, this.customName);
         components.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(this.getStacks()));
 
@@ -354,7 +349,16 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private static <T> void applyPatchToBuilder(DataComponentMap.Builder builder, DataComponentPatch patch) {
+        for (Map.Entry<DataComponentType<?>, Optional<?>> entry : patch.entrySet()) {
+            entry.getValue().ifPresent(value -> builder.set((DataComponentType<T>) entry.getKey(), (T) value));
+        }
+    }
+
     public ItemStack saveToItemStack(ItemStack stack) {
+        if (!savedExtraComponents.isEmpty())
+            stack.applyComponents(savedExtraComponents);
         stack.set(ModDataComponents.BACKPACK_STACK_MULTIPLIER, this.stackMultiplier);
         stack.set(ModDataComponents.BACKPACK_UPGRADES, this.upgrades);
         stack.set(ModDataComponents.INVENTORY_SORT_ORDER, this.sortOrder);
@@ -383,6 +387,13 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         // removing an upgrade cleanly strips its settings from the saved data
         Set<UpgradeType> installedForSave = new HashSet<>(UpgradeHelper.getInstalledUpgrades(itemHandler));
         upgradeData.saveToNBT(tag, installedForSave);
+
+        if (!savedExtraComponents.isEmpty()) {
+            DataComponentPatch.CODEC.encodeStart(
+                    registries.createSerializationContext(NbtOps.INSTANCE),
+                    savedExtraComponents
+            ).result().ifPresent(encoded -> tag.put("ExtraComponents", encoded));
+        }
     }
 
     @Override
@@ -403,10 +414,18 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         if (tag.contains("CustomName", Tag.TAG_STRING))
             customName = parseCustomNameSafe(tag.getString("CustomName"), registries);
         sortOrder = (tag.contains("SortOrder", CompoundTag.TAG_STRING)) ? SortOrder.valueOf(tag.getString("SortOrder")) : SortOrder.COUNT;
+        this.workshopProcessing = tag.getBoolean("WorkshopProcessing");
 
         UpgradeDataManager loadedData = UpgradeDataManager.loadFromNBT(tag);
         upgradeData.copyFrom(loadedData);
         populateDefaultsForInstalledUpgrades();
+
+        if (tag.contains("ExtraComponents")) {
+            DataComponentPatch.CODEC.parse(
+                    registries.createSerializationContext(NbtOps.INSTANCE),
+                    tag.get("ExtraComponents")
+            ).result().ifPresent(patch -> this.savedExtraComponents = patch);
+        }
     }
 
     @Override
@@ -419,6 +438,8 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         CompoundTag tag = super.getUpdateTag(registries);
         tag.put("Items", itemHandler.serializeNBT(registries));
         tag.putString("SortOrder", sortOrder.name());
+        tag.putBoolean("WorkshopProcessing", workshopProcessing);
+        upgradeData.saveToNBT(tag, new HashSet<>(UpgradeHelper.getInstalledUpgrades(itemHandler)));
         return tag;
     }
 
@@ -428,13 +449,34 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         itemHandler.deserializeNBT(lookupProvider, tag.getCompound("Items"));
         if (tag.contains("SortOrder", CompoundTag.TAG_STRING))
             this.sortOrder = SortOrder.valueOf(tag.getString("SortOrder"));
+        this.workshopProcessing = tag.getBoolean("WorkshopProcessing");
     }
 
+    public boolean isWorkshopProcessing() {
+        return workshopProcessing;
+    }
+
+    public void setWorkshopProcessing(boolean processing) {
+        if (this.workshopProcessing == processing) return;
+        this.workshopProcessing = processing;
+        Level level = getLevel();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    public float advanceClientFlywheelAngle(float targetSpeed) {
+        if (clientFlywheelSpin == null) {
+            clientFlywheelSpin = new net.fxnt.fxntstorage.backpack.upgrade.workshop.FlywheelSpin();
+        }
+        return clientFlywheelSpin.advance(targetSpeed);
+    }
 
     public void serverTick(Level level) {
         if (!level.isClientSide) {
             for (IUpgrade upgrade : UpgradeRegistry.getAll()) {
-                if (upgrade.getType().equals(UpgradeType.MAGNET) || upgrade.getType().equals(UpgradeType.JUKEBOX)) {
+                if (upgrade.getType().equals(UpgradeType.MAGNET) || upgrade.getType().equals(UpgradeType.JUKEBOX)
+                        || upgrade.getType().equals(UpgradeType.WORKSHOP)) {
                     UpgradeContext ctx = UpgradeContext.forBlock(
                             this, level, BackpackMenu.BackpackType.BLOCK, worldPosition
                     );

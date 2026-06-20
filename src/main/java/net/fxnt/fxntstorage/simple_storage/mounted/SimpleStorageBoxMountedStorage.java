@@ -16,9 +16,13 @@ import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
 import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
+import net.fxnt.fxntstorage.simple_storage.CompactingChain;
+import net.fxnt.fxntstorage.simple_storage.CompactingRecipeHelper;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
+import net.fxnt.fxntstorage.util.ContraptionInteractionContext;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -28,6 +32,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -59,6 +64,12 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     private @Nullable FilterItemStack lastRegisteredFilter = null;
     private @Nullable Contraption currentContraption = null;
 
+    public boolean compactingUpgrade = false;
+    public @Nullable CompactingChain compactingChain = null;
+    public int compactingSelectedTier = 0;
+    private @Nullable Level world = null;
+    private boolean lastRegisteredCompacting = false;
+
     protected SimpleStorageBoxMountedStorage(MountedItemStorageType<?> type, ItemStackHandler handler) {
         super(type, handler);
     }
@@ -72,8 +83,11 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         if (player.isSpectator()) return false;
 
         ItemStack itemInHand = player.getMainHandItem();
+        Direction side = ContraptionInteractionContext.INTERACTION_DIRECTION.get();
+        if (side == null) return false;
+        if (!side.equals(info.state().getValue(SimpleStorageBox.FACING))) return false;
 
-        if (itemInHand.isEmpty()) {
+        if (itemInHand.isEmpty() && player.isShiftKeyDown()) {
             return openStorageMenu(player, contraption, info);
         }
 
@@ -88,19 +102,97 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             handleUpgradeInteraction(player, itemInHand);
         }
 
-        return true;
+        return false;
     }
 
     private boolean canInsertItem(ItemStack itemInHand) {
-        return !itemInHand.is(Tags.Items.TOOLS_WRENCH) && !itemInHand.is(ModTags.Items.STORAGE_BOX_UPGRADE)
-                && (filterItem.isEmpty() || itemInHand.getItem().equals(filterItem.getItem()));
+        if (itemInHand.is(Tags.Items.TOOLS_WRENCH) || itemInHand.is(ModTags.Items.STORAGE_BOX_UPGRADE))
+            return false;
+        if (compactingUpgrade && compactingChain != null) {
+            return compactingChain.toT0Units(itemInHand.getItem(), 1) > 0;
+        }
+        return filterItem.isEmpty() || itemInHand.getItem().equals(filterItem.getItem());
     }
 
     private void handleUpgradeInteraction(ServerPlayer player, ItemStack itemInHand) {
         if (itemInHand.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())) {
             handleVoidUpgrade(player, itemInHand);
+        } else if (itemInHand.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())) {
+            handleCompactingUpgrade(player, itemInHand);
         } else if (itemInHand.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
             handleCapacityUpgrade(player, itemInHand);
+        }
+    }
+
+    private void handleCompactingUpgrade(ServerPlayer player, ItemStack itemInHand) {
+        ItemStack currentUpgrade = getStackInSlot(VOID_UPGRADE_SLOT);
+        if (currentUpgrade.isEmpty()) {
+            setStackInSlot(VOID_UPGRADE_SLOT, itemInHand.copyWithCount(1));
+            compactingUpgrade = true;
+            if (!player.isCreative()) {
+                itemInHand.shrink(1);
+                player.getInventory().setChanged();
+            }
+            buildCompactingChain();
+            onCompactingUpgradeInstalled();
+        } else if (currentUpgrade.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())) {
+            onCompactingUpgradeRemoved();
+            if (!player.isCreative()) {
+                giveItemToPlayer(player, currentUpgrade.copyWithCount(1));
+            }
+            setStackInSlot(VOID_UPGRADE_SLOT, ItemStack.EMPTY);
+            compactingUpgrade = false;
+            compactingChain = null;
+        }
+        markDirty();
+    }
+
+    private void buildCompactingChain() {
+        if (world == null || filterItem.isEmpty()) {
+            compactingChain = null;
+            return;
+        }
+        if (CompactingRecipeHelper.isEmpty()) {
+            CompactingRecipeHelper.rebuild(world.getRecipeManager(), world.registryAccess());
+        }
+        compactingChain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+    }
+
+    private void onCompactingUpgradeInstalled() {
+        compactingSelectedTier = 0;
+        if (compactingChain == null) return;
+        ItemStack stored = getStackInSlot(0);
+        if (!stored.isEmpty() && stored.getItem() != compactingChain.t0()) {
+            int t0Units = compactingChain.toT0Units(stored.getItem(), stored.getCount());
+            if (t0Units > 0) {
+                setStackInSlot(0, new ItemStack(compactingChain.t0(), Math.min(t0Units, getMaxItemCapacity())));
+                filterItem = new ItemStack(compactingChain.t0());
+            }
+        }
+    }
+
+    private void onCompactingUpgradeRemoved() {
+        if (compactingChain == null) return;
+        int t0Stored = getStackInSlot(0).getCount();
+        if (t0Stored <= 0) return;
+
+        // Convert stored T0 back to the highest tier, leaving that in the box and ejecting the
+        // leftover (< 1 highest-tier unit) as the lowest tier.
+        CompactingChain chain = compactingChain;
+        CompactingChain.TierResult result = chain.toHighestTier(t0Stored);
+        int remainder = chain.remainderAfterHighestTier(t0Stored);
+
+        ItemStack highestTierStack = new ItemStack(result.item(), result.count());
+        setStackInSlot(0, highestTierStack);
+        filterItem = highestTierStack.copyWithCount(1);
+
+        if (remainder > 0 && world instanceof ServerLevel serverLevel && currentContraption != null) {
+            var pos = currentContraption.entity.blockPosition();
+            serverLevel.addFreshEntity(new ItemEntity(
+                    serverLevel,
+                    pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
+                    new ItemStack(chain.t0(), remainder)
+            ));
         }
     }
 
@@ -192,7 +284,12 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         return getStackInSlot(VOID_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_VOID_UPGRADE);
     }
 
-    private int getMaxItemCapacity() {
+    private boolean hasCompactingUpgrade() {
+        return getStackInSlot(VOID_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE);
+    }
+
+    // Capacity of a plain (non-compacting) box, measured in filter-item units.
+    private int getBaseItemCapacity() {
         int upgradeCount = 0;
 
         for (int i = CAPACITY_UPGRADE_SLOT_START; i < CAPACITY_UPGRADE_SLOT_START + MAX_CAPACITY_UPGRADES; i++) {
@@ -205,6 +302,15 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         int stackSize = filterItem.isEmpty() ? ITEM_STACK_SIZE : filterItem.getMaxStackSize();
 
         return maxCapacity * stackSize;
+    }
+
+    private int getMaxItemCapacity() {
+        int base = getBaseItemCapacity();
+        // When compacting, capacity is scaled off the highest tier (e.g. iron blocks).
+        if (compactingUpgrade && compactingChain != null) {
+            return base * compactingChain.highestTierT0PerUnit();
+        }
+        return base;
     }
 
     protected @Nullable MenuProvider createMenu(Component name, IItemHandlerModifiable handler, Predicate<Player> stillValid, Consumer<Player> onClose, int contraptionId, BlockPos localPos, CompoundTag nbt) {
@@ -236,6 +342,8 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             return ItemStack.EMPTY;
         } else if (!this.isItemValid(slot, stack)) {
             return stack;
+        } else if (compactingUpgrade && compactingChain != null) {
+            return insertCompacting(stack, simulate);
         } else {
 
             ItemStack existing = wrapped.getStackInSlot(slot);
@@ -272,6 +380,39 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         }
     }
 
+    private ItemStack insertCompacting(ItemStack stack, boolean simulate) {
+        int t0PerUnit = compactingChain.toT0Units(stack.getItem(), 1);
+        if (t0PerUnit <= 0) return stack;
+
+        int t0ToInsert = stack.getCount() * t0PerUnit;
+        ItemStack existing = wrapped.getStackInSlot(0);
+        int currentT0 = existing.isEmpty() ? 0 : existing.getCount();
+        int space = getMaxItemCapacity() - currentT0;
+
+        if (space <= 0) return stack;
+
+        int actualT0 = Math.min(t0ToInsert, space);
+        // Round down so we never partially consume a higher-tier item
+        if (t0PerUnit > 1) {
+            actualT0 = (actualT0 / t0PerUnit) * t0PerUnit;
+        }
+        if (actualT0 <= 0) return stack;
+
+        if (!simulate) {
+            if (existing.isEmpty()) {
+                wrapped.setStackInSlot(0, new ItemStack(compactingChain.t0(), actualT0));
+            } else {
+                existing.grow(actualT0);
+            }
+            if (filterItem.isEmpty()) filterItem = new ItemStack(compactingChain.t0());
+            markDirty();
+        }
+
+        int consumed = actualT0 / t0PerUnit;
+        int remaining = stack.getCount() - consumed;
+        return remaining <= 0 ? ItemStack.EMPTY : stack.copyWithCount(remaining);
+    }
+
     @Override
     public ItemStack extractItem(int slot, int amount, boolean simulate) {
         ItemStack stack = super.extractItem(slot, amount, simulate);
@@ -287,6 +428,20 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             if (registry.matches(currentContraption.entity.level(), stack) && filterItem.isEmpty()) {
                 return false;
             }
+        }
+
+        // Lazily build chain if upgrade is installed but chain not yet built
+        if (compactingUpgrade && compactingChain == null && !filterItem.isEmpty() && world != null) {
+            buildCompactingChain();
+        }
+
+        if (compactingUpgrade && compactingChain != null) {
+            int t0Units = compactingChain.toT0Units(stack.getItem(), 1);
+            if (t0Units > 0) {
+                if (slot > 0) return false;
+                return getStackInSlot(0).getCount() < getMaxItemCapacity();
+            }
+            return false;
         }
 
         if (filterTest(stack)) {
@@ -317,9 +472,24 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     public void updateClientStorageData(MovementContext context) {
+        this.world = context.world;
+
+        // Detect compacting upgrade installed/removed via GUI (slot changed without going through handleInteraction)
+        boolean nowCompacting = hasCompactingUpgrade();
+        if (nowCompacting != compactingUpgrade) {
+            compactingUpgrade = nowCompacting;
+            if (nowCompacting) {
+                buildCompactingChain();
+                onCompactingUpgradeInstalled();
+            } else {
+                onCompactingUpgradeRemoved();
+                compactingChain = null;
+            }
+        }
+
         int amount = getStackInSlot(0).getCount();
         int maxCapacity = getMaxItemCapacity();
-        boolean voidUpgrade = !getStackInSlot(VOID_UPGRADE_SLOT).isEmpty();
+        boolean voidUpgrade = hasVoidUpgrade();
 
         if (!getStackInSlot(0).isEmpty() && filterItem.isEmpty()) {
             filterItem = getStackInSlot(0).copyWithCount(1);
@@ -330,10 +500,19 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
         context.blockEntityData.putInt("StoredAmount", amount);
         context.blockEntityData.putBoolean("VoidUpgrade", voidUpgrade);
+        context.blockEntityData.putBoolean("CompactingUpgrade", compactingUpgrade);
+        context.blockEntityData.putInt("CompactingSelectedTier", compactingSelectedTier);
         context.blockEntityData.putInt("MaxItemCapacity", maxCapacity);
         context.blockEntityData.putFloat("PercentageUsed", getPercent());
-        if (!context.state.getValue(SimpleStorageBox.STORAGE_USED).equals(fillLevel)) {
-            BlockState updatedState = context.state.setValue(SimpleStorageBox.STORAGE_USED, fillLevel);
+
+        boolean stateChanged = !context.state.getValue(SimpleStorageBox.STORAGE_USED).equals(fillLevel)
+                || context.state.getValue(SimpleStorageBox.COMPACTING) != compactingUpgrade
+                || context.state.getValue(SimpleStorageBox.VOID_UPGRADE) != voidUpgrade;
+        if (stateChanged) {
+            BlockState updatedState = context.state
+                    .setValue(SimpleStorageBox.STORAGE_USED, fillLevel)
+                    .setValue(SimpleStorageBox.COMPACTING, compactingUpgrade)
+                    .setValue(SimpleStorageBox.VOID_UPGRADE, voidUpgrade);
             StructureTemplate.StructureBlockInfo updatedInfo = new StructureTemplate.StructureBlockInfo(context.localPos, updatedState, context.blockEntityData);
             context.contraption.getBlocks().put(context.localPos, updatedInfo);
         }
@@ -371,13 +550,25 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
                         : context.blockEntityData.getCompound("FilterItem")
         ).copyWithCount(1);
 
+        this.world = context.world;
         this.currentContraption = context.contraption.entity.getContraption();
+
+        this.compactingUpgrade = hasCompactingUpgrade();
+        this.compactingSelectedTier = context.blockEntityData.getInt("CompactingSelectedTier");
+        if (this.compactingUpgrade) {
+            buildCompactingChain();
+        }
 
         if (this.currentContraption != null && !filterItem.isEmpty()) {
             FilterItemStack filterWrapper = FilterItemStack.of(filterItem);
             ContraptionStorageFilters registry = ContraptionStorageFilters.getOrCreate(currentContraption);
             registry.register(this, filterWrapper);
+            if (compactingUpgrade && compactingChain != null) {
+                if (compactingChain.t1() != null) registry.register(this, new ItemStack(compactingChain.t1()));
+                if (compactingChain.t2() != null) registry.register(this, new ItemStack(compactingChain.t2()));
+            }
             lastRegisteredFilter = filterWrapper;
+            lastRegisteredCompacting = compactingUpgrade;
         }
 
         PacketDistributor.sendToPlayersTrackingEntity(context.contraption.entity, new SyncMountedStoragePacket(
@@ -408,22 +599,29 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         ItemStack candidate = getStackInSlot(0).isEmpty() ? filterItem : getStackInSlot(0).copyWithCount(1);
         FilterItemStack newFilter = candidate.isEmpty() ? null : FilterItemStack.of(candidate);
 
-        if (lastRegisteredFilter != null && newFilter != null
+        boolean compactingChanged = compactingUpgrade != lastRegisteredCompacting;
+
+        if (!compactingChanged && lastRegisteredFilter != null && newFilter != null
                 && ItemStack.isSameItemSameComponents(lastRegisteredFilter.item(), newFilter.item())) {
             return; // nothing changed
         }
 
-        // Remove old filter
+        // Remove old filter(s)
         if (lastRegisteredFilter != null) {
             registry.unregister(this);
         }
 
-        // Add new filter if it exists
+        // Register primary filter plus T1/T2 chain entries when compacting is active
         if (newFilter != null) {
             registry.register(this, newFilter);
+            if (compactingUpgrade && compactingChain != null) {
+                if (compactingChain.t1() != null) registry.register(this, new ItemStack(compactingChain.t1()));
+                if (compactingChain.t2() != null) registry.register(this, new ItemStack(compactingChain.t2()));
+            }
         }
 
         lastRegisteredFilter = newFilter;
+        lastRegisteredCompacting = compactingUpgrade;
     }
 
     private ItemStackHandler migrateSlotItems(ItemStackHandler oldHandler) {

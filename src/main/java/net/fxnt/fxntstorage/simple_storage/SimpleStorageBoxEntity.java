@@ -11,6 +11,7 @@ import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
@@ -24,9 +25,11 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.Nameable;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -43,7 +46,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.neoforge.common.util.Lazy;
+import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -63,10 +66,13 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     public int maxItemCapacity = ITEM_STACK_SIZE * BASE_CAPACITY;
     public int storedAmount = 0;
     public boolean voidUpgrade = false;
+    public boolean compactingUpgrade = false;
+    public @Nullable CompactingChain compactingChain = null;
+    public int compactingSelectedTier = 0;
 
     /*
-        Slot0 = Total item count
-        Slot1 = Void Upgrade Item slot
+        Slot0 = Total item count (always T0 units when compacting is active)
+        Slot1 = Void/Compacting Upgrade Item slot
         Slot2-10 = Capacity Upgrade Item slots
      */
     public static final int VOID_UPGRADE_SLOT = 1;
@@ -74,28 +80,25 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     public static final int MAX_CAPACITY_UPGRADES = 9;
     public static final int BASE_SLOT_COUNT = 2;
 
-    public static int SLOT_COUNT = BASE_SLOT_COUNT + MAX_CAPACITY_UPGRADES; // Item Slot + Void Upgrade Slot + Capacity Upgrade Slots
+    public static final int SLOT_COUNT = BASE_SLOT_COUNT + MAX_CAPACITY_UPGRADES; // Item Slot + Void Upgrade Slot + Capacity Upgrade Slots
     public ItemStack filterItem = ItemStack.EMPTY;
     public boolean isPlayerInteraction = false;
     private boolean storageSlotChanged = false;
     private boolean upgradeSlotChanged = false;
     private boolean blockStateNeedsUpdate = false;
+    private boolean pendingLightFix = false;
 
-    private final ItemStackHandler itemHandler = createItemHandler(SLOT_COUNT);
-    private final Lazy<IItemHandlerModifiable> lazyItemHandler = Lazy.of(() -> itemHandler);
+    final ItemStackHandler itemHandler = createItemHandler();
 
     private record StorageStats(int stored, int capacity, EnumProperties.StorageUsed fillLevel) {
-        float percentage() {
-            return capacity == 0 ? 0f : (stored * 100f) / capacity;
-        }
     }
 
     public SimpleStorageBoxEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
         super(pType, pPos, pBlockState);
     }
 
-    private ItemStackHandler createItemHandler(int slotCount) {
-        return new ItemStackHandler(slotCount) {
+    private ItemStackHandler createItemHandler() {
+        return new ItemStackHandler(SLOT_COUNT) {
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
@@ -103,6 +106,18 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
                     storageSlotChanged = true;
                     if (filterItem.isEmpty() && !this.stacks.getFirst().isEmpty()) {
                         setFilter(this.stacks.getFirst());
+                    }
+                }
+                if (slot == VOID_UPGRADE_SLOT) {
+                    ItemStack upgradeSlot = this.stacks.get(VOID_UPGRADE_SLOT);
+                    voidUpgrade = upgradeSlot.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
+                    boolean nowCompacting = upgradeSlot.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get());
+                    if (nowCompacting && !compactingUpgrade) {
+                        compactingUpgrade = true;
+                        onCompactingUpgradeInstalled();
+                    } else if (!nowCompacting && compactingUpgrade) {
+                        compactingUpgrade = false;
+                        onCompactingUpgradeRemoved();
                     }
                 }
                 if (slot >= VOID_UPGRADE_SLOT) upgradeSlotChanged = true;
@@ -114,7 +129,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
                 if (this.stacks.getFirst().getCount() >= maxItemCapacity && voidUpgrade) {
                     return ItemStack.EMPTY;
                 }
-                return voidUpgrade || simulate && amount.getCount() < stack.getCount() ? ItemStack.EMPTY : amount;
+                return voidUpgrade ? ItemStack.EMPTY : amount;
             }
 
             @Override
@@ -128,7 +143,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
                         if (existing.isEmpty()) {
                             return ItemStack.EMPTY;
                         } else {
-                            int toExtract = Math.min(amount, maxItemCapacity);
+                            int toExtract = Math.min(Math.min(amount, maxItemCapacity), existing.getMaxStackSize());
                             if (existing.getCount() <= toExtract) {
                                 if (!simulate) {
                                     this.stacks.set(slot, ItemStack.EMPTY);
@@ -177,7 +192,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     }
 
     public IItemHandlerModifiable getItemHandler() {
-        return lazyItemHandler.get();
+        return itemHandler;
     }
 
     public int getCapacityUpgrades() {
@@ -191,41 +206,198 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     }
 
     public boolean hasVoidUpgrade() {
-        this.voidUpgrade = this.itemHandler.getStackInSlot(VOID_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
-        return this.voidUpgrade;
+        return voidUpgrade;
+    }
+
+    public boolean hasCompactingUpgrade() {
+        return compactingUpgrade;
+    }
+
+    private int compactingSlotFor(ItemStack stack) {
+        if (compactingChain == null) return -1;
+        int tiers = compactingChain.tiers();
+        if (stack.getItem() == compactingChain.t0()) return tiers - 1;
+        if (stack.getItem() == compactingChain.t1()) return tiers - 2;
+        if (compactingChain.t2() != null && stack.getItem() == compactingChain.t2()) return 0;
+        return -1;
+    }
+
+    public IItemHandler getCapabilityHandler() {
+        if (compactingUpgrade && compactingChain != null) {
+            return new CompactingItemHandler(this, compactingChain);
+        }
+        // Expose only slot 0 to external capability consumers such as Jade
+        return storageOnlyHandler;
+    }
+
+    private final IItemHandler storageOnlyHandler = new IItemHandler() {
+        @Override
+        public int getSlots() {
+            return 1;
+        }
+
+        @Override
+        public ItemStack getStackInSlot(int slot) {
+            return slot == 0 ? itemHandler.getStackInSlot(0) : ItemStack.EMPTY;
+        }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            return slot == 0 ? itemHandler.insertItem(0, stack, simulate) : stack;
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return slot == 0 ? itemHandler.extractItem(0, amount, simulate) : ItemStack.EMPTY;
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return slot == 0 ? itemHandler.getSlotLimit(0) : 0;
+        }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return slot == 0 && itemHandler.isItemValid(0, stack);
+        }
+    };
+
+    private void buildCompactingChain() {
+        if (!filterItem.isEmpty() && level != null && !CompactingRecipeHelper.isEmpty()) {
+            compactingChain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+            if (compactingChain != null) {
+                compactingSelectedTier = Math.min(compactingSelectedTier, compactingChain.tiers() - 1);
+            }
+        } else {
+            compactingChain = null;
+        }
+    }
+
+    public void onCompactingUpgradeInstalled() { // Public for ponder scene
+        compactingSelectedTier = 0;
+        // Ensure recipe data is available
+        if (level != null && CompactingRecipeHelper.isEmpty()) {
+            CompactingRecipeHelper.rebuild(level.getRecipeManager(), level.registryAccess());
+        }
+        buildCompactingChain();
+        if (compactingChain != null) {
+            // Convert stored items to T0 if they're currently T1/T2
+            ItemStack stored = itemHandler.getStackInSlot(0);
+            if (!stored.isEmpty() && stored.getItem() != compactingChain.t0()) {
+                int t0Units = compactingChain.toT0Units(stored.getItem(), stored.getCount());
+                if (t0Units > 0) {
+                    filterItem = new ItemStack(compactingChain.t0());
+                    // Capacity is now scaled off the highest tier, so recompute before clamping.
+                    itemHandler.setStackInSlot(0, new ItemStack(compactingChain.t0(), Math.min(t0Units, computeCapacity())));
+                }
+            }
+        }
+    }
+
+    private void onCompactingUpgradeRemoved() {
+        if (compactingChain == null) return;
+
+        // Convert stored T0 back to the highest possible tier, leaving that in the box and
+        // ejecting the leftover (< 1 highest-tier unit) as the lowest tier
+        int t0Stored = itemHandler.getStackInSlot(0).getCount();
+        if (t0Stored <= 0) {
+            compactingChain = null;
+            return;
+        }
+
+        CompactingChain chain = compactingChain;
+        CompactingChain.TierResult result = chain.toHighestTier(t0Stored);
+        int remainder = chain.remainderAfterHighestTier(t0Stored);
+
+        ItemStack highestTierStack = new ItemStack(result.item(), result.count());
+        itemHandler.setStackInSlot(0, highestTierStack);
+        filterItem = highestTierStack.copyWithCount(1);
+
+        if (remainder > 0 && level != null) {
+            spawnCompactingRemainder(chain, remainder);
+        }
+        compactingChain = null;
+    }
+
+    private void spawnCompactingRemainder(CompactingChain chain, int remainder) {
+        BlockPos pos = getBlockPos();
+        Direction facing = getBlockState().getValue(SimpleStorageBox.FACING);
+
+        // Spawn at the center of the front face
+        double spawnX = pos.getX() + 0.5 + facing.getStepX() * 0.6;
+        double spawnY = pos.getY() + 0.5;
+        double spawnZ = pos.getZ() + 0.5 + facing.getStepZ() * 0.6;
+
+        RandomSource rng = level.getRandom();
+
+        double vx = facing.getStepX() * 0.1 + (rng.nextDouble() - 0.5) * 0.05;
+        double vy = 0.10 + rng.nextDouble() * 0.05;
+        double vz = facing.getStepZ() * 0.1 + (rng.nextDouble() - 0.5) * 0.05;
+
+        ItemEntity drop = new ItemEntity(
+                level, spawnX, spawnY, spawnZ,
+                new ItemStack(chain.t0(), remainder),
+                vx, vy, vz
+        );
+        level.addFreshEntity(drop);
     }
 
     private StorageStats calculateStats() {
-        int stored = itemHandler.getStackInSlot(0).getCount();
+        int stored = computeStored();
+        int capacity = computeCapacity();
+        return new StorageStats(stored, capacity, fillLevelFor(stored, capacity));
+    }
+
+    private int computeStored() {
+        return itemHandler.getStackInSlot(0).getCount();
+    }
+
+    private int capacityForUpgrades(int upgrades) {
         int stackSize = filterItem.isEmpty() ? ITEM_STACK_SIZE : filterItem.getMaxStackSize();
-        int capacity = (BASE_CAPACITY << getCapacityUpgrades()) * stackSize;
-
-        EnumProperties.StorageUsed fillLevel = EnumProperties.StorageUsed.EMPTY;
-        if (stored >= capacity) fillLevel = EnumProperties.StorageUsed.FULL;
-        else if (stored > 0) fillLevel = EnumProperties.StorageUsed.HAS_ITEMS;
-
-        return new StorageStats(stored, capacity, fillLevel);
+        int base = (BASE_CAPACITY << upgrades) * stackSize;
+        if (compactingUpgrade && compactingChain != null) {
+            return base * compactingChain.highestTierT0PerUnit();
+        }
+        return base;
     }
 
-    private int calculateStoredAmount() {
-        return calculateStats().stored();
+    private int computeCapacity() {
+        return capacityForUpgrades(getCapacityUpgrades());
     }
 
-    private int calculateMaxCapacity() {
-        return calculateStats().capacity();
+    public boolean canRemoveCapacityUpgrade() {
+        int upgrades = getCapacityUpgrades();
+        if (upgrades <= 0) return true;
+        return computeStored() <= capacityForUpgrades(upgrades - 1);
     }
 
-    public float calculatePercentageUsed() {
-        return calculateStats().percentage();
+    private static EnumProperties.StorageUsed fillLevelFor(int stored, int capacity) {
+        if (stored >= capacity) return EnumProperties.StorageUsed.FULL;
+        if (stored > 0) return EnumProperties.StorageUsed.HAS_ITEMS;
+        return EnumProperties.StorageUsed.EMPTY;
     }
 
     public int getStoredAmount() {
-        return calculateStoredAmount();
+        return computeStored();
     }
 
     public int getMaxItemCapacity() {
-        this.maxItemCapacity = calculateMaxCapacity();
+        this.maxItemCapacity = computeCapacity();
         return this.maxItemCapacity;
+    }
+
+    public int getDisplayedStoredAmount() {
+        if (compactingUpgrade && compactingChain != null) {
+            return computeStored() / compactingChain.highestTierT0PerUnit();
+        }
+        return getStoredAmount();
+    }
+
+    public int getDisplayedMaxCapacity() {
+        if (compactingUpgrade && compactingChain != null) {
+            return getMaxItemCapacity() / compactingChain.highestTierT0PerUnit();
+        }
+        return getMaxItemCapacity();
     }
 
     public void setUpgradeSlotChanged(boolean hasChanged) {
@@ -234,7 +406,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     @Override
     public Component getName() {
-        return customName != null ? customName : getBlockState().getBlock().getName();
+        return getDisplayName();
     }
 
     @Override
@@ -251,6 +423,14 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         return this.filterItem;
     }
 
+    public ItemStack getDisplayedItem() {
+        if (compactingUpgrade && compactingChain != null) {
+            int selected = Math.min(compactingSelectedTier, compactingChain.tiers() - 1);
+            return compactingChain.itemForSlot(selected);
+        }
+        return this.filterItem;
+    }
+
     public void setPlayerInteraction(boolean isPlayer) {
         this.isPlayerInteraction = isPlayer;
     }
@@ -260,8 +440,14 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         super.onLoad();
         if (level != null && level.isClientSide)
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
-        if (level instanceof ServerLevel serverLevel)
-            serverLevel.getLightEngine().checkBlock(worldPosition); // Re-calc light levels
+        if (level instanceof ServerLevel)
+            pendingLightFix = true; // Deferred to first tick so chunk is fully loaded
+        if (compactingUpgrade) {
+            if (CompactingRecipeHelper.isEmpty() && level != null) {
+                CompactingRecipeHelper.rebuild(level.getRecipeManager(), level.registryAccess());
+            }
+            buildCompactingChain();
+        }
     }
 
     @Override
@@ -273,6 +459,8 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
+        super.collectImplicitComponents(components);
+        components.set(DataComponents.CUSTOM_NAME, customName);
         components.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(getStacks()));
     }
 
@@ -285,7 +473,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     }
 
     public List<ItemStack> getStacks() {
-        List<ItemStack> stacks = new ArrayList<>(List.of());
+        List<ItemStack> stacks = new ArrayList<>(itemHandler.getSlots());
         for (int i = 0; i < itemHandler.getSlots(); ++i) {
             stacks.add(itemHandler.getStackInSlot(i));
         }
@@ -304,6 +492,8 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         tag.putInt("MaxItemCapacity", this.getMaxItemCapacity());  // Needed for MountedStorage
         tag.putInt("StoredAmount", this.getStoredAmount());
         tag.putBoolean("VoidUpgrade", this.hasVoidUpgrade());  // Needed for MountedStorage
+        tag.putBoolean("CompactingUpgrade", this.hasCompactingUpgrade());
+        tag.putInt("CompactingSelectedTier", this.compactingSelectedTier);
         if (!filterItem.isEmpty()) {
             tag.put("FilterItem", filterItem.copyWithCount(1).saveOptional(registries));
         }
@@ -318,6 +508,8 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         this.maxItemCapacity = tag.getInt("MaxItemCapacity"); // Needed for MountedStorage
         this.storedAmount = tag.getInt("StoredAmount");
         this.voidUpgrade = tag.getBoolean("VoidUpgrade"); // Needed for MountedStorage
+        this.compactingUpgrade = tag.getBoolean("CompactingUpgrade");
+        this.compactingSelectedTier = tag.getInt("CompactingSelectedTier");
         CompoundTag filterTag = tag.getCompound("FilterItem");
         filterItem = (filterTag.isEmpty()) ? ItemStack.EMPTY : ItemStack.parseOptional(registries, filterTag);
         if (tag.contains("CustomName", Tag.TAG_STRING))
@@ -348,6 +540,8 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         } else {
             this.itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
         }
+
+        if (compactingUpgrade) buildCompactingChain();
     }
 
     private void migrateSlotItems(CompoundTag itemsTag, HolderLookup.Provider registries, int oldSize) {
@@ -397,7 +591,10 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     public void initBlockState(Level level) {
         setFilter(getItemHandler().getStackInSlot(0));
-        BlockState newState = getBlockState().setValue(SimpleStorageBox.STORAGE_USED, calculateStats().fillLevel());
+        BlockState newState = getBlockState()
+                .setValue(SimpleStorageBox.STORAGE_USED, calculateStats().fillLevel())
+                .setValue(SimpleStorageBox.COMPACTING, hasCompactingUpgrade())
+                .setValue(SimpleStorageBox.VOID_UPGRADE, hasVoidUpgrade());
         level.setBlock(worldPosition, newState, Block.UPDATE_ALL);
         level.sendBlockUpdated(worldPosition, newState, newState, Block.UPDATE_ALL);
     }
@@ -405,10 +602,14 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     public void serverTick(Level level, BlockPos blockPos, BlockState blockState) {
         if (level.isClientSide) return;
 
-        // Compute stats once when a slot changes, update the cached fields immediately
-        // so the item handler always sees current capacity, then reset the dirty flags.
-        // blockStateNeedsUpdate carries the intent through to the timer gate so the
-        // visual block state update is deferred without re-running calculateStats().
+        if (pendingLightFix && level instanceof ServerLevel serverLevel) {
+            pendingLightFix = false;
+            serverLevel.getLightEngine().checkBlock(blockPos);
+            for (Direction dir : Direction.values()) {
+                serverLevel.getLightEngine().checkBlock(blockPos.relative(dir));
+            }
+        }
+
         if (upgradeSlotChanged || storageSlotChanged) {
             StorageStats stats = calculateStats();
             this.storedAmount = stats.stored();
@@ -427,49 +628,26 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     }
 
     private void updateBlockState(Level level, BlockPos blockPos, BlockState blockState) {
-        EnumProperties.StorageUsed status;
-        if (storedAmount >= maxItemCapacity) status = EnumProperties.StorageUsed.FULL;
-        else if (storedAmount > 0) status = EnumProperties.StorageUsed.HAS_ITEMS;
-        else status = EnumProperties.StorageUsed.EMPTY;
+        EnumProperties.StorageUsed status = fillLevelFor(storedAmount, maxItemCapacity);
+        boolean compacting = hasCompactingUpgrade();
 
-        BlockState newState = blockState.getValue(SimpleStorageBox.STORAGE_USED) != status
-                ? blockState.setValue(SimpleStorageBox.STORAGE_USED, status)
-                : blockState;
+        BlockState newState = blockState
+                .setValue(SimpleStorageBox.STORAGE_USED, status)
+                .setValue(SimpleStorageBox.COMPACTING, compacting)
+                .setValue(SimpleStorageBox.VOID_UPGRADE, hasVoidUpgrade());
 
         level.setBlock(blockPos, newState, Block.UPDATE_ALL);
         level.sendBlockUpdated(blockPos, blockState, newState, Block.UPDATE_ALL);
     }
 
-    public void transferToStorage(Player pPlayer, Boolean transferAll) {
-        // Get the item in the players main hand and check the hand is NOT empty and the item matches the filter (if one applied)
-        ItemStack itemInHand = pPlayer.getItemInHand(InteractionHand.MAIN_HAND);
+    public void transferToStorage(Player player, boolean transferAll) {
+        ItemStack itemInHand = player.getItemInHand(InteractionHand.MAIN_HAND);
 
         if (itemInHand.is(ModTags.Items.STORAGE_BOX_UPGRADE)) {
-
-            if (itemInHand.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())) {
-                if (!this.hasVoidUpgrade()) {
-                    this.itemHandler.setStackInSlot(VOID_UPGRADE_SLOT, itemInHand.copyWithCount(1));
-                    if (!pPlayer.isCreative()) {
-                        itemInHand.shrink(1);
-                        pPlayer.getInventory().setChanged();
-                    }
-                } else {
-                    ItemStack voidStack = this.itemHandler.getStackInSlot(VOID_UPGRADE_SLOT);
-                    int slot = pPlayer.getInventory().getSlotWithRemainingSpace(voidStack);
-                    if (slot > -1) {
-                        pPlayer.getInventory().getItem(slot).grow(1);
-                        pPlayer.getInventory().setChanged();
-                    } else {
-                        slot = pPlayer.getInventory().getFreeSlot();
-                        if (slot > -1) {
-                            pPlayer.getInventory().setItem(slot, voidStack);
-                            pPlayer.getInventory().setChanged();
-                        } else {
-                            pPlayer.drop(voidStack, false);
-                        }
-                    }
-                    this.itemHandler.setStackInSlot(VOID_UPGRADE_SLOT, ItemStack.EMPTY);
-                }
+            if (itemInHand.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())
+                    || itemInHand.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())) {
+                // Void and compacting upgrades both live in VOID_UPGRADE_SLOT; toggle logic is identical.
+                toggleUpgradeInSlot(player, itemInHand);
             } else if (itemInHand.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
                 boolean canAddUpgrade = false;
                 for (int i = CAPACITY_UPGRADE_SLOT_START; i < CAPACITY_UPGRADE_SLOT_START + MAX_CAPACITY_UPGRADES; i++) {
@@ -479,11 +657,11 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
                         break;
                     }
                 }
-                if (!pPlayer.isCreative() && canAddUpgrade) {
+                if (!player.isCreative() && canAddUpgrade) {
                     itemInHand.shrink(1);
-                    pPlayer.getInventory().setChanged();
+                    player.getInventory().setChanged();
                 } else if (!canAddUpgrade) {
-                    pPlayer.displayClientMessage(Component.translatable("fxntstorage.storage_box_capacity_upgrade_max"), true);
+                    player.displayClientMessage(Component.translatable("fxntstorage.storage_box_capacity_upgrade_max"), true);
                 }
             }
         }
@@ -492,61 +670,106 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
             Single-click: add entire stack in main hand
             double-click: add every stack in player inventory matching item filter
          */
-        if (transferAll) {
-            for (int i = 0; i < pPlayer.getInventory().getContainerSize(); i++) {
-                ItemStack playerStack = pPlayer.getInventory().getItem(i);
-                if (playerStack.isEmpty() || !ItemStack.isSameItemSameComponents(filterItem, playerStack)) continue;
-
-                // Transfer items to the container
-                ItemStack remainder = itemHandler.insertItem(0, playerStack, false);
-                pPlayer.getInventory().setItem(i, remainder);
+        if (compactingUpgrade && compactingChain != null) {
+            CompactingItemHandler compHandler = new CompactingItemHandler(this, compactingChain);
+            if (transferAll) {
+                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                    ItemStack playerStack = player.getInventory().getItem(i);
+                    if (playerStack.isEmpty()) continue;
+                    int slot = compactingSlotFor(playerStack);
+                    if (slot < 0) continue;
+                    player.getInventory().setItem(i, compHandler.insertItem(slot, playerStack, false));
+                }
+            } else {
+                if (itemInHand.isEmpty()) return;
+                int slot = compactingSlotFor(itemInHand);
+                if (slot < 0) return;
+                player.setItemInHand(InteractionHand.MAIN_HAND, compHandler.insertItem(slot, itemInHand, false));
             }
         } else {
-            if (itemInHand.isEmpty() || !filterTest(itemInHand)) return;
+            if (transferAll) {
+                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                    ItemStack playerStack = player.getInventory().getItem(i);
+                    if (playerStack.isEmpty() || !ItemStack.isSameItemSameComponents(filterItem, playerStack)) continue;
+                    player.getInventory().setItem(i, itemHandler.insertItem(0, playerStack, false));
+                }
+            } else {
+                if (itemInHand.isEmpty() || !filterTest(itemInHand)) return;
 
-            int availableSpace = this.getMaxItemCapacity() - this.getStoredAmount();
-            int srcAmount = itemInHand.getCount();
+                int availableSpace = getMaxItemCapacity() - getStoredAmount();
+                int srcAmount = itemInHand.getCount();
 
-            // If no space available and void upgrade is present, void the items in hand
-            if (availableSpace <= 0 && hasVoidUpgrade()) {
-                itemInHand.shrink(srcAmount);
-                return;
-            }
+                if (availableSpace <= 0 && hasVoidUpgrade()) {
+                    itemInHand.shrink(srcAmount);
+                    return;
+                }
 
-            int moveAmount = Math.min(srcAmount, availableSpace);
-            if (moveAmount > 0) {
-                // If no filter has been set, set it the item in hand
-                if (this.getFilterItem().isEmpty()) setFilter(itemInHand);
-
-                ItemStack remainder = itemHandler.insertItem(0, itemInHand, false);
-                pPlayer.setItemInHand(InteractionHand.MAIN_HAND, remainder);
+                int moveAmount = Math.min(srcAmount, availableSpace);
+                if (moveAmount > 0) {
+                    if (filterItem.isEmpty()) setFilter(itemInHand);
+                    player.setItemInHand(InteractionHand.MAIN_HAND, itemHandler.insertItem(0, itemInHand, false));
+                }
             }
         }
         setChanged();
     }
 
+    private void toggleUpgradeInSlot(Player player, ItemStack itemInHand) {
+        if (this.itemHandler.getStackInSlot(VOID_UPGRADE_SLOT).isEmpty()) {
+            this.itemHandler.setStackInSlot(VOID_UPGRADE_SLOT, itemInHand.copyWithCount(1));
+            if (!player.isCreative()) {
+                itemInHand.shrink(1);
+                player.getInventory().setChanged();
+            }
+        } else {
+            ItemStack existing = this.itemHandler.getStackInSlot(VOID_UPGRADE_SLOT);
+            int slot = player.getInventory().getSlotWithRemainingSpace(existing);
+            if (slot > -1) {
+                player.getInventory().getItem(slot).grow(1);
+            } else {
+                slot = player.getInventory().getFreeSlot();
+                if (slot > -1) player.getInventory().setItem(slot, existing);
+                else player.drop(existing, false);
+            }
+            player.getInventory().setChanged();
+            this.itemHandler.setStackInSlot(VOID_UPGRADE_SLOT, ItemStack.EMPTY);
+        }
+    }
+
     public void transferFromStorage(Player pPlayer) {
         ItemStack slot0 = itemHandler.getStackInSlot(0);
-
         if (!slot0.isEmpty()) {
             int maxStack = Math.min(slot0.getMaxStackSize(), slot0.getCount());
             int amountToExtract = (pPlayer.isShiftKeyDown()) ? maxStack : 1;
-
             ItemStack extracted = itemHandler.extractItem(0, amountToExtract, false);
-
-            if (!extracted.isEmpty()) {
-                ItemHandlerHelper.giveItemToPlayer(pPlayer, extracted);
-            }
+            if (!extracted.isEmpty()) ItemHandlerHelper.giveItemToPlayer(pPlayer, extracted);
         }
+    }
+
+    public void transferFromStorage(Player pPlayer, int compactingSlot) {
+        if (!compactingUpgrade || compactingChain == null) {
+            transferFromStorage(pPlayer);
+            return;
+        }
+        CompactingItemHandler compHandler = new CompactingItemHandler(this, compactingChain);
+        compactingSlot = Math.clamp(compactingSlot, 0, compHandler.getSlots() - 1);
+        ItemStack preview = compHandler.getStackInSlot(compactingSlot);
+        if (preview.isEmpty()) return;
+        int maxAmount = preview.getMaxStackSize();
+        int amount = pPlayer.isShiftKeyDown() ? Math.min(maxAmount, preview.getCount()) : 1;
+        ItemStack extracted = compHandler.extractItem(compactingSlot, amount, false);
+        if (!extracted.isEmpty()) ItemHandlerHelper.giveItemToPlayer(pPlayer, extracted);
     }
 
     public void removeFilter() {
         this.filterItem = ItemStack.EMPTY;
+        this.compactingChain = null;
         storageSlotChanged = true; // Trigger block update
     }
 
     public void setFilter(ItemStack itemStack) {
         this.filterItem = itemStack.copyWithCount(1);
+        if (compactingUpgrade) buildCompactingChain();
     }
 
     public boolean filterTest(ItemStack stack) {
@@ -564,7 +787,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     // ThresholdSwitchObservable //
     @Override
     public int getMaxValue() {
-        return calculateMaxCapacity();
+        return computeCapacity();
     }
 
     @Override
@@ -574,7 +797,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     @Override
     public int getCurrentValue() {
-        return calculateStoredAmount();
+        return computeStored();
     }
 
     @Override
@@ -592,7 +815,9 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
     @OnlyIn(Dist.CLIENT)
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-        if (filterItem.isEmpty() || ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.OFF)
+        // When a Compacting Upgrade is installed, show the currently displayed item instead of the underlying filter item
+        ItemStack displayItem = getDisplayedItem();
+        if (displayItem.isEmpty() || ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.OFF)
             return false;
 
         Minecraft mc = Minecraft.getInstance();
@@ -600,14 +825,15 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
             return false;
         if (blockHit.getDirection() != getBlockState().getValue(SimpleStorageBox.FACING)) return false;
 
-        boolean hasPotion = filterItem.has(DataComponents.POTION_CONTENTS);
-        boolean hasEnchantments = (filterItem.has(DataComponents.ENCHANTMENTS) && !filterItem.get(DataComponents.ENCHANTMENTS).isEmpty()) || filterItem.has(DataComponents.STORED_ENCHANTMENTS);
-        boolean hasTrim = filterItem.has(DataComponents.TRIM);
+        boolean hasPotion = displayItem.has(DataComponents.POTION_CONTENTS);
+        var ench = displayItem.get(DataComponents.ENCHANTMENTS);
+        boolean hasEnchantments = (ench != null && !ench.isEmpty()) || displayItem.has(DataComponents.STORED_ENCHANTMENTS);
+        boolean hasTrim = displayItem.has(DataComponents.TRIM);
 
         if ((!hasPotion && !hasEnchantments && !hasTrim) && ConfigManager.ClientConfig.SIMPLE_STORAGE_GOGGLE_INFO.get() == ConfigManager.ClientConfig.SimpleStorageGoggleOverlay.ONLY_TAGGED)
             return false;
 
-        List<Component> vanillaTooltip = filterItem.getTooltipLines(Item.TooltipContext.of(mc.level), mc.player, TooltipFlag.NORMAL);
+        List<Component> vanillaTooltip = displayItem.getTooltipLines(Item.TooltipContext.of(mc.level), mc.player, TooltipFlag.NORMAL);
 
         for (Component component : vanillaTooltip) {
             tooltip.add(Component.literal("    ").append(component.copy()));

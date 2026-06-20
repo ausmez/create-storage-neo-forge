@@ -11,6 +11,7 @@ import mezz.jei.api.registration.IRecipeTransferRegistration;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +48,7 @@ public class JEICompat implements IModPlugin {
         });
 
         registration.addGhostIngredientHandler(BackpackScreen.class, new JEIGhostIngredientHandler());
+        registration.addGhostIngredientHandler(ReserveStorageBoxScreen.class, new JEIReserveStorageGhostHandler());
     }
 
     @Override
@@ -55,6 +57,7 @@ public class JEICompat implements IModPlugin {
         IStackHelper stackHelper = registration.getJeiHelpers().getStackHelper();
 
         registration.addRecipeTransferHandler(new JEICraftingTransferHandler(transferHelper, stackHelper), RecipeTypes.CRAFTING);
+        registration.addRecipeTransferHandler(new JEIBackpackCraftingTransferHandler(transferHelper, stackHelper), RecipeTypes.CRAFTING);
         registration.addRecipeTransferHandler(new JEIStonecuttingTransferHandler(transferHelper, stackHelper), RecipeTypes.STONECUTTING);
     }
 }

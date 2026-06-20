@@ -9,6 +9,7 @@ import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceFilteredEntity;
 import net.fxnt.fxntstorage.passer.PasserEntity;
 import net.fxnt.fxntstorage.passer.PasserSmartEntity;
+import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxEntity;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 
 import java.util.Objects;
@@ -84,6 +85,11 @@ public class ModBlockEntities {
     public static final BlockEntityEntry<PasserSmartEntity> SMART_PASSER_ENTITY = REGISTRATE
             .blockEntity("smart_passer_entity", PasserSmartEntity::new)
             .validBlock(ModBlocks.SMART_PASSER_BLOCK)
+            .register();
+
+    public static final BlockEntityEntry<ReserveStorageBoxEntity> RESERVE_STORAGE_BOX_ENTITY = REGISTRATE
+            .blockEntity("reserve_storage_box_entity", ReserveStorageBoxEntity::new)
+            .validBlock(ModBlocks.RESERVE_STORAGE_BOX)
             .register();
 
     public static void register() {

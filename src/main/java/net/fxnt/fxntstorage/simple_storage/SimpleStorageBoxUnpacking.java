@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,12 +31,12 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
                 return false;
             } else if (!simulate) {
                 for (ItemStack itemStack : items) {
-                    ItemStack remainder = targetInv.insertItem(0, itemStack, simulate);
+                    ItemHandlerHelper.insertItemStacked(targetInv, itemStack.copy(), false);
                 }
 
                 return true;
             } else {
-                // Test if all ItemStacks in package are the same
+                // Test if all ItemStacks in package are the same type
                 ItemStack ref = null;
                 for (ItemStack stack : items) {
                     if (ref == null) {
@@ -53,7 +54,7 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
                         if (itemStack != null && !itemStack.isEmpty()) totalToInsert += itemStack.getCount();
                     }
 
-                    return totalToInsert + ssbe.storedAmount <= ssbe.maxItemCapacity;
+                    return totalToInsert + ssbe.getStoredAmount() <= ssbe.getMaxItemCapacity();
                 }
 
                 return false;

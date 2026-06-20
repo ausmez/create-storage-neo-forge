@@ -59,6 +59,7 @@ public class Util {
     public static final String BLANK_UPGRADE = "backpack_blank_upgrade";
     public static final String STORAGE_BOX_VOID_UPGRADE = "storage_box_void_upgrade";
     public static final String STORAGE_BOX_CAPACITY_UPGRADE = "storage_box_capacity_upgrade";
+    public static final String STORAGE_BOX_COMPACTING_UPGRADE = "storage_box_compacting_upgrade";
     public static final String MAGNET_UPGRADE = "backpack_magnet_upgrade";
     public static final String MAGNET_UPGRADE_DEACTIVATED = "backpack_magnet_upgrade_deactivated";
     public static final String PICKBLOCK_UPGRADE = "backpack_pickblock_upgrade";
@@ -83,6 +84,10 @@ public class Util {
     public static final String JUKEBOX_UPGRADE_DEACTIVATED = "backpack_jukebox_upgrade_deactivated";
     public static final String HEALTH_UPGRADE = "backpack_health_upgrade";
     public static final String HEALTH_UPGRADE_DEACTIVATED = "backpack_health_upgrade_deactivated";
+    public static final String CRAFTING_UPGRADE = "backpack_crafting_upgrade";
+    public static final String CRAFTING_UPGRADE_DEACTIVATED = "backpack_crafting_upgrade_deactivated";
+    public static final String WORKSHOP_UPGRADE = "backpack_workshop_upgrade";
+    public static final String WORKSHOP_UPGRADE_DEACTIVATED = "backpack_workshop_upgrade_deactivated";
 
     // Menus
     public static final int SLOT_SIZE = 18;

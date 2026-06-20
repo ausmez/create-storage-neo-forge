@@ -14,7 +14,7 @@ public class SimpleStorageBoxVoidSlot extends SlotItemHandler {
     @Override
     public boolean mayPlace(ItemStack stack) {
         if (this.hasItem()) return false;
-        return stack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
+        return stack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get()) || stack.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get());
     }
 
     @Override
