@@ -120,14 +120,15 @@ public class KeybindHandler {
             }
             minekeyWasDown = minekeyIsDown;
 
-            // === FLY JETPACK KEY ===
+            // === FLY JETPACK KEY (hold to fly) ===
             boolean flykeyIsDown = FLY_JETPACK.isDown();
-            boolean shiftIsDown = player.isShiftKeyDown();
 
-            if (flykeyIsDown != flykeyWasDown && isSurvival && isWearingBackpack
+            if (isSurvival && isWearingBackpack
                     && UpgradeHelper.hasActiveUpgrade(backpackContainer.getItemHandler(), UpgradeType.FLIGHT)) {
-                PacketDistributor.sendToServer(new JetpackFlyingPacket(flykeyIsDown, shiftIsDown));
-                JetpackManager.getJetpackHandler(player).processPlayerFlyingPacket(flykeyIsDown, shiftIsDown);
+                if (flykeyIsDown != flykeyWasDown) {
+                    PacketDistributor.sendToServer(new JetpackFlyingPacket(flykeyIsDown));
+                    JetpackManager.getJetpackHandler(player).processPlayerFlyingPacket(flykeyIsDown);
+                }
             }
 
             flykeyWasDown = flykeyIsDown;

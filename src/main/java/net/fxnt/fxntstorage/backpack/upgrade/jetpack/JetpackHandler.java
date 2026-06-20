@@ -79,8 +79,9 @@ public class JetpackHandler {
     private int missedPackets = 0;
 
     private boolean cleanupNeeded = false;
-
     private IBackpackContainer itemHandler;
+    private int consecutiveAirTicks = 0;
+    private boolean receivedFlyingPacketThisAirSession = false;
 
     public JetpackHandler(Player player) {
         this.player = player;
@@ -93,8 +94,16 @@ public class JetpackHandler {
         if (player.isPassenger()) {
             isJumping = false;
             endHovering(false);
+            receivedFlyingPacketThisAirSession = false;
             fadeOutVisualAirOverlay();
             return;
+        }
+
+        if (player.onGround()) {
+            consecutiveAirTicks = 0;
+            receivedFlyingPacketThisAirSession = false;
+        } else {
+            consecutiveAirTicks++;
         }
 
         if (player.level().isClientSide) {
@@ -107,7 +116,7 @@ public class JetpackHandler {
     private void executeClient() {
         updatePredictedFuel();
 
-        if (isHovering && wasTeleported()) {
+        if (isHovering && receivedFlyingPacketThisAirSession && consecutiveAirTicks >= 2) {
             hoverHeight = player.getY();
         }
 
@@ -117,20 +126,10 @@ public class JetpackHandler {
                 return;
             }
 
-            player.setNoGravity(true);
+            player.setNoGravity(!player.onGround());
             player.resetFallDistance();
 
-            if (player.isShiftKeyDown()) {
-                startHovering(true);
-            } else if (isHovering) {
-                endHovering(true);
-            }
-
             updateClientMovementWithInterpolation();
-
-            if (player.onGround() && isHovering) {
-                endHovering(true);
-            }
 
             if (!player.isInWater() && !player.isInLava()) {
                 handleThrustSound();
@@ -140,16 +139,16 @@ public class JetpackHandler {
             playedSoundThisJump = !player.onGround();
 
             if (isHovering) {
-                if (player.onGround()) {
-                    endHovering(true);
-                }
-
                 if (predictedFuelRemaining <= 0) {
                     endHovering(false);
                     return;
                 }
 
-                updateClientMovementWithInterpolation();
+                if (receivedFlyingPacketThisAirSession && consecutiveAirTicks >= 2) {
+                    updateClientMovementWithInterpolation();
+                } else {
+                    player.setNoGravity(false);
+                }
             } else {
                 player.setNoGravity(false);
                 fadeOutVisualAirOverlay();
@@ -164,7 +163,7 @@ public class JetpackHandler {
 
         jetPackFuelRemaining = (float) calculateJetPackFuel(player);
 
-        if ((isJumping || isHovering) && jetPackFuelRemaining > 0) {
+        if (receivedFlyingPacketThisAirSession && (isJumping || isHovering) && jetPackFuelRemaining > 0) {
             player.setNoGravity(true);
             depleteJetPackFuel(player);
             validatePlayerMovement();
@@ -319,11 +318,8 @@ public class JetpackHandler {
     }
 
     public void toggleHover() {
-        if (player.onGround()) {
-            endHovering(false);
-            return;
-        }
         if (!isHovering) {
+            if (player.onGround()) return;
             startHovering(true);
         } else {
             player.setNoGravity(false);
@@ -564,15 +560,31 @@ public class JetpackHandler {
     }
 
     private double calculateVerticalHoveringSpeed(double targetHeight) {
-        ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
-        UpgradeDataManager manager = UpgradeDataManager.loadFromItem(backpack);
-        boolean bobbingEnabled = manager.getSetting(UpgradeDataSync.Field.JETPACK_BOBBING, true);
+        double distanceToGround = getDistanceToGround(player);
+
+        if (isJumping) {
+            if (distanceToGround > MAX_ALLOWED_HEIGHT) {
+                return -0.1;
+            }
+            return 0.42;
+        }
+        if (player.isShiftKeyDown()) {
+            return -0.3;
+        }
 
         double currentY = player.getY();
         double yDifference = targetHeight - currentY;
 
         double adjustmentForce = yDifference * 0.3;
         double newYVelocity = player.getDeltaMovement().y * 0.8 + adjustmentForce;
+
+        if (distanceToGround > MAX_ALLOWED_HEIGHT) {
+            newYVelocity = Math.min(newYVelocity, -0.1);
+        }
+
+        ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+        UpgradeDataManager manager = UpgradeDataManager.loadFromItem(backpack);
+        boolean bobbingEnabled = manager.getSetting(UpgradeDataSync.Field.JETPACK_BOBBING, true);
 
         if (bobbingEnabled && player.level().isClientSide()) {
             float time = player.level().getGameTime() + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
@@ -693,13 +705,16 @@ public class JetpackHandler {
         this.left = left;
     }
 
-    public void processPlayerFlyingPacket(boolean flying, boolean hovering) {
+    public void processPlayerFlyingPacket(boolean flying) {
         this.isJumping = flying;
-        this.isHovering = hovering;
+        if (flying) {
+            this.receivedFlyingPacketThisAirSession = true;
+        }
     }
 
     public void flyingOnKeyPress() {
         this.isJumping = true;
+        this.receivedFlyingPacketThisAirSession = true;
     }
 
     public void flyingOnKeyRelease() {
@@ -721,5 +736,6 @@ public class JetpackHandler {
         lastValidVelocity = Vec3.ZERO;
         predictedFuelRemaining = 0;
         lastFuelSync = 0;
+        receivedFlyingPacketThisAirSession = false;
     }
 }
