@@ -13,8 +13,10 @@ import net.fxnt.fxntstorage.backpack.upgrade.oremining.OreMiningUpgrade;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.util.Util;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -59,6 +61,18 @@ public record KeyPressedPacket(byte hotKey, boolean pressed, Optional<BlockPos> 
                     case Util.BACKPACK_MENU_CTRL -> {
                         if (player.containerMenu instanceof BackpackMenu backpackMenu) {
                             backpackMenu.setCtrlKeyDown(pressed);
+                        }
+                    }
+                    case Util.TOGGLE_JETPACK -> {
+                        Boolean isActive = UpgradeHelper.toggleWornUpgrade(player, UpgradeType.FLIGHT);
+                        if (isActive != null) {
+                            Component state = Component.translatable(isActive
+                                            ? "message.fxntstorage.upgrade_activated"
+                                            : "message.fxntstorage.upgrade_deactivated")
+                                    .withStyle(isActive ? ChatFormatting.GREEN : ChatFormatting.RED);
+                            player.displayClientMessage(
+                                    Component.translatable("message.fxntstorage.jetpack_upgrade").append(Component.literal(": "))
+                                            .append(state), true);
                         }
                     }
                     case Util.TOGGLE_HOVER -> {

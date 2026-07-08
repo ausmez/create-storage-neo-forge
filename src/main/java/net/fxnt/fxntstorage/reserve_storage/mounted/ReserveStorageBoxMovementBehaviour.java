@@ -17,6 +17,9 @@ public class ReserveStorageBoxMovementBehaviour implements MovementBehaviour {
         @Nullable ReserveStorageBoxMountedStorage storage = getMountedStorage(context);
         if (storage == null) return;
 
+        if (!storage.isInitialized())
+            storage.initBlockEntityData(context);
+
         if (storage.isDirty())
             storage.updateClientStorageData(context);
     }

@@ -290,9 +290,9 @@ public class StorageNetwork {
             boolean hasRealSpace = box.getMaxItemCapacity() - box.getStoredAmount() > 0;
 
             if (box.compactingUpgrade && box.compactingChain != null) {
-                // Compacting boxes can't carry a void upgrade, so they're never a void last resort
-                if (acceptsCompactingItem(box, itemStack) && hasRealSpace) {
-                    return box;
+                if (acceptsCompactingItem(box, itemStack)) {
+                    if (hasRealSpace) return box;
+                    if (box.hasVoidUpgrade() && voidBox == null) voidBox = box;
                 }
             } else if (ItemStack.isSameItemSameComponents(box.getFilterItem(), itemStack)) {
                 if (hasRealSpace) return box;

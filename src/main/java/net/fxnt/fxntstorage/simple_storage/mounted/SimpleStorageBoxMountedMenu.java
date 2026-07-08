@@ -1,6 +1,5 @@
 package net.fxnt.fxntstorage.simple_storage.mounted;
 
-import com.simibubi.create.content.contraptions.AbstractContraptionEntity;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.fxnt.fxntstorage.network.packet.SetMountedStorageDirtyPacket;
@@ -14,19 +13,16 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
-import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
@@ -50,61 +46,50 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
         this.localPos = localPos;
         container.startOpen(playerInventory.player);
 
-        this.addDataSlot(new DataSlot() {
-            @Override
-            public int get() {
-                return getStoredAmount();
-            }
-
-            @Override
-            public void set(int i) {
-                setStoredAmount(i);
-            }
-        });
-
-        this.addDataSlot(new DataSlot() {
-            @Override
-            public int get() {
-                return getMaxItemCapacity();
-            }
-
-            @Override
-            public void set(int i) {
-                setMaxItemCapacity(i);
-            }
-        });
-
-        this.addDataSlot(new DataSlot() {
-            @Override
-            public int get() {
-                return getVoidUpgrade() ? 1 : 0;
-            }
-
-            @Override
-            public void set(int i) {
-                setVoidUpgrade(i);
-            }
-        });
-
-        // Add Void/Compacting slot
-        this.addSlot(new Slot(container, VOID_UPGRADE_SLOT, 8, 20) {
+        // Add Void slot (lower)
+        this.addSlot(new Slot(container, VOID_UPGRADE_SLOT, 8, 20 + Util.SLOT_SIZE) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 if (this.hasItem()) return false;
-                return stack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())
-                        || stack.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get());
+                return stack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
             }
 
             @Override
             public int getMaxStackSize() {
                 return 1;
             }
+
+            @Override
+            public void setChanged() {
+                super.setChanged();
+                setStorageDirty();
+            }
+        });
+
+        // Add Compacting slot (upper)
+        this.addSlot(new Slot(container, COMPACTING_UPGRADE_SLOT, 8, 20) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                if (this.hasItem()) return false;
+                return stack.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get());
+            }
+
+            @Override
+            public int getMaxStackSize() {
+                return 1;
+            }
+
+            @Override
+            public void setChanged() {
+                super.setChanged();
+                setStorageDirty();
+            }
         });
 
         // Add Capacity Slots
         for (int i = 0; i < MAX_CAPACITY_UPGRADES; ++i) {
             int slot = i + CAPACITY_UPGRADE_SLOT_START;
-            int y = 58;
+            int y = 60;
             int x = 8;
             this.addSlot(new Slot(container, slot, x + (Util.SLOT_SIZE * i), y) {
                 @Override
@@ -133,7 +118,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
 
         // Add Inventory Slots
         int xOffset = 8;
-        int yOffset = 94;
+        int yOffset = 96;
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 9; x++) {
                 this.addSlot(new Slot(playerInventory, y * 9 + x + 9, xOffset + Util.SLOT_SIZE * x, yOffset + y * Util.SLOT_SIZE));
@@ -148,7 +133,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
+        int playerStartSlot = 2 + MAX_CAPACITY_UPGRADES;
         if (slotId >= 0 && slotId < playerStartSlot) {
             ItemStack itemStack = this.slots.get(slotId).getItem();
             if (itemStack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get()) && !canRemoveCapacityUpgrade()) {
@@ -174,7 +159,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
 
     private int getCapacityUpgrades() {
         int count = 0;
-        for (int i = 1; i < MAX_CAPACITY_UPGRADES + 1; ++i) {
+        for (int i = 2; i < MAX_CAPACITY_UPGRADES + 2; ++i) {
             ItemStack stack = this.slots.get(i).getItem();
             if (!stack.isEmpty() && stack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
                 ++count;
@@ -186,7 +171,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack slotStack = this.slots.get(index).getItem();
-        int playerStartSlot = 1 + MAX_CAPACITY_UPGRADES;
+        int playerStartSlot = 2 + MAX_CAPACITY_UPGRADES;
 
         // If click player slot, if upgrade then move to upgrade slot, otherwise, don't allow inserting items
         if (index < playerStartSlot) {
@@ -213,9 +198,8 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
             }
         } else {
             // Clicked Player Slot
-            if (slotStack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())
-                    || slotStack.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())) {
-                // Move to void/compacting slot
+            if (slotStack.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())) {
+                // Move to the void slot (menu index 0)
                 if (!this.slots.getFirst().hasItem()) {
                     this.slots.getFirst().set(slotStack.copyWithCount(1));
                     slotStack.shrink(1);
@@ -224,9 +208,19 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
                     setStorageDirty();
                     return slotStack;
                 }
+            } else if (slotStack.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())) {
+                // Move to the compacting slot (menu index 1)
+                if (!this.slots.get(1).hasItem()) {
+                    this.slots.get(1).set(slotStack.copyWithCount(1));
+                    slotStack.shrink(1);
+                    this.container.setChanged();
+                    player.getInventory().setChanged();
+                    setStorageDirty();
+                    return slotStack;
+                }
             } else if (slotStack.is(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get())) {
-                // Move to upgrade slot
-                for (int i = 1; i <= MAX_CAPACITY_UPGRADES; i++) {
+                // Move to a capacity slot (menu indices 2..2+MAX_CAPACITY_UPGRADES)
+                for (int i = 2; i < 2 + MAX_CAPACITY_UPGRADES; i++) {
                     if (!this.slots.get(i).hasItem()) {
                         this.slots.get(i).set(slotStack.copyWithCount(1));
                         slotStack.shrink(1);
@@ -249,8 +243,13 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
         return this.localPos;
     }
 
-    public void setFilterItem(ItemStack stack) {
-        this.nbt.put("FilterItem", stack.copyWithCount(1).save(player.registryAccess()));
+    public void applySyncedData(CompoundTag source) {
+        this.nbt.putInt("StoredAmount", source.getInt("StoredAmount"));
+        this.nbt.putInt("MaxItemCapacity", source.getInt("MaxItemCapacity"));
+        this.nbt.putBoolean("CompactingUpgrade", source.getBoolean("CompactingUpgrade"));
+        if (source.contains("FilterItem", Tag.TAG_COMPOUND)) {
+            this.nbt.put("FilterItem", source.getCompound("FilterItem"));
+        }
     }
 
     public ItemStack getFilterItem() {
@@ -266,11 +265,6 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
             return nbt.getInt("StoredAmount");
         }
         return container.getItem(0).getCount();
-    }
-
-    public void setStoredAmount(int value) {
-        nbt.putInt("StoredAmount", value);
-        updateContraptionNbt(tag -> tag.putInt("StoredAmount", value));
     }
 
     // Capacity of a plain (non-compacting) box, measured in filter-item units.
@@ -302,7 +296,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
         if (player.level().isClientSide) {
             return nbt.getBoolean("CompactingUpgrade");
         }
-        return container.getItem(VOID_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get());
+        return container.getItem(COMPACTING_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get());
     }
 
     // How many T0 items make up one highest-tier unit when compacting, else 1.
@@ -317,7 +311,7 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
         return chain != null ? chain.highestTierT0PerUnit() : 1;
     }
 
-    private CompactingChain compactingChain() {
+    private @Nullable CompactingChain compactingChain() {
         ItemStack filter = getFilterItem();
         if (!isCompacting() || filter.isEmpty()) return null;
         if (CompactingRecipeHelper.isEmpty()) {
@@ -345,39 +339,12 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
         return chain != null ? chain.itemForSlot(0) : getFilterItem();
     }
 
-    public void setMaxItemCapacity(int value) {
-        nbt.putInt("MaxItemCapacity", value);
-        updateContraptionNbt(tag -> tag.putInt("MaxItemCapacity", value));
-    }
-
     public boolean getVoidUpgrade() {
-        return !container.getItem(VOID_UPGRADE_SLOT).isEmpty();
-    }
-
-    public void setVoidUpgrade(int value) {
-        nbt.putBoolean("VoidUpgrade", value != 0);
-        updateContraptionNbt(tag -> tag.putBoolean("VoidUpgrade", value != 0));
+        return container.getItem(VOID_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
     }
 
     public Container getContainer() {
         return this.container;
-    }
-
-    private void updateContraptionNbt(Consumer<CompoundTag> editor) {
-        Entity entity = this.player.level().getEntity(contraptionId);
-        if (!(entity instanceof AbstractContraptionEntity contraptionEntity)) return;
-
-        var contraption = contraptionEntity.getContraption();
-        var info = contraption.getBlocks().get(localPos);
-        if (info == null) return;
-
-        CompoundTag tag = info.nbt();
-        editor.accept(tag);
-
-        contraption.getBlocks().put(localPos, new StructureTemplate.StructureBlockInfo(
-                info.pos(), info.state(), tag
-        ));
-//        contraption.resetClientContraption();
     }
 
     private void setStorageDirty() {

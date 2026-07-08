@@ -5,7 +5,10 @@ import com.simibubi.create.CreateClient;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.contraption.storage.item.MountedItemStorageType;
 import com.simibubi.create.content.decoration.encasing.CasingBlock;
-import com.simibubi.create.foundation.block.connected.*;
+import com.simibubi.create.foundation.block.connected.AllCTTypes;
+import com.simibubi.create.foundation.block.connected.CTModel;
+import com.simibubi.create.foundation.block.connected.CTSpriteShiftEntry;
+import com.simibubi.create.foundation.block.connected.CTSpriteShifter;
 import com.simibubi.create.impl.contraption.storage.FallbackMountedStorageType;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
@@ -13,7 +16,9 @@ import net.fxnt.fxntstorage.init.ModCompats;
 import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxCTBehaviour;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
+import net.fxnt.fxntstorage.simple_storage.StorageTrimCTBehaviour;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMovementBehaviour;
 import net.mehvahdjukaar.every_compat.api.PaletteStrategies;
 import net.mehvahdjukaar.every_compat.api.SimpleEntrySet;
@@ -77,12 +82,21 @@ public class WoodGoodModule extends EveryCompatModule {
     public void addDynamicClientResources(Consumer<ResourceGenTask> executor) {
         super.addDynamicClientResources(executor);
 
-        storage_trims.blocks.forEach(((woodType, block) -> {
-            Supplier<CTSpriteShiftEntry> shift = () -> CTSpriteShifter.getCT(AllCTTypes.OMNIDIRECTIONAL,
-                    ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "block/cs/" + woodType.getNamespace() + "/casings/" + woodType.getTypeName() + "_casing"),
-                    ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "block/cs/" + woodType.getNamespace() + "/casings/" + woodType.getTypeName() + "_casing_connected"));
-            registerCTModel(block, shift);
-        }));
+        simple_storage_boxes.blocks.forEach((woodType, box) -> {
+            CTSpriteShiftEntry shift = getCasingShift(woodType);
+            registerBoxCTModel(box, shift, () -> storage_trims.blocks.get(woodType));
+        });
+
+        storage_trims.blocks.forEach((woodType, trim) -> {
+            CTSpriteShiftEntry shift = getCasingShift(woodType);
+            registerTrimCTModel(trim, shift, () -> simple_storage_boxes.blocks.get(woodType));
+        });
+    }
+
+    private static CTSpriteShiftEntry getCasingShift(WoodType woodType) {
+        return CTSpriteShifter.getCT(AllCTTypes.OMNIDIRECTIONAL,
+                ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "block/cs/" + woodType.getNamespace() + "/casings/" + woodType.getTypeName() + "_casing"),
+                ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "block/cs/" + woodType.getNamespace() + "/casings/" + woodType.getTypeName() + "_casing_connected"));
     }
 
     @Override
@@ -103,12 +117,21 @@ public class WoodGoodModule extends EveryCompatModule {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void registerCTModel(Block block, Supplier<CTSpriteShiftEntry> spriteShift) {
+    private static void registerBoxCTModel(Block block, CTSpriteShiftEntry shift, Supplier<? extends Block> matchingTrim) {
         CreateClient.MODEL_SWAPPER.getCustomBlockModels().register(
                 Utils.getID(block),
-                model -> new CTModel(model, new SimpleCTBehaviour(spriteShift.get()))
+                model -> new CTModel(model, new SimpleStorageBoxCTBehaviour(shift, matchingTrim))
         );
-        CreateClient.CASING_CONNECTIVITY.makeCasing(block, spriteShift.get());
-        FXNTStorage.LOGGER.debug("Registered CTModel for {}", Utils.getID(block));
+        FXNTStorage.LOGGER.debug("Registered box CTModel for {}", Utils.getID(block));
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void registerTrimCTModel(Block block, CTSpriteShiftEntry shift, Supplier<? extends Block> matchingBox) {
+        CreateClient.MODEL_SWAPPER.getCustomBlockModels().register(
+                Utils.getID(block),
+                model -> new CTModel(model, new StorageTrimCTBehaviour(shift, matchingBox))
+        );
+        CreateClient.CASING_CONNECTIVITY.makeCasing(block, shift);
+        FXNTStorage.LOGGER.debug("Registered trim CTModel for {}", Utils.getID(block));
     }
 }

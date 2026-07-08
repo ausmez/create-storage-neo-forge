@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.3.1 - 2026-07-08
+
+## Changes
+### Simple Storage Box
+- Void and Compacting upgrades now have dedicated upgrade slots, allowing both to be installed simultaneously. (#69)
+- Void mode is now indicated by a purple status light and display text instead of rendering the Void Upgrade item on the block.
+- Added Jade tooltip information showing installed Void and Compacting upgrades.
+- Added optional Create-style connected textures for Simple Storage Boxes and matching Storage Trims. (#62)
+  - Configurable via client setting **Off**, **Boxes only**, or **Boxes and Trim**. Also applies to modded wood variants added through EveryCompat integration.
+### Reserve Barrel
+- Added support for Void mode. Use a wrench on the front display to toggle voiding of excess items once storage is full.
+- Improved compatibility with the Create Packager.
+### Backpack
+- Added a keybind (default `G`) to activate/deactivate the Jetpack upgrade without opening the backpack.
+- Added a configurable Jetpack hover mode (client setting **Jetpack Hover Mode**: Original / Alternate). (#67)
+  - **Original** (default) keeps the existing behavior, maintaining a fixed hover altitude.
+  - **Alternate** allows free ascent (jump) and descent (sneak) while hovering (similar to Creative mode movement), up to the jetpack's maximum flight ceiling. Releasing both keys maintains the current altitude.
+### Smart Passer Block
+- Added an alternate recipe for upgrading an existing Passer Block into a Smart Passer Block. (#72)
+
+## Bug Fixes
+- Fixed a backpack item duplication issue where items removed through the GUI could reappear after placing and breaking the backpack. (#71)
+- Fixed backpack custom names growing each time the backpack was placed and broken when using name-decorating mods (such as Apotheosis).
+- Long custom names are now truncated to prevent overlapping other GUI elements or extending beyond the menu.
+- Fixed the Simple Storage Box tooltip displaying incorrect contents when a Compacting Upgrade was installed.
+- Fixed mounted Simple Storage Boxes not inserting all matching items from the inventory when the front display was double-clicked.
+- Fixed mounted Simple Storage Boxes with both the Void and Compacting upgrades failing to void matching items once full, both during contraption automation (such as drills) and when using the front display manually.
+- Fixed an issue where only some crafting ingredients would transfer to the crafting grid if matching ingredients were present in the Workshop upgrade output slot.
+- Fixed the delay when rapidly crafting items using the Crafting upgrade.
+- Improved stack selection when quick-crafting from the Crafting upgrade, now prioritizing existing stacks, followed by backpack slots, and finally player inventory slots. 
+- Fixed the Torch Deployer upgrade reading the incorrect light value, causing it to almost never place torches.
+
+---
+
 ## 1.3.0 - 2026-06-20
 
 ## New Features
@@ -16,7 +50,6 @@
 - **Portable Workshop Upgrade** – A mini workshop you can take anywhere! Supports deploying, pressing, and polishing recipes, powered by air pressure (configurable RPM).
 
 ## Changes
-
 - Backpacks can now be used on Create contraptions - including all inventory, tool slots, and upgrades.
   - Player-only upgrades (all except Magnet, Jukebox, Crafting, and Portable Workshop) will show a dark red overlay when installed in a contraption-mounted backpack.
 - Jade support for Simple Storage Boxes, displaying max item capacity and number of capacity upgrades.
@@ -24,7 +57,6 @@
 - The Jetpack Upgrade now costs fewer resources to craft.
 
 ## Bug Fixes
-
 - Fixed the Simple Storage Controller wrongly denying items when set to deny filling empty storage. (#68)
 - Storage Boxes and Simple Storage Boxes are no longer destroyed when hit by a Mace's Wind Burst - the storage box now drops properly. (#66)
 - Fixed Simple Storage Boxes occasionally creating extra "phantom" packages when used with the Create Packager. (#61)

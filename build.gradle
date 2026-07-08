@@ -176,10 +176,10 @@ dependencies {
     runtimeOnly "curse.maven:sodium-394468:6382651"
 
     // Create Aeronautics
-    runtimeOnly "dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}"
-    runtimeOnly "dev.eriksonn.aeronautics:aeronautics-neoforge-${minecraft_version}:${aeronautics_version}"
-    runtimeOnly "dev.simulated_team.simulated:simulated-neoforge-${minecraft_version}:${simulated_version}"
-    runtimeOnly "dev.ryanhcode.offroad:offroad-neoforge-${minecraft_version}:${offroad_version}"
+//    runtimeOnly "dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}"
+//    runtimeOnly "dev.eriksonn.aeronautics:aeronautics-neoforge-${minecraft_version}:${aeronautics_version}"
+//    runtimeOnly "dev.simulated_team.simulated:simulated-neoforge-${minecraft_version}:${simulated_version}"
+//    runtimeOnly "dev.ryanhcode.offroad:offroad-neoforge-${minecraft_version}:${offroad_version}"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

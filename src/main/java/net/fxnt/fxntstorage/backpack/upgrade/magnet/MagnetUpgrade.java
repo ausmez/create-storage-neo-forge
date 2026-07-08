@@ -37,7 +37,6 @@ import java.util.function.Predicate;
 
 import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 
-
 public class MagnetUpgrade extends AbstractUpgrade {
 
     public MagnetUpgrade() {

@@ -87,6 +87,9 @@ public class FXNTStorage {
     public static final boolean REI_LOADED = ModList.get().isLoaded(ModCompats.REI);
 
     public FXNTStorage(IEventBus modEventBus, ModContainer modContainer) {
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            ConfigManager.migrateClientConfigFile();
+        }
         modContainer.registerConfig(ModConfig.Type.CLIENT, ConfigManager.ClientConfig.CLIENT_SPEC);
         modContainer.registerConfig(ModConfig.Type.SERVER, ConfigManager.ServerConfig.SERVER_SPEC);
 
@@ -172,11 +175,29 @@ public class FXNTStorage {
     @EventBusSubscriber(modid = MOD_ID, value = Dist.CLIENT)
     public static class ClientModEvents {
 
+        private static ConfigManager.ClientConfig.SimpleStorageBoxConnectedTextures lastCTMode;
+
+        @SubscribeEvent
+        public static void onConfigLoad(final ModConfigEvent.Loading event) {
+            if (Objects.equals(event.getConfig().getModId(), MOD_ID) && event.getConfig().getType().equals(ModConfig.Type.CLIENT)) {
+                lastCTMode = ConfigManager.ClientConfig.SIMPLE_STORAGE_CONNECTED_TEXTURES.get();
+            }
+        }
+
         @SubscribeEvent
         public static void onConfigReload(final ModConfigEvent.Reloading event) {
             if (Objects.equals(event.getConfig().getModId(), MOD_ID) && event.getConfig().getType().equals(ModConfig.Type.CLIENT)) {
                 if (Minecraft.getInstance().getConnection() != null && Minecraft.getInstance().player != null) {
                     ConfigManager.ClientConfig.sendClientSettings();
+                }
+                // Re-mesh chunks only when the connected-texture mode changes
+                ConfigManager.ClientConfig.SimpleStorageBoxConnectedTextures ctMode =
+                        ConfigManager.ClientConfig.SIMPLE_STORAGE_CONNECTED_TEXTURES.get();
+                if (ctMode != lastCTMode) {
+                    lastCTMode = ctMode;
+                    if (Minecraft.getInstance().level != null) {
+                        Minecraft.getInstance().levelRenderer.allChanged();
+                    }
                 }
             }
         }
@@ -263,6 +284,7 @@ public class FXNTStorage {
         @SubscribeEvent
         public static void onKeyRegister(RegisterKeyMappingsEvent event) {
             event.register(KeybindHandler.TOGGLE_BACKPACK_KEY);
+            event.register(KeybindHandler.TOGGLE_JETPACK_KEY);
             event.register(KeybindHandler.TOGGLE_JETPACK_HOVER_KEY);
             event.register(KeybindHandler.ORE_MINE_ANY_BLOCK);
             event.register(KeybindHandler.COMPACTING_WHEEL_KEY);

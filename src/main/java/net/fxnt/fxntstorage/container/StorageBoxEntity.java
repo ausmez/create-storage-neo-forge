@@ -256,8 +256,8 @@ public class StorageBoxEntity extends SmartBlockEntity implements Container, Men
     @Override
     protected void applyImplicitComponents(DataComponentInput componentInput) {
         super.applyImplicitComponents(componentInput);
-        componentInput.get(DataComponents.CUSTOM_NAME);
-        this.sortOrder = componentInput.getOrDefault(ModDataComponents.INVENTORY_SORT_ORDER, SortOrder.COUNT);
+        customName = componentInput.get(DataComponents.CUSTOM_NAME);
+        sortOrder = componentInput.getOrDefault(ModDataComponents.INVENTORY_SORT_ORDER, SortOrder.COUNT);
         setVoidUpgrade(componentInput.getOrDefault(ModDataComponents.VOID_UPGRADE, false));
         readInventory(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
     }

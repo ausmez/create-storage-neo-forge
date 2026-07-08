@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.config;
 
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import net.fxnt.fxntstorage.network.packet.SyncClientSettingsPacket;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -10,9 +11,12 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -181,21 +185,34 @@ public class ConfigManager {
         public static ModConfigSpec.BooleanValue CHECK_BACKPACK_FOR_TOOLBOX_ITEMS;
         public static ModConfigSpec.IntValue FEEDER_HUNGER_LEVEL;
         public static ModConfigSpec.IntValue FEEDER_HEALTH_THRESHOLD;
-        public static ModConfigSpec.EnumValue<SimpleStorageGoggleOverlay> SIMPLE_STORAGE_GOGGLE_INFO;
+        public static ModConfigSpec.EnumValue<SimpleStorageBoxGoggleOverlay> SIMPLE_STORAGE_GOGGLE_INFO;
+        public static ModConfigSpec.EnumValue<SimpleStorageBoxConnectedTextures> SIMPLE_STORAGE_CONNECTED_TEXTURES;
         public static ModConfigSpec.ConfigValue<List<? extends String>> REFILL_BLACKLIST;
         public static ModConfigSpec.BooleanValue JUKEBOX_NOTES_ENABLED;
         public static ModConfigSpec.BooleanValue WORKSHOP_FLYWHEEL_VISUALS;
         public static ModConfigSpec.BooleanValue WORKSHOP_SOUNDS;
+        public static ModConfigSpec.EnumValue<JetpackHoverMode> JETPACK_HOVER_MODE;
 
         public enum TorchDeployerLightSource {
             BLOCK_LIGHT,
             SKY_LIGHT
         }
 
-        public enum SimpleStorageGoggleOverlay {
+        public enum JetpackHoverMode {
+            ORIGINAL,
+            ALTERNATE
+        }
+
+        public enum SimpleStorageBoxGoggleOverlay {
             OFF,
             ONLY_TAGGED,
             ALL_ITEMS
+        }
+
+        public enum SimpleStorageBoxConnectedTextures {
+            OFF,
+            BOXES_ONLY,
+            BOXES_AND_TRIM
         }
 
         static {
@@ -213,6 +230,18 @@ public class ConfigManager {
                             .comment("Feeder Upgrade activates when hunger falls below this value. One point = half a drumstick")
                             .translation("fxntstorage.configuration.feederHungerLevel")
                             .defineInRange("feederHungerLevel", 18, 1, 20)
+            );
+            CLIENT_BUILDER.pop();
+
+            CLIENT_BUILDER.comment("Jetpack Upgrade").push("jetpack_upgrade");
+            JETPACK_HOVER_MODE = sync(
+                    "JetpackHoverMode",
+                    CLIENT_BUILDER
+                            .comment("Hover behavior for the Jetpack Upgrade.",
+                                    "ORIGINAL = hover locks to a fixed altitude,",
+                                    "ALTERNATE = ascend (jump) / descend (sneak) freely while hovering, within flight range.")
+                            .translation("fxntstorage.configuration.jetpackHoverMode")
+                            .defineEnum("jetpackHoverMode", JetpackHoverMode.ORIGINAL)
             );
             CLIENT_BUILDER.pop();
 
@@ -251,17 +280,6 @@ public class ConfigManager {
             );
             CLIENT_BUILDER.pop();
 
-            CLIENT_BUILDER.comment("Workshop Upgrade").push("workshop_upgrade");
-            WORKSHOP_FLYWHEEL_VISUALS = CLIENT_BUILDER
-                    .comment("Render the spinning flywheels on the backpack (worn and placed) when the Workshop Upgrade is installed.")
-                    .translation("fxntstorage.configuration.workshopFlywheelVisuals")
-                    .define("workshopFlywheelVisuals", true);
-            WORKSHOP_SOUNDS = CLIENT_BUILDER
-                    .comment("Play the press/deployer sounds when the Workshop Upgrade processes items.")
-                    .translation("fxntstorage.configuration.workshopSounds")
-                    .define("workshopSounds", true);
-            CLIENT_BUILDER.pop();
-
             CLIENT_BUILDER.comment("Torch Deployer Upgrade").push("torch_deployer_upgrade");
             TORCH_DEPLOYER_COOLDOWN = sync(
                     "TorchDeployerCooldown",
@@ -286,6 +304,31 @@ public class ConfigManager {
             );
             CLIENT_BUILDER.pop();
 
+            CLIENT_BUILDER.comment("Workshop Upgrade").push("workshop_upgrade");
+            WORKSHOP_FLYWHEEL_VISUALS = CLIENT_BUILDER
+                    .comment("Render the spinning flywheels on the backpack (worn and placed) when the Workshop Upgrade is installed.")
+                    .translation("fxntstorage.configuration.workshopFlywheelVisuals")
+                    .define("workshopFlywheelVisuals", true);
+            WORKSHOP_SOUNDS = CLIENT_BUILDER
+                    .comment("Play the press/deployer sounds when the Workshop Upgrade processes items.")
+                    .translation("fxntstorage.configuration.workshopSounds")
+                    .define("workshopSounds", true);
+            CLIENT_BUILDER.pop();
+
+            CLIENT_BUILDER.comment("Simple Storage Box").push("simple_storage_box");
+            SIMPLE_STORAGE_GOGGLE_INFO = CLIENT_BUILDER
+                    .comment("Display goggle overlay for items with tag data in Simple Storage Boxes. (e.g. enchanted items, potions, tipped arrows or trimmed armor)")
+                    .translation("fxntstorage.configuration.simpleStorageBoxGoggleInfo")
+                    .defineEnum("simpleStorageBoxGoggleInfo", SimpleStorageBoxGoggleOverlay.ONLY_TAGGED);
+            SIMPLE_STORAGE_CONNECTED_TEXTURES = CLIENT_BUILDER
+                    .comment("Create-style connected textures for the casing faces of Simple Storage Boxes.",
+                            "OFF = no connected textures,",
+                            "BOXES_ONLY = connect adjacent same-wood boxes,",
+                            "BOXES_AND_TRIM = also connect to adjacent same-wood Storage Trim.")
+                    .translation("fxntstorage.configuration.simpleStorageBoxConnectedTextures")
+                    .defineEnum("simpleStorageBoxConnectedTextures", SimpleStorageBoxConnectedTextures.OFF);
+            CLIENT_BUILDER.pop();
+
             CHECK_BACKPACK_FOR_PROJECTILES = sync(
                     "CheckBackpackForProjectiles",
                     CLIENT_BUILDER
@@ -300,10 +343,6 @@ public class ConfigManager {
                             .translation("fxntstorage.configuration.checkBackpackForToolboxItems")
                             .define("checkBackpackForToolboxItems", true)
             );
-            SIMPLE_STORAGE_GOGGLE_INFO = CLIENT_BUILDER
-                    .comment("Display goggle overlay for items with tag data in Simple Storage Boxes. (e.g. enchanted items, potions, tipped arrows or trimmed armor)")
-                    .translation("fxntstorage.configuration.simpleStorageGoggleInfo")
-                    .defineEnum("simpleStorageGoggleInfo", SimpleStorageGoggleOverlay.ONLY_TAGGED);
 
             CLIENT_SPEC = CLIENT_BUILDER.build();
         }
@@ -412,6 +451,26 @@ public class ConfigManager {
             settings.remove("fxntPreferSilkTouch");
             settings.remove("fxntDisplayFeederMessage");
             settings.remove("fxntJetpackHover");
+        }
+    }
+
+    public static void migrateClientConfigFile() {
+        Path configFile = FMLPaths.CONFIGDIR.get().resolve("fxntstorage-client.toml");
+        if (!Files.exists(configFile)) {
+            return;
+        }
+
+        // .sync() so save() writes to disk immediately; the default async writer may not flush before NeoForge
+        // reads the file back during config load.
+        try (CommentedFileConfig config = CommentedFileConfig.builder(configFile).sync().build()) {
+            config.load();
+
+            if (config.contains("simpleStorageGoggleInfo")
+                    && !config.contains("simple_storage_box.simpleStorageBoxGoggleInfo")) {
+                config.set("simple_storage_box.simpleStorageBoxGoggleInfo", config.get("simpleStorageGoggleInfo"));
+                config.remove("simpleStorageGoggleInfo");
+                config.save();
+            }
         }
     }
 }

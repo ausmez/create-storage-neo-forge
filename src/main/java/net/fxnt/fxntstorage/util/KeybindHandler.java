@@ -45,6 +45,7 @@ public class KeybindHandler {
     public static final String KEY_CATEGORY_FXNTSTORAGE = "hotKey.fxntstorage.category";
 
     public static final KeyMapping TOGGLE_BACKPACK_KEY = new KeyMapping("hotKey.fxntstorage.toggle_backpack", GLFW.GLFW_KEY_B, KEY_CATEGORY_FXNTSTORAGE);
+    public static final KeyMapping TOGGLE_JETPACK_KEY = new KeyMapping("hotKey.fxntstorage.toggle_jetpack", GLFW.GLFW_KEY_G, KEY_CATEGORY_FXNTSTORAGE);
     public static final KeyMapping TOGGLE_JETPACK_HOVER_KEY = new KeyMapping("hotKey.fxntstorage.toggle_jetpack_hover", GLFW.GLFW_KEY_H, KEY_CATEGORY_FXNTSTORAGE);
     public static final KeyMapping ORE_MINE_ANY_BLOCK = new KeyMapping("hotKey.fxntstorage.oremine_any_block", GLFW.GLFW_KEY_GRAVE_ACCENT, KEY_CATEGORY_FXNTSTORAGE);
     public static final KeyMapping FLY_JETPACK = new KeyMapping("hotKey.fxntstorage.fly_jetpack", GLFW.GLFW_KEY_SPACE, KEY_CATEGORY_FXNTSTORAGE);
@@ -79,6 +80,13 @@ public class KeybindHandler {
 
             while (COMPACTING_WHEEL_KEY.consumeClick()) {
                 if (!player.isSpectator() && mc.screen == null) openCompactingWheel(mc);
+            }
+
+            while (TOGGLE_JETPACK_KEY.consumeClick()) {
+                if (!isSurvival || !isWearingBackpack) break;
+                if (!UpgradeHelper.hasUpgrade(backpackContainer.getItemHandler(), UpgradeType.FLIGHT)) break;
+
+                PacketDistributor.sendToServer(new KeyPressedPacket(Util.TOGGLE_JETPACK, true, Optional.empty()));
             }
 
             while (TOGGLE_JETPACK_HOVER_KEY.consumeClick()) {

@@ -112,6 +112,9 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     // Sort order
     private SortOrder currentSortOrder;
 
+    // Title truncation / hover tooltip
+    private final TruncatedTitle titleRenderer = new TruncatedTitle();
+
     public BackpackScreen(BackpackMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.itemSlots = menu.getItemSlotCount();
@@ -472,6 +475,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         super.render(graphics, mouseX, mouseY, delta);
         renderTooltip(graphics, mouseX, mouseY);
         handlePanelRenderTooltip(graphics, mouseX, mouseY);
+        titleRenderer.renderTooltipIfHovered(graphics, font, leftPos, topPos, mouseX, mouseY);
     }
 
     @Override
@@ -570,7 +574,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(font, title, 8, 6, 0x404040, false);
+        int maxTitleWidth = (imageWidth - 42) - 12; // up to sort button, minus padding
+        titleRenderer.draw(graphics, font, title, 8, 6, maxTitleWidth, 0x404040);
         graphics.drawString(font, playerInventoryTitle,
                 PLAYER_INVENTORY_SLOTS_MIN_X, layout.inventorySlotsMinZ - 11, 0x404040, false);
 

@@ -6,7 +6,6 @@ import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.contraptions.render.ContraptionMatrices;
 import net.createmod.catnip.gui.AbstractSimiScreen;
 import net.fxnt.fxntstorage.compat.sable.SableCompat;
-import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -20,6 +19,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -50,7 +50,9 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         int percentUsed = (int) Math.round(((double) amount / totalSpace) * 100);
 
         String line1 = Util.formatNumber(amount);
-        String line2 = percentUsed + "% Used";
+        String line2 = hasVoidUpgrade
+                ? Component.translatable("container.fxntstorage.void_mode").getString()
+                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
 
         Direction side = state.getValue(HorizontalDirectionalBlock.FACING);
 
@@ -106,24 +108,20 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
                 renderLine(displayCount, -1f, poseStack, buffer, color, textLight);
                 renderLine(line2, -4f, poseStack, buffer, color, textLight);
                 renderPips(chain.tiers(), selected, poseStack, buffer, textLight - 32);
-                renderItem(itemRenderer, chain.itemForSlot(selected), poseStack, buffer, itemLight,
-                        ModItems.STORAGE_BOX_COMPACTING_UPGRADE.asStack());
+                renderItem(itemRenderer, chain.itemForSlot(selected), poseStack, buffer, itemLight, ItemStack.EMPTY);
             } else {
                 renderLine(line1, -1f, poseStack, buffer, color, textLight);
                 renderLine(line2, -4f, poseStack, buffer, color, textLight);
                 if (!filterItem.isEmpty()) {
-                    renderItem(itemRenderer, filterItem, poseStack, buffer, itemLight,
-                            ModItems.STORAGE_BOX_COMPACTING_UPGRADE.asStack());
+                    renderItem(itemRenderer, filterItem, poseStack, buffer, itemLight, ItemStack.EMPTY);
                 }
             }
         } else {
             renderLine(line1, -1f, poseStack, buffer, color, textLight);
             renderLine(line2, -4f, poseStack, buffer, color, textLight);
 
-            if (!filterItem.isEmpty() || hasVoidUpgrade) {
-                ItemStack upgradeIcon = hasVoidUpgrade
-                        ? ModItems.STORAGE_BOX_VOID_UPGRADE.asStack() : ItemStack.EMPTY;
-                renderItem(itemRenderer, filterItem, poseStack, buffer, itemLight, upgradeIcon);
+            if (!filterItem.isEmpty()) {
+                renderItem(itemRenderer, filterItem, poseStack, buffer, itemLight, ItemStack.EMPTY);
             }
         }
 
@@ -148,7 +146,9 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         int percentUsed = (int) Math.round(((double) amount / totalSpace) * 100);
 
         String line1 = Util.formatNumber(amount);
-        String line2 = percentUsed + "% Used";
+        String line2 = blockEntity.hasVoidUpgrade()
+                ? Component.translatable("container.fxntstorage.void_mode").getString()
+                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 
@@ -177,7 +177,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
                 int selected = Math.min(blockEntity.compactingSelectedTier, chain.tiers() - 1);
                 displayItem = chain.itemForSlot(selected);
                 displayCount = getCountForSlot(chain, selected, amount);
-                renderPips(chain.tiers(), selected, poseStack, buffer, textLight-32);
+                renderPips(chain.tiers(), selected, poseStack, buffer, textLight - 32);
             } else {
                 displayItem = blockEntity.getFilterItem();
                 displayCount = line1;
@@ -185,18 +185,14 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
             renderLine(displayCount, -1.4f, poseStack, buffer, color, textLight);
             renderLine(line2, -4.1f, poseStack, buffer, color, textLight);
-            renderItem(Minecraft.getInstance().getItemRenderer(), displayItem, poseStack, buffer, itemLight,
-                    ModItems.STORAGE_BOX_COMPACTING_UPGRADE.asStack());
+            renderItem(Minecraft.getInstance().getItemRenderer(), displayItem, poseStack, buffer, itemLight, ItemStack.EMPTY);
         } else {
             renderLine(line1, -1.4f, poseStack, buffer, color, textLight);
             renderLine(line2, -4.1f, poseStack, buffer, color, textLight);
 
             ItemStack filterItem = blockEntity.getFilterItem();
-            if (!filterItem.isEmpty() || blockEntity.voidUpgrade || blockEntity.compactingUpgrade) {
-                ItemStack upgradeIcon = blockEntity.voidUpgrade
-                        ? ModItems.STORAGE_BOX_VOID_UPGRADE.asStack()
-                        : ItemStack.EMPTY;
-                renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, itemLight, upgradeIcon);
+            if (!filterItem.isEmpty()) {
+                renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, itemLight, ItemStack.EMPTY);
             }
         }
 

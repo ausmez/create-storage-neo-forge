@@ -4,6 +4,7 @@
     "back": "fxntstorage:block/casings/bamboo_casing",
     "casing": "fxntstorage:block/casings/bamboo_casing",
     "particle": "fxntstorage:block/casings/bamboo_casing",
-    "top": "fxntstorage:block/casings/bamboo_casing"
+    "top": "fxntstorage:block/casings/bamboo_casing",
+    "trim": "fxntstorage:block/casings/casing_trim"
   }
 }

@@ -24,6 +24,7 @@ import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBox;
 import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxItem;
 import net.fxnt.fxntstorage.reserve_storage.mounted.ReserveStorageBoxMovementBehaviour;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
+import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxCTBehaviour;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMovementBehaviour;
 import net.fxnt.fxntstorage.util.Util;
@@ -35,6 +36,7 @@ import net.neoforged.fml.ModList;
 
 import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
 import static com.simibubi.create.api.contraption.storage.item.MountedItemStorageType.mountedItemStorage;
+import static com.simibubi.create.foundation.data.CreateRegistrate.connectedTextures;
 
 public class ModBlocks {
     private static final CreateRegistrate REGISTRATE = FXNTStorage.REGISTRATE;
@@ -301,6 +303,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.OAK_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.OAK_CASING, ModBlocks.STORAGE_TRIM_OAK)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.OAK_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.OAK_PLANKS))
@@ -314,6 +317,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.SPRUCE_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.SPRUCE_CASING, ModBlocks.STORAGE_TRIM_SPRUCE)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.SPRUCE_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.SPRUCE_PLANKS))
@@ -327,6 +331,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.BIRCH_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.BIRCH_CASING, ModBlocks.STORAGE_TRIM_BIRCH)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.BIRCH_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.BIRCH_PLANKS))
@@ -340,6 +345,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.JUNGLE_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.JUNGLE_CASING, ModBlocks.STORAGE_TRIM_JUNGLE)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.JUNGLE_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.JUNGLE_PLANKS))
@@ -353,6 +359,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.ACACIA_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.ACACIA_CASING, ModBlocks.STORAGE_TRIM_ACACIA)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.ACACIA_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.ACACIA_PLANKS))
@@ -366,6 +373,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.DARK_OAK_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.DARK_OAK_CASING, ModBlocks.STORAGE_TRIM_DARK_OAK)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.DARK_OAK_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.DARK_OAK_PLANKS))
@@ -379,6 +387,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.MANGROVE_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.MANGROVE_CASING, ModBlocks.STORAGE_TRIM_MANGROVE)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.MANGROVE_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.MANGROVE_PLANKS))
@@ -392,6 +401,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.CHERRY_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.CHERRY_CASING, ModBlocks.STORAGE_TRIM_CHERRY)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.CHERRY_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.CHERRY_PLANKS))
@@ -405,6 +415,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.BAMBOO_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.BAMBOO_CASING, ModBlocks.STORAGE_TRIM_BAMBOO)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.BAMBOO_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.BAMBOO_PLANKS))
@@ -418,6 +429,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.CRIMSON_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.CRIMSON_CASING, ModBlocks.STORAGE_TRIM_CRIMSON)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.CRIMSON_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.CRIMSON_PLANKS))
@@ -431,6 +443,7 @@ public class ModBlocks {
             .initialProperties(() -> Blocks.WARPED_PLANKS)
             .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
             .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.WARPED_CASING, ModBlocks.STORAGE_TRIM_WARPED)))
             .blockstate(ModBlockstateHelper.simpleStorageBox(Blocks.WARPED_PLANKS))
             .loot(ModLootTableHelper.copyComponents())
             .recipe(ModRecipeHelper.simpleStorageBox(Blocks.WARPED_PLANKS))
@@ -445,6 +458,7 @@ public class ModBlocks {
                     .initialProperties(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS::get)
                     .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
                     .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+                    .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.PALE_OAK_CASING, ModBlocks.STORAGE_TRIM_PALE_OAK)))
                     .blockstate(ModBlockstateHelper.simpleStorageBox(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS))
                     .loot(ModLootTableHelper.copyComponents())
                     .recipe(ModRecipeHelper.simpleStorageBox(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS))
@@ -458,7 +472,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_OAK = REGISTRATE
             .block("oak_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.OAK_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.OAK_CASING, ModBlocks.SIMPLE_STORAGE_BOX_OAK))
             .blockstate(ModBlockstateHelper.storageTrim("oak"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.OAK_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -467,7 +481,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_SPRUCE = REGISTRATE
             .block("spruce_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.SPRUCE_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.SPRUCE_CASING, ModBlocks.SIMPLE_STORAGE_BOX_SPRUCE))
             .blockstate(ModBlockstateHelper.storageTrim("spruce"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.SPRUCE_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -476,7 +490,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_BIRCH = REGISTRATE
             .block("birch_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.BIRCH_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.BIRCH_CASING, ModBlocks.SIMPLE_STORAGE_BOX_BIRCH))
             .blockstate(ModBlockstateHelper.storageTrim("birch"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.BIRCH_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -485,7 +499,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_JUNGLE = REGISTRATE
             .block("jungle_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.JUNGLE_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.JUNGLE_CASING, ModBlocks.SIMPLE_STORAGE_BOX_JUNGLE))
             .blockstate(ModBlockstateHelper.storageTrim("jungle"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.JUNGLE_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -494,7 +508,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_ACACIA = REGISTRATE
             .block("acacia_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.ACACIA_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.ACACIA_CASING, ModBlocks.SIMPLE_STORAGE_BOX_ACACIA))
             .blockstate(ModBlockstateHelper.storageTrim("acacia"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.ACACIA_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -503,7 +517,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_DARK_OAK = REGISTRATE
             .block("dark_oak_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.DARK_OAK_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.DARK_OAK_CASING, ModBlocks.SIMPLE_STORAGE_BOX_DARK_OAK))
             .blockstate(ModBlockstateHelper.storageTrim("dark_oak"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.DARK_OAK_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -512,7 +526,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_MANGROVE = REGISTRATE
             .block("mangrove_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.MANGROVE_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.MANGROVE_CASING, ModBlocks.SIMPLE_STORAGE_BOX_MANGROVE))
             .blockstate(ModBlockstateHelper.storageTrim("mangrove"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.MANGROVE_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -521,7 +535,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_CHERRY = REGISTRATE
             .block("cherry_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.CHERRY_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.CHERRY_CASING, ModBlocks.SIMPLE_STORAGE_BOX_CHERRY))
             .blockstate(ModBlockstateHelper.storageTrim("cherry"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.CHERRY_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -530,7 +544,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_BAMBOO = REGISTRATE
             .block("bamboo_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.BAMBOO_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.BAMBOO_CASING, ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO))
             .blockstate(ModBlockstateHelper.storageTrim("bamboo"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.BAMBOO_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -539,7 +553,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_CRIMSON = REGISTRATE
             .block("crimson_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.CRIMSON_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.CRIMSON_CASING, ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON))
             .blockstate(ModBlockstateHelper.storageTrim("crimson"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.CRIMSON_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -549,7 +563,7 @@ public class ModBlocks {
     public static final BlockEntry<CasingBlock> STORAGE_TRIM_WARPED = REGISTRATE
             .block("warped_storage_trim", CasingBlock::new)
             .properties(properties -> properties.mapColor(MapColor.PODZOL))
-            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.WARPED_CASING))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.WARPED_CASING, ModBlocks.SIMPLE_STORAGE_BOX_WARPED))
             .blockstate(ModBlockstateHelper.storageTrim("warped"))
             .recipe(ModRecipeHelper.storageTrim(Blocks.WARPED_PLANKS))
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
@@ -559,7 +573,7 @@ public class ModBlocks {
             ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT) ? REGISTRATE
                     .block("pale_oak_storage_trim", CasingBlock::new)
                     .properties(properties -> properties.mapColor(MapColor.QUARTZ))
-                    .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.PALE_OAK_CASING))
+                    .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.PALE_OAK_CASING, ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK))
                     .blockstate(ModBlockstateHelper.storageTrim("pale_oak"))
                     .recipe(ModRecipeHelper.storageTrim(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS))
                     .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)

@@ -85,8 +85,8 @@ public class ModBlockstateHelper {
         String path = BuiltInRegistries.BLOCK.getKey(planks).getPath();
         String woodType = path.substring(0, path.indexOf("_planks"));
 
-//        if (!prov.models().existingFileHelper.exists(modLoc("block/storage_box_void"), PackType.CLIENT_RESOURCES))
-//            ModModelHelper.storageBoxLight(prov);
+        if (!prov.models().existingFileHelper.exists(modLoc("block/storage_box_void"), PackType.CLIENT_RESOURCES))
+            ModModelHelper.storageBoxLight(prov);
 
         ModModelHelper.simpleStorageBox(prov, woodType); // Generate blockModel
 
@@ -96,6 +96,7 @@ public class ModBlockstateHelper {
             builder.part()
                     .modelFile(prov.models().getExistingFile(prov.modLoc("block/" + woodType + "_simple_storage_box_base")))
                     .rotationY(getRotationForDirection(dir))
+                    .uvLock(true)
                     .addModel()
                     .condition(StorageBox.FACING, Direction.byName(dir.getName()))
                     .end();
@@ -111,15 +112,15 @@ public class ModBlockstateHelper {
                         .end();
             }
         }
-//        for (Direction dir : Direction.Plane.HORIZONTAL) {
-//            builder.part()
-//                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/storage_box_void")))
-//                    .rotationY(getRotationForDirection(dir))
-//                    .addModel()
-//                    .condition(StorageBox.FACING, Direction.byName(dir.getName()))
-//                    .condition(SimpleStorageBox.VOID_UPGRADE, true)
-//                    .end();
-//        }
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            builder.part()
+                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/storage_box_void")))
+                    .rotationY(getRotationForDirection(dir))
+                    .addModel()
+                    .condition(StorageBox.FACING, Direction.byName(dir.getName()))
+                    .condition(SimpleStorageBox.VOID_UPGRADE, true)
+                    .end();
+        }
     }
 
     public static NonNullBiConsumer<DataGenContext<Block, CasingBlock>, RegistrateBlockstateProvider> storageTrim(String name) {
@@ -271,6 +272,10 @@ public class ModBlockstateHelper {
                 addDirectionalParts.accept("block/storage_box_" + state.getSerializedName(),
                         part -> part.condition(StorageBox.STORAGE_USED, state));
             }
+
+            // Void upgrade overlay
+            addDirectionalParts.accept("block/storage_box_void",
+                    part -> part.condition(ReserveStorageBox.VOID_UPGRADE, true));
         };
     }
 

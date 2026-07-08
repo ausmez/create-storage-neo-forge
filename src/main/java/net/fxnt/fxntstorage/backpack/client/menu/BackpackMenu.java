@@ -392,6 +392,11 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     @Override
+    public boolean canTakeItemForPickAll(ItemStack stack, Slot slot) {
+        return slot.container != craftingResultContainer && super.canTakeItemForPickAll(stack, slot);
+    }
+
+    @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = slots.get(index);
         if (!slot.hasItem())
@@ -525,11 +530,17 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     private boolean moveItemStack(ItemStack newStack, int startIndex, int endIndex, boolean reverseDirection) {
-        boolean flag = false;
-        int i = startIndex;
-        if (reverseDirection) {
-            i = endIndex - 1;
+        boolean flag = mergeIntoExisting(newStack, startIndex, endIndex, reverseDirection);
+        if (!newStack.isEmpty()) {
+            flag |= placeIntoEmpty(newStack, startIndex, endIndex, reverseDirection);
         }
+        return flag;
+    }
+
+    // Top off existing matching stacks in [startIndex, endIndex) without touching empty slots.
+    private boolean mergeIntoExisting(ItemStack newStack, int startIndex, int endIndex, boolean reverseDirection) {
+        boolean flag = false;
+        int i = reverseDirection ? endIndex - 1 : startIndex;
 
         while (!newStack.isEmpty()) {
             if (reverseDirection) {
@@ -565,41 +576,42 @@ public class BackpackMenu extends AbstractContainerMenu {
             }
         }
 
-        if (!newStack.isEmpty()) {
+        return flag;
+    }
+
+    // Drop into the first empty, placeable slot in [startIndex, endIndex).
+    private boolean placeIntoEmpty(ItemStack newStack, int startIndex, int endIndex, boolean reverseDirection) {
+        if (newStack.isEmpty()) {
+            return false;
+        }
+
+        int i = reverseDirection ? endIndex - 1 : startIndex;
+        while (true) {
             if (reverseDirection) {
-                i = endIndex - 1;
-            } else {
-                i = startIndex;
+                if (i < startIndex) {
+                    break;
+                }
+            } else if (i >= endIndex) {
+                break;
             }
 
-            while (true) {
-                if (reverseDirection) {
-                    if (i < startIndex) {
-                        break;
-                    }
-                } else if (i >= endIndex) {
-                    break;
-                }
+            Slot slot1 = this.slots.get(i);
+            ItemStack itemstack1 = slot1.getItem();
+            if (itemstack1.isEmpty() && slot1.mayPlace(newStack)) {
+                int l = slot1.getMaxStackSize(newStack);
+                slot1.setByPlayer(newStack.split(Math.min(newStack.getCount(), l)));
+                slot1.setChanged();
+                return true;
+            }
 
-                Slot slot1 = this.slots.get(i);
-                ItemStack itemstack1 = slot1.getItem();
-                if (itemstack1.isEmpty() && slot1.mayPlace(newStack)) {
-                    int l = slot1.getMaxStackSize(newStack);
-                    slot1.setByPlayer(newStack.split(Math.min(newStack.getCount(), l)));
-                    slot1.setChanged();
-                    flag = true;
-                    break;
-                }
-
-                if (reverseDirection) {
-                    --i;
-                } else {
-                    ++i;
-                }
+            if (reverseDirection) {
+                --i;
+            } else {
+                ++i;
             }
         }
 
-        return flag;
+        return false;
     }
 
     @Override
@@ -800,10 +812,18 @@ public class BackpackMenu extends AbstractContainerMenu {
     }
 
     public boolean moveStackToStorageThenPlayer(ItemStack stack) {
-        boolean moved = moveItemStack(stack, layout.items().getStartIndex(), layout.items().getEndIndex(), false);
-        if (!stack.isEmpty()) {
-            moved |= moveStackToPlayerInventory(stack);
-        }
+        int itemsStart = layout.items().getStartIndex();
+        int itemsEnd = layout.items().getEndIndex();
+        int playerStart = layout.getTotalSlots();
+        int playerEnd = playerStart + 36;
+
+        boolean moved = false;
+        // Top off existing matching stacks first - backpack, then player inventory
+        moved |= mergeIntoExisting(stack, itemsStart, itemsEnd, false);
+        if (!stack.isEmpty()) moved |= mergeIntoExisting(stack, playerStart, playerEnd, true);
+        // Fall back to a free slot - backpack, then player inventory
+        if (!stack.isEmpty()) moved |= placeIntoEmpty(stack, itemsStart, itemsEnd, false);
+        if (!stack.isEmpty()) moved |= placeIntoEmpty(stack, playerStart, playerEnd, true);
         return moved;
     }
 

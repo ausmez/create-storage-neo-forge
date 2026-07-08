@@ -84,7 +84,7 @@ public class BackpackBlock extends BaseEntityBlock {
             be.saveExtraComponents(stack);
             be.readInventory(stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
             if (stack.has(DataComponents.CUSTOM_NAME))
-                be.setCustomName(stack.getHoverName());
+                be.setCustomName(stack.get(DataComponents.CUSTOM_NAME));
             SortOrder order = Optional.ofNullable(stack.get(ModDataComponents.INVENTORY_SORT_ORDER)).orElse(SortOrder.COUNT);
             be.setSortOrder(order);
         }

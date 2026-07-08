@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -42,7 +43,9 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         int percentUsed = Math.round(tag.getFloat("PercentageUsed"));
 
         String line1 = Util.formatNumber(amount);
-        String line2 = tag.getBoolean("VoidUpgrade") ? "Void Mode" : percentUsed + "% Used";
+        String line2 = tag.getBoolean("VoidUpgrade")
+                ? Component.translatable("container.fxntstorage.void_mode").getString()
+                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
 
         Direction side = state.getValue(HorizontalDirectionalBlock.FACING);
 
@@ -107,7 +110,9 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         int amount = blockEntity.getStoredAmount();
 
         String line1 = Util.formatNumber(amount);
-        String line2 = blockEntity.voidUpgrade ? "Void Mode" : blockEntity.getPercentageUsed() + "% Used";
+        String line2 = blockEntity.voidUpgrade
+                ? Component.translatable("container.fxntstorage.void_mode").getString()
+                : blockEntity.getPercentageUsed() + Component.translatable("container.fxntstorage.percent_used").getString();
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 

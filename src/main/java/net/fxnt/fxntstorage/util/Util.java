@@ -101,6 +101,7 @@ public class Util {
     public static final byte BACKPACK_MENU_CTRL = 4;
     public static final byte TOGGLE_HOVER = 5;
     public static final byte MINE_ALL_BLOCKS = 6;
+    public static final byte TOGGLE_JETPACK = 7;
 
     // Inventory sorting
     public static final byte INV_TYPE_BACKPACK = 0;

@@ -8,6 +8,7 @@ import com.simibubi.create.content.contraptions.Contraption;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.foundation.codec.CreateCodecs;
+import com.simibubi.create.foundation.utility.CreateLang;
 import net.fxnt.fxntstorage.backpack.BackpackEntity;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
@@ -26,8 +27,11 @@ import net.fxnt.fxntstorage.network.packet.WorkshopProcessingPacket;
 import net.fxnt.fxntstorage.util.ParticleHelper;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -134,7 +138,22 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
         int contraptionId = contraption.entity.getId();
         BlockPos localPos = info.pos();
         int multiplier = this.stackMultiplier;
-        Component title = Component.translatable(info.state().getBlock().getDescriptionId());
+
+        CompoundTag nbt = info.nbt();
+        Component customName = (nbt != null && nbt.contains("CustomName", Tag.TAG_STRING))
+                ? BlockEntity.parseCustomNameSafe(nbt.getString("CustomName"), player.registryAccess())
+                : null;
+
+        DataComponentPatch extras = DataComponentPatch.EMPTY;
+        if (nbt != null && nbt.contains("ExtraComponents")) {
+            extras = DataComponentPatch.CODEC.parse(
+                    player.registryAccess().createSerializationContext(NbtOps.INSTANCE),
+                    nbt.get("ExtraComponents")
+            ).result().orElse(DataComponentPatch.EMPTY);
+        }
+
+        Component blockName = BackpackEntity.displayNameFor(info.state().getBlock(), extras, customName);
+        Component menuName = CreateLang.translateDirect("contraptions.moving_container", blockName).withStyle(blockName.getStyle());
         BackpackMountedStorage self = this;
 
         player.openMenu(new SimpleMenuProvider(
@@ -143,7 +162,7 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
                     menu.setContraptionId(contraptionId);
                     return menu;
                 },
-                title
+                menuName
         ), (RegistryFriendlyByteBuf buf) -> {
             buf.writeEnum(BackpackMenu.BackpackType.CONTRAPTION);
             buf.writeInt(contraptionId);

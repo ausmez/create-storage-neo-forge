@@ -4,6 +4,7 @@ import com.simibubi.create.content.redstone.thresholdSwitch.ThresholdSwitchObser
 import com.simibubi.create.foundation.utility.CreateLang;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.EnumProperties;
+import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
@@ -38,6 +39,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static net.fxnt.fxntstorage.reserve_storage.ReserveStorageBox.VOID_UPGRADE;
+
 public class ReserveStorageBoxEntity extends BlockEntity implements Container, MenuProvider, Nameable, ThresholdSwitchObservable {
     static final int SLOT_COUNT = 36;
     static final int STORAGE_SLOTS = 27;
@@ -49,6 +52,7 @@ public class ReserveStorageBoxEntity extends BlockEntity implements Container, M
     private int tickCount = 0;
     private int storedAmount = 0;
     private float percentageUsed = 0;
+    boolean voidUpgrade;
 
     private final ItemStackHandler itemHandler = createItemHandler();
     private final ReserveStorageBoxAutomationHandler automationHandler = new ReserveStorageBoxAutomationHandler(itemHandler);
@@ -61,6 +65,7 @@ public class ReserveStorageBoxEntity extends BlockEntity implements Container, M
 
     public ReserveStorageBoxEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
         super(type, pos, blockState);
+        this.voidUpgrade = blockState.getValue(VOID_UPGRADE);
     }
 
     private ItemStackHandler createItemHandler() {
@@ -68,6 +73,27 @@ public class ReserveStorageBoxEntity extends BlockEntity implements Container, M
             @Override
             public int getSlotLimit(int slot) {
                 return slot >= 27 ? ReserveStorageBoxGhostSlot.MAX_COUNT : super.getSlotLimit(slot);
+            }
+
+            @Override
+            public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+                ItemStack result = super.insertItem(slot, stack, simulate);
+                if (voidUpgrade && slot < STORAGE_SLOTS && !result.isEmpty() && !canStoreItem(result)) {
+                    return ItemStack.EMPTY;
+                }
+                return result;
+            }
+
+            private boolean canStoreItem(ItemStack stack) {
+                for (int i = 0; i < STORAGE_SLOTS; i++) {
+                    ItemStack existing = getStackInSlot(i);
+                    if (existing.isEmpty()) return true;
+                    if (ItemStack.isSameItemSameComponents(existing, stack)
+                            && existing.getCount() < Math.min(getSlotLimit(i), existing.getMaxStackSize())) {
+                        return true;
+                    }
+                }
+                return false;
             }
         };
     }
@@ -149,12 +175,14 @@ public class ReserveStorageBoxEntity extends BlockEntity implements Container, M
     protected void applyImplicitComponents(DataComponentInput componentInput) {
         super.applyImplicitComponents(componentInput);
         customName = componentInput.get(DataComponents.CUSTOM_NAME);
+        setVoidUpgrade(componentInput.getOrDefault(ModDataComponents.VOID_UPGRADE, false));
         readInventory(componentInput.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY));
     }
 
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder components) {
         super.collectImplicitComponents(components);
+        components.set(ModDataComponents.VOID_UPGRADE, this.voidUpgrade);
         components.set(DataComponents.CUSTOM_NAME, customName);
         components.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(getStacks()));
     }
@@ -182,6 +210,7 @@ public class ReserveStorageBoxEntity extends BlockEntity implements Container, M
         tag.putInt("StoredAmount", stats.stored());
         tag.putFloat("PercentageUsed", stats.percentage());
         tag.putString("ReserveSlotStatus", calculateSlotStatus());
+        tag.putBoolean("VoidUpgrade", voidUpgrade);
         tag.putString("SortOrder", sortOrder.name());
         if (customName != null)
             tag.putString("CustomName", Component.Serializer.toJson(customName, registries));
@@ -221,6 +250,8 @@ public class ReserveStorageBoxEntity extends BlockEntity implements Container, M
         itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
         storedAmount = tag.getInt("StoredAmount");
         percentageUsed = tag.getFloat("PercentageUsed");
+        if (tag.contains("VoidUpgrade"))
+            voidUpgrade = tag.getBoolean("VoidUpgrade");
         if (tag.contains("SortOrder", Tag.TAG_STRING))
             sortOrder = SortOrder.valueOf(tag.getString("SortOrder"));
         if (tag.contains("CustomName", Tag.TAG_STRING))
@@ -293,8 +324,22 @@ public class ReserveStorageBoxEntity extends BlockEntity implements Container, M
         return new StorageStats(stored, capacity, fillLevel);
     }
 
-    public int getPercentageUsed() {
-        return Math.round(calculateStats().percentage());
+    public float getPercentageUsed() {
+        return calculateStats().percentage();
+    }
+
+    public void toggleVoidUpgrade() {
+        BlockState blockState = this.getBlockState();
+        Level level = this.getLevel();
+        if (level != null) {
+            this.voidUpgrade = !blockState.getValue(VOID_UPGRADE);
+            level.setBlockAndUpdate(this.getBlockPos(), blockState.setValue(VOID_UPGRADE, this.voidUpgrade));
+            this.setChanged();
+        }
+    }
+
+    public void setVoidUpgrade(boolean bool) {
+        if (this.voidUpgrade != bool) this.toggleVoidUpgrade();
     }
 
     @Override

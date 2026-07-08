@@ -252,7 +252,9 @@ public record TransferRecipePacket(ResourceLocation recipeId, List<Integer> reci
             }
 
             if (backpack != null) {
-                for (int i = 0; i < backpack.getSlots(); i++) {
+                // Only count items section
+                int itemsEnd = Math.min(BackpackSlotLayout.createLayout().items().getEndIndex(), backpack.getSlots());
+                for (int i = 0; i < itemsEnd; i++) {
                     ItemStack stack = backpack.getStackInSlot(i);
                     if (!stack.isEmpty() && ingredient.test(stack)) {
                         available += stack.getCount();

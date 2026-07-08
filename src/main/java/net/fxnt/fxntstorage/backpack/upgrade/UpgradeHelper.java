@@ -1,7 +1,10 @@
 package net.fxnt.fxntstorage.backpack.upgrade;
 
+import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
@@ -30,6 +33,39 @@ public class UpgradeHelper {
         return upgradeName.contains("_deactivated")
                 ? type.getActiveStack()
                 : type.getDeactivatedStack();
+    }
+
+    public static Boolean toggleWornUpgrade(ServerPlayer player, UpgradeType type) {
+        ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+        if (backpack.isEmpty()) {
+            return null;
+        }
+
+        BackpackContainer container = BackpackContainer.Cache.getOrCreateWornBackpack(player, backpack);
+        IItemHandler handler = container.getItemHandler();
+
+        for (int i : LAYOUT.upgrades().range()) {
+            ItemStack stack = handler.getStackInSlot(i);
+            if (!type.isInStack(stack)) {
+                continue;
+            }
+
+            boolean wasActive = stack.getItem() == type.getActiveItem();
+            container.setStackInSlot(i, toggleUpgrade(stack));
+            container.setChanged(); // persists to the worn stack + syncs
+
+            IUpgrade upgrade = UpgradeRegistry.get(type);
+            if (upgrade != null) {
+                UpgradeContext ctx = UpgradeContext.forWornBackpack(player, backpack, container);
+                if (wasActive) {
+                    upgrade.onRemoved(ctx);
+                } else {
+                    upgrade.onInstalled(ctx);
+                }
+            }
+            return !wasActive;
+        }
+        return null;
     }
 
     public static boolean hasUpgrade(IItemHandler handler, UpgradeType type) {

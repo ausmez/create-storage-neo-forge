@@ -46,7 +46,9 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.OptionalInt;
+import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -70,6 +72,11 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     private @Nullable Level world = null;
     private boolean lastRegisteredCompacting = false;
 
+    // Tracks each player's last front-display click time (game ticks) to detect a double-click,
+    // mirroring the placed block's ClickData in SimpleStorageBox. One storage per mounted box, so
+    // the block position is implicit and only the per-player timestamp is needed.
+    private final Map<Player, Long> lastClickTimes = new WeakHashMap<>();
+
     protected SimpleStorageBoxMountedStorage(MountedItemStorageType<?> type, ItemStackHandler handler) {
         super(type, handler);
     }
@@ -86,6 +93,22 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         Direction side = ContraptionInteractionContext.INTERACTION_DIRECTION.get();
         if (side == null) return false;
         if (!side.equals(info.state().getValue(SimpleStorageBox.FACING))) return false;
+
+        // Double-click the front display to sweep every matching stack from the inventory into the
+        // box (same 10-tick window as the placed block, SimpleStorageBox.useWithoutItem).
+        long now = player.level().getGameTime();
+        Long lastClick = lastClickTimes.get(player);
+        boolean isDoubleClick = lastClick != null && now - lastClick < 10;
+        if (isDoubleClick) {
+            lastClickTimes.remove(player);
+            if (itemInHand.isEmpty() || canInsertItem(itemInHand)) {
+                insertAllMatching(player);
+                markDirty();
+                return true;
+            }
+            return false;
+        }
+        lastClickTimes.put(player, now);
 
         if (itemInHand.isEmpty() && player.isShiftKeyDown()) {
             return openStorageMenu(player, contraption, info);
@@ -114,6 +137,16 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         return filterItem.isEmpty() || itemInHand.getItem().equals(filterItem.getItem());
     }
 
+    // Sweep every matching stack from the player's inventory into the box. Reuses insertItem so both
+    // compacting and void handling apply; canInsertItem is the same match test used for a single click.
+    private void insertAllMatching(ServerPlayer player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack playerStack = player.getInventory().getItem(i);
+            if (playerStack.isEmpty() || !canInsertItem(playerStack)) continue;
+            player.getInventory().setItem(i, insertItem(0, playerStack, false));
+        }
+    }
+
     private void handleUpgradeInteraction(ServerPlayer player, ItemStack itemInHand) {
         if (itemInHand.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())) {
             handleVoidUpgrade(player, itemInHand);
@@ -125,9 +158,9 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     private void handleCompactingUpgrade(ServerPlayer player, ItemStack itemInHand) {
-        ItemStack currentUpgrade = getStackInSlot(VOID_UPGRADE_SLOT);
+        ItemStack currentUpgrade = getStackInSlot(COMPACTING_UPGRADE_SLOT);
         if (currentUpgrade.isEmpty()) {
-            setStackInSlot(VOID_UPGRADE_SLOT, itemInHand.copyWithCount(1));
+            setStackInSlot(COMPACTING_UPGRADE_SLOT, itemInHand.copyWithCount(1));
             compactingUpgrade = true;
             if (!player.isCreative()) {
                 itemInHand.shrink(1);
@@ -140,7 +173,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             if (!player.isCreative()) {
                 giveItemToPlayer(player, currentUpgrade.copyWithCount(1));
             }
-            setStackInSlot(VOID_UPGRADE_SLOT, ItemStack.EMPTY);
+            setStackInSlot(COMPACTING_UPGRADE_SLOT, ItemStack.EMPTY);
             compactingUpgrade = false;
             compactingChain = null;
         }
@@ -285,7 +318,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     private boolean hasCompactingUpgrade() {
-        return getStackInSlot(VOID_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE);
+        return getStackInSlot(COMPACTING_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE);
     }
 
     // Capacity of a plain (non-compacting) box, measured in filter-item units.
@@ -389,14 +422,14 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         int currentT0 = existing.isEmpty() ? 0 : existing.getCount();
         int space = getMaxItemCapacity() - currentT0;
 
-        if (space <= 0) return stack;
+        if (space <= 0) return hasVoidUpgrade() ? ItemStack.EMPTY : stack;
 
         int actualT0 = Math.min(t0ToInsert, space);
         // Round down so we never partially consume a higher-tier item
         if (t0PerUnit > 1) {
             actualT0 = (actualT0 / t0PerUnit) * t0PerUnit;
         }
-        if (actualT0 <= 0) return stack;
+        if (actualT0 <= 0) return hasVoidUpgrade() ? ItemStack.EMPTY : stack;
 
         if (!simulate) {
             if (existing.isEmpty()) {
@@ -410,7 +443,8 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
 
         int consumed = actualT0 / t0PerUnit;
         int remaining = stack.getCount() - consumed;
-        return remaining <= 0 ? ItemStack.EMPTY : stack.copyWithCount(remaining);
+        if (remaining <= 0) return ItemStack.EMPTY;
+        return hasVoidUpgrade() ? ItemStack.EMPTY : stack.copyWithCount(remaining);
     }
 
     @Override
@@ -439,6 +473,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             int t0Units = compactingChain.toT0Units(stack.getItem(), 1);
             if (t0Units > 0) {
                 if (slot > 0) return false;
+                if (hasVoidUpgrade()) return true;
                 return getStackInSlot(0).getCount() < getMaxItemCapacity();
             }
             return false;
@@ -534,12 +569,10 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             ItemStackHandler migratedHandler = migrateSlotItems(wrapped); // Slot layout migration
             context.blockEntityData.put("Items", migratedHandler.serializeNBT(context.world.registryAccess()));
 
-            for (int i = 0; i < getSlots(); i++) {
-                if (i < migratedHandler.getSlots()) {
-                    setStackInSlot(i, migratedHandler.getStackInSlot(i));
-                } else {
-                    setStackInSlot(i, ItemStack.EMPTY);
-                }
+            // Resize the live handler to the new slot count (the layout grew to SLOT_COUNT) before copying.
+            wrapped.setSize(migratedHandler.getSlots());
+            for (int i = 0; i < migratedHandler.getSlots(); i++) {
+                setStackInSlot(i, migratedHandler.getStackInSlot(i));
             }
         }
 
@@ -625,31 +658,51 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     private ItemStackHandler migrateSlotItems(ItemStackHandler oldHandler) {
+        // The new layout is: 0=storage, 1=void, 2=compacting, 3-11=capacity.
         ItemStackHandler newHandler = new ItemStackHandler(SLOT_COUNT);
-        // --- Old Slot0 + Slot1 -> New Slot0
-        ItemStack slot0 = oldHandler.getStackInSlot(0);
-        ItemStack slot1 = oldHandler.getStackInSlot(1);
+        if (oldHandler.getSlots() == 11) {
+            // 1.1.2 layout: 0=storage, 1=shared void/compacting upgrade, 2-10=capacity.
+            newHandler.setStackInSlot(0, oldHandler.getStackInSlot(0).copy());
+            placeMigratedUpgrade(newHandler, oldHandler.getStackInSlot(1));
+            for (int oldSlot = 2; oldSlot <= 10; oldSlot++) {
+                int newSlot = (oldSlot - 2) + CAPACITY_UPGRADE_SLOT_START;
+                if (newSlot < newHandler.getSlots()) {
+                    newHandler.setStackInSlot(newSlot, oldHandler.getStackInSlot(oldSlot).copy());
+                }
+            }
+        } else {
+            // Pre-1.1.2 layout: 0+1=storage halves, 3=shared void/compacting upgrade, 4-12=capacity.
+            ItemStack slot0 = oldHandler.getStackInSlot(0);
+            ItemStack slot1 = oldHandler.getStackInSlot(1);
 
-        if (!slot0.isEmpty() || !slot1.isEmpty()) {
-            ItemStack merged = slot0.copy();
+            if (!slot0.isEmpty() || !slot1.isEmpty()) {
+                ItemStack merged = slot0.copy();
 
-            int totalCount = slot0.getCount() + slot1.getCount();
-            merged.setCount(Math.min(totalCount, getMaxItemCapacity()));
+                int totalCount = slot0.getCount() + slot1.getCount();
+                merged.setCount(Math.min(totalCount, getMaxItemCapacity()));
 
-            newHandler.setStackInSlot(0, merged);
-        }
+                newHandler.setStackInSlot(0, merged);
+            }
 
-        // --- Old Slot3 -> New Slot1
-        newHandler.setStackInSlot(1, oldHandler.getStackInSlot(3).copy());
+            placeMigratedUpgrade(newHandler, oldHandler.getStackInSlot(3));
 
-        // --- Old Slot4-12 -> New Slot2-10
-        for (int oldSlot = 4; oldSlot <= 12; oldSlot++) {
-            int newSlot = (oldSlot - 4) + 2;
-            if (newSlot < newHandler.getSlots()) {
-                newHandler.setStackInSlot(newSlot, oldHandler.getStackInSlot(oldSlot).copy());
+            for (int oldSlot = 4; oldSlot <= 12; oldSlot++) {
+                int newSlot = (oldSlot - 4) + CAPACITY_UPGRADE_SLOT_START;
+                if (newSlot < newHandler.getSlots()) {
+                    newHandler.setStackInSlot(newSlot, oldHandler.getStackInSlot(oldSlot).copy());
+                }
             }
         }
 
         return newHandler;
+    }
+
+    // Route the previously-shared upgrade item into its dedicated slot
+    private void placeMigratedUpgrade(ItemStackHandler newHandler, ItemStack upgrade) {
+        if (upgrade.is(ModItems.STORAGE_BOX_VOID_UPGRADE.get())) {
+            newHandler.setStackInSlot(VOID_UPGRADE_SLOT, upgrade.copyWithCount(1));
+        } else if (upgrade.is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())) {
+            newHandler.setStackInSlot(COMPACTING_UPGRADE_SLOT, upgrade.copyWithCount(1));
+        }
     }
 }

@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_passer_block": {
+      "conditions": {
+        "items": [
+          {
+            "items": "fxntstorage:passer_block"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "fxntstorage:smart_passer_block_from_passer"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_passer_block"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "fxntstorage:smart_passer_block_from_passer"
+    ]
+  }
+}

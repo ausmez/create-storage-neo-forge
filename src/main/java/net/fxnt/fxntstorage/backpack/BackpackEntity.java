@@ -154,7 +154,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
 
     @Override
     public @Nullable Component getCustomName() {
-        return getDisplayName();
+        return customName;
     }
 
     @Override
@@ -163,9 +163,15 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     }
 
     public @NotNull Component getDisplayName() {
-        ItemStack displayStack = new ItemStack(this.block.asItem());
-        if (!savedExtraComponents.isEmpty())
-            displayStack.applyComponents(savedExtraComponents);
+        return displayNameFor(this.block, savedExtraComponents, this.customName);
+    }
+
+    public static Component displayNameFor(Block block, DataComponentPatch extraComponents, @Nullable Component customName) {
+        ItemStack displayStack = new ItemStack(block.asItem());
+        if (!extraComponents.isEmpty())
+            displayStack.applyComponents(extraComponents);
+        if (customName != null)
+            displayStack.set(DataComponents.CUSTOM_NAME, customName);
         return displayStack.getHoverName();
     }
 
@@ -268,15 +274,46 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     }
 
     public void readInventory(ItemContainerContents contents) {
-        List<ItemStack> itemStacks = contents.stream().toList();
-
-        for (int i = 0; i < itemStacks.size(); i++) {
-            itemHandler.setStackInSlot(i, itemStacks.get(i));
+        int slots = itemHandler.getSlots();
+        int contentSlots = contents.getSlots();
+        for (int i = 0; i < slots; i++) {
+            itemHandler.setStackInSlot(i, i < contentSlots ? contents.getStackInSlot(i) : ItemStack.EMPTY);
         }
     }
 
     public void saveExtraComponents(ItemStack stack) {
-        this.savedExtraComponents = stack.getComponentsPatch();
+        DataComponentPatch.Builder builder = DataComponentPatch.builder();
+        for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
+            if (isManagedComponent(entry.getKey())) continue;
+            applyPatchEntryToBuilder(builder, entry.getKey(), entry.getValue());
+        }
+        this.savedExtraComponents = builder.build();
+    }
+
+    private static boolean isManagedComponent(DataComponentType<?> type) {
+        if (type == DataComponents.CONTAINER
+                || type == DataComponents.BLOCK_ENTITY_DATA
+                || type == DataComponents.CUSTOM_NAME
+                || type == ModDataComponents.BACKPACK_STACK_MULTIPLIER
+                || type == ModDataComponents.BACKPACK_UPGRADES
+                || type == ModDataComponents.INVENTORY_SORT_ORDER
+                || type == ModDataComponents.BACKPACK_ACTIVE_PANELS) {
+            return true;
+        }
+        for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
+            DataComponentType<Boolean> component = ModDataComponents.getComponentForField(field);
+            if (component != null && type == component) return true;
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> void applyPatchEntryToBuilder(DataComponentPatch.Builder builder, DataComponentType<?> type, Optional<?> value) {
+        if (value.isPresent()) {
+            builder.set((DataComponentType<T>) type, (T) value.get());
+        } else {
+            builder.remove(type);
+        }
     }
 
     private boolean hasEmptyOrNonMaxSlot(ItemStack pStack) {

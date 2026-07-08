@@ -28,8 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBox.*;
-import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.CAPACITY_UPGRADE_SLOT_START;
-import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.SLOT_COUNT;
+import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
 public class SimpleStorageBoxScenes {
 
@@ -258,7 +257,7 @@ public class SimpleStorageBoxScenes {
         scene.idle(40);
         scene.world().modifyBlock(leftBox, s -> s.setValue(VOID_UPGRADE, true), false);
         scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, (t) -> {
-            t.getItemHandler().setStackInSlot(3, vUpgrade);
+            t.getItemHandler().setStackInSlot(VOID_UPGRADE_SLOT, vUpgrade);
             t.voidUpgrade = true;
             t.setFilter(iron);
             t.getItemHandler().setStackInSlot(0, iron.copyWithCount(2048));
@@ -320,7 +319,7 @@ public class SimpleStorageBoxScenes {
         scene.overlay().showControls(util.vector().blockSurface(box, Direction.NORTH), Pointing.RIGHT, 10).rightClick().withItem(upgrade);
         scene.idle(10);
         scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, t -> {
-            t.getItemHandler().setStackInSlot(3, upgrade);
+            t.getItemHandler().setStackInSlot(COMPACTING_UPGRADE_SLOT, upgrade);
             t.compactingUpgrade = true;
             t.onCompactingUpgradeInstalled();
         });

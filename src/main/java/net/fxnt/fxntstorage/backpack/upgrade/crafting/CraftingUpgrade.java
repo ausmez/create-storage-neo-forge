@@ -132,11 +132,11 @@ public class CraftingUpgrade extends AbstractUpgrade {
             return Optional.of(ItemStack.EMPTY);
         }
 
-        // Shift-click an ingredient out of the grid - send it to the player inventory
+        // Shift-click an ingredient out of the grid
         if (menu.layout.craftingMatrix().contains(slotIndex)) {
             Slot slot = menu.slots.get(slotIndex);
             ItemStack stack = slot.getItem();
-            if (!stack.isEmpty() && menu.moveStackToPlayerInventory(stack)) {
+            if (!stack.isEmpty() && menu.moveStackToStorageThenPlayer(stack)) {
                 if (stack.isEmpty()) {
                     slot.set(ItemStack.EMPTY);
                 }

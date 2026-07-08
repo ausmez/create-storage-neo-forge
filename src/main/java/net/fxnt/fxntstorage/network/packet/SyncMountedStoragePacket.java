@@ -16,7 +16,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.neoforged.neoforge.network.codec.NeoForgeStreamCodecs;
@@ -59,8 +58,10 @@ public record SyncMountedStoragePacket(int contraptionId, BlockPos localPos, Enu
                         newNbt.putString("ReserveSlotStatus", nbt.getString("ReserveSlotStatus"));
                         newNbt.putInt("StoredAmount", nbt.getInt("StoredAmount"));
                         newNbt.putFloat("PercentageUsed", nbt.getFloat("PercentageUsed"));
+                        newNbt.putBoolean("VoidUpgrade", nbt.getBoolean("VoidUpgrade"));
                         newState = oldState
-                                .setValue(ReserveStorageBox.STORAGE_USED, fillLevel());
+                                .setValue(ReserveStorageBox.STORAGE_USED, fillLevel())
+                                .setValue(ReserveStorageBox.VOID_UPGRADE, nbt.getBoolean("VoidUpgrade"));
                     } else {
                         newNbt.putInt("StoredAmount", nbt.getInt("StoredAmount"));
                         newNbt.putBoolean("VoidUpgrade", nbt.getBoolean("VoidUpgrade"));
@@ -86,10 +87,10 @@ public record SyncMountedStoragePacket(int contraptionId, BlockPos localPos, Enu
                         }
                     }
 
-                    // Update FilterItem icon if player has menu open
+                    // Push the full NBT snapshot into an open menu to update data
                     if (player.containerMenu instanceof SimpleStorageBoxMountedMenu menu) {
                         if (menu.getLocalPos().equals(localPos()))
-                            menu.setFilterItem(ItemStack.parse(player.registryAccess(), newNbt.getCompound("FilterItem")).orElse(ItemStack.EMPTY));
+                            menu.applySyncedData(newNbt);
                     }
 
                     StructureTemplate.StructureBlockInfo newInfo = new StructureTemplate.StructureBlockInfo(blockInfo.pos(), newState, newNbt);

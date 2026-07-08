@@ -10,7 +10,9 @@ import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataManager;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataSync;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.network.packet.JetpackFlyingPacket;
 import net.fxnt.fxntstorage.network.packet.JetpackFuelSyncPacket;
 import net.fxnt.fxntstorage.network.packet.VisualJetpackAirPacket;
 import net.fxnt.fxntstorage.util.ParticleHelper;
@@ -52,6 +54,7 @@ import java.util.Objects;
 public class JetpackHandler {
     private static final int MAX_ALLOWED_HEIGHT = 32;
     private static final double GRAVITY = -0.44;
+    private static final double ALTERNATE_HOVER_VERTICAL_SPEED = 0.35;
     private static final long FUEL_SYNC_INTERVAL = 1000; // 1 sec
     private static final long MAX_INTERPOLATION_TIME = 200; // 200ms
     private static final int MAX_MISSED_PACKETS = 5;
@@ -64,6 +67,7 @@ public class JetpackHandler {
     private boolean airGaugeCleared = false;
     private boolean isJumping = false;
     private boolean isHovering = false;
+    private boolean alternateControlsArmed = false;
     private float forward = 0f;
     private float left = 0f;
     private boolean playedSoundThisJump = false;
@@ -120,7 +124,12 @@ public class JetpackHandler {
             player.setNoGravity(true);
             player.resetFallDistance();
 
-            if (player.isShiftKeyDown()) {
+            if (isAlternateHover()) {
+                if (!isHovering && player.isShiftKeyDown()) {
+                    startHovering(true);
+                    PacketDistributor.sendToServer(new JetpackFlyingPacket(isJumping, true));
+                }
+            } else if (player.isShiftKeyDown()) {
                 startHovering(true);
             } else if (isHovering) {
                 endHovering(true);
@@ -160,6 +169,10 @@ public class JetpackHandler {
     private void executeServer() {
         if (isHovering && wasTeleported()) {
             hoverHeight = player.getY();
+        }
+
+        if (isHovering && player.onGround()) {
+            endHovering(false);
         }
 
         jetPackFuelRemaining = (float) calculateJetPackFuel(player);
@@ -334,6 +347,7 @@ public class JetpackHandler {
     public void startHovering(boolean announce) {
         isHovering = true;
         hoverHeight = player.getY();
+        alternateControlsArmed = false;
         if (announce) displayHoverMessage(true);
     }
 
@@ -347,11 +361,13 @@ public class JetpackHandler {
     private void displayHoverMessage(boolean isStarting) {
         boolean isElytraBoost = player.getItemBySlot(EquipmentSlot.CHEST).getItem().equals(Items.ELYTRA)
                 && player.isFallFlying() && ConfigManager.ServerConfig.ELYTRA_BOOST_ENABLED.get();
-        String messageKey = isStarting
-                ? (isElytraBoost ? "item.fxntstorage.jetpack.elytra_boost_enabled" : "item.fxntstorage.jetpack.hover_enabled")
-                : (isElytraBoost ? "item.fxntstorage.jetpack.elytra_boost_disabled" : "item.fxntstorage.jetpack.hover_disabled");
+        Component state = Component.translatable(isStarting
+                        ? "message.fxntstorage.enabled"
+                        : "message.fxntstorage.disabled")
+                .withStyle(isStarting ? ChatFormatting.GREEN : ChatFormatting.RED);
 
-        player.displayClientMessage(Component.translatable(messageKey), true);
+        String messageKey = isElytraBoost ? "item.fxntstorage.jetpack.elytra_boost" : "item.fxntstorage.jetpack.hover";
+        player.displayClientMessage(Component.translatable(messageKey).append(Component.literal(": ").append(state)), true);
     }
 
     private void updateClientMovementWithInterpolation() {
@@ -415,7 +431,9 @@ public class JetpackHandler {
 
         double verticalSpeed;
         if (isHovering) {
-            verticalSpeed = calculateVerticalHoveringSpeed(hoverHeight);
+            verticalSpeed = isAlternateHover()
+                    ? calculateVerticalAlternateHoverSpeed()
+                    : calculateVerticalHoveringSpeed(hoverHeight);
         } else {
             verticalSpeed = calculateVerticalSpeed();
         }
@@ -563,6 +581,54 @@ public class JetpackHandler {
         return currentVerticalSpeed * (1 - dampingFactor) + verticalTarget * dampingFactor;
     }
 
+    private boolean isAlternateHover() {
+        if (player.level().isClientSide) {
+            return ConfigManager.ClientConfig.JETPACK_HOVER_MODE.get()
+                    == ConfigManager.ClientConfig.JetpackHoverMode.ALTERNATE;
+        }
+        return "ALTERNATE".equals(ClientSettings.getString(player.getUUID(), "JetpackHoverMode"));
+    }
+
+    private double calculateVerticalAlternateHoverSpeed() {
+        boolean jump = isJumping;
+        boolean sneak = player.isShiftKeyDown();
+        // Don't act on the ascend/descend keys until the player has released both keys
+        if (!alternateControlsArmed && !jump && !sneak) {
+            alternateControlsArmed = true;
+        }
+        boolean ascending = alternateControlsArmed && jump && !sneak;   // both keys held = stationary
+        boolean descending = alternateControlsArmed && sneak && !jump;
+
+        if (ascending) {
+            hoverHeight = player.getY();
+
+            double dist = getDistanceToGround(player);
+            double up = ALTERNATE_HOVER_VERTICAL_SPEED;
+            if (dist >= 0) {
+                if (dist >= MAX_ALLOWED_HEIGHT) {
+                    up = 0.0; // at/above the ceiling: stop rising
+                } else if (dist > MAX_ALLOWED_HEIGHT - 4) {
+                    up *= (MAX_ALLOWED_HEIGHT - dist) / 4.0; // taper over the last few blocks
+                }
+            }
+            double newYVelocity = player.getDeltaMovement().y * 0.8 + up * 0.2;
+            return Mth.clamp(newYVelocity, -ALTERNATE_HOVER_VERTICAL_SPEED, ALTERNATE_HOVER_VERTICAL_SPEED);
+        }
+
+        if (descending) {
+            hoverHeight = player.getY();
+            double newYVelocity = player.getDeltaMovement().y * 0.8 - ALTERNATE_HOVER_VERTICAL_SPEED * 0.2;
+            return Mth.clamp(newYVelocity, -ALTERNATE_HOVER_VERTICAL_SPEED, ALTERNATE_HOVER_VERTICAL_SPEED);
+        }
+
+        double residual = player.getDeltaMovement().y;
+        if (Math.abs(residual) > 0.02) {
+            hoverHeight = player.getY();
+            return residual * 0.5;
+        }
+        return calculateVerticalHoveringSpeed(hoverHeight);
+    }
+
     private double calculateVerticalHoveringSpeed(double targetHeight) {
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         UpgradeDataManager manager = UpgradeDataManager.loadFromItem(backpack);
@@ -695,7 +761,13 @@ public class JetpackHandler {
 
     public void processPlayerFlyingPacket(boolean flying, boolean hovering) {
         this.isJumping = flying;
-        this.isHovering = hovering;
+        if (isAlternateHover()) {
+            if (flying && hovering && !isHovering) {
+                startHovering(false);
+            }
+        } else {
+            this.isHovering = hovering;
+        }
     }
 
     public void flyingOnKeyPress() {

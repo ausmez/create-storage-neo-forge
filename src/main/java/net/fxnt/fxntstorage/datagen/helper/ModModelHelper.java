@@ -102,6 +102,7 @@ public class ModModelHelper {
 
     public static void simpleStorageBox(RegistrateBlockstateProvider prov, String name) {
         prov.models().withExistingParent("block/" + name + "_simple_storage_box_base", modLoc("block/storage_box_base"))
+                .texture("trim", modLoc("block/casings/casing_trim"))
                 .texture("casing", modLoc("block/casings/" + name + "_casing"))
                 .texture("particle", modLoc("block/casings/" + name + "_casing"))
                 .texture("top", modLoc("block/casings/" + name + "_casing"))

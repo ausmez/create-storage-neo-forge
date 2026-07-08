@@ -4,9 +4,25 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public record CompactingChain(Item t0, Item t1, int t0ToT1, @Nullable Item t2, int t1ToT2) {
 
     public record TierResult(Item item, int count) {}
+
+    // Express a raw T0 amount as the whole amount in each tier
+    public List<ItemStack> tierViews(int t0Stored) {
+        List<ItemStack> result = new ArrayList<>();
+        if (t2 != null) {
+            int count = t2Count(t0Stored);
+            if (count > 0) result.add(new ItemStack(t2, count));
+        }
+        int t1Count = t1Count(t0Stored);
+        if (t1Count > 0) result.add(new ItemStack(t1, t1Count));
+        if (t0Stored > 0) result.add(new ItemStack(t0, t0Stored));
+        return result;
+    }
 
     public int tiers() {
         return t2 != null ? 3 : 2;

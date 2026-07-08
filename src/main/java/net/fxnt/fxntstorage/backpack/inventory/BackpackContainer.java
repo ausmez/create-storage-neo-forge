@@ -105,6 +105,12 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
         upgradeData.copyFrom(loadedData);
     }
 
+    // Detect a stale client-side worn container after the equipped stack is re-synced
+    public boolean matchesUpgrades(ItemStack itemStack) {
+        List<String> other = itemStack.get(ModDataComponents.BACKPACK_UPGRADES);
+        return Objects.equals(upgrades, other == null ? List.of() : other);
+    }
+
     public void saveItemsToStack() {
         this.stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(getItems()));
         this.stack.set(ModDataComponents.BACKPACK_UPGRADES, upgrades);
@@ -302,6 +308,11 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
             BackpackContainer cached = player.getData(ModAttachmentTypes.WORN_BACKPACK_CONTAINER);
 
             if (cached != null) {
+                if (player.level().isClientSide && !cached.matchesUpgrades(backpack)) {
+                    BackpackContainer rebuilt = new BackpackContainer(player, backpack);
+                    player.setData(ModAttachmentTypes.WORN_BACKPACK_CONTAINER, rebuilt);
+                    return rebuilt;
+                }
                 cached.setContext(backpack, player);
                 return cached;
             }

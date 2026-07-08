@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.client.menu.TruncatedTitle;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.gui.Font;
@@ -22,23 +23,18 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
 
-import java.util.List;
-
-import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
-
 public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainerMenu & ISimpleStorageBoxMenu>
         extends AbstractContainerScreen<M> {
 
     private static final ResourceLocation GUI_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             FXNTStorage.MOD_ID, "textures/gui/container/simple_storage_box_screen.png");
-    private static final List<ResourceLocation> EMPTY_SLOT_UTILITY_UPGRADES = List.of(
-            modLoc("item/void_template"),
-            modLoc("item/compacting_template")
-    );
     private static final int GUI_TEXTURE_WIDTH = 176;
-    private static final int GUI_TEXTURE_HEIGHT = 176;
+    private static final int GUI_TEXTURE_HEIGHT = 178;
 
-    private final CyclingSlotBackground utilityIcon = new CyclingSlotBackground(0);
+    // Empty-slot icons for the void (menu slot 0) and compacting (menu slot 1) upgrade slots.
+    private final CyclingSlotBackground voidIcon = new CyclingSlotBackground(0);
+    private final CyclingSlotBackground compactingIcon = new CyclingSlotBackground(1);
+    private final TruncatedTitle titleRenderer = new TruncatedTitle();
 
     protected AbstractSimpleStorageBoxScreen(M menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -49,53 +45,64 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
     @Override
     protected void containerTick() {
         super.containerTick();
-        this.utilityIcon.tick(EMPTY_SLOT_UTILITY_UPGRADES);
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         this.renderBackground(graphics, mouseX, mouseY, delta);
         super.render(graphics, mouseX, mouseY, delta);
-        int filterX = leftPos + 30;
-        int filterY = topPos + 20;
+        int filterX = leftPos + 32;
+        int filterY = topPos + 22;
         renderFilterItem(graphics, filterX, filterY);
         this.renderTooltip(graphics, mouseX, mouseY);
         ItemStack filterItem = menu.getDisplayedItem();
-        if (!filterItem.isEmpty() && mouseX >= filterX && mouseX < filterX + 32 && mouseY >= filterY && mouseY < filterY + 32) {
+        if (!filterItem.isEmpty() && mouseX >= filterX && mouseX < filterX + 34 && mouseY >= filterY && mouseY < filterY + 34) {
             graphics.renderTooltip(font, filterItem, mouseX, mouseY);
         }
+        titleRenderer.renderTooltipIfHovered(graphics, font, leftPos, topPos, mouseX, mouseY);
     }
 
     @Override
     protected void renderBg(GuiGraphics graphics, float delta, int mouseX, int mouseY) {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         graphics.blit(GUI_TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, GUI_TEXTURE_WIDTH, GUI_TEXTURE_HEIGHT);
-        this.utilityIcon.render(this.menu, graphics, delta, this.leftPos, this.topPos);
+        this.voidIcon.render(this.menu, graphics, delta, this.leftPos, this.topPos);
+        this.compactingIcon.render(this.menu, graphics, delta, this.leftPos, this.topPos);
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(font, title, 7, 6, 0x404040, false);
+        titleRenderer.draw(graphics, font, title, 7, 6, imageWidth - 7 - 4, 0x404040);
         graphics.drawString(font, playerInventoryTitle, 7, 93 - 11, 0x404040, false);
 
         String storedText = Component.translatable("container.fxntstorage.simple_storage_box.stored").append(": ").getString();
         String capacityText = Component.translatable("container.fxntstorage.simple_storage_box.capacity").append(": ").getString();
         String voidText = Component.translatable("container.fxntstorage.simple_storage_box.upgrade").append(": ").getString();
 
-        graphics.drawString(font, storedText + menu.getDisplayedStoredAmount(), 66, 20, 0x404040, false);
-        graphics.drawString(font, capacityText + menu.getDisplayedMaxCapacity(), 66, 32, 0x404040, false);
-        graphics.drawString(font, voidText + (
-                menu.getSlot(0).getItem().is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE) ? Component.translatable("container.fxntstorage.simple_storage_box.compacting").getString()
-                        : menu.getSlot(0).getItem().is(ModItems.STORAGE_BOX_VOID_UPGRADE)
-                          ? Component.translatable("container.fxntstorage.simple_storage_box.void").getString()
-                          : Component.translatable("container.fxntstorage.simple_storage_box.none").getString()
-        ), 66, 44, 0x404040, false);
+        graphics.drawString(font, storedText + menu.getDisplayedStoredAmount(), 68, 21, 0x404040, false);
+        graphics.drawString(font, capacityText + menu.getDisplayedMaxCapacity(), 68, 33, 0x404040, false);
+        graphics.drawString(font, voidText + getUpgradeLabel(), 68, 45, 0x404040, false);
+    }
+
+    // Void upgrade lives in menu slot 0, compacting in menu slot 1; both can be installed at once.
+    private String getUpgradeLabel() {
+        boolean hasVoid = menu.getSlot(0).getItem().is(ModItems.STORAGE_BOX_VOID_UPGRADE);
+        boolean hasCompacting = menu.getSlot(1).getItem().is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE);
+
+        if (hasVoid && hasCompacting)
+            return Component.translatable("container.fxntstorage.simple_storage_box.compacting_void").getString();
+        if (hasVoid)
+            return Component.translatable("container.fxntstorage.simple_storage_box.void").getString();
+        if (hasCompacting)
+            return Component.translatable("container.fxntstorage.simple_storage_box.compacting").getString();
+
+        return Component.translatable("container.fxntstorage.simple_storage_box.none").getString();
     }
 
     private void renderFilterItem(GuiGraphics graphics, int x, int y) {
         ItemStack itemStack = menu.getDisplayedItem();
         if (!itemStack.isEmpty()) {
-            renderFilterItemStack(graphics, itemStack, x + 16f, y + 16f);
+            renderFilterItemStack(graphics, itemStack, x + 15f, y + 15f);
             renderFilterItemDecoration(graphics, font, itemStack, x, y, menu.getDisplayedStoredAmount());
         }
     }
@@ -109,7 +116,7 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
         poseStack.translate(x, y, 150);
 
         poseStack.mulPose((new Matrix4f()).scaling(1.0F, -1.0F, 1.0F));
-        poseStack.scale(24.0F, 24.0F, 24.0F);
+        poseStack.scale(26.0F, 26.0F, 26.0F);
         boolean bl = !bakedModel.usesBlockLight();
         if (bl) {
             Lighting.setupForFlatItems();

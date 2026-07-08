@@ -4,6 +4,7 @@
     "back": "fxntstorage:block/casings/cherry_casing",
     "casing": "fxntstorage:block/casings/cherry_casing",
     "particle": "fxntstorage:block/casings/cherry_casing",
-    "top": "fxntstorage:block/casings/cherry_casing"
+    "top": "fxntstorage:block/casings/cherry_casing",
+    "trim": "fxntstorage:block/casings/casing_trim"
   }
 }

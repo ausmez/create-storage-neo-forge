@@ -35,6 +35,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -51,6 +52,8 @@ public class ReserveStorageBoxMountedStorage extends SimpleMountedStorage {
     private static final int GHOST_SLOTS = 9;
 
     private boolean dirty = false;
+    private boolean initialized = false;
+    private boolean voidUpgrade;
 
     public static final MapCodec<ReserveStorageBoxMountedStorage> CODEC = CreateCodecs.ITEM_STACK_HANDLER.xmap(
             ReserveStorageBoxMountedStorage::new, storage -> storage.wrapped
@@ -72,8 +75,27 @@ public class ReserveStorageBoxMountedStorage extends SimpleMountedStorage {
     @Override
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
         if (slot >= STORAGE_SLOTS) return stack;
-        if (!simulate) markDirty();
-        return super.insertItem(slot, stack, simulate);
+        ItemStack remainder = super.insertItem(slot, stack, simulate);
+        // Void the overflow only when item has nowhere left to go
+        if (!remainder.isEmpty() && voidUpgrade && !canStoreItem(remainder)) {
+            remainder = ItemStack.EMPTY;
+        }
+        if (!simulate) {
+            markDirty();
+        }
+        return remainder;
+    }
+
+    private boolean canStoreItem(ItemStack stack) {
+        for (int i = 0; i < STORAGE_SLOTS; i++) {
+            ItemStack existing = wrapped.getStackInSlot(i);
+            if (existing.isEmpty()) return true;
+            if (ItemStack.isSameItemSameComponents(existing, stack)
+                    && existing.getCount() < Math.min(wrapped.getSlotLimit(i), existing.getMaxStackSize())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -142,6 +164,23 @@ public class ReserveStorageBoxMountedStorage extends SimpleMountedStorage {
         Direction side = ContraptionInteractionContext.INTERACTION_DIRECTION.get();
         if (side == null) return false;
         if (!side.equals(info.state().getValue(ReserveStorageBox.FACING))) return false;
+
+        // Right-Click with Create Wrench in hand will toggle void mode
+        if (itemInHand.is(Tags.Items.TOOLS_WRENCH) && info.nbt() != null) {
+            boolean nbtValue = info.nbt().getBoolean("VoidUpgrade");
+            voidUpgrade = !nbtValue;
+
+            CompoundTag newNbt = info.nbt().copy();
+            newNbt.putBoolean("VoidUpgrade", !nbtValue);
+
+            BlockState updatedState = info.state().setValue(ReserveStorageBox.VOID_UPGRADE, !nbtValue);
+
+            StructureTemplate.StructureBlockInfo updatedInfo = new StructureTemplate.StructureBlockInfo(info.pos(), updatedState, newNbt);
+            contraption.getBlocks().put(info.pos(), updatedInfo);
+
+            markDirty();
+            return true;
+        }
 
         if (!itemInHand.isEmpty()) {
             ItemStack remainder = ItemHandlerHelper.insertItem(this, itemInHand, false);
@@ -271,7 +310,9 @@ public class ReserveStorageBoxMountedStorage extends SimpleMountedStorage {
         context.blockEntityData.putString("ReserveSlotStatus", slotStatus);
         context.blockEntityData.putInt("StoredAmount", storedAmount);
         context.blockEntityData.putFloat("PercentageUsed", percentageUsed);
+        context.blockEntityData.putBoolean("VoidUpgrade", voidUpgrade);
         context.state = context.state.setValue(ReserveStorageBox.STORAGE_USED, fillLevel);
+        context.state = context.state.setValue(ReserveStorageBox.VOID_UPGRADE, voidUpgrade);
         PacketDistributor.sendToPlayersTrackingEntity(
                 context.contraption.entity,
                 new SyncMountedStoragePacket(context.contraption.entity.getId(), context.localPos, fillLevel, context.blockEntityData)
@@ -280,6 +321,16 @@ public class ReserveStorageBoxMountedStorage extends SimpleMountedStorage {
     }
 
     public record ReserveCalcResult(float percent, String slotStatus, int storedAmount, float percentageUsed) {
+    }
+
+    public void initBlockEntityData(MovementContext context) {
+        if (initialized) return;
+        voidUpgrade = context.blockEntityData.getBoolean("VoidUpgrade");
+        initialized = true;
+    }
+
+    public boolean isInitialized() {
+        return this.initialized;
     }
 
     public boolean isDirty() {

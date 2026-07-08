@@ -4,6 +4,7 @@
     "back": "fxntstorage:block/casings/mangrove_casing",
     "casing": "fxntstorage:block/casings/mangrove_casing",
     "particle": "fxntstorage:block/casings/mangrove_casing",
-    "top": "fxntstorage:block/casings/mangrove_casing"
+    "top": "fxntstorage:block/casings/mangrove_casing",
+    "trim": "fxntstorage:block/casings/casing_trim"
   }
 }

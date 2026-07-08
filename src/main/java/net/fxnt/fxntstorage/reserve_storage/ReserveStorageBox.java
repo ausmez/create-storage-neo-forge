@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.reserve_storage;
 import com.mojang.serialization.MapCodec;
 import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
+import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -20,12 +21,14 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
@@ -36,12 +39,14 @@ public class ReserveStorageBox extends BaseEntityBlock {
     public static final MapCodec<ReserveStorageBox> CODEC = simpleCodec(ReserveStorageBox::new);
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
+    public static final BooleanProperty VOID_UPGRADE = BooleanProperty.create("void_upgrade");
 
     public ReserveStorageBox(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)
+                .setValue(VOID_UPGRADE, false)
         );
     }
 
@@ -115,6 +120,11 @@ public class ReserveStorageBox extends BaseEntityBlock {
         if (entity instanceof ReserveStorageBoxEntity blockEntity) {
             ItemStack mainHandItem = player.getItemInHand(InteractionHand.MAIN_HAND);
 
+            if (mainHandItem.is(Tags.Items.TOOLS_WRENCH)) {
+                blockEntity.toggleVoidUpgrade();
+                return InteractionResult.SUCCESS;
+            }
+
             if (player.isShiftKeyDown()) {
                 player.openMenu(blockEntity, buf -> {
                     buf.writeBoolean(false);
@@ -142,7 +152,8 @@ public class ReserveStorageBox extends BaseEntityBlock {
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        boolean voidUpgrade = context.getItemInHand().getComponents().getOrDefault(ModDataComponents.VOID_UPGRADE, false);
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()).setValue(VOID_UPGRADE, voidUpgrade);
     }
 
     @Override
@@ -158,6 +169,6 @@ public class ReserveStorageBox extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        super.createBlockStateDefinition(builder.add(FACING, STORAGE_USED));
+        super.createBlockStateDefinition(builder.add(FACING, STORAGE_USED, VOID_UPGRADE));
     }
 }

@@ -10,6 +10,8 @@ import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxEntity;
 import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxItem;
+import net.fxnt.fxntstorage.simple_storage.CompactingChain;
+import net.fxnt.fxntstorage.simple_storage.CompactingRecipeHelper;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.COMPACTING_UPGRADE_SLOT;
 import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.VOID_UPGRADE_SLOT;
 
 public class BackpackTooltip implements TooltipComponent {
@@ -77,11 +80,29 @@ public class BackpackTooltip implements TooltipComponent {
 
             this.storage = list;
 
+            // Express slot0 as the whole amount in each tier so the tooltip
+            // reflects the box contents the way the in-world block does
+            if (item instanceof SimpleStorageBoxItem
+                    && COMPACTING_UPGRADE_SLOT < contents.size()
+                    && contents.get(COMPACTING_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())
+                    && !CompactingRecipeHelper.isEmpty()) {
+                ItemStack stored = contents.getFirst();
+                if (!stored.isEmpty()) {
+                    CompactingChain chain = CompactingRecipeHelper.buildChain(stored.getItem());
+                    if (chain != null) {
+                        int t0Units = chain.toT0Units(stored.getItem(), stored.getCount());
+                        this.storage = chain.tierViews(t0Units);
+                    }
+                }
+            }
+
             if (item instanceof SimpleStorageBoxItem) {
                 ItemStack capUpgrades = new ItemStack(ModItems.STORAGE_BOX_CAPACITY_UPGRADE.get()).copyWithCount(0);
                 for (int i = VOID_UPGRADE_SLOT; i < contents.size(); ++i) {
                     if (!contents.get(i).isEmpty()) {
                         if (i == VOID_UPGRADE_SLOT) // Void Upgrade
+                            this.upgrades.add(contents.get(i));
+                        if (i == COMPACTING_UPGRADE_SLOT) // Compacting Upgrade
                             this.upgrades.add(contents.get(i));
                         if (i > VOID_UPGRADE_SLOT) // Capacity Upgrades
                             capUpgrades.grow(1);

@@ -3,6 +3,7 @@ package net.fxnt.fxntstorage.compat;
 import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -30,7 +31,26 @@ public class JadeCompat implements IWailaPlugin {
                     .append(Component.literal(String.valueOf(box.getDisplayedMaxCapacity())));
 
             if (capUpgrades > 0)
-                text.append(Component.literal(" (" + capUpgrades + ")"));
+                text.append(
+                        Component.literal(" (")
+                                .append(Component.literal("" + capUpgrades).withStyle(ChatFormatting.DARK_AQUA))
+                                .append(Component.literal(")")).withStyle(ChatFormatting.DARK_GRAY)
+                );
+
+            if (box.compactingUpgrade) {
+                text.append(
+                        Component.literal(" [")
+                                .append(Component.literal("C").withStyle(ChatFormatting.GOLD))
+                                .append(Component.literal("]")).withStyle(ChatFormatting.DARK_GRAY)
+                );
+            }
+
+            if (box.voidUpgrade)
+                text.append(
+                        Component.literal(" [")
+                                .append(Component.literal("V").withStyle(ChatFormatting.DARK_PURPLE))
+                                .append(Component.literal("]")).withStyle(ChatFormatting.DARK_GRAY)
+                );
 
             iTooltip.add(text);
         }

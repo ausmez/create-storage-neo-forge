@@ -4,6 +4,7 @@
     "back": "fxntstorage:block/casings/spruce_casing",
     "casing": "fxntstorage:block/casings/spruce_casing",
     "particle": "fxntstorage:block/casings/spruce_casing",
-    "top": "fxntstorage:block/casings/spruce_casing"
+    "top": "fxntstorage:block/casings/spruce_casing",
+    "trim": "fxntstorage:block/casings/casing_trim"
   }
 }

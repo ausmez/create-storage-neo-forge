@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.reserve_storage;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.client.menu.TruncatedTitle;
 import net.fxnt.fxntstorage.network.packet.ReserveStorageBoxGhostPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
@@ -45,6 +46,7 @@ public class ReserveStorageBoxScreen extends AbstractContainerScreen<ReserveStor
     private static final int RESERVE_MISSING_COLOR = 0x66000000 + DyeColor.RED.getTextureDiffuseColor();
 
     private final List<ReserveStorageBoxScrollInput> ghostScrollInputs = new ArrayList<>();
+    private final TruncatedTitle titleRenderer = new TruncatedTitle();
 
     public ReserveStorageBoxScreen(ReserveStorageBoxMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -206,6 +208,7 @@ public class ReserveStorageBoxScreen extends AbstractContainerScreen<ReserveStor
         renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
+        titleRenderer.renderTooltipIfHovered(guiGraphics, font, leftPos, topPos, mouseX, mouseY);
     }
 
     @Override
@@ -223,7 +226,7 @@ public class ReserveStorageBoxScreen extends AbstractContainerScreen<ReserveStor
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         int cx = GUI_WIDTH / 2 - font.width(RESERVED_ITEMS.getString()) / 2;
         guiGraphics.drawString(font, RESERVED_ITEMS, cx, 4, 0x202F20, false);
-        guiGraphics.drawString(font, title, SLOT_START_X, ROWS_START_Y - 12, 0x404040, false);
+        titleRenderer.draw(guiGraphics, font, title, SLOT_START_X, ROWS_START_Y - 12, (imageWidth - 24) - SLOT_START_X - 4, 0x404040);
         guiGraphics.drawString(font, playerInventoryTitle, SLOT_START_X, INV_START_Y - 11, 0x404040, false);
     }
 
