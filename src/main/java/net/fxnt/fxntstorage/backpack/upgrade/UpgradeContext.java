@@ -4,6 +4,7 @@ import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.items.ItemStackHandler;
@@ -20,9 +21,11 @@ public class UpgradeContext {
     private final BlockPos blockPos;
     private final int slotId;
     private final int button;
+    private final ClickType clickType;
 
     private UpgradeContext(Object menu, Player player, Level level, ItemStack backpack, IBackpackContainer container,
-                           ItemStackHandler itemHandler, BackpackMenu.BackpackType backpackType, BlockPos blockPos, int slotId, int button) {
+                           ItemStackHandler itemHandler, BackpackMenu.BackpackType backpackType, BlockPos blockPos, int slotId, int button,
+                           @Nullable ClickType clickType) {
         this.menu = menu;
         this.player = player;
         this.level = level;
@@ -33,21 +36,23 @@ public class UpgradeContext {
         this.blockPos = blockPos;
         this.slotId = slotId;
         this.button = button;
+        this.clickType = clickType;
     }
 
     public static UpgradeContext forMenu(Object menu, Player player, ItemStackHandler handler,
                                          BackpackMenu.BackpackType type, @Nullable BlockPos pos) {
-        return new UpgradeContext(menu, player, player.level(), null, null, handler, type, pos, -999,-1);
+        return new UpgradeContext(menu, player, player.level(), null, null, handler, type, pos, -999,-1, null);
     }
 
     public static UpgradeContext forMenuWithSlot(Object menu, Player player, IBackpackContainer container,
-                                                 BackpackMenu.BackpackType type, @Nullable BlockPos pos, int slotId, int button) {
-        return new UpgradeContext(menu, player, player.level(), null, container, container.getItemHandler(), type, pos, slotId, button);
+                                                 BackpackMenu.BackpackType type, @Nullable BlockPos pos, int slotId, int button,
+                                                 ClickType clickType) {
+        return new UpgradeContext(menu, player, player.level(), null, container, container.getItemHandler(), type, pos, slotId, button, clickType);
     }
 
     public static UpgradeContext forPlayer(Player player, ItemStack backpack, IBackpackContainer container,
                                            BackpackMenu.BackpackType type, @Nullable BlockPos pos) {
-        return new UpgradeContext(null, player, player.level(), backpack, container, null, type, pos, -999,-1);
+        return new UpgradeContext(null, player, player.level(), backpack, container, null, type, pos, -999,-1, null);
     }
 
     public static UpgradeContext forWornBackpack(Player player, ItemStack backpack, IBackpackContainer container) {
@@ -56,12 +61,12 @@ public class UpgradeContext {
 
     public static UpgradeContext forBlock(IBackpackContainer container, Level level, BackpackMenu.BackpackType type,
                                           @Nullable BlockPos pos) {
-        return new UpgradeContext(null, null, level, null, container, null, type, pos, -999,-1);
+        return new UpgradeContext(null, null, level, null, container, null, type, pos, -999,-1, null);
     }
 
     public static UpgradeContext forUpgradeSlot(Player player, IBackpackContainer container,
                                                 BackpackMenu.BackpackType type) {
-        return new UpgradeContext(null, player, player.level(), null, container, null, type, null, -999,-1);
+        return new UpgradeContext(null, player, player.level(), null, container, null, type, null, -999,-1, null);
     }
 
     @SuppressWarnings("unchecked")
@@ -105,4 +110,7 @@ public class UpgradeContext {
     public int slotId() { return slotId; }
 
     public int button() { return button; }
+
+    @Nullable
+    public ClickType clickType() { return clickType; }
 }

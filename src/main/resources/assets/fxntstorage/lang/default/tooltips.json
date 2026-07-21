@@ -89,7 +89,7 @@
 
   "tooltip.fxntstorage.backpack_crafting_upgrade.summary1": "Access a full _crafting_ grid directly from the backpack.",
   "tooltip.fxntstorage.backpack_crafting_upgrade.summary2": "Crafting _ingredients_ can be supplied from either the _backpack_ or _player_ inventory.",
-  "tooltip.fxntstorage.backpack_crafting_upgrade.subtext": "Upgrade is always activate.",
+  "tooltip.fxntstorage.backpack_crafting_upgrade.subtext": "Upgrade is always active.",
 
   "tooltip.fxntstorage.backpack_workshop_upgrade.summary1": "Enables the use of a _deployer_ or _mechanical press_ directly from the backpack. Requires a _backtank_ for power.",
   "tooltip.fxntstorage.backpack_workshop_upgrade.summary2": "Does NOT function when the backpack is stored in inventory.",

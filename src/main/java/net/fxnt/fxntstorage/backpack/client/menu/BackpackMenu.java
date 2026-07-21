@@ -224,7 +224,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         // Handle upgrade specific click events
         for (IUpgrade upgrade : UpgradeRegistry.getAll()) {
             UpgradeContext ctx = UpgradeContext.forMenuWithSlot(
-                    this, player, container, getBackpackType(), blockPos, pSlotId, pButton
+                    this, player, container, getBackpackType(), blockPos, pSlotId, pButton, pClickType
             );
             if (upgrade.clicked(ctx))
                 return;
@@ -409,7 +409,7 @@ public class BackpackMenu extends AbstractContainerMenu {
             IUpgrade upgrade = UpgradeRegistry.get(upgradeType);
             if (upgrade == null) continue;
 
-            UpgradeContext ctx = UpgradeContext.forMenuWithSlot(this, player, container, type, blockPos, slot.index, -1);
+            UpgradeContext ctx = UpgradeContext.forMenuWithSlot(this, player, container, type, blockPos, slot.index, -1, ClickType.QUICK_MOVE);
             Optional<ItemStack> result = upgrade.onQuickMove(ctx);
             if (result.isPresent()) {
                 return result.get();

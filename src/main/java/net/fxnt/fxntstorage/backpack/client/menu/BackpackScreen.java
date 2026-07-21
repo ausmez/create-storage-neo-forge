@@ -824,6 +824,14 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
                 && mouseY <= getScrollThumbY() + SCROLL_THUMB_HEIGHT;
     }
 
+    @Override
+    protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top, int button) {
+        for (Rect2i zone : getExclusionZones()) {
+            if (zone.contains((int) mouseX, (int) mouseY)) return false;
+        }
+        return super.hasClickedOutside(mouseX, mouseY, left, top, button);
+    }
+
     @NotNull
     @ApiStatus.OverrideOnly
     public List<Rect2i> getExclusionZones() {

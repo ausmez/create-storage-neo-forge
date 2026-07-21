@@ -22,6 +22,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -77,6 +78,8 @@ public class FeederUpgrade extends AbstractUpgrade {
         BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
         if (layout.feederFilter().contains(context.slotId())) {
+            if (context.clickType() != ClickType.PICKUP) return true;
+
             Slot slot = context.player().containerMenu.slots.get(context.slotId());
             ItemStack carried = context.player().containerMenu.getCarried();
             ItemStack existing = slot.getItem();

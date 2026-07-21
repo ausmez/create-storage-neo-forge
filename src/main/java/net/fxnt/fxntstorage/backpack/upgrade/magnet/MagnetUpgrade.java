@@ -22,6 +22,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -75,6 +76,8 @@ public class MagnetUpgrade extends AbstractUpgrade {
         BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
         if (layout.magnetFilter().contains(context.slotId())) {
+            if (context.clickType() != ClickType.PICKUP) return true;
+
             Slot slot = context.player().containerMenu.slots.get(context.slotId());
             ItemStack carried = context.player().containerMenu.getCarried();
             ItemStack existing = slot.getItem();

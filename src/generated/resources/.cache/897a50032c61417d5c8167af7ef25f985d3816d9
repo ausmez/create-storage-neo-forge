@@ -1,4 +1,4 @@
-// 1.21.1	2026-07-08T15:46:31.147543267	Registrate Provider for fxntstorage [Registries, Data Maps, Recipes, Advancements, Loot Tables, Tags (blocks), Tags (enchantments), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+// 1.21.1	2026-07-21T19:58:00.469688503	Registrate Provider for fxntstorage [Registries, Data Maps, Recipes, Advancements, Loot Tables, Tags (blocks), Tags (enchantments), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
 16ef765d89f5fc1ed557b5038d3925be3cbe2e1b assets/fxntstorage/blockstates/acacia_simple_storage_box.json
 53485db55bd07aa6df056d70e9e056dc828b641e assets/fxntstorage/blockstates/acacia_storage_trim.json
 996e0e9183b86db90271ab3dd4f686acdbc2535b assets/fxntstorage/blockstates/andesite_backpack.json
@@ -41,8 +41,8 @@ a8213dc7e554fc16431aa79004532e364d06770f assets/fxntstorage/blockstates/storage_
 bd6fac4501783d3ca0c56f0d43c72e5f054aeee5 assets/fxntstorage/blockstates/warped_simple_storage_box.json
 d78eda1df494563f537d44fb0be4c818bc5c8f5b assets/fxntstorage/blockstates/warped_storage_trim.json
 b779125c6882bf4a7ea522080547a5a18626fa2e assets/fxntstorage/blockstates/weathered_storage_box.json
-68b548511b72ec95aecc05cb0e8028fd4963537c assets/fxntstorage/lang/en_ud.json
-4a060de6153728a9fe8c8d3b3192338750ac239f assets/fxntstorage/lang/en_us.json
+2393b7cf46a38f5bd1551ed21d15820a0a0a66c3 assets/fxntstorage/lang/en_ud.json
+78907bea6e04d52764d16b1c24e06ab34a463f19 assets/fxntstorage/lang/en_us.json
 1d9c7949e79ef361a6b149bf15750cc178fdacaa assets/fxntstorage/models/block/acacia_simple_storage_box_base.json
 6f505d78151050f5fae85a8d8b38618e7b264ed8 assets/fxntstorage/models/block/acacia_storage_trim.json
 29e311fb268afaadb0496d595559f7cd8e56543b assets/fxntstorage/models/block/andesite_backpack.json

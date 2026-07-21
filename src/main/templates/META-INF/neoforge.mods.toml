@@ -55,7 +55,7 @@ side = "BOTH"
 modId = "constructionstick"
 type = "optional"
 versionRange = "[1.3.0,)"
-ordering = "NONE"
+ordering = "AFTER"
 side = "BOTH"
 
 [[dependencies.${ mod_id }]]

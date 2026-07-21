@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.2 - 2026-07-21
+
+## Bug Fixes
+- Fixed a race condition that could cause the game to crash when the ConstructionSticks mod is present. (#74)
+- Fixed upgrades not returning their contents when swapped out. Jukebox music discs, Crafting items, and Portable Workshop contents are now returned to the inventory (or dropped if inventory is full).
+- Fixed issue when removing one backpack upgrade, incorrectly triggers the removal effects of other upgrades.
+- Fixed held items being dropped when clicking backpack upgrade tabs or buttons.
+- Fixed the Feeder and Magnet upgrade filter slots sometimes requiring multiple clicks to set a filter.
+- Fixed right-click dragging over the Feeder and Magnet upgrade filter slots setting a filter instead of clearing it.
+- Fixed a typo in the Crafting upgrade tooltip.
+
+---
+
 ## 1.3.1 - 2026-07-08
 
 ## Changes

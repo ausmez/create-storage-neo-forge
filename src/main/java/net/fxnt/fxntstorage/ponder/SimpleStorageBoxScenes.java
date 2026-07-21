@@ -318,6 +318,7 @@ public class SimpleStorageBoxScenes {
 
         scene.overlay().showControls(util.vector().blockSurface(box, Direction.NORTH), Pointing.RIGHT, 10).rightClick().withItem(upgrade);
         scene.idle(10);
+        scene.world().modifyBlock(box, s -> s.setValue(STORAGE_USED, EnumProperties.StorageUsed.HAS_ITEMS), false);
         scene.world().modifyBlockEntity(box, SimpleStorageBoxEntity.class, t -> {
             t.getItemHandler().setStackInSlot(COMPACTING_UPGRADE_SLOT, upgrade);
             t.compactingUpgrade = true;

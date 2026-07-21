@@ -128,5 +128,7 @@
   "effect.fxntstorage.calm_endermen": "Calm Endermen",
   "effect.fxntstorage.pacify_piglins": "Pacify Piglins",
   "effect.fxntstorage.repel_creepers": "Repel Creepers",
-  "effect.fxntstorage.phantom_ward": "Phantom Ward"
+  "effect.fxntstorage.phantom_ward": "Phantom Ward",
+
+  "config.jade.plugin_fxntstorage.oak_simple_storage_box": "Simple Storage Box"
 }
