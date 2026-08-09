@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.3 - 2026-08-09
+
+## Changes
+- Added Chinese (Simplified) translation (`zh_cn`) - Thanks @VoidCat
+
 ## 1.3.2 - 2026-07-21
 
 ## Bug Fixes
