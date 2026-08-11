@@ -475,5 +475,6 @@
   "tooltip.fxntstorage.upgrade_tab.toolswap": "Tool Swap",
   "tooltip.fxntstorage.upgrade_tab.torchdeployer": "Torch Deployer",
   "tooltip.fxntstorage.upgrade_tab.workshop": "Portable Workshop",
-  "tooltip.fxntstorage.upgrades": "Upgrades"
+  "tooltip.fxntstorage.upgrades": "Upgrades",
+  "item.fxntstorage.backpack_feeder_upgrade.message.1x": "1x"
 }
