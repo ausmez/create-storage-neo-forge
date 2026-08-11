@@ -475,5 +475,6 @@
   "tooltip.fxntstorage.upgrade_tab.torchdeployer": "火把部署",
   "tooltip.fxntstorage.upgrade_tab.workshop": "便携工作站",
   "tooltip.fxntstorage.upgrades": "升级",
-  "config.jade.plugin_fxntstorage.oak_simple_storage_box": "简易储物箱"
+  "config.jade.plugin_fxntstorage.oak_simple_storage_box": "简易储物箱",
+  "item.fxntstorage.backpack_feeder_upgrade.message.1x": "一个"
 }
