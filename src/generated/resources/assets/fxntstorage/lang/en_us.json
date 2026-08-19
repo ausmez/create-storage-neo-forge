@@ -279,7 +279,7 @@
   "item.fxntstorage.backpack_falldamage_upgrade": "Fall Damage Upgrade",
   "item.fxntstorage.backpack_falldamage_upgrade_deactivated": "Fall Damage Upgrade",
   "item.fxntstorage.backpack_feeder_upgrade": "Feeder Upgrade",
-  "item.fxntstorage.backpack_feeder_upgrade.message": "Feeder upgrade just fed you %s!",
+  "item.fxntstorage.backpack_feeder_upgrade.message": "Feeder upgrade just fed you: %s!",
   "item.fxntstorage.backpack_feeder_upgrade_deactivated": "Feeder Upgrade",
   "item.fxntstorage.backpack_flight_upgrade": "Jetpack Upgrade",
   "item.fxntstorage.backpack_flight_upgrade_deactivated": "Jetpack Upgrade",

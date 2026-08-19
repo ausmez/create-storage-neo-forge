@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.4 - 2026-08-19
+
+## Changes
+- Updated the Feeder upgrade display message
+
 ## 1.3.3 - 2026-08-09
 
 ## Changes

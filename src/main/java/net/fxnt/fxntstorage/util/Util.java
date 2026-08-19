@@ -117,10 +117,6 @@ public class Util {
                 : String.format("%.2fM", number / 1_000_000.0);
     }
 
-    public static boolean isVowel(char c) {
-        return "AEIOUaeiou".indexOf(c) != -1;
-    }
-
     public record ItemWithComponent(Item item, DataComponentPatch patch) {
         @Override
         public boolean equals(Object obj) {

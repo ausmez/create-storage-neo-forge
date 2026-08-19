@@ -21,7 +21,7 @@
   "item.fxntstorage.brass_backpack": "Brass Backpack",
   "item.fxntstorage.hardened_backpack": "Hardened Backpack",
 
-  "item.fxntstorage.backpack_feeder_upgrade.message": "Feeder upgrade just fed you %s!",
+  "item.fxntstorage.backpack_feeder_upgrade.message": "Feeder upgrade just fed you: %s!",
 
   "fxntstorage.storage_box_void_upgrade_exists": "This storage box already contains a void upgrade",
   "fxntstorage.storage_box_capacity_upgrade_max": "This storage box has reached maximum capacity",

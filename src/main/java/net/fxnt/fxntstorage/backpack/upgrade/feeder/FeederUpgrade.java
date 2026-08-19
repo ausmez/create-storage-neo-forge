@@ -227,8 +227,7 @@ public class FeederUpgrade extends AbstractUpgrade {
                     boolean displayMessage = container.getUpgradeSetting(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE);
 
                     if (displayMessage) {
-                        String foodNameFormatted = (Util.isVowel(foodName.charAt(0)) ? "an" : "a") + " §a" + foodName + "§r";
-                        player.displayClientMessage(Component.translatable("item.fxntstorage.backpack_feeder_upgrade.message", foodNameFormatted), true);
+                        player.displayClientMessage(Component.translatable("item.fxntstorage.backpack_feeder_upgrade.message", "§a" + foodName + "§r"), true);
                     }
 
                 } else {
