@@ -31,6 +31,9 @@ public interface IUpgrade {
 
     void onRemoved(UpgradeContext context);
 
+    default void validateContents(UpgradeContext context) {
+    }
+
     default Optional<ItemStack> onQuickMove(UpgradeContext context) {
         return Optional.empty();
     }

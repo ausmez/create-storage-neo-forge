@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.2.7 - 2026-08-23
+
+## Changes
+- Added Jade tooltip information showing installed Capacity and Void upgrades.
+- Void mode is now indicated by a purple status light and display text instead of rendering the Void Upgrade item on the block.
+- Added an alternate recipe for upgrading an existing Passer Block into a Smart Passer Block. (#72)
+- Create Smart Observers now detect items transferred through a Passer Block or Smart Passer Block.
+- Moved Vanilla Backport compat to a datapack to prevent log errors when mod not present.
+- The Jetpack Upgrade now costs fewer resources to craft.
+
+## Bug Fixes
+- Fixed a crash (`AbstractMethodError`) when using a Construction Wand from Construction Wand - KOTS mod. (#80)
+- Fixed Construction Wand placing blocks for free from a Storage Box that could not be read.
+- Fixed Storage Boxes losing their custom name when broken and picked back up.
+- Fixed an issue where the Carry On mod did not blacklist Create: Storage blocks from being picked up.
+- Fixed a log warning being emitted when clicking the Sort Order button in the backpack GUI.
+- Fixed issue picking up a music disc from the Jukebox upgrade slot, both moving the disc to the inventory and leaving a ghost copy on the cursor.
+- Fixed backpack menus resending their full contents to the client on every click.
+- Fixed loot table parsing errors and recipe skip messages being logged when loading a world without the optional Vanilla Backport mod installed. The Pale Oak loot tables and recipes now ship in a built-in datapack that is only enabled when Vanilla Backport is present.
+### Backported Fixes
+- Fixed Jukebox Upgrade not returning music discs when upgrade swapped out. Items are now returned to the inventory (or dropped if inventory is full).
+- Fixed issue when removing one backpack upgrade, incorrectly triggers the removal effects of other upgrades.
+- Fixed held items being dropped when clicking backpack upgrade tabs or buttons.
+- Fixed the Feeder and Magnet upgrade filter slots sometimes requiring multiple clicks to set a filter.
+- Fixed right-click dragging over the Feeder and Magnet upgrade filter slots setting a filter instead of clearing it.
+- Long custom names are now truncated to prevent overlapping other GUI elements or extending beyond the menu.
+- Fixed mounted Simple Storage Boxes not inserting all matching items from the inventory when the front display was double-clicked.
+- Fixed the Torch Deployer upgrade reading the incorrect light value, causing it to almost never place torches.
+- Fixed an item-duplication/corruption bug when inserting into a Simple Storage Box via the Create Packager.
+- Fixed a crash that happens when the optional Curios mod was not installed. (#59)
+- Fixed the Jukebox upgrade continuing to play music after swapping out the disc.
+- Fixed Jukebox Upgrade note particles so they now appear more randomly.
+- Fixed backpack data from other mods being lost when placing the backpack as a block. (#57)
+- Fixed Storage Boxes and Backpacks not showing custom name in menus when placed on a Create contraption.
+- Storage Boxes and Simple Storage Boxes can now only be accessed from the front display when mounted on a contraption.
+- Adjusted item and text rendering on Storage Boxes and Simple Storage Boxes when shaders are installed.
+- Fixed custom names rendering incorrectly when Storage Boxes and Simple Storage Boxes mounted on contraptions.
+- Fixed music continuing to play after the Jukebox upgrade was quick-moved (shift-clicked) out of the backpack.
+- Fixed removing any backpack upgrade notifying every other installed upgrade that it had been removed.
+- Fixed backpacks losing item NBT added by other mods, such as enchantments or Apotheosis affixes, when placed in the world and picked back up. (#57)
+- Fixed held items being dropped when clicking backpack upgrade tabs or buttons.
+
+---
+
 ## 1.2.6 - 2026-04-22
 
 ## Changes

@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage.passer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
 import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -105,7 +106,20 @@ public class PasserEntity extends SmartBlockEntity {
 
         // Do the move
         ItemStack actualExtractAmount = ItemHelper.extract(srcContainer, canAccept, mode, actualInsertAmount, false);
-        ItemHandlerHelper.insertItemStacked(dstContainer, actualExtractAmount, false);
+        if (actualExtractAmount.isEmpty()) return;
+
+        ItemStack transferred = actualExtractAmount.copy();
+        ItemStack leftover = ItemHandlerHelper.insertItemStacked(dstContainer, actualExtractAmount, false);
+        if (!leftover.isEmpty())
+            transferred.shrink(leftover.getCount());
+
+        if (!transferred.isEmpty())
+            onTransfer(transferred);
+    }
+
+    protected void onTransfer(ItemStack stack) {
+        if (level == null || level.isClientSide) return;
+        AllBlocks.SMART_OBSERVER.get().onFunnelTransfer(level, worldPosition, stack);
     }
 
     @Nullable

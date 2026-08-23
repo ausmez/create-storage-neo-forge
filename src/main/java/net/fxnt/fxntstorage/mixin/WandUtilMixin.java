@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage.mixin;
 
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.compat.constructionwand.ConstructionWandVersion;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,6 +21,7 @@ public class WandUtilMixin {
     // Injected for countItem() used for the placement preview grid
     @Inject(method = "getFullInv", at = @At("RETURN"), remap = false)
     private static void fxnt$addBackpackToFullInv(Player player, CallbackInfoReturnable<List<ItemStack>> cir) {
+        if (ConstructionWandVersion.isKots()) return; // KOTS already scans armor and Curios slots
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         if (backpack.isEmpty()) return;
         cir.getReturnValue().add(backpack);
@@ -28,6 +30,7 @@ public class WandUtilMixin {
     // Injected for SupplierInventory.takeItemStack() used for actual block placement
     @Inject(method = "getMainInv", at = @At("RETURN"), cancellable = true, remap = false)
     private static void fxnt$addBackpackToMainInv(Player player, CallbackInfoReturnable<List<ItemStack>> cir) {
+        if (ConstructionWandVersion.isKots()) return; // KOTS already scans armor and Curios slots
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         if (backpack.isEmpty()) return;
         List<ItemStack> inv = new ArrayList<>(cir.getReturnValue());

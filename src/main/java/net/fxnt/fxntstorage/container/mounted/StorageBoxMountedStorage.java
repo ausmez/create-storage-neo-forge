@@ -17,8 +17,10 @@ import net.fxnt.fxntstorage.init.ModMountedStorageTypes;
 import net.fxnt.fxntstorage.init.ModNetwork;
 import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
 import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
+import net.fxnt.fxntstorage.util.ContraptionInteractionContext;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -73,6 +75,9 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
         if (player.isSpectator()) return false;
 
         ItemStack itemInHand = player.getMainHandItem();
+        Direction side = ContraptionInteractionContext.INTERACTION_DIRECTION.get();
+        if (side == null) return false;
+        if (!side.equals(info.state().getValue(StorageBox.FACING))) return false;
 
         // Right-Click with Create Wrench in hand will toggle void mode
         if (itemInHand.is(AllTags.AllItemTags.WRENCH.tag) && info.nbt() != null) {
@@ -112,6 +117,8 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
             }
         }
 
+        if (!player.isShiftKeyDown()) return false;
+
         ServerLevel level = player.serverLevel();
         BlockPos localPos = info.pos();
         Vec3 localPosVec = Vec3.atCenterOf(localPos);
@@ -120,9 +127,15 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
             return this.isMenuValid(player, contraption, currentPos);
         };
         CompoundTag nbt = info.nbt();
-        Component customName = (nbt != null && nbt.contains("CustomName", Tag.TAG_STRING))
-                ? Component.nullToEmpty(nbt.getString("CustomName"))
-                : null;
+        Component customName = null;
+        if (nbt != null && nbt.contains("CustomName", Tag.TAG_STRING)) {
+            String customNameString = nbt.getString("CustomName");
+            try {
+                customName = Component.Serializer.fromJson(customNameString);
+            } catch (Exception e) {
+                customName = Component.literal(customNameString);
+            }
+        }
         Component blockName = customName != null ? customName : info.state().getBlock().getName();
         Component menuName = CreateLang.translateDirect("contraptions.moving_container", blockName);
         Consumer<Player> onClose = p -> {

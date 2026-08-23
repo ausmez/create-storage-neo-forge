@@ -190,6 +190,45 @@
         "facing": "west",
         "storage_used": "full"
       }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_box_void"
+      },
+      "when": {
+        "facing": "north",
+        "void_upgrade": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_box_void",
+        "y": 90
+      },
+      "when": {
+        "facing": "east",
+        "void_upgrade": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_box_void",
+        "y": 180
+      },
+      "when": {
+        "facing": "south",
+        "void_upgrade": "true"
+      }
+    },
+    {
+      "apply": {
+        "model": "fxntstorage:block/storage_box_void",
+        "y": 270
+      },
+      "when": {
+        "facing": "west",
+        "void_upgrade": "true"
+      }
     }
   ]
 }

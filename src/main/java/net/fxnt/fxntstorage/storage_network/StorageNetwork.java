@@ -371,17 +371,7 @@ public class StorageNetwork {
             if (!canTakeItem(slot, current)) return ItemStack.EMPTY;
 
             int toExtract = Math.min(current.getCount(), amount);
-            if (simulate) {
-                if (toExtract == 0) {
-                    return ItemStack.EMPTY;
-                } else {
-                    ItemStack copy = current.copy();
-                    copy.setCount(toExtract);
-                    return copy;
-                }
-            }
-
-            return box.getItemHandler().extractItem(boxSlot, toExtract, false);
+            return box.getItemHandler().extractItem(boxSlot, toExtract, simulate);
         }
 
         @Override

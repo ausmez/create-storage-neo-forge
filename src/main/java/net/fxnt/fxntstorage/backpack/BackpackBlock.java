@@ -27,6 +27,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -35,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 @ParametersAreNonnullByDefault
 @SuppressWarnings("deprecation")
@@ -67,13 +70,40 @@ public class BackpackBlock extends BaseEntityBlock {
     public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
         if (blockEntity instanceof BackpackEntity be) {
+            // Store extra NBT
+            be.saveExtraTag(pStack);
             CompoundTag tag = pStack.getOrCreateTag().getCompound("BlockEntityTag");
             be.saveAdditional(tag);
             if (pStack.hasCustomHoverName())
                 be.setCustomName(pStack.getHoverName());
             SortOrder order = (tag.contains("SortOrder")) ? SortOrder.valueOf(tag.getString("SortOrder")) : SortOrder.COUNT;
             be.setSortOrder(order);
+
+            if (!pLevel.isClientSide) {
+                be.setChanged();
+                pLevel.sendBlockUpdated(pPos, pState, pState, Block.UPDATE_ALL);
+            }
         }
+    }
+
+    @Override
+    public @NotNull ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        ItemStack stack = super.getCloneItemStack(level, pos, state);
+        if (level.getBlockEntity(pos) instanceof BackpackEntity be)
+            be.applyExtraTag(stack);
+        return stack;
+    }
+
+    @Override
+    public @NotNull List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+        List<ItemStack> drops = super.getDrops(state, params);
+        if (params.getOptionalParameter(LootContextParams.BLOCK_ENTITY) instanceof BackpackEntity be) {
+            for (ItemStack drop : drops) {
+                if (drop.getItem() instanceof BackpackItem)
+                    be.applyExtraTag(drop);
+            }
+        }
+        return drops;
     }
 
     public int getStackMultiplier() {

@@ -20,6 +20,7 @@ import net.fxnt.fxntstorage.ponder.CsPonderPlugin;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntityRenderer;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxScreen;
 import net.fxnt.fxntstorage.simple_storage.mounted.SimpleStorageBoxMountedScreen;
+import net.fxnt.fxntstorage.util.CuriosEventHandler;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -84,6 +85,7 @@ public class FXNTStorage {
 
         if (ModList.get().isLoaded(ModCompats.CONSTRUCTION_WAND)) ConstructionWandCompat.init();
         if (ModList.get().isLoaded(ModCompats.EVERY_COMPAT)) EveryCompCompat.init();
+        if (CURIOS_LOADED) MinecraftForge.EVENT_BUS.register(CuriosEventHandler.class);
     }
 
     private static void onCommonSetup(final FMLCommonSetupEvent event) {

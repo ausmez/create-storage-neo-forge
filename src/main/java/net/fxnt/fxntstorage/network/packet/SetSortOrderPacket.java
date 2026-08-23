@@ -28,7 +28,6 @@ public record SetSortOrderPacket(SortOrder sortOrder) {
             if (player != null) {
                 if (player.containerMenu instanceof BackpackMenu menu) {
                     menu.container.setSortOrder(packet.sortOrder());
-                    menu.container.setDataChanged();
                 }
 
                 if (player.containerMenu instanceof StorageBoxMenu menu) {

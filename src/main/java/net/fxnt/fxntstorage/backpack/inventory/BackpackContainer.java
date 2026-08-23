@@ -195,7 +195,8 @@ public class BackpackContainer implements IBackpackContainer, ICapabilityProvide
         this.sortOrder = sortOrder;
         if (player.level().isClientSide)
             ModNetwork.sendToServer(new SetSortOrderPacket(sortOrder));
-        setDataChanged();
+        else
+            setDataChanged();
     }
 
     @Override

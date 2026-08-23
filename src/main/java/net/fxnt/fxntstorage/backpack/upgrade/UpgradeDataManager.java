@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class UpgradeDataManager {
-    private static final String NBT_EXPANDED_PANELS = "BackpackActivePanels";
-    private static final String NBT_UPGRADE_SETTINGS = "BackpackUpgradeSettings";
+    public static final String NBT_EXPANDED_PANELS = "BackpackActivePanels";
+    public static final String NBT_UPGRADE_SETTINGS = "BackpackUpgradeSettings";
 
     private int expandedPanels = 0;
     private final Map<String, Boolean> booleanSettings = new HashMap<>();

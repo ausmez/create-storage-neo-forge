@@ -67,8 +67,8 @@ public class TorchDeployerUpgrade extends AbstractUpgrade {
         }
 
         int blockLightLevel = (lightSource == ConfigManager.ClientConfig.TorchDeployerLightSource.SKY_LIGHT)
-                ? level.getBrightness(LightLayer.BLOCK, playerPos)
-                : level.getMaxLocalRawBrightness(playerPos);
+                ? level.getBrightness(LightLayer.SKY, playerPos)
+                : level.getBrightness(LightLayer.BLOCK, playerPos);
 
         if (blockLightLevel <= lightLevel &&
                 level.getBlockState(belowPos).isSolid() &&

@@ -11,6 +11,7 @@ import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageInterface;
 import net.fxnt.fxntstorage.controller.StorageInterfaceFiltered;
+import net.fxnt.fxntstorage.init.ModBlocks;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
 import net.fxnt.fxntstorage.passer.PasserBlock;
@@ -18,6 +19,7 @@ import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
@@ -116,16 +118,28 @@ public class ModRecipeHelper {
     }
 
     public static NonNullBiConsumer<DataGenContext<Block, PasserBlock>, RegistrateRecipeProvider> passer(boolean isSmart) {
-        return (ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
-                .define('X', isSmart ? AllBlocks.SMART_CHUTE : AllBlocks.CHUTE)
-                .define('Y', Items.REDSTONE)
-                .define('Z', Items.HOPPER)
-                .pattern("X")
-                .pattern("Y")
-                .pattern("Z")
-                .group("storage_box")
-                .unlockedBy("has_andesite_alloy", RegistrateRecipeProvider.has(AllItems.ANDESITE_ALLOY))
-                .save(prov, modLoc("crafting_shaped/" + ctx.getName()));
+        return (ctx, prov) -> {
+            ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                    .define('X', isSmart ? AllBlocks.SMART_CHUTE : AllBlocks.CHUTE)
+                    .define('Y', Items.REDSTONE)
+                    .define('Z', Items.HOPPER)
+                    .pattern("X")
+                    .pattern("Y")
+                    .pattern("Z")
+                    .group("storage_box")
+                    .unlockedBy("has_andesite_alloy", RegistrateRecipeProvider.has(AllItems.ANDESITE_ALLOY))
+                    .save(prov, modLoc("crafting_shaped/" + ctx.getName()));
+
+            if (isSmart) {
+                ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ctx.get())
+                        .requires(ModBlocks.PASSER_BLOCK)
+                        .requires(AllItems.BRASS_SHEET)
+                        .requires(AllItems.ELECTRON_TUBE)
+                        .group("storage_box")
+                        .unlockedBy("has_passer_block", RegistrateRecipeProvider.has(ModBlocks.PASSER_BLOCK))
+                        .save(prov, modLoc("smart_passer_block_from_passer"));
+            }
+        };
     }
 
     public static NonNullBiConsumer<DataGenContext<Block, BackpackBlock>, RegistrateRecipeProvider> backpack() {

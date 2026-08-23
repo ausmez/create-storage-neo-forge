@@ -23,7 +23,7 @@
             "item": "create:item_vault"
           },
           "W": {
-            "item": "vanillabackport:pale_oak_planks"
+            "item": "minecraft:pale_oak_planks"
           }
         },
         "pattern": [

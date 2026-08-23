@@ -12,7 +12,7 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.IItemHandler;
 
 import java.util.Objects;
 
@@ -36,18 +36,19 @@ public class SimpleStorageBoxMenu extends AbstractContainerMenu implements ISimp
     public void initSlots() {
         // Add Fake Main slot (Non-intractable)
         // Just render. Don't add slot
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(itemHandler -> {
-            // Add Void slot
-            this.addSlot(new SimpleStorageBoxVoidSlot(itemHandler, SimpleStorageBoxEntity.VOID_UPGRADE_SLOT, 8, 20));
+        // The exposed capability only shows slot 0, so get the backing handler directly
+        IItemHandler itemHandler = this.blockEntity.getItemHandler();
 
-            // Add Capacity Slots
-            for (int i = 0; i < SimpleStorageBoxEntity.MAX_CAPACITY_UPGRADES; i++) {
-                int slot = i + SimpleStorageBoxEntity.CAPACITY_UPGRADE_SLOT_START;
-                int y = 58;
-                int x = 8;
-                this.addSlot(new SimpleStorageBoxUpgradeSlot(itemHandler, slot, x + (Util.SLOT_SIZE * i), y));
-            }
-        });
+        // Add Void slot
+        this.addSlot(new SimpleStorageBoxVoidSlot(itemHandler, SimpleStorageBoxEntity.VOID_UPGRADE_SLOT, 8, 20));
+
+        // Add Capacity Slots
+        for (int i = 0; i < SimpleStorageBoxEntity.MAX_CAPACITY_UPGRADES; i++) {
+            int slot = i + SimpleStorageBoxEntity.CAPACITY_UPGRADE_SLOT_START;
+            int y = 58;
+            int x = 8;
+            this.addSlot(new SimpleStorageBoxUpgradeSlot(itemHandler, slot, x + (Util.SLOT_SIZE * i), y));
+        }
 
         Inventory playerInventory = player.getInventory();
         // Add Inventory Slots

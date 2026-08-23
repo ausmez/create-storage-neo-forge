@@ -84,6 +84,9 @@ public class ModBlockstateHelper {
         String path = ForgeRegistries.BLOCKS.getKey(planks).getPath();
         String woodType = path.substring(0, path.indexOf("_planks"));
 
+        if (!prov.models().existingFileHelper.exists(modLoc("block/storage_box_void"), PackType.CLIENT_RESOURCES))
+            ModModelHelper.storageBoxLight(prov);
+
         ModModelHelper.simpleStorageBox(prov, woodType); // Generate blockModel
 
         MultiPartBlockStateBuilder builder = prov.getMultipartBuilder(ctx.get());
@@ -106,6 +109,15 @@ public class ModBlockstateHelper {
                         .condition(StorageBox.STORAGE_USED, state)
                         .end();
             }
+        }
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            builder.part()
+                    .modelFile(prov.models().getExistingFile(prov.modLoc("block/storage_box_void")))
+                    .rotationY(getRotationForDirection(dir))
+                    .addModel()
+                    .condition(StorageBox.FACING, Direction.byName(dir.getName()))
+                    .condition(SimpleStorageBox.VOID_UPGRADE, true)
+                    .end();
         }
     }
 

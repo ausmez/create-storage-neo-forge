@@ -60,7 +60,9 @@ public record SyncMountedStoragePacket(int contraptionId, BlockPos localPos, Enu
                         if (nbt.contains("FilterItem", CompoundTag.TAG_COMPOUND)) {
                             newNbt.put("FilterItem", nbt.getCompound("FilterItem"));
                         }
-                        newState = oldState.setValue(SimpleStorageBox.STORAGE_USED, packet.fillLevel());
+                        newState = oldState
+                                .setValue(SimpleStorageBox.STORAGE_USED, packet.fillLevel())
+                                .setValue(SimpleStorageBox.VOID_UPGRADE, nbt.getBoolean("VoidUpgrade"));
                     } else { // StorageBox
                         newNbt.putFloat("PercentageUsed", nbt.getFloat("PercentageUsed"));
                         newState = oldState

@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -27,6 +28,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import static net.fxnt.fxntstorage.util.RendererHelper.*;
+import static net.fxnt.fxntstorage.util.RendererHelper.emissiveItemLight;
+import static net.fxnt.fxntstorage.util.RendererHelper.emissiveLight;
 
 public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<SimpleStorageBoxEntity> {
 
@@ -48,7 +51,9 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         int percentUsed = (int) Math.round(((double) amount / totalSpace) * 100);
 
         String line1 = Util.formatNumber(amount);
-        String line2 = percentUsed + "% Used";
+        String line2 = hasVoidUpgrade
+                ? Component.translatable("container.fxntstorage.void_mode").getString()
+                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
 
         Direction side = state.getValue(HorizontalDirectionalBlock.FACING);
 
@@ -61,7 +66,10 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null) return;
+        if (player == null) {
+            poseStack.popPose();
+            return;
+        }
 
         double distance = context.position != null
                 ? Math.sqrt(player.distanceToSqr(context.position))
@@ -76,20 +84,19 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         int color = getColorForDistance(distance);
 
         BlockPos lightPos = context.contraption.entity.blockPosition().offset(context.localPos).relative(side);
+        int envLight = LevelRenderer.getLightColor(context.world, lightPos);
+        int textLight = emissiveLight(envLight);
+        int itemLight = emissiveItemLight(envLight);
 
-        int blockLight = context.world.getBrightness(LightLayer.BLOCK, lightPos);
-        int skyLight = context.world.getBrightness(LightLayer.SKY, lightPos);
-        int lightLevel = LightTexture.pack(blockLight, skyLight);
-
-        renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
-        renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
+        renderLine(line1, -1f, poseStack, buffer, color, textLight);
+        renderLine(line2, -4f, poseStack, buffer, color, textLight);
 
         if (tag.contains("FilterItem")) {
             ItemStack filterItem = tag.getCompound("FilterItem").isEmpty()
                     ? ItemStack.EMPTY
                     : ItemStack.of(tag.getCompound("FilterItem"));
             if (!filterItem.isEmpty() || hasVoidUpgrade) {
-                renderItem(itemRenderer, filterItem, poseStack, buffer, lightLevel, hasVoidUpgrade);
+                renderItem(itemRenderer, filterItem, poseStack, buffer, itemLight);
             }
         }
 
@@ -100,7 +107,6 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
     public void render(SimpleStorageBoxEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
         Minecraft mc = Minecraft.getInstance();
         Screen currentScreen = mc.screen;
-
         boolean isPonderScene = currentScreen instanceof AbstractSimiScreen;
 
         Player player = mc.player;
@@ -114,7 +120,9 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         int percentUsed = (int) Math.round(((double) amount / totalSpace) * 100);
 
         String line1 = Util.formatNumber(amount);
-        String line2 = percentUsed + "% Used";
+        String line2 = blockEntity.hasVoidUpgrade()
+                ? Component.translatable("container.fxntstorage.void_mode").getString()
+                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 
@@ -130,14 +138,16 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         poseStack.translate(0f, 0f, 0.5f - 0.95f / 16f);
 
         int color = getColorForDistance(distance);
-        int lightLevel = LevelRenderer.getLightColor(level, blockEntity.getBlockPos());
+        int envLight = LevelRenderer.getLightColor(level, blockEntity.getBlockPos());
+        int textLight = emissiveLight(envLight);
+        int itemLight = emissiveItemLight(envLight);
 
-        renderLine(line1, -1f, poseStack, buffer, color, lightLevel);
-        renderLine(line2, -4f, poseStack, buffer, color, lightLevel);
+        renderLine(line1, -1f, poseStack, buffer, color, textLight);
+        renderLine(line2, -4f, poseStack, buffer, color, textLight);
 
         ItemStack filterItem = blockEntity.getFilterItem();
-        if (!filterItem.isEmpty() || blockEntity.voidUpgrade) {
-            renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, lightLevel, blockEntity.voidUpgrade);
+        if (!filterItem.isEmpty()) {
+            renderItem(Minecraft.getInstance().getItemRenderer(), filterItem, poseStack, buffer, textLight);
         }
 
         poseStack.popPose();

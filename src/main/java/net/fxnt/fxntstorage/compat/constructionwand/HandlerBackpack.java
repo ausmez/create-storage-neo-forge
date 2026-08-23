@@ -6,15 +6,14 @@ import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import thetadev.constructionwand.api.IContainerHandler;
 import thetadev.constructionwand.basics.WandUtil;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
-public class HandlerBackpack implements IContainerHandler {
+public class HandlerBackpack implements IWandContainer {
     private BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
     @Override
-    public boolean matches(Player player, ItemStack itemStack, ItemStack inventoryStack) {
+    public boolean matches(Player player, ItemStack inventoryStack) {
         return inventoryStack != null && inventoryStack.getCount() == 1 && Block.byItem(inventoryStack.getItem()) instanceof BackpackBlock;
     }
 

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.client.menu.TruncatedTitle;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -28,6 +29,8 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
     private static final int GUI_TEXTURE_WIDTH = 176;
     private static final int GUI_TEXTURE_HEIGHT = 176;
 
+    private final TruncatedTitle titleRenderer = new TruncatedTitle();
+
     protected AbstractSimpleStorageBoxScreen(M menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         imageWidth = GUI_TEXTURE_WIDTH;
@@ -46,6 +49,7 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
         if (!filterItem.isEmpty() && mouseX >= filterX && mouseX < filterX + 32 && mouseY >= filterY && mouseY < filterY + 32) {
             graphics.renderTooltip(font, filterItem, mouseX, mouseY);
         }
+        titleRenderer.renderTooltipIfHovered(graphics, font, leftPos, topPos, mouseX, mouseY);
     }
 
     @Override
@@ -56,12 +60,12 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(font, title, 7, 6, 0x404040, false);
+        titleRenderer.draw(graphics, font, title, 7, 6, imageWidth - 7 - 4, 0x404040);
         graphics.drawString(font, playerInventoryTitle, 7, 93 - 11, 0x404040, false);
 
         String storedText = Component.translatable("container.fxntstorage.simple_storage_box.stored").append(": ").getString();
         String capacityText = Component.translatable("container.fxntstorage.simple_storage_box.capacity").append(": ").getString();
-        String voidText = Component.translatable("container.fxntstorage.simple_storage_box.void").append(": ").getString();
+        String voidText = Component.translatable("container.fxntstorage.void_mode").append(": ").getString();
 
         graphics.drawString(font, storedText + menu.getStoredAmount(), 66, 20, 0x404040, false);
         graphics.drawString(font, capacityText + menu.getMaxItemCapacity(), 66, 32, 0x404040, false);

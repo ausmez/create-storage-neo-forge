@@ -6,6 +6,7 @@ import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.client.menu.button.WidgetSprites;
 import net.fxnt.fxntstorage.backpack.client.menu.slot.JukeboxDiscSlot;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
@@ -19,12 +20,14 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.RecordItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -56,21 +59,6 @@ public class JukeboxUpgrade extends AbstractUpgrade {
     }
 
     @Override
-    public boolean clicked(UpgradeContext context) {
-        BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
-
-        if (layout.jukeboxDiscs().contains(context.slotId())) {
-            Slot slot = context.player().containerMenu.slots.get(context.slotId());
-            ItemStack existing = slot.getItem();
-
-            if (!existing.isEmpty() && existing.getItem() instanceof RecordItem) {
-                onRemoved(context);
-            }
-        }
-        return false;
-    }
-
-    @Override
     public List<Slot> createSlots(UpgradeContext context) {
         BackpackMenu menu = context.menu();
         return List.of(
@@ -98,26 +86,19 @@ public class JukeboxUpgrade extends AbstractUpgrade {
     public void onRemoved(UpgradeContext context) {
         if (context.isClientSide()) {
             stopPlayback(context);
-        } else {
-            stopPlaybackServer(context);
-
-            if (context.menu() instanceof BackpackMenu menu) {
-                int discSlotIndex = menu.layout.jukeboxDiscs().getStartIndex();
-                Slot discSlot = menu.slots.get(discSlotIndex);
-                ItemStack disc = discSlot.getItem();
-
-                if (!disc.isEmpty() && disc.getItem() instanceof RecordItem) {
-                    boolean moved = menu.moveStackToPlayerInventory(disc);
-
-                    if (!moved) {
-                        context.player().drop(disc.copy(), false);
-                    }
-
-                    discSlot.set(ItemStack.EMPTY);
-                    discSlot.setChanged();
-                }
-            }
+            return;
         }
+
+        stopPlaybackServer(context);
+        returnOrphanedDisc(context);
+    }
+
+    @Override
+    public void validateContents(UpgradeContext context) {
+        if (context.isClientSide()) return;
+
+        stopOrphanedPlayback(context);
+        returnOrphanedDisc(context);
     }
 
     @Override
@@ -157,26 +138,25 @@ public class JukeboxUpgrade extends AbstractUpgrade {
 
     @Override
     protected void tickActive(UpgradeContext context) {
-        boolean notesEnabled = ConfigManager.ServerConfig.JUKEBOX_NOTES_ENABLED.get();
-        boolean buffsEnabled = ConfigManager.ServerConfig.JUKEBOX_BUFFS_ENABLED.get();
-
         if (context.backpackType() == BackpackMenu.BackpackType.BLOCK) {
-            if (context.level().getGameTime() % 40 != 0)
-                return;
-
             JukeboxUpgradeHelper.getMusicDisc(null, context.level(), context.blockPos())
                     .ifPresent(musicDisc -> {
                         Level level = context.level();
                         BlockPos pos = context.blockPos();
+                        long gameTime = level.getGameTime();
 
                         boolean isPlaying = JukeboxHandler.isBlockPlaying(level, pos);
 
                         if (!isPlaying) return;
 
-                        if (notesEnabled)
-                            ParticleHelper.jukeboxParticles(level, pos);
+                        if (ConfigManager.ServerConfig.JUKEBOX_NOTES_ENABLED.get()) {
+                            int particleInterval = level.getRandom().nextInt(31) + 10;
+                            if (gameTime % particleInterval == 0)
+                                ParticleHelper.jukeboxParticles(level, pos);
+                        }
 
-                        if (!buffsEnabled) return;
+                        if (!ConfigManager.ServerConfig.JUKEBOX_BUFFS_ENABLED.get()) return;
+                        if (gameTime % 40 != 0) return;
 
                         if (!(musicDisc.getItem() instanceof RecordItem discItem)) return;
                         var soundEvent = discItem.getSound();
@@ -189,21 +169,77 @@ public class JukeboxUpgrade extends AbstractUpgrade {
                         }
                     });
         } else if (context.backpackType() == BackpackMenu.BackpackType.WORN) {
-            if (context.player().getRandom().nextInt(20) != 0)
-                return;
-
             Player player = context.player();
             boolean isPlaying = JukeboxHandler.isPlayerPlaying((ServerPlayer) player);
             boolean isBackpackVisible = BackpackHelper.isWearingBackpack(player, true);
 
             if (!isBackpackVisible || !isPlaying) return;
 
-            if (notesEnabled)
-                ParticleHelper.jukeboxParticles(player);
+            if (ConfigManager.ServerConfig.JUKEBOX_NOTES_ENABLED.get()) {
+                int particleInterval = player.getRandom().nextInt(31) + 10;
+                if (player.level().getGameTime() % particleInterval == 0)
+                    ParticleHelper.jukeboxParticles(player);
+            }
         }
     }
 
     // ======= HELPER METHODS =======
+    private void returnOrphanedDisc(UpgradeContext context) {
+        IBackpackContainer container = resolveContainer(context);
+        if (container == null) return;
+
+        ItemStackHandler itemHandler = container.getItemHandler();
+        if (itemHandler == null || UpgradeHelper.hasUpgrade(itemHandler, UpgradeType.JUKEBOX)) return;
+
+        int discSlotIndex = BackpackSlotLayout.createLayout().jukeboxDiscs().getStartIndex();
+        ItemStack disc = itemHandler.getStackInSlot(discSlotIndex);
+        if (disc.isEmpty()) return;
+
+        // Never clear the slot without somewhere to put the disc
+        Player player = context.player();
+        boolean canDropAtBlock = context.level() != null && context.blockPos() != null;
+        if (player == null && !canDropAtBlock) return;
+
+        ItemStack returnedDisc = disc.copy();
+        itemHandler.setStackInSlot(discSlotIndex, ItemStack.EMPTY);
+        container.setDataChanged();
+
+        if (player != null) {
+            player.getInventory().add(returnedDisc);
+            if (!returnedDisc.isEmpty()) {
+                player.drop(returnedDisc, false);
+            }
+        } else {
+            BlockPos pos = context.blockPos();
+            Containers.dropItemStack(context.level(), pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, returnedDisc);
+        }
+    }
+
+    private void stopOrphanedPlayback(UpgradeContext context) {
+        IBackpackContainer container = resolveContainer(context);
+        if (container == null) return;
+
+        ItemStackHandler itemHandler = container.getItemHandler();
+        if (itemHandler == null || UpgradeHelper.hasUpgrade(itemHandler, UpgradeType.JUKEBOX)) return;
+
+        if (context.backpackType() == BackpackMenu.BackpackType.WORN) {
+            if (context.player() instanceof ServerPlayer serverPlayer && JukeboxHandler.isPlayerPlaying(serverPlayer)) {
+                JukeboxHandler.stopPlayer(serverPlayer);
+            }
+        } else if (context.backpackType() == BackpackMenu.BackpackType.BLOCK
+                && context.level() != null && context.blockPos() != null
+                && JukeboxHandler.isBlockPlaying(context.level(), context.blockPos())) {
+            JukeboxHandler.stopBlock(context.level(), context.blockPos());
+        }
+    }
+
+    @Nullable
+    private IBackpackContainer resolveContainer(UpgradeContext context) {
+        if (context.container() != null) return context.container();
+        if (context.menu() instanceof BackpackMenu menu) return menu.container;
+        return null;
+    }
+
     private void stopPlayback(UpgradeContext context) {
         if (!context.isClientSide()) return;
 

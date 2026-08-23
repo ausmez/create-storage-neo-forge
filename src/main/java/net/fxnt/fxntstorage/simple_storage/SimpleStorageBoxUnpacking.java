@@ -9,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
                 return false;
             } else if (!simulate) {
                 for (ItemStack itemStack : items) {
-                    ItemStack remainder = targetInv.insertItem(0, itemStack, simulate);
+                    ItemHandlerHelper.insertItemStacked(targetInv, itemStack.copy(), false);
                 }
 
                 return true;
@@ -53,7 +54,7 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
                         if (itemStack != null && !itemStack.isEmpty()) totalToInsert += itemStack.getCount();
                     }
 
-                    return totalToInsert + ssbe.storedAmount <= ssbe.maxItemCapacity;
+                    return totalToInsert + ssbe.getStoredAmount() <= ssbe.getMaxItemCapacity();
                 }
 
                 return false;

@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.container;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.client.menu.TruncatedTitle;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
@@ -78,6 +79,7 @@ public abstract class AbstractStorageBoxScreen<M extends AbstractContainerMenu &
     private int scrollYOffset;
     private boolean isDragging;
     private SortOrder currentSortOrder;
+    private final TruncatedTitle titleRenderer = new TruncatedTitle();
 
     protected AbstractStorageBoxScreen(M menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -204,6 +206,7 @@ public abstract class AbstractStorageBoxScreen<M extends AbstractContainerMenu &
         this.renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, delta);
         this.renderTooltip(graphics, mouseX, mouseY);
+        titleRenderer.renderTooltipIfHovered(graphics, font, leftPos, topPos, mouseX, mouseY);
     }
 
     @Override
@@ -222,7 +225,7 @@ public abstract class AbstractStorageBoxScreen<M extends AbstractContainerMenu &
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(font, title, 30, 6, 0x404040, false);
+        titleRenderer.draw(graphics, font, title, 30, 6, (imageWidth - 42) - 34, 0x404040);
         graphics.drawString(font, playerInventoryTitle, INVENTORY_MIN_X, inventorySlotsMinY - INVENTORY_LABEL_OFFSET, 0x404040, false);
     }
 

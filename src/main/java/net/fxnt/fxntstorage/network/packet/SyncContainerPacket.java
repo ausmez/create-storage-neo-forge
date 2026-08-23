@@ -48,8 +48,16 @@ public record SyncContainerPacket(int containerId, int stateId, NonNullList<Item
 
                 if (player.containerMenu instanceof BackpackMenu menu && menu.containerId == packet.containerId()) {
                     ItemStackHandler itemHandler = menu.container.getItemHandler();
-                    for (int i = 0; i < packet.items().size(); i++) {
-                        itemHandler.setStackInSlot(i, packet.items().get(i));
+                    int backpackSlots = itemHandler.getSlots();
+                    int slotCount = Math.min(packet.items().size(), menu.slots.size());
+
+                    for (int i = 0; i < slotCount; i++) {
+                        ItemStack stack = packet.items().get(i);
+                        if (i < backpackSlots) {
+                            itemHandler.setStackInSlot(i, stack);
+                        } else {
+                            menu.getSlot(i).set(stack);
+                        }
                     }
 
                     menu.setCarried(packet.carriedItem());

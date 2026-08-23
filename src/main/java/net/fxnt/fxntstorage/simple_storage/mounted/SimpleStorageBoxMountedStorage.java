@@ -20,7 +20,9 @@ import net.fxnt.fxntstorage.network.packet.SyncMountedStoragePacket;
 import net.fxnt.fxntstorage.registry.ContraptionStorageFilters;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
+import net.fxnt.fxntstorage.util.ContraptionInteractionContext;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -44,6 +46,8 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -60,6 +64,8 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     private ItemStack filterItem = ItemStack.EMPTY;
     private @Nullable FilterItemStack lastRegisteredFilter = null;
     private @Nullable Contraption currentContraption = null;
+    // Track player last front-display click to detect double-clicks
+    private final Map<Player, Long> lastClickTimes = new WeakHashMap<>();
 
     protected SimpleStorageBoxMountedStorage(MountedItemStorageType<?> type, ItemStackHandler handler) {
         super(type, handler);
@@ -74,8 +80,25 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         if (player.isSpectator()) return false;
 
         ItemStack itemInHand = player.getMainHandItem();
+        Direction side = ContraptionInteractionContext.INTERACTION_DIRECTION.get();
+        if (side == null) return false;
+        if (!side.equals(info.state().getValue(SimpleStorageBox.FACING))) return false;
 
-        if (itemInHand.isEmpty()) {
+        long now = player.level().getGameTime();
+        Long lastClick = lastClickTimes.get(player);
+        boolean isDoubleClick = lastClick != null && now - lastClick < 10;
+        if (isDoubleClick) {
+            lastClickTimes.remove(player);
+            if (itemInHand.isEmpty() || canInsertItem(itemInHand)) {
+                insertAllMatching(player);
+                markDirty();
+                return true;
+            }
+            return false;
+        }
+        lastClickTimes.put(player, now);
+
+        if (itemInHand.isEmpty() && player.isShiftKeyDown()) {
             return openStorageMenu(player, contraption, info);
         }
 
@@ -96,6 +119,14 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     private boolean canInsertItem(ItemStack itemInHand) {
         return !itemInHand.is(AllTags.AllItemTags.WRENCH.tag) && !itemInHand.is(ModTags.Items.STORAGE_BOX_UPGRADE)
                 && (filterItem.isEmpty() || itemInHand.getItem().equals(filterItem.getItem()));
+    }
+
+    private void insertAllMatching(ServerPlayer player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack playerStack = player.getInventory().getItem(i);
+            if (playerStack.isEmpty() || !canInsertItem(playerStack)) continue;
+            player.getInventory().setItem(i, insertItem(0, playerStack, false));
+        }
     }
 
     private void handleUpgradeInteraction(ServerPlayer player, ItemStack itemInHand) {
@@ -173,9 +204,15 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             return this.isMenuValid(player, contraption, currentPos);
         };
         CompoundTag nbt = info.nbt();
-        Component customName = (nbt != null && nbt.contains("CustomName", Tag.TAG_STRING))
-                ? Component.nullToEmpty(nbt.getString("CustomName"))
-                : null;
+        Component customName = null;
+        if (nbt != null && nbt.contains("CustomName", Tag.TAG_STRING)) {
+            String customNameString = nbt.getString("CustomName");
+            try {
+                customName = Component.Serializer.fromJson(customNameString);
+            } catch (Exception e) {
+                customName = Component.literal(customNameString);
+            }
+        }
         Component blockName = customName != null ? customName : info.state().getBlock().getName();
         Component menuName = CreateLang.translateDirect("contraptions.moving_container", blockName);
         Consumer<Player> onClose = p -> {
@@ -338,8 +375,14 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         context.blockEntityData.putBoolean("VoidUpgrade", voidUpgrade);
         context.blockEntityData.putInt("MaxItemCapacity", maxCapacity);
         context.blockEntityData.putFloat("PercentageUsed", getPercent());
-        if (!context.state.getValue(SimpleStorageBox.STORAGE_USED).equals(fillLevel)) {
-            BlockState updatedState = context.state.setValue(SimpleStorageBox.STORAGE_USED, fillLevel);
+
+        boolean stateChanged = !context.state.getValue(SimpleStorageBox.STORAGE_USED).equals(fillLevel)
+                || context.state.getValue(SimpleStorageBox.VOID_UPGRADE) != voidUpgrade;
+
+        if (stateChanged) {
+            BlockState updatedState = context.state
+                    .setValue(SimpleStorageBox.STORAGE_USED, fillLevel)
+                    .setValue(SimpleStorageBox.VOID_UPGRADE, voidUpgrade);
             StructureTemplate.StructureBlockInfo updatedInfo = new StructureTemplate.StructureBlockInfo(context.localPos, updatedState, context.blockEntityData);
             context.contraption.getBlocks().put(context.localPos, updatedInfo);
         }

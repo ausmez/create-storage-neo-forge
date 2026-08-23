@@ -26,8 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static net.fxnt.fxntstorage.container.StorageBox.STORAGE_USED;
-import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.CAPACITY_UPGRADE_SLOT_START;
-import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.SLOT_COUNT;
+import static net.fxnt.fxntstorage.container.StorageBox.VOID_UPGRADE;
+import static net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity.*;
 
 public class SimpleStorageBoxScenes {
 
@@ -237,13 +237,15 @@ public class SimpleStorageBoxScenes {
         scene.overlay().showControls(util.vector().blockSurface(leftBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(vUpgrade);
         scene.overlay().showText(65).text("Void Upgrade will void (delete) any item added beyond the max capacity").attachKeyFrame().placeNearTarget().pointAt(util.vector().blockSurface(leftBox, Direction.WEST));
         scene.idle(40);
-        scene.world().modifyBlock(leftBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.get().defaultBlockState().setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL), false);
         scene.world().modifyBlockEntity(leftBox, SimpleStorageBoxEntity.class, (t) -> {
-            t.getItemHandler().setStackInSlot(3, vUpgrade);
+            t.getItemHandler().setStackInSlot(VOID_UPGRADE_SLOT, vUpgrade);
             t.voidUpgrade = true;
             t.setFilter(iron);
             t.getItemHandler().setStackInSlot(0, iron.copyWithCount(2048));
         });
+        scene.world().modifyBlock(leftBox, (s) -> ModBlocks.SIMPLE_STORAGE_BOX_OAK.getDefaultState()
+                .setValue(STORAGE_USED, EnumProperties.StorageUsed.FULL)
+                .setValue(VOID_UPGRADE, true), false);
         scene.idle(50);
 
         scene.overlay().showControls(util.vector().blockSurface(rightBox, Direction.NORTH), Pointing.RIGHT, 30).rightClick().withItem(cUpgrade);

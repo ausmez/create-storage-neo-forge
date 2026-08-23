@@ -11,15 +11,14 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import thetadev.constructionwand.api.IContainerHandler;
 import thetadev.constructionwand.basics.WandUtil;
 
 import java.util.Optional;
 
-public class HandlerStorageBox implements IContainerHandler {
+public class HandlerStorageBox implements IWandContainer {
 
     @Override
-    public boolean matches(Player player, ItemStack itemStack, ItemStack inventoryStack) {
+    public boolean matches(Player player, ItemStack inventoryStack) {
         return inventoryStack != null && inventoryStack.getCount() == 1
                 && (Block.byItem(inventoryStack.getItem()) instanceof StorageBox
                 || Block.byItem(inventoryStack.getItem()) instanceof SimpleStorageBox);
@@ -49,7 +48,7 @@ public class HandlerStorageBox implements IContainerHandler {
     public int useItems(Player player, ItemStack itemStack, ItemStack inventoryStack, int count) {
         Optional<IItemHandler> itemHandlerOptional = inventoryStack.getCapability(ForgeCapabilities.ITEM_HANDLER).resolve();
         if (itemHandlerOptional.isEmpty()) {
-            return 0;
+            return count;
         } else {
             IItemHandler itemHandler = itemHandlerOptional.get();
 

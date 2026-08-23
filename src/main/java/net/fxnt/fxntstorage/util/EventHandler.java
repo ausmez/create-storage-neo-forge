@@ -50,8 +50,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.network.NetworkHooks;
-import top.theillusivec4.curios.api.event.CurioChangeEvent;
-
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -410,30 +408,11 @@ public class EventHandler {
         }
     }
 
-    @SubscribeEvent
-    public static void onCurioChange(CurioChangeEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!event.getIdentifier().equals("back")) return;
-
-        ItemStack oldStack = event.getFrom();
-        ItemStack newStack = event.getTo();
-
-        // Backpack removed from a back slot
-        if (isBackpack(oldStack) && !isBackpack(newStack)) {
-            stopJukeboxIfPlaying(player);
-            UpgradeEventDispatcher.dispatchBackpackUnequipped(player, oldStack);
-        }
-
-        if (!isBackpack(oldStack) && isBackpack(newStack)) {
-            UpgradeEventDispatcher.dispatchBackpackEquipped(player, newStack);
-        }
-    }
-
     private static boolean isBackpack(ItemStack stack) {
         return stack.is(ModTags.Items.BACKPACK_ITEM);
     }
 
-    private static void stopJukeboxIfPlaying(ServerPlayer player) {
+    static void stopJukeboxIfPlaying(ServerPlayer player) {
         if (JukeboxHandler.isPlayerPlaying(player)) {
             JukeboxHandler.stopPlayer(player);
         }

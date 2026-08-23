@@ -40,17 +40,6 @@ public class UpgradeSlot extends SlotItemHandler {
     public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
         super.onTake(player, stack);
 
-        BackpackMenu.BackpackType type = (backpack instanceof BackpackContainer)
-                ? BackpackMenu.BackpackType.WORN
-                : BackpackMenu.BackpackType.BLOCK;
-
-        if (player.containerMenu instanceof BackpackMenu menu) {
-            UpgradeContext context = UpgradeContext.forMenu(menu, player, menu.container.getItemHandler(), type, null);
-            for (IUpgrade upgrade : UpgradeRegistry.getAll()) {
-                upgrade.onRemoved(context);
-            }
-        }
-
         if (onUpgradeTaken != null) {
             onUpgradeTaken.accept(stack);
         }
@@ -83,13 +72,16 @@ public class UpgradeSlot extends SlotItemHandler {
                 ? BackpackMenu.BackpackType.WORN
                 : BackpackMenu.BackpackType.BLOCK;
 
+        super.setByPlayer(stack);
+
         UpgradeContext context = UpgradeContext.forUpgradeSlot(player, backpack, type);
+
+        // Notify after the swap, so upgrades see the slot contents they are being told about
         if (!oldStack.isEmpty()) {
             IUpgrade oldUpgrade = UpgradeRegistry.get(UpgradeType.fromItem(oldStack.getItem()));
-            oldUpgrade.onRemoved(context);
+            if (oldUpgrade != null)
+                oldUpgrade.onRemoved(context);
         }
-
-        super.setByPlayer(stack);
 
         IUpgrade upgrade = UpgradeRegistry.get(UpgradeType.fromItem(stack.getItem()));
         if (upgrade != null)

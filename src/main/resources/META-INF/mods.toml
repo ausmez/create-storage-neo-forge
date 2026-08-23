@@ -44,7 +44,7 @@ side = "BOTH"
 [[dependencies.${ mod_id }]]
 modId = "vanillabackport"
 mandatory = false
-versionRange = "[1,2)"
+versionRange = "[1.1.5,)"
 ordering = "AFTER"
 side = "BOTH"
 
@@ -66,5 +66,5 @@ side = "BOTH"
 modId = "constructionwand"
 mandatory = false
 versionRange = "[1,)"
-ordering = "NONE"
+ordering = "AFTER"
 side = "BOTH"

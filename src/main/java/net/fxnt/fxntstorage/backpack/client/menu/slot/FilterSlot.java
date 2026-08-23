@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.backpack.client.menu.slot;
 
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,6 +21,11 @@ public class FilterSlot extends SlotItemHandler {
     @Override
     public int getMaxStackSize() {
         return 1;
+    }
+
+    @Override
+    public boolean mayPlace(@NotNull ItemStack stack) {
+        return false; // Prevent vanilla QUICK_CRAFT
     }
 
     @Override

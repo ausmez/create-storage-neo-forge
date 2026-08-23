@@ -72,6 +72,8 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     private LazyOptional<IItemHandlerModifiable> lazyItemHandler = LazyOptional.empty();
     private final BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
+    private CompoundTag savedExtraTag = new CompoundTag();
+
     private Set<UpgradeType> cachedInstalledUpgradeTypes = new HashSet<>();
     private final UpgradeDataManager upgradeData = new UpgradeDataManager();
 
@@ -239,11 +241,12 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         if (this.customName != null) return this.customName;
 
         Level blockLevel = this.level;
-        if (blockLevel != null) {
-            return this.block.getCloneItemStack(this.level, this.pos, this.getBlockState()).getHoverName();
-        } else {
-            return new ItemStack(ModBlocks.BACKPACK.get()).getHoverName();
-        }
+        ItemStack displayStack = (blockLevel != null)
+                ? this.block.getCloneItemStack(blockLevel, this.pos, this.getBlockState())
+                : new ItemStack(ModBlocks.BACKPACK.get());
+
+        applyExtraTag(displayStack);
+        return displayStack.getHoverName();
     }
 
     public void setData(int slotCount, int maxStackSize) {
@@ -347,6 +350,8 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         UpgradeDataManager loadedData = UpgradeDataManager.loadFromNBT(tag);
         upgradeData.copyFrom(loadedData);
         populateDefaultsForInstalledUpgrades();
+
+        savedExtraTag = tag.contains("ExtraTag", Tag.TAG_COMPOUND) ? tag.getCompound("ExtraTag").copy() : new CompoundTag();
     }
 
     @Override
@@ -368,9 +373,53 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         // removing an upgrade cleanly strips its settings from the saved data
         Set<UpgradeType> installedForSave = new HashSet<>(UpgradeHelper.getInstalledUpgrades(itemHandler));
         upgradeData.saveToNBT(tag, installedForSave);
+
+        if (!savedExtraTag.isEmpty())
+            tag.put("ExtraTag", savedExtraTag.copy());
+    }
+
+    public void saveExtraTag(ItemStack stack) {
+        CompoundTag stackTag = stack.getTag();
+        if (stackTag == null || stackTag.isEmpty()) {
+            this.savedExtraTag = new CompoundTag();
+            return;
+        }
+
+        CompoundTag extraTag = stackTag.copy();
+        extraTag.remove("BlockEntityTag");
+        extraTag.remove(UpgradeDataManager.NBT_EXPANDED_PANELS);
+        extraTag.remove(UpgradeDataManager.NBT_UPGRADE_SETTINGS);
+
+        if (extraTag.contains("display", Tag.TAG_COMPOUND)) {
+            CompoundTag displayTag = extraTag.getCompound("display");
+            displayTag.remove("Name");
+            if (displayTag.isEmpty())
+                extraTag.remove("display");
+        }
+
+        this.savedExtraTag = extraTag;
+    }
+
+    public void applyExtraTag(ItemStack stack) {
+        if (savedExtraTag.isEmpty()) return;
+        mergeMissing(stack.getOrCreateTag(), savedExtraTag);
+    }
+
+    private static void mergeMissing(CompoundTag target, CompoundTag source) {
+        for (String key : source.getAllKeys()) {
+            Tag value = source.get(key);
+            if (value == null) continue;
+            Tag existing = target.get(key);
+            if (existing == null) {
+                target.put(key, value.copy());
+            } else if (existing instanceof CompoundTag existingCompound && value instanceof CompoundTag sourceCompound) {
+                mergeMissing(existingCompound, sourceCompound);
+            }
+        }
     }
 
     public ItemStack saveToItemStack(ItemStack stack) {
+        applyExtraTag(stack);
         CompoundTag tag = stack.getOrCreateTagElement("BlockEntityTag");
         saveAdditional(tag);
         // Save custom display name

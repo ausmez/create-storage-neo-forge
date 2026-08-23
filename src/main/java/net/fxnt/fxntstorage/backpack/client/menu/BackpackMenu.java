@@ -170,6 +170,14 @@ public class BackpackMenu extends AbstractContainerMenu {
         if (container instanceof BackpackContainer backpackContainer) {
             backpackContainer.refreshFromStack();
         }
+
+        if (!player.level().isClientSide) {
+            UpgradeContext context = UpgradeContext.forMenuWithSlot(this, player, container, type, blockPos, -999, -1);
+            for (IUpgrade upgrade : UpgradeRegistry.getAll()) {
+                upgrade.validateContents(context);
+            }
+        }
+
         super.broadcastChanges();
     }
 
@@ -495,7 +503,7 @@ public class BackpackMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
 
-                slot.onTake(player, itemStack2);
+                slot.onTake(player, itemStack.copyWithCount(itemStack.getCount() - itemStack2.getCount()));
             }
             return itemStack;
         }

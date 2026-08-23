@@ -13,7 +13,9 @@
 
   "container.fxntstorage.simple_storage_box.stored": "Stored",
   "container.fxntstorage.simple_storage_box.capacity": "Capacity",
-  "container.fxntstorage.simple_storage_box.void": "Void Mode",
+  "container.fxntstorage.simple_storage_box.max_capacity": "Max Capacity",
+  "container.fxntstorage.percent_used": "% Used",
+  "container.fxntstorage.void_mode": "Void Mode",
   "container.fxntstorage.enabled": "Enabled",
   "container.fxntstorage.disabled": "Disabled",
 
@@ -76,8 +78,8 @@
 
   "item.fxntstorage.backpack_feeder_upgrade.message": "Feeder upgrade just fed you %s!",
 
-  "item.fxntstorage.storage_box_void_upgrade": "Simple Storage Box Void Upgrade",
-  "item.fxntstorage.storage_box_capacity_upgrade": "Simple Storage Box Capacity Upgrade",
+  "item.fxntstorage.storage_box_void_upgrade": "Void Upgrade",
+  "item.fxntstorage.storage_box_capacity_upgrade": "Capacity Upgrade",
 
   "block.fxntstorage.oak_storage_trim": "Oak Storage Trim",
   "block.fxntstorage.spruce_storage_trim": "Spruce Storage Trim",
@@ -454,5 +456,7 @@
   "tooltip.fxntstorage.backpack_jukebox_upgrade.panel.stop": "Stop",
   "tooltip.fxntstorage.backpack_jukebox_upgrade.panel.play": "Play",
   "tooltip.fxntstorage.backpack_jukebox_upgrade.panel.muted": "Muted",
-  "tooltip.fxntstorage.backpack_jukebox_upgrade.panel.unmuted": "Unmuted"
+  "tooltip.fxntstorage.backpack_jukebox_upgrade.panel.unmuted": "Unmuted",
+
+  "config.jade.plugin_fxntstorage.oak_simple_storage_box": "Simple Storage Box"
 }

@@ -5,10 +5,10 @@ import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -38,9 +38,16 @@ public record SyncSlotCountPacket(int containerId, int stateId, int slot, ItemSt
                 Player player = client.player;
                 if (player == null) return;
                 if (player.containerMenu instanceof BackpackMenu menu && player.containerMenu.containerId == packet.containerId()) {
-                    Slot slotToUpdate = menu.getSlot(packet.slot());
-                    slotToUpdate.set(packet.stack());
-                    menu.slots.set(packet.slot(), slotToUpdate);
+                    if (packet.slot() < 0 || packet.slot() >= menu.slots.size()) return;
+
+                    ItemStackHandler itemHandler = menu.container.getItemHandler();
+                    if (packet.slot() < itemHandler.getSlots()) {
+                        itemHandler.setStackInSlot(packet.slot(), packet.stack());
+                    } else {
+                        menu.getSlot(packet.slot()).set(packet.stack());
+                    }
+
+                    menu.setStateId(packet.stateId());
                 }
             }
         });

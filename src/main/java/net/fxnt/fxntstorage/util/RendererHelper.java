@@ -25,6 +25,26 @@ public class RendererHelper {
     // Use Create config for max render distance - read at call time so config changes take effect without restart
     public static double getMaxDistance() { return AllConfigs.client().filterItemRenderDistance.get(); }
 
+    // Minimum packed-light value per component so text/items look emissive; 128 = level 8 (out of 15).
+    private static final int EMISSIVE_BASE = 224;
+    private static final int EMISSIVE_BASE_ITEM = 192;
+
+    public static int emissiveLight(int envPackedLight) {
+        return emissiveLight(envPackedLight, EMISSIVE_BASE);
+    }
+
+    public static int emissiveLight(int envPackedLight, int base) {
+        int sky = (envPackedLight >> 16) & 0xFFFF;
+        int block = envPackedLight & 0xFFFF;
+        // Use the strongest source for both components so shader packs see neutral white
+        int value = Math.max(Math.max(sky, block), base);
+        return (value << 16) | value;
+    }
+
+    public static int emissiveItemLight(int envPackedLight) {
+        return emissiveLight(envPackedLight, EMISSIVE_BASE_ITEM);
+    }
+
     public static void renderLine(String text, float yOffset, PoseStack poseStack, MultiBufferSource buffer, int color, int packedLight) {
         Font font = Minecraft.getInstance().font;
 
@@ -38,7 +58,7 @@ public class RendererHelper {
         poseStack.popPose();
     }
 
-    public static void renderItem(ItemRenderer itemRenderer, ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, int packedLight, boolean voidUpgrade) {
+    public static void renderItem(ItemRenderer itemRenderer, ItemStack stack, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         Level level = Minecraft.getInstance().level;
         poseStack.pushPose();
         poseStack.translate(0f, 0.175f, 0f);
@@ -56,21 +76,6 @@ public class RendererHelper {
 
         itemRenderer.renderStatic(stack, ItemDisplayContext.FIXED, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
         poseStack.popPose();
-
-        if (voidUpgrade) {
-            poseStack.pushPose();
-            poseStack.translate(0f, 0.5f, 0f);
-            poseStack.mulPose(Axis.YP.rotationDegrees(180));
-            poseStack.translate(-0.3f, -0.2f, 0f);
-
-            scale = 0.25f + (1 / 64f);
-            poseStack.scale(scale, scale, scale);
-
-            ItemStack icon = new ItemStack(ModItems.STORAGE_BOX_VOID_UPGRADE.get());
-            itemRenderer.renderStatic(icon, ItemDisplayContext.FIXED, packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, level, 0);
-
-            poseStack.popPose();
-        }
     }
 
     public static int getColorForDistance(double distance) {

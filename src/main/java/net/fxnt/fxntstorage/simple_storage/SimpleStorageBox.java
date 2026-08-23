@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
@@ -43,6 +44,7 @@ import java.util.WeakHashMap;
 public class SimpleStorageBox extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final EnumProperty<EnumProperties.StorageUsed> STORAGE_USED = EnumProperty.create("storage_used", EnumProperties.StorageUsed.class);
+    public static final BooleanProperty VOID_UPGRADE = BooleanProperty.create("void_upgrade");
 
     private static class ClickData {
         long lastClickTime;
@@ -57,6 +59,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
         this.registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(STORAGE_USED, EnumProperties.StorageUsed.EMPTY)
+                .setValue(VOID_UPGRADE, false)
         );
     }
 
@@ -225,7 +228,7 @@ public class SimpleStorageBox extends BaseEntityBlock {
     @Override
     protected void createBlockStateDefinition(StateDefinition.@NotNull Builder<Block, BlockState> pBuilder) {
         super.createBlockStateDefinition(pBuilder);
-        pBuilder.add(FACING, STORAGE_USED);
+        pBuilder.add(FACING, STORAGE_USED, VOID_UPGRADE);
     }
 
     @Override

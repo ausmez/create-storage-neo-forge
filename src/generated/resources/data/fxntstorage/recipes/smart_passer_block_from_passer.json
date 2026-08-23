@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "storage_box",
+  "ingredients": [
+    {
+      "item": "fxntstorage:passer_block"
+    },
+    {
+      "item": "create:brass_sheet"
+    },
+    {
+      "item": "create:electron_tube"
+    }
+  ],
+  "result": {
+    "item": "fxntstorage:smart_passer_block"
+  }
+}
