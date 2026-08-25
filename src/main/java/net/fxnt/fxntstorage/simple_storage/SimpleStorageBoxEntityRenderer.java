@@ -52,7 +52,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         String line1 = Util.formatNumber(amount);
         String line2 = hasVoidUpgrade
                 ? Component.translatable("container.fxntstorage.void_mode").getString()
-                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
+                : Component.translatable("container.fxntstorage.percent_used", percentUsed).getString();
 
         Direction side = state.getValue(HorizontalDirectionalBlock.FACING);
 
@@ -148,7 +148,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         String line1 = Util.formatNumber(amount);
         String line2 = blockEntity.hasVoidUpgrade()
                 ? Component.translatable("container.fxntstorage.void_mode").getString()
-                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
+                : Component.translatable("container.fxntstorage.percent_used", percentUsed).getString();
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 

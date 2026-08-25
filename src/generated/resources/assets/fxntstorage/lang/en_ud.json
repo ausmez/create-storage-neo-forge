@@ -49,7 +49,7 @@
   "block_type.fxntstorage.simple_storage_box": "xoᗺ ǝbɐɹoʇS ǝןdɯıS %s",
   "block_type.fxntstorage.storage_trim": "ɯıɹ⟘ ǝbɐɹoʇS %s",
   "config.jade.plugin_fxntstorage.oak_simple_storage_box": "xoᗺ ǝbɐɹoʇS ǝןdɯıS",
-  "container.fxntstorage.percent_used": "pǝs∩ %",
+  "container.fxntstorage.percent_used": "pǝs∩ %s%%",
   "container.fxntstorage.reserve_storage_box.reserved_items": "sɯǝʇI pǝʌɹǝsǝᴚ",
   "container.fxntstorage.simple_storage_box.capacity": "ʎʇıɔɐdɐƆ",
   "container.fxntstorage.simple_storage_box.compacting": "buıʇɔɐdɯoƆ",
