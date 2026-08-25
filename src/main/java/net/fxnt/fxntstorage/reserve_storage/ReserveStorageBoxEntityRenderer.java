@@ -95,7 +95,7 @@ public class ReserveStorageBoxEntityRenderer implements BlockEntityRenderer<Rese
         int color = getColorForDistance(distance);
         String line2 = blockEntity.voidUpgrade
                 ? Component.translatable("container.fxntstorage.void_mode").getString()
-                : Math.round(blockEntity.getPercentageUsed()) + Component.translatable("container.fxntstorage.percent_used").getString();
+                : Component.translatable("container.fxntstorage.percent_used", Math.round(blockEntity.getPercentageUsed())).getString();
 
         renderLine(buildSlotIndicator(slotStatus), 12f, poseStack, bufferSource, textLight, SLOT_INDICATOR_SCALE);
         renderLine(Util.formatNumber(blockEntity.getCurrentValue()), 7f, poseStack, bufferSource, color, textLight);
@@ -146,7 +146,7 @@ public class ReserveStorageBoxEntityRenderer implements BlockEntityRenderer<Rese
         renderLine(Util.formatNumber(tag.getInt("StoredAmount")), -1f, poseStack, buffer, color, textLight);
         renderLine(tag.getBoolean("VoidUpgrade")
                 ? Component.translatable("container.fxntstorage.void_mode").getString()
-                : Math.round(tag.getFloat("PercentageUsed")) + Component.translatable("container.fxntstorage.percent_used").getString(), -4f, poseStack, buffer, color, textLight);
+                : Component.translatable("container.fxntstorage.percent_used", Math.round(tag.getFloat("PercentageUsed"))).getString(), -4f, poseStack, buffer, color, textLight);
 
         poseStack.popPose();
     }

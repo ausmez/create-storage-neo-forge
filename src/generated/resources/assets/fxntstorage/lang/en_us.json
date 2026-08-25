@@ -49,7 +49,7 @@
   "block_type.fxntstorage.simple_storage_box": "%s Simple Storage Box",
   "block_type.fxntstorage.storage_trim": "%s Storage Trim",
   "config.jade.plugin_fxntstorage.oak_simple_storage_box": "Simple Storage Box",
-  "container.fxntstorage.percent_used": "% Used",
+  "container.fxntstorage.percent_used": "%s%% Used",
   "container.fxntstorage.reserve_storage_box.reserved_items": "Reserved Items",
   "container.fxntstorage.simple_storage_box.capacity": "Capacity",
   "container.fxntstorage.simple_storage_box.compacting": "Compacting",

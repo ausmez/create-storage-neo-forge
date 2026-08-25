@@ -13,7 +13,7 @@
   "container.fxntstorage.simple_storage_box.none": "None",
   "container.fxntstorage.simple_storage_box.max_capacity": "Max Capacity",
   "container.fxntstorage.void_mode": "Void Mode",
-  "container.fxntstorage.percent_used": "% Used",
+  "container.fxntstorage.percent_used": "%s%% Used",
 
   "item.fxntstorage.backpack": "Industrial Iron Backpack",
   "item.fxntstorage.andesite_backpack": "Andesite Backpack",
