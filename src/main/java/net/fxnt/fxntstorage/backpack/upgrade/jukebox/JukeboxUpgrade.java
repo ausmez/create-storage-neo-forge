@@ -1,6 +1,8 @@
 package net.fxnt.fxntstorage.backpack.upgrade.jukebox;
 
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIcon;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIconSprites;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.client.menu.slot.JukeboxDiscSlot;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
@@ -13,7 +15,6 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -33,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 
 public class JukeboxUpgrade extends AbstractUpgrade {
 
@@ -90,24 +90,25 @@ public class JukeboxUpgrade extends AbstractUpgrade {
             stopPlayback(context);
         } else {
             stopPlaybackServer(context);
-
-            if (context.menu() instanceof BackpackMenu menu) {
-                int discSlotIndex = menu.layout.jukeboxDiscs().getStartIndex();
-                Slot discSlot = menu.slots.get(discSlotIndex);
-                ItemStack disc = discSlot.getItem();
-
-                if (!disc.isEmpty() && disc.has(DataComponents.JUKEBOX_PLAYABLE)) {
-                    boolean moved = menu.moveStackToPlayerInventory(disc);
-
-                    if (!moved) {
-                        context.player().drop(disc.copy(), false);
-                    }
-
-                    discSlot.set(ItemStack.EMPTY);
-                    discSlot.setChanged();
-                }
-            }
         }
+    }
+
+    @Override
+    public void onUninstalled(UpgradeContext context) {
+        if (context.isClientSide()) return;
+        if (!(context.menu() instanceof BackpackMenu menu)) return;
+
+        int discSlotIndex = menu.layout.jukeboxDiscs().getStartIndex();
+        Slot discSlot = menu.slots.get(discSlotIndex);
+        ItemStack disc = discSlot.getItem();
+        if (disc.isEmpty() || !disc.has(DataComponents.JUKEBOX_PLAYABLE)) return;
+
+        if (!menu.moveStackToPlayerInventory(disc)) {
+            context.player().drop(disc.copy(), false);
+        }
+
+        discSlot.set(ItemStack.EMPTY);
+        discSlot.setChanged();
     }
 
     @Override
@@ -243,14 +244,10 @@ public class JukeboxUpgrade extends AbstractUpgrade {
         public record JukeboxState(boolean playing, boolean muted) {
         }
 
-        private static final WidgetSprites JUKEBOX_PLAY = new WidgetSprites(
-                modLoc("play"), modLoc("play_disabled"), modLoc("play_highlight"), modLoc("play_disabled")
-        );
-        private static final WidgetSprites JUKEBOX_STOP = new WidgetSprites(modLoc("stop"), modLoc("stop_highlight"));
-        private static final WidgetSprites JUKEBOX_UNMUTED = new WidgetSprites(
-                modLoc("unmuted"), modLoc("unmuted_disabled"), modLoc("unmuted_highlight"), modLoc("unmuted_disabled")
-        );
-        private static final WidgetSprites JUKEBOX_MUTED = new WidgetSprites(modLoc("muted"), modLoc("muted_highlight"));
+        private static final GuiIconSprites JUKEBOX_PLAY = new GuiIconSprites(GuiIcon.PLAY, GuiIcon.PLAY_DISABLED);
+        private static final GuiIconSprites JUKEBOX_STOP = new GuiIconSprites(GuiIcon.STOP);
+        private static final GuiIconSprites JUKEBOX_UNMUTED = new GuiIconSprites(GuiIcon.UNMUTED, GuiIcon.UNMUTED_DISABLED);
+        private static final GuiIconSprites JUKEBOX_MUTED = new GuiIconSprites(GuiIcon.MUTED);
 
         private final UpgradeContext context;
         private final List<AbstractWidget> widgets = new ArrayList<>();

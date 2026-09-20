@@ -1,101 +1,190 @@
 package net.fxnt.fxntstorage.simple_storage;
 
-import net.minecraft.core.HolderLookup;
+import net.fxnt.fxntstorage.FXNTStorage;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CompactingRecipeHelper {
-    private static final Map<Item, Map.Entry<Item, Integer>> N_TO_ONE = new HashMap<>();
-    private static final Map<Item, Map.Entry<Item, Integer>> ONE_TO_N = new HashMap<>();
 
-    public static void rebuild(RecipeManager recipeManager, HolderLookup.Provider registries) {
-        N_TO_ONE.clear();
-        ONE_TO_N.clear();
+    private static final int MAX_TIERS = 3;
 
-        for (RecipeHolder<?> holder : recipeManager.getRecipes()) {
-            Recipe<?> recipe = holder.value();
-            if (!(recipe instanceof CraftingRecipe craftingRecipe)) continue;
+    private static final Map<Item, Optional<CompactingChain>> CHAIN_CACHE = new ConcurrentHashMap<>();
+    private static volatile boolean built = false;
 
-            ItemStack output = craftingRecipe.getResultItem(registries);
-            if (output.isEmpty() || output.getCount() != 1) continue;
+    private record Step(Item item, int ratio) {}
 
-            List<Ingredient> ingredients = craftingRecipe.getIngredients();
+    public static void rebuild() {
+        CHAIN_CACHE.clear();
+        built = true;
+    }
+
+    public static boolean isEmpty() {
+        return !built;
+    }
+
+    @Nullable
+    public static CompactingChain buildChain(Level level, Item filterItem) {
+        Optional<CompactingChain> cached = CHAIN_CACHE.get(filterItem);
+        if (cached != null) return cached.orElse(null);
+
+        CompactingChain chain = resolveChain(level, filterItem);
+        CHAIN_CACHE.putIfAbsent(filterItem, Optional.ofNullable(chain));
+        FXNTStorage.LOGGER.debug("Compacting recipe chain has been rebuilt!");
+        return chain;
+    }
+
+    @Nullable
+    private static CompactingChain resolveChain(Level level, Item filterItem) {
+        List<Item> items = new ArrayList<>();
+        List<Integer> ratios = new ArrayList<>();
+        Set<Item> seen = new HashSet<>();
+        items.add(filterItem);
+        seen.add(filterItem);
+
+        Item cursor = filterItem;
+        while (items.size() < MAX_TIERS) {
+            Step up = findUpperTier(level, cursor);
+            if (up == null || !seen.add(up.item())) break;
+            items.addLast(up.item());
+            ratios.addLast(up.ratio());
+            cursor = up.item();
+        }
+
+        cursor = filterItem;
+        while (items.size() < MAX_TIERS) {
+            Step down = findLowerTier(level, cursor);
+            if (down == null || !seen.add(down.item())) break;
+            items.addFirst(down.item());
+            ratios.addFirst(down.ratio());
+            cursor = down.item();
+        }
+
+        if (items.size() < 2) return null;
+
+        Item t2 = items.size() > 2 ? items.get(2) : null;
+        int t1ToT2 = items.size() > 2 ? ratios.get(1) : 1;
+        return new CompactingChain(items.get(0), items.get(1), ratios.get(0), t2, t1ToT2);
+    }
+
+    // What a full grid of this item crafts into, 3x3 preferred over 2x2.
+    @Nullable
+    private static Step findUpperTier(Level level, Item item) {
+        Step step = matchSquare(level, item, 3);
+        return step != null ? step : matchSquare(level, item, 2);
+    }
+
+    @Nullable
+    private static Step matchSquare(Level level, Item item, int size) {
+        int ratio = size * size;
+        CraftingInput input = filledGrid(item, size, size);
+
+        List<Item> candidates = new ArrayList<>();
+        for (RecipeHolder<CraftingRecipe> holder : level.getRecipeManager().getRecipesFor(RecipeType.CRAFTING, input, level)) {
+            ItemStack result = holder.value().assemble(input, level.registryAccess());
+            if (result.isEmpty() || result.getCount() != 1 || result.getItem() == item) continue;
+
+            // Every slot holds our item, so any ingredient accepts it; the first one stands for the rest.
+            List<Ingredient> ingredients = holder.value().getIngredients();
             if (ingredients.isEmpty()) continue;
+            if (!trustworthy(level, ingredients.getFirst(), result.getItem(), ratio)) continue;
 
-            ItemStack first = singleItem(ingredients.getFirst());
-            if (first == null || first.isEmpty()) continue;
+            if (!candidates.contains(result.getItem())) candidates.add(result.getItem());
+        }
 
-            // All ingredients must be the same single item
-            boolean allSame = true;
+        return pick(candidates, item, ratio);
+    }
+
+    // What this item is a packed form of, found by scanning for recipes that produce it
+    @Nullable
+    private static Step findLowerTier(Level level, Item item) {
+        List<Item> candidates = new ArrayList<>();
+        int bestRatio = 0;
+
+        for (RecipeHolder<CraftingRecipe> holder : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
+            CraftingRecipe recipe = holder.value();
+            ItemStack result = recipe.getResultItem(level.registryAccess());
+            if (result.isEmpty() || result.getCount() != 1 || result.getItem() != item) continue;
+
+            List<Ingredient> ingredients = recipe.getIngredients();
+            int ratio = ingredients.size();
+            // Mirrors the 3x3-before-2x2 preference on the way up
+            if ((ratio != 4 && ratio != 9) || ratio < bestRatio) continue;
+
+            List<Item> variants = uniformIngredientItems(ingredients);
+            variants.remove(item);
+            if (variants.isEmpty()) continue;
+            if (!trustworthy(level, ingredients.getFirst(), item, ratio)) continue;
+
+            if (ratio > bestRatio) {
+                candidates.clear();
+                bestRatio = ratio;
+            }
+            for (Item variant : variants) {
+                if (!candidates.contains(variant)) candidates.add(variant);
+            }
+        }
+
+        return pick(candidates, item, bestRatio);
+    }
+
+    private static List<Item> uniformIngredientItems(List<Ingredient> ingredients) {
+        List<Item> result = new ArrayList<>();
+        // Ingredient.EMPTY resolves to nothing, so shaped recipes with holes drop out here
+        for (ItemStack reference : ingredients.getFirst().getItems()) {
+            if (reference.isEmpty()) continue;
+
+            boolean acceptedEverywhere = true;
             for (int i = 1; i < ingredients.size(); i++) {
-                ItemStack next = singleItem(ingredients.get(i));
-                if (next == null || next.getItem() != first.getItem()) {
-                    allSame = false;
+                if (!ingredients.get(i).test(reference)) {
+                    acceptedEverywhere = false;
                     break;
                 }
             }
 
-            if (allSame && isCompactingRatio(ingredients.size())) {
-                int ratio = ingredients.size();
-                Item input = first.getItem();
-                Item out = output.getItem();
-                // When two valid recipes exist for the same input (e.g. 4 iron ingots -> trapdoor
-                // and 9 iron ingots -> iron block), prefer the higher ratio - the block recipe
-                // is the intended compacting target
-                Map.Entry<Item, Integer> existing = N_TO_ONE.get(input);
-                if (existing == null || ratio > existing.getValue()) {
-                    if (existing != null) ONE_TO_N.remove(existing.getKey());
-                    N_TO_ONE.put(input, Map.entry(out, ratio));
-                    ONE_TO_N.put(out, Map.entry(input, ratio));
-                }
-            }
+            if (acceptedEverywhere && !result.contains(reference.getItem())) result.add(reference.getItem());
         }
+        return result;
     }
 
-    @Nullable
-    private static ItemStack singleItem(Ingredient ingredient) {
-        ItemStack[] items = ingredient.getItems();
-        return (items.length == 1) ? items[0] : null;
-    }
+    private static boolean trustworthy(Level level, Ingredient ingredient, Item packed, int count) {
+        if (ingredient.getItems().length <= 1) return true;
 
-    @Nullable
-    public static CompactingChain buildChain(Item filterItem) {
-        // Walk down to find T0
-        Item t0 = filterItem;
-        for (int safety = 0; safety < 4; safety++) {
-            Map.Entry<Item, Integer> prev = ONE_TO_N.get(t0);
-            if (prev == null) break;
-            t0 = prev.getKey();
+        CraftingInput input = filledGrid(packed, 1, 1);
+        for (RecipeHolder<CraftingRecipe> holder : level.getRecipeManager().getRecipesFor(RecipeType.CRAFTING, input, level)) {
+            ItemStack result = holder.value().assemble(input, level.registryAccess());
+            if (result.getCount() == count && ingredient.test(result)) return true;
         }
-
-        // T1 is what T0 packs into, with the ratio
-        Map.Entry<Item, Integer> t1Entry = N_TO_ONE.get(t0);
-        if (t1Entry == null) return null;
-        Item t1 = t1Entry.getKey();
-        int t0ToT1 = t1Entry.getValue();
-
-        // T2 is what T1 packs into (may not exist)
-        Map.Entry<Item, Integer> t2Entry = N_TO_ONE.get(t1);
-        Item t2 = t2Entry != null ? t2Entry.getKey() : null;
-        int t1ToT2 = t2Entry != null ? t2Entry.getValue() : 1;
-
-        return new CompactingChain(t0, t1, t0ToT1, t2, t1ToT2);
+        return false;
     }
 
-    // Only treat recipes that fill a complete square grid as compacting (2×2=4, 3×3=9, etc.)
-    private static boolean isCompactingRatio(int n) {
-        if (n < 4) return false;
-        int sqrt = (int) Math.round(Math.sqrt(n));
-        return sqrt * sqrt == n;
+    // Prefer a candidate from the same mod as the item being resolved, then lowest id
+    @Nullable
+    private static Step pick(List<Item> candidates, Item reference, int ratio) {
+        if (candidates.isEmpty() || ratio <= 0) return null;
+
+        String preferred = idOf(reference).getNamespace();
+        Item best = candidates.stream()
+                .min(Comparator.comparingInt((Item candidate) -> idOf(candidate).getNamespace().equals(preferred) ? 0 : 1)
+                        .thenComparing(candidate -> idOf(candidate).toString()))
+                .orElseThrow();
+        return new Step(best, ratio);
     }
 
-    public static boolean isEmpty() {
-        return N_TO_ONE.isEmpty();
+    private static ResourceLocation idOf(Item item) {
+        return BuiltInRegistries.ITEM.getKey(item);
+    }
+
+    private static CraftingInput filledGrid(Item item, int width, int height) {
+        List<ItemStack> slots = new ArrayList<>(width * height);
+        for (int i = 0; i < width * height; i++) slots.add(new ItemStack(item));
+        return CraftingInput.of(width, height, slots);
     }
 }

@@ -19,6 +19,7 @@ public class ModCompats {
     public static final String SABLE = "sable";
     public static final String TOMS_STORAGE = "toms_storage";
     public static final String VANILLA_BACKPORT = "vanillabackport";
+    public static final String THIRST_WAS_RECLAIMED = "thirst";
 
     @SubscribeEvent
     public static void enqueueCompatMessages(final InterModEnqueueEvent event) {

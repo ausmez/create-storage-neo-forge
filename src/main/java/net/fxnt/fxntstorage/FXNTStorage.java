@@ -85,6 +85,7 @@ public class FXNTStorage {
     public static final boolean CURIOS_LOADED = ModList.get().isLoaded(ModCompats.CURIOS);
     public static final boolean EMI_LOADED = ModList.get().isLoaded(ModCompats.EMI);
     public static final boolean REI_LOADED = ModList.get().isLoaded(ModCompats.REI);
+    public static final boolean THIRST_LOADED = ModList.get().isLoaded(ModCompats.THIRST_WAS_RECLAIMED);
 
     public FXNTStorage(IEventBus modEventBus, ModContainer modContainer) {
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -211,7 +212,7 @@ public class FXNTStorage {
         public static void onRecipesUpdated(RecipesUpdatedEvent event) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null) {
-                CompactingRecipeHelper.rebuild(mc.level.getRecipeManager(), mc.level.registryAccess());
+                CompactingRecipeHelper.rebuild();
             }
         }
 

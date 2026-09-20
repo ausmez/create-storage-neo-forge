@@ -11,8 +11,10 @@ import net.fxnt.fxntstorage.backpack.upgrade.magnet.MagnetUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.oremining.OreMiningUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.pickblock.PickBlockUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.refill.RefillUpgrade;
+import net.fxnt.fxntstorage.backpack.upgrade.thirst.ThirstUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.toolswap.ToolSwapUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.torch.TorchDeployerUpgrade;
+import net.fxnt.fxntstorage.backpack.upgrade.voiding.VoidUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopUpgrade;
 
 import java.util.Collection;
@@ -30,6 +32,7 @@ public class UpgradeRegistry {
         }
 
         register(new FeederUpgrade());
+        register(new ThirstUpgrade());
         register(new CraftingUpgrade());
         register(new WorkshopUpgrade());
         register(new JetpackUpgrade());
@@ -43,6 +46,7 @@ public class UpgradeRegistry {
         register(new ItemPickupUpgrade());
         register(new FallDamageUpgrade());
         register(new MechanicalHeartUpgrade());
+        register(new VoidUpgrade());
 
         initialized = true;
     }
@@ -60,6 +64,16 @@ public class UpgradeRegistry {
 
     public static Collection<IUpgrade> getAll() {
         return Collections.unmodifiableCollection(UPGRADES.values());
+    }
+
+    public static int getDefaultIntSetting(UpgradeDataSync.Field field) {
+        for (IUpgrade upgrade : UPGRADES.values()) {
+            Map<UpgradeDataSync.Field, Integer> defaults = upgrade.getDefaultIntSettings();
+            if (defaults.containsKey(field)) {
+                return defaults.get(field);
+            }
+        }
+        return 0;
     }
 
     public static boolean getDefaultSetting(UpgradeDataSync.Field field) {

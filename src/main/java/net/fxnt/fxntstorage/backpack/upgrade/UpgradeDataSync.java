@@ -23,14 +23,28 @@ public class UpgradeDataSync implements ContainerData {
         TOOLSWAP_PREFER_SWORD(9, "toolswap_prefer_sword"),
         TOOLSWAP_PREFER_SILKTOUCH(10, "toolswap_prefer_silktouch"),
         EXPANDED_PANELS(11, "expanded_panels"),
-        WORKSHOP_PROCESSING(12, "workshop_processing");
+        WORKSHOP_PROCESSING(12, "workshop_processing"),
+        THIRST_DISPLAY_MESSAGE(13, "thirst_display_message"),
+        THIRST_MIN_PURITY(14, "thirst_min_purity", true),
+        VOID_MODE(15, "void_mode", true),
+        VOID_GUI_ALLOW(16, "void_gui_allow");
 
         private final int index;
         private final String id;
+        private final boolean integer;
 
         Field(int index, String id) {
+            this(index, id, false);
+        }
+
+        Field(int index, String id, boolean integer) {
             this.index = index;
             this.id = id;
+            this.integer = integer;
+        }
+
+        public boolean isInteger() {
+            return integer;
         }
 
         public int getIndex() {
@@ -66,6 +80,10 @@ public class UpgradeDataSync implements ContainerData {
                     );
                 }
             }
+        }
+
+        public static Field fromId(String id) {
+            return BY_ID.get(id);
         }
 
         public static Field fromIndex(int index) {

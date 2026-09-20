@@ -4,10 +4,9 @@ import com.simibubi.create.content.logistics.filter.FilterItem;
 import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
-import net.fxnt.fxntstorage.backpack.client.menu.slot.FeederFilterSlot;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.upgrade.GhostFilterHelper;
 import net.fxnt.fxntstorage.network.packet.GhostItemPacket;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.inventory.Slot;
@@ -35,15 +34,12 @@ public class JEIGhostIngredientHandler implements IGhostIngredientHandler<Backpa
         BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
 
         ingredient.getItemStack().ifPresent(stack -> {
-            for (int i : layout.getFiltersRange()) {
+            for (int i : layout.getFilterSlotIndices()) {
                 Slot slot = gui.getMenu().getSlot(i);
                 if (createFilter.test(slot.getItem()) || !slot.isActive())
                     continue;
 
-                if (slot instanceof FeederFilterSlot) {
-                    if (!Util.isEdible(stack, gui.getMenu().player) || Util.hasNegativeEffects(stack, gui.getMenu().player))
-                        continue;
-                }
+                if (!GhostFilterHelper.accepts(gui.getMenu(), i, stack)) continue;
 
                 targets.add(new GhostTarget<>(gui, i));
             }

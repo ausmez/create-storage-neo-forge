@@ -1,33 +1,38 @@
 package net.fxnt.fxntstorage.backpack.upgrade.feeder;
 
-import com.simibubi.create.content.logistics.filter.FilterItem;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
-import com.simibubi.create.content.logistics.filter.PackageFilterItem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIcon;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIconSprites;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.client.menu.slot.FeederFilterSlot;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
+import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ClientSettings;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.SuspiciousStewEffects;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.event.EventHooks;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -35,9 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
-
-import static net.fxnt.fxntstorage.util.Util.hasNegativeEffects;
 
 public class FeederUpgrade extends AbstractUpgrade {
 
@@ -74,79 +76,26 @@ public class FeederUpgrade extends AbstractUpgrade {
     }
 
     @Override
+    public int getFilterSlotIndex(BackpackSlotLayout layout) {
+        return layout.feederFilter().getStartIndex();
+    }
+
+    @Override
+    public void onUninstalled(UpgradeContext context) {
+        GhostFilterHelper.returnFilterItem(context, getFilterSlotIndex(BackpackSlotLayout.createLayout()));
+    }
+
+    @Override
+    public boolean filterAccepts(UpgradeContext context, ItemStack stack) {
+        return isEdible(stack, context.player()) && !hasNegativeEffects(stack, context.player());
+    }
+
+    @Override
     public boolean clicked(UpgradeContext context) {
         BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
+        if (context.slotId() != getFilterSlotIndex(layout)) return false;
 
-        if (layout.feederFilter().contains(context.slotId())) {
-            if (context.clickType() != ClickType.PICKUP) return true;
-
-            Slot slot = context.player().containerMenu.slots.get(context.slotId());
-            ItemStack carried = context.player().containerMenu.getCarried();
-            ItemStack existing = slot.getItem();
-
-            Predicate<ItemStack> isCreateFilter = stack -> stack.getItem() instanceof FilterItem;
-            Predicate<ItemStack> isAttributeListFilter = stack -> stack.getItem() instanceof FilterItem && !(stack.getItem() instanceof PackageFilterItem);
-            Predicate<ItemStack> isGoodFood = stack -> Util.isEdible(stack, context.player()) && !Util.hasNegativeEffects(stack, context.player());
-
-            boolean requiresFood = layout.feederFilter().contains(context.slotId());
-            boolean carriedIsFilter = !carried.isEmpty() && isCreateFilter.test(carried);
-            boolean existingIsFilter = !existing.isEmpty() && isCreateFilter.test(existing);
-
-            // RIGHT CLICK: clear slot
-            if (context.button() == 1 && !existingIsFilter) {
-                slot.set(ItemStack.EMPTY);
-                context.container().setDataChanged();
-                return true;
-            }
-
-            // PICK UP existing filter
-            if (existingIsFilter && carried.isEmpty()) {
-                context.player().containerMenu.setCarried(existing);
-                slot.set(ItemStack.EMPTY);
-                context.container().setDataChanged();
-                return true;
-            }
-
-            if (existingIsFilter && carriedIsFilter) {
-                if (carried.getCount() > 1) {
-                    context.player().drop(existing, true);
-                    slot.set(carried.copyWithCount(1));
-                    carried.shrink(1);
-                } else {
-                    context.player().containerMenu.setCarried(existing);
-                    slot.set(carried);
-                }
-                context.container().setDataChanged();
-                return true;
-            }
-
-            if (requiresFood && !isGoodFood.test(carried) && !isAttributeListFilter.test(carried)) return true;
-            if (existingIsFilter || carried.isEmpty()) return true;
-
-            ItemStack ghost;
-            if (carriedIsFilter) {
-                if (carried.getCount() == 1) {
-                    ghost = carried;
-                    context.player().containerMenu.setCarried(ItemStack.EMPTY);
-                } else {
-                    ghost = carried.copyWithCount(1);
-                    carried.shrink(1);
-                    context.player().containerMenu.setCarried(carried);
-                }
-            } else {
-                if (carried.has(DataComponents.POTION_CONTENTS)) {
-                    ghost = carried.copyWithCount(1);
-                } else {
-                    ghost = new ItemStack(carried.getItem(), 1);
-                }
-            }
-
-            slot.set(ghost);
-            context.container().setDataChanged();
-        } else {
-            return false;
-        }
-        return true;
+        return GhostFilterHelper.handleClick(context, stack -> filterAccepts(context, stack));
     }
 
     @Override
@@ -156,87 +105,125 @@ public class FeederUpgrade extends AbstractUpgrade {
 
     @Override
     protected void tickActive(UpgradeContext context) {
-        if (context.level().getGameTime() % 15 != 0)
-            return;
-
+        if (context.level().getGameTime() % 15 != 0) return;
         if (context.backpack().isEmpty()) return;
 
         Player player = context.player();
+        if (!shouldFeedPlayer(player)) return;
+
         Level level = context.level();
+        IBackpackContainer container = context.container();
+        IItemHandlerModifiable itemHandler = container.getItemHandler();
+        BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
+        FilterItemStack filter = FilterItemStack.of(itemHandler.getStackInSlot(layout.feederFilter().getStartIndex()));
 
-        boolean doFeed = shouldFeedPlayer(player);
+        for (int i : layout.items().range()) {
+            ItemStack food = itemHandler.getStackInSlot(i);
+            if (!filter.isEmpty() && !filter.test(level, food)) continue;
+            if (!isEdible(food, player) || hasNegativeEffects(food, player)) continue;
 
-        if (doFeed) {
-            // Look for food in backpack
-            IBackpackContainer container = context.container();
-            IItemHandlerModifiable itemHandler = container.getItemHandler();
-            BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
-            FilterItemStack filter = FilterItemStack.of(itemHandler.getStackInSlot(layout.feederFilter().getStartIndex()));
+            if (consume(context, itemHandler, layout, i, food)) return;
+        }
+     }
 
-            for (int i : layout.items().range()) {
-                ItemStack food = itemHandler.getStackInSlot(i);
-                if (!filter.isEmpty()) {
-                    if (!filter.test(level, food))
-                        continue;
+    private boolean isEdible(@NotNull ItemStack food, LivingEntity player) {
+        if (!food.has(DataComponents.FOOD))
+            return false;
+
+        FoodProperties foodProperties = food.getItem().getFoodProperties(food, player);
+        return foodProperties != null && foodProperties.nutrition() > 0;
+    }
+
+    private boolean hasNegativeEffects(@NotNull ItemStack food, LivingEntity player) {
+        FoodProperties foodProperties = food.getFoodProperties(player);
+        if (foodProperties == null) return false;
+
+        ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
+        UpgradeDataManager manager = UpgradeDataManager.loadFromItem(backpack);
+
+        if (food.is(Items.CHORUS_FRUIT) && !manager.getSetting(UpgradeDataSync.Field.FEEDER_ALLOW_CHORUS_FRUIT, false))
+            return true;
+
+        if (food.is(Items.OMINOUS_BOTTLE)) return true;
+
+        SuspiciousStewEffects stewEffects = food.get(DataComponents.SUSPICIOUS_STEW_EFFECTS);
+        if (stewEffects != null) {
+            for (SuspiciousStewEffects.Entry entry : stewEffects.effects()) {
+                if (entry.effect().value().getCategory().equals(MobEffectCategory.HARMFUL)) return true;
+            }
+        }
+
+        // This should capture most foods with negative effects
+        for (FoodProperties.PossibleEffect effect : foodProperties.effects()) {
+            MobEffectInstance instance = effect.effectSupplier().get();
+            if (instance.getEffect().value().getCategory().equals(MobEffectCategory.HARMFUL))
+                return true;
+        }
+        return false;
+    }
+
+    private boolean consume(UpgradeContext context, IItemHandlerModifiable itemHandler, BackpackSlotLayout layout, int slot, ItemStack food) {
+        Player player = context.player();
+        Level level = context.level();
+        IBackpackContainer container = context.container();
+
+        String foodName = food.getItem().getName(food).getString();
+
+        // Stash MainHandItem and place food item in Main Hand
+        ItemStack mainHandItem = player.getMainHandItem();
+        player.getInventory().items.set(player.getInventory().selected, food);
+
+        ItemStack singleItem = food.copyWithCount(1);
+
+        if (singleItem.use(level, player, InteractionHand.MAIN_HAND).getResult() != InteractionResult.CONSUME) {
+            player.getInventory().items.set(player.getInventory().selected, mainHandItem);
+            return false;
+        }
+
+        player.getInventory().items.set(player.getInventory().selected, mainHandItem);
+        food.shrink(1);
+        itemHandler.setStackInSlot(slot, food);
+
+        ItemStack remainder = EventHooks.onItemUseFinish(player, singleItem.copy(), 0,
+                singleItem.getItem().finishUsingItem(singleItem, level, player));
+        returnRemainder(context, itemHandler, layout, remainder);
+
+        container.setDataChanged();
+
+        if (container.getUpgradeSetting(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE)) {
+            player.displayClientMessage(Component.translatable(
+                    "item.fxntstorage.backpack_feeder_upgrade.message", "§a" + foodName + "§r"), true);
+        }
+        return true;
+    }
+
+    private void returnRemainder(UpgradeContext context, IItemHandlerModifiable itemHandler, BackpackSlotLayout layout, ItemStack remainder) {
+        if (remainder.isEmpty()) return;
+
+        IBackpackContainer container = context.container();
+        Player player = context.player();
+        int firstEmptyStack = -1;
+
+        for (int j : layout.items().range()) {
+            ItemStack stack = itemHandler.getStackInSlot(j);
+
+            if (stack.isEmpty() && firstEmptyStack < 0) {
+                firstEmptyStack = j;
+            }
+            if (ItemStack.isSameItemSameComponents(stack, remainder)
+                    && stack.getCount() < container.getStackMultiplier() * remainder.getMaxStackSize()) {
+                ItemStack insertResult = itemHandler.insertItem(j, remainder, false);
+                if (!insertResult.isEmpty()) {
+                    player.drop(insertResult, true);
                 }
-
-                if (!Util.isEdible(food, player) || hasNegativeEffects(food, player)) continue;
-
-                String foodName = food.getItem().getName(food).getString();
-
-                // Stash MainHandItem and place food item in Main Hand
-                ItemStack mainHandItem = player.getMainHandItem();
-                player.getInventory().items.set(player.getInventory().selected, food);
-
-                ItemStack singleItem = food.copyWithCount(1);
-
-                // Use the food item and check if it was consumed
-                if (singleItem.use(level, player, InteractionHand.MAIN_HAND).getResult() == InteractionResult.CONSUME) {
-                    player.getInventory().items.set(player.getInventory().selected, mainHandItem);
-                    food.shrink(1);
-                    itemHandler.setStackInSlot(i, food);
-
-                    ItemStack remainder = EventHooks.onItemUseFinish(player, singleItem.copy(), 0, singleItem.getItem().finishUsingItem(singleItem, level, player));
-                    if (!remainder.isEmpty()) {
-                        boolean itemPlaced = false;
-                        int firstEmptyStack = -1;
-
-                        for (int j : layout.items().range()) {
-                            ItemStack stack = itemHandler.getStackInSlot(j);
-
-                            if (stack.isEmpty() && firstEmptyStack < 0) {
-                                firstEmptyStack = j;
-                            }
-                            if ((ItemStack.isSameItemSameComponents(stack, remainder) && stack.getCount() < container.getStackMultiplier() * remainder.getMaxStackSize())) {
-                                ItemStack insertResult = itemHandler.insertItem(j, remainder, false);
-                                if (!insertResult.isEmpty()) {
-                                    player.drop(remainder, true);
-                                }
-                                itemPlaced = true;
-                                break;
-                            }
-                        }
-
-                        if (!itemPlaced && firstEmptyStack > -1) {
-                            itemHandler.insertItem(firstEmptyStack, remainder, false);
-                        }
-                    }
-
-                    container.setDataChanged();
-
-                    boolean displayMessage = container.getUpgradeSetting(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE);
-
-                    if (displayMessage) {
-                        player.displayClientMessage(Component.translatable("item.fxntstorage.backpack_feeder_upgrade.message", "§a" + foodName + "§r"), true);
-                    }
-
-                } else {
-                    // For some reason, food item was not consumed, revert item
-                    player.getInventory().items.set(player.getInventory().selected, mainHandItem);
-                }
-
                 return;
             }
+        }
+
+        if (firstEmptyStack > -1) {
+            itemHandler.insertItem(firstEmptyStack, remainder, false);
+        } else {
+            player.drop(remainder, true);
         }
     }
 
@@ -262,10 +249,12 @@ public class FeederUpgrade extends AbstractUpgrade {
         public record FeederState(boolean allowChorus, boolean displayMessage) {
         }
 
-        private static final WidgetSprites CHORUS_ON = UpgradePanel.createWidgetSprites("chorus_on");
-        private static final WidgetSprites CHORUS_OFF = UpgradePanel.createWidgetSprites("chorus_off");
-        private static final WidgetSprites MSG_ON = UpgradePanel.createWidgetSprites("message_on");
-        private static final WidgetSprites MSG_OFF = UpgradePanel.createWidgetSprites("message_off");
+        private static final GuiIconSprites CHORUS_ON = new GuiIconSprites(GuiIcon.CHORUS_ON);
+        private static final GuiIconSprites CHORUS_OFF = new GuiIconSprites(GuiIcon.CHORUS_OFF);
+        private static final GuiIconSprites MSG_ON = new GuiIconSprites(GuiIcon.MESSAGE_ON);
+        private static final GuiIconSprites MSG_OFF = new GuiIconSprites(GuiIcon.MESSAGE_OFF);
+
+        private static final String TOOLTIP_PREFIX = "tooltip.fxntstorage.backpack_feeder_upgrade.panel.";
 
         private int panelX;
         private int panelY;
@@ -310,8 +299,8 @@ public class FeederUpgrade extends AbstractUpgrade {
                             initialState,
                             state -> state.allowChorus() ? CHORUS_ON : CHORUS_OFF,
                             state -> state.allowChorus()
-                                    ? Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.allow_chorus").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.allow_chorus.description").withStyle(ChatFormatting.DARK_GRAY))
-                                    : Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.disallow_chorus").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.disallow_chorus.description").withStyle(ChatFormatting.DARK_GRAY)),
+                                    ? Component.translatable(TOOLTIP_PREFIX + "allow_chorus").append("\n").append(Component.translatable(TOOLTIP_PREFIX + "allow_chorus.description").withStyle(ChatFormatting.DARK_GRAY))
+                                    : Component.translatable(TOOLTIP_PREFIX + "disallow_chorus").append("\n").append(Component.translatable(TOOLTIP_PREFIX + "disallow_chorus.description").withStyle(ChatFormatting.DARK_GRAY)),
                             button -> menu.toggleUpgradeSetting(UpgradeDataSync.Field.FEEDER_ALLOW_CHORUS_FRUIT)
                     )
             );
@@ -322,8 +311,8 @@ public class FeederUpgrade extends AbstractUpgrade {
                             initialState,
                             state -> state.displayMessage() ? MSG_ON : MSG_OFF,
                             state -> state.displayMessage()
-                                    ? Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.show_message").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.show_message.description").withStyle(ChatFormatting.DARK_GRAY))
-                                    : Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.hide_message").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.hide_message.description").withStyle(ChatFormatting.DARK_GRAY)),
+                                    ? Component.translatable(TOOLTIP_PREFIX + "show_message").append("\n").append(Component.translatable(TOOLTIP_PREFIX + "show_message.description").withStyle(ChatFormatting.DARK_GRAY))
+                                    : Component.translatable(TOOLTIP_PREFIX + "hide_message").append("\n").append(Component.translatable(TOOLTIP_PREFIX + "hide_message.description").withStyle(ChatFormatting.DARK_GRAY)),
                             button -> menu.toggleUpgradeSetting(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE)
                     )
             );
@@ -344,8 +333,8 @@ public class FeederUpgrade extends AbstractUpgrade {
                 graphics.renderTooltip(
                         font,
                         List.of(
-                                Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.filter_slot"),
-                                Component.translatable("tooltip.fxntstorage.backpack_feeder_upgrade.panel.filter_slot.description")
+                                Component.translatable(TOOLTIP_PREFIX + "filter_slot"),
+                                Component.translatable(TOOLTIP_PREFIX + "filter_slot.description")
                                         .withStyle(ChatFormatting.DARK_GRAY)
                         ),
                         Optional.empty(),

@@ -2,6 +2,8 @@ package net.fxnt.fxntstorage.network.packet;
 
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.upgrade.GhostFilterHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -29,6 +31,13 @@ public record GhostItemPacket(ItemStack item, int slot) implements CustomPacketP
     public void handle(final IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player && player.containerMenu instanceof BackpackMenu menu) {
+                if (!item.isEmpty() && !GhostFilterHelper.accepts(menu, slot, item)) {
+                    FXNTStorage.LOGGER.debug("GhostItemPacket rejected for slot {}: {}", slot, item);
+                    return;
+                }
+                if (item.isEmpty() && GhostFilterHelper.upgradeForSlot(
+                        BackpackSlotLayout.createLayout(), slot) == null) return;
+
                 menu.container.getItemHandler().setStackInSlot(slot, item);
                 menu.container.setDataChanged();
             }

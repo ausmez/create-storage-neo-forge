@@ -305,9 +305,9 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
         ItemStack filter = getFilterItem();
         if (filter.isEmpty()) return 1;
         if (CompactingRecipeHelper.isEmpty()) {
-            CompactingRecipeHelper.rebuild(player.level().getRecipeManager(), player.level().registryAccess());
+            CompactingRecipeHelper.rebuild();
         }
-        CompactingChain chain = CompactingRecipeHelper.buildChain(filter.getItem());
+        CompactingChain chain = CompactingRecipeHelper.buildChain(player.level(), filter.getItem());
         return chain != null ? chain.highestTierT0PerUnit() : 1;
     }
 
@@ -315,9 +315,9 @@ public class SimpleStorageBoxMountedMenu extends AbstractContainerMenu implement
         ItemStack filter = getFilterItem();
         if (!isCompacting() || filter.isEmpty()) return null;
         if (CompactingRecipeHelper.isEmpty()) {
-            CompactingRecipeHelper.rebuild(player.level().getRecipeManager(), player.level().registryAccess());
+            CompactingRecipeHelper.rebuild();
         }
-        return CompactingRecipeHelper.buildChain(filter.getItem());
+        return CompactingRecipeHelper.buildChain(player.level(), filter.getItem());
     }
 
     @Override

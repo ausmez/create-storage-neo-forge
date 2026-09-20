@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "E": {
+      "item": "minecraft:ender_pearl"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "O": {
+      "item": "minecraft:obsidian"
+    },
+    "R": {
+      "item": "create:redstone_link"
+    }
+  },
+  "pattern": [
+    " R ",
+    "IBI",
+    "OEO"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:backpack_void_upgrade"
+  }
+}

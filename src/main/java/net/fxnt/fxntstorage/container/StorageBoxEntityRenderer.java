@@ -45,7 +45,7 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         String line1 = Util.formatNumber(amount);
         String line2 = tag.getBoolean("VoidUpgrade")
                 ? Component.translatable("container.fxntstorage.void_mode").getString()
-                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
+                : Component.translatable("container.fxntstorage.percent_used", percentUsed).getString();
 
         Direction side = state.getValue(HorizontalDirectionalBlock.FACING);
 
@@ -108,11 +108,12 @@ public class StorageBoxEntityRenderer extends SmartBlockEntityRenderer<StorageBo
         if (level == null) return;
 
         int amount = blockEntity.getStoredAmount();
+        int percentUsed = blockEntity.getPercentageUsed();
 
         String line1 = Util.formatNumber(amount);
         String line2 = blockEntity.voidUpgrade
                 ? Component.translatable("container.fxntstorage.void_mode").getString()
-                : blockEntity.getPercentageUsed() + Component.translatable("container.fxntstorage.percent_used").getString();
+                : Component.translatable("container.fxntstorage.percent_used", percentUsed).getString();
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 

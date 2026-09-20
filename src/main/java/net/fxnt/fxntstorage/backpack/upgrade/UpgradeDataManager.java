@@ -15,6 +15,7 @@ public class UpgradeDataManager {
     @Nullable
     private UpgradeType expandedPanel = null;
     private final Map<String, Boolean> booleanSettings = new HashMap<>();
+    private final Map<String, Integer> integerSettings = new HashMap<>();
 
     public UpgradeDataManager() {
     }
@@ -61,9 +62,18 @@ public class UpgradeDataManager {
         booleanSettings.remove(field.getId());
     }
 
+    public int getIntSetting(UpgradeDataSync.Field field) {
+        return integerSettings.getOrDefault(field.getId(), UpgradeRegistry.getDefaultIntSetting(field));
+    }
+
+    public void setIntSetting(UpgradeDataSync.Field field, int value) {
+        integerSettings.put(field.getId(), value);
+    }
+
     public void clear() {
         expandedPanel = null;
         booleanSettings.clear();
+        integerSettings.clear();
     }
 
     // Copy from another manager
@@ -71,6 +81,8 @@ public class UpgradeDataManager {
         this.expandedPanel = other.expandedPanel;
         this.booleanSettings.clear();
         this.booleanSettings.putAll(other.booleanSettings);
+        this.integerSettings.clear();
+        this.integerSettings.putAll(other.integerSettings);
     }
 
     public static UpgradeDataManager loadFromItem(ItemStack stack) {
@@ -84,6 +96,12 @@ public class UpgradeDataManager {
             if (component != null) {
                 boolean defaultValue = UpgradeRegistry.getDefaultSetting(field);
                 manager.setSetting(field, stack.getOrDefault(component, defaultValue));
+            }
+
+            DataComponentType<Integer> intComponent = ModDataComponents.getIntComponentForField(field);
+            if (intComponent != null) {
+                int defaultValue = UpgradeRegistry.getDefaultIntSetting(field);
+                manager.setIntSetting(field, stack.getOrDefault(intComponent, defaultValue));
             }
         }
 
@@ -99,12 +117,21 @@ public class UpgradeDataManager {
 
         for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
             DataComponentType<Boolean> component = ModDataComponents.getComponentForField(field);
-            if (component == null) continue;
+            if (component != null) {
+                if (booleanSettings.containsKey(field.getId())) {
+                    stack.set(component, booleanSettings.get(field.getId()));
+                } else {
+                    stack.remove(component);
+                }
+            }
 
-            if (booleanSettings.containsKey(field.getId())) {
-                stack.set(component, booleanSettings.get(field.getId()));
-            } else {
-                stack.remove(component);
+            DataComponentType<Integer> intComponent = ModDataComponents.getIntComponentForField(field);
+            if (intComponent != null) {
+                if (integerSettings.containsKey(field.getId())) {
+                    stack.set(intComponent, integerSettings.get(field.getId()));
+                } else {
+                    stack.remove(intComponent);
+                }
             }
         }
     }
@@ -119,7 +146,12 @@ public class UpgradeDataManager {
         if (tag.contains("UpgradeSettings")) {
             CompoundTag settingsTag = tag.getCompound("UpgradeSettings");
             for (String key : settingsTag.getAllKeys()) {
-                manager.booleanSettings.put(key, settingsTag.getBoolean(key));
+                UpgradeDataSync.Field field = UpgradeDataSync.Field.fromId(key);
+                if (field != null && field.isInteger()) {
+                    manager.integerSettings.put(key, settingsTag.getInt(key));
+                } else {
+                    manager.booleanSettings.put(key, settingsTag.getBoolean(key));
+                }
             }
         }
 
@@ -140,6 +172,11 @@ public class UpgradeDataManager {
                 // and have never been written (i.e. not present in the map), to keep NBT clean.
                 if (booleanSettings.containsKey(field.getId())) {
                     settingsTag.putBoolean(field.getId(), booleanSettings.get(field.getId()));
+                }
+            }
+            for (UpgradeDataSync.Field field : upgrade.getIntSettings()) {
+                if (integerSettings.containsKey(field.getId())) {
+                    settingsTag.putInt(field.getId(), integerSettings.get(field.getId()));
                 }
             }
         }

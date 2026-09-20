@@ -1,5 +1,6 @@
 package net.fxnt.fxntstorage.backpack.upgrade;
 
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,6 +24,14 @@ public interface IUpgrade {
 
     Map<UpgradeDataSync.Field, Boolean> getDefaultSettings();
 
+    default List<UpgradeDataSync.Field> getIntSettings() {
+        return List.of();
+    }
+
+    default Map<UpgradeDataSync.Field, Integer> getDefaultIntSettings() {
+        return Map.of();
+    }
+
     @Nullable
     UpgradePanel createPanel(UpgradeContext context);
 
@@ -32,6 +41,9 @@ public interface IUpgrade {
 
     void onRemoved(UpgradeContext context);
 
+    default void onUninstalled(UpgradeContext context) {
+    }
+
     default Optional<ItemStack> onQuickMove(UpgradeContext context) {
         return Optional.empty();
     }
@@ -40,6 +52,14 @@ public interface IUpgrade {
 
     default boolean clicked(UpgradeContext context) {
         return false;
+    }
+
+    default int getFilterSlotIndex(BackpackSlotLayout layout) {
+        return -1;
+    }
+
+    default boolean filterAccepts(UpgradeContext context, ItemStack stack) {
+        return true;
     }
 
     default boolean onPlayerTouchItem(UpgradeContext context, ItemEntity itemEntity, @Nullable UUID target, int pickupDelay) {

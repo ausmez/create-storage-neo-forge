@@ -87,11 +87,34 @@ public class ModDataComponents {
             builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL)
     );
 
+    public static final DataComponentType<Boolean> BACKPACK_THIRST_MESSAGE = register(
+            "backpack_thirst_message",
+            builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL)
+    );
+
+    public static final DataComponentType<Integer> BACKPACK_THIRST_MIN_PURITY = register(
+            "backpack_thirst_min_purity",
+            builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT)
+    );
+
+    public static final DataComponentType<Integer> BACKPACK_VOID_MODE = register(
+            "backpack_void_mode",
+            builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.INT)
+    );
+
+    public static final DataComponentType<Boolean> BACKPACK_VOID_GUI_ALLOW = register(
+            "backpack_void_gui_allow",
+            builder -> builder.persistent(Codec.BOOL).networkSynchronized(ByteBufCodecs.BOOL)
+    );
+
     private static final Map<UpgradeDataSync.Field, DataComponentType<Boolean>>
             FIELD_COMPONENT_MAP = Map.ofEntries(
             // Feeder upgrade
             Map.entry(UpgradeDataSync.Field.FEEDER_ALLOW_CHORUS_FRUIT, BACKPACK_FEEDER_CHORUS),
             Map.entry(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE, BACKPACK_FEEDER_MESSAGE),
+
+            // Thirst upgrade
+            Map.entry(UpgradeDataSync.Field.THIRST_DISPLAY_MESSAGE, BACKPACK_THIRST_MESSAGE),
 
             // Jetpack upgrade
             Map.entry(UpgradeDataSync.Field.JETPACK_OVERLAY, BACKPACK_JETPACK_OVERLAY),
@@ -106,7 +129,10 @@ public class ModDataComponents {
 
             // Tool Swap upgrade
             Map.entry(UpgradeDataSync.Field.TOOLSWAP_PREFER_SWORD, BACKPACK_PREFER_SWORD),
-            Map.entry(UpgradeDataSync.Field.TOOLSWAP_PREFER_SILKTOUCH, BACKPACK_PREFER_SILKTOUCH)
+            Map.entry(UpgradeDataSync.Field.TOOLSWAP_PREFER_SILKTOUCH, BACKPACK_PREFER_SILKTOUCH),
+
+            // Void upgrade
+            Map.entry(UpgradeDataSync.Field.VOID_GUI_ALLOW, BACKPACK_VOID_GUI_ALLOW)
     );
 
     private static <T> DataComponentType<T> register(String name, UnaryOperator<DataComponentType.Builder<T>> builder) {
@@ -119,7 +145,20 @@ public class ModDataComponents {
         DATA_COMPONENT_TYPES.register(eventBus);
     }
 
+    private static final Map<UpgradeDataSync.Field, DataComponentType<Integer>>
+            FIELD_INT_COMPONENT_MAP = Map.ofEntries(
+            // Thirst upgrade
+            Map.entry(UpgradeDataSync.Field.THIRST_MIN_PURITY, BACKPACK_THIRST_MIN_PURITY),
+
+            // Void upgrade
+            Map.entry(UpgradeDataSync.Field.VOID_MODE, BACKPACK_VOID_MODE)
+    );
+
     public static DataComponentType<Boolean> getComponentForField(UpgradeDataSync.Field field) {
         return FIELD_COMPONENT_MAP.get(field);
+    }
+
+    public static DataComponentType<Integer> getIntComponentForField(UpgradeDataSync.Field field) {
+        return FIELD_INT_COMPONENT_MAP.get(field);
     }
 }

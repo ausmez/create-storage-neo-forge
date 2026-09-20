@@ -13,6 +13,8 @@ public enum UpgradeType {
     FEEDER("feeder", ModItems.BACKPACK_FEEDER_UPGRADE::get, ModItems.BACKPACK_FEEDER_UPGRADE_DEACTIVATED::get, true),
     CRAFTING("crafting", ModItems.BACKPACK_CRAFTING_UPGRADE::get, ModItems.BACKPACK_CRAFTING_UPGRADE_DEACTIVATED::get, true),
     WORKSHOP("workshop", ModItems.BACKPACK_WORKSHOP_UPGRADE::get, ModItems.BACKPACK_WORKSHOP_UPGRADE_DEACTIVATED::get, true),
+    THIRST("thirst", ModItems.BACKPACK_THIRST_UPGRADE::get, ModItems.BACKPACK_THIRST_UPGRADE_DEACTIVATED::get, true),
+    VOID("void", ModItems.BACKPACK_VOID_UPGRADE::get, ModItems.BACKPACK_VOID_UPGRADE_DEACTIVATED::get, true),
 
     // Upgrades with panels but no slots
     FLIGHT("flight", ModItems.BACKPACK_FLIGHT_UPGRADE::get, ModItems.BACKPACK_FLIGHT_UPGRADE_DEACTIVATED::get, true),
@@ -91,7 +93,7 @@ public enum UpgradeType {
     }
 
     public boolean isPlayerOnly() {
-        return this != MAGNET && this != JUKEBOX && this != CRAFTING && this != WORKSHOP;
+        return this != MAGNET && this != JUKEBOX && this != CRAFTING && this != WORKSHOP && this != VOID;
     }
 
     public boolean isThisUpgrade(Item item) {

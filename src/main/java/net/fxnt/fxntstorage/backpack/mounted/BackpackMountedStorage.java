@@ -17,6 +17,7 @@ import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxBuffHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.voiding.VoidUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopUpgrade;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
@@ -78,7 +79,10 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
         this.stackMultiplier = stackMultiplier;
         for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
             String key = field.getId();
-            if (upgradeSettings.contains(key)) {
+            if (!upgradeSettings.contains(key)) continue;
+            if (field.isInteger()) {
+                upgradeData.setIntSetting(field, upgradeSettings.getInt(key));
+            } else {
                 upgradeData.setSetting(field, upgradeSettings.getBoolean(key));
             }
         }
@@ -96,7 +100,11 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
         ItemStackHandler copy = copyToItemStackHandler(entity.getItemHandler());
         CompoundTag upgradeSettings = new CompoundTag();
         for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
-            upgradeSettings.putBoolean(field.getId(), entity.getUpgradeSetting(field));
+            if (field.isInteger()) {
+                upgradeSettings.putInt(field.getId(), entity.getUpgradeIntSetting(field));
+            } else {
+                upgradeSettings.putBoolean(field.getId(), entity.getUpgradeSetting(field));
+            }
         }
         UpgradeType expanded = entity.getExpandedPanel();
         if (expanded != null) {
@@ -108,7 +116,11 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
     private CompoundTag serializeUpgradeSettings() {
         CompoundTag tag = new CompoundTag();
         for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
-            tag.putBoolean(field.getId(), upgradeData.getSetting(field));
+            if (field.isInteger()) {
+                tag.putInt(field.getId(), upgradeData.getIntSetting(field));
+            } else {
+                tag.putBoolean(field.getId(), upgradeData.getSetting(field));
+            }
         }
         if (expandedPanel != null) {
             tag.putString("ExpandedPanel", expandedPanel.getId());
@@ -116,15 +128,44 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
         return tag;
     }
 
+    private @Nullable Level contraptionLevel;
+
     @Override
     public int getSlotLimit(int slot) {
         return 64 * stackMultiplier;
     }
 
+    private static boolean isVisibleSlot(int slot) {
+        return LAYOUT.items().contains(slot) || LAYOUT.tools().contains(slot);
+    }
+
+    @Override
+    public @NotNull ItemStack getStackInSlot(int slot) {
+        if (!isVisibleSlot(slot)) return ItemStack.EMPTY;
+        return super.getStackInSlot(slot);
+    }
+
+    @Override
+    public void setStackInSlot(int slot, @NotNull ItemStack stack) {
+        if (!LAYOUT.items().contains(slot)) return;
+        super.setStackInSlot(slot, stack);
+    }
+
+    @Override
+    public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+        if (!LAYOUT.items().contains(slot)) return false;
+        return super.isItemValid(slot, stack);
+    }
+
     @Override
     public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
         if (!LAYOUT.items().contains(slot)) return stack;
-        return super.insertItem(slot, stack, simulate);
+
+        // Voided items are reported as accepted, so the caller hands them over instead of keeping them
+        ItemStack toInsert = VoidUpgrade.acceptableInsert(this, contraptionLevel, stack);
+        if (toInsert.isEmpty()) return ItemStack.EMPTY;
+
+        return super.insertItem(slot, toInsert, simulate);
     }
 
     @Override
@@ -194,7 +235,11 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
             entityHandler.setStackInSlot(i, wrapped.getStackInSlot(i));
         }
         for (UpgradeDataSync.Field field : UpgradeDataSync.Field.values()) {
-            backpackEntity.setUpgradeSetting(field, upgradeData.getSetting(field));
+            if (field.isInteger()) {
+                backpackEntity.setUpgradeIntSetting(field, upgradeData.getIntSetting(field));
+            } else {
+                backpackEntity.setUpgradeSetting(field, upgradeData.getSetting(field));
+            }
         }
         backpackEntity.setExpandedPanel(this.expandedPanel);
         backpackEntity.setSortOrder(this.sortOrder);
@@ -205,7 +250,7 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
         boolean ignoreItemsProcessing = upgradeData.getSetting(UpgradeDataSync.Field.MAGNET_IGNORE_FAN, true);
 
         int filterSlotIndex = LAYOUT.magnetFilter().getStartIndex();
-        FilterItemStack filter = FilterItemStack.of(getStackInSlot(filterSlotIndex));
+        FilterItemStack filter = FilterItemStack.of(getItemHandler().getStackInSlot(filterSlotIndex));
 
         int range = ConfigManager.ServerConfig.MAGNET_PULL_RANGE.get();
         Vec3 worldPos = context.contraption.entity.toGlobalVector(Vec3.atCenterOf(context.localPos), 1.0f);
@@ -263,7 +308,7 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
         if (!buffsEnabled) return;
         if (gameTime % 40 != 0) return;
 
-        ItemStack disc = getStackInSlot(LAYOUT.jukeboxDiscs().getStartIndex());
+        ItemStack disc = getItemHandler().getStackInSlot(LAYOUT.jukeboxDiscs().getStartIndex());
         if (disc.isEmpty()) return;
 
         JukeboxPlayable playable = disc.get(DataComponents.JUKEBOX_PLAYABLE);
@@ -303,6 +348,11 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
         }
         PacketDistributor.sendToPlayersTrackingEntity(context.contraption.entity,
                 WorkshopProcessingPacket.forContraption(context.contraption.entity.getId(), processing, context.localPos));
+    }
+
+    protected void tickVoid(MovementContext context) {
+        this.contraptionLevel = context.world;
+        VoidUpgrade.voidItems(this, context.world);
     }
 
     protected boolean hasActiveUpgrade(UpgradeType upgrade) {
@@ -379,6 +429,16 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
     @Override
     public void setUpgradeSetting(UpgradeDataSync.Field setting, boolean value) {
         upgradeData.setSetting(setting, value);
+    }
+
+    @Override
+    public int getUpgradeIntSetting(UpgradeDataSync.Field setting) {
+        return upgradeData.getIntSetting(setting);
+    }
+
+    @Override
+    public void setUpgradeIntSetting(UpgradeDataSync.Field setting, int value) {
+        upgradeData.setIntSetting(setting, value);
     }
 
     @Override

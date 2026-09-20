@@ -29,9 +29,12 @@ public class EMICompat implements EmiPlugin {
             }
         });
 
+        registry.addGenericScreenBoundsProvider(screen ->
+                screen instanceof BackpackScreen backpackScreen ? asEmiRect(backpackScreen.getScreenBounds()) : null);
+
         registry.addGenericExclusionArea((screen, consumer) -> {
-            if (screen instanceof BackpackScreen backPackScreen) {
-                backPackScreen.getExclusionZones().stream().map(EMICompat::asEmiRect).forEach(consumer);
+            if (screen instanceof BackpackScreen backpackScreen) {
+                backpackScreen.getProtrudingPanelZones().stream().map(EMICompat::asEmiRect).forEach(consumer);
             }
         });
 

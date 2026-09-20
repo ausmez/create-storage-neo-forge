@@ -1,13 +1,10 @@
 package net.fxnt.fxntstorage.backpack.client.menu.button;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.fxnt.fxntstorage.backpack.upgrade.UpgradePanel;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -19,21 +16,21 @@ import java.util.function.Function;
 @OnlyIn(Dist.CLIENT)
 public class ItemSpriteButton<T> extends Button {
 
-    private static final WidgetSprites BACKGROUND = UpgradePanel.createWidgetSprites("background");
+    private static final GuiIconSprites BACKGROUND = new GuiIconSprites(GuiIcon.BACKGROUND);
 
-    private final Function<T, ResourceLocation> overlayResolver;
+    private final Function<T, GuiIcon> overlayResolver;
     private final Function<T, Component> tooltipResolver;
     private final Function<T, ItemStack> itemResolver;
 
     private T lastState;
-    private ResourceLocation currentOverlay;
+    private GuiIcon currentOverlay;
     private ItemStack currentItem;
 
     private final int itemRenderSize;
 
     public ItemSpriteButton(int x, int y, int width, int height,
                             T initialState,
-                            Function<T, ResourceLocation> overlayResolver,
+                            Function<T, GuiIcon> overlayResolver,
                             Function<T, Component> tooltipResolver,
                             Function<T, ItemStack> itemResolver,
                             int itemRenderSize,
@@ -68,12 +65,7 @@ public class ItemSpriteButton<T> extends Button {
 
         // Background
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, this.alpha);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
-        guiGraphics.blitSprite(BACKGROUND.get(this.active, this.isHovered()), x, y, this.width, this.height);
-
-        RenderSystem.disableBlend();
+        GuiIconSprites.renderButton(guiGraphics, BACKGROUND, this.active, this.isHovered(), x, y, this.width, this.height);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         // ItemStack
@@ -89,8 +81,7 @@ public class ItemSpriteButton<T> extends Button {
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(0, 0, 200);
 
-            guiGraphics.blitSprite(currentOverlay, x, y, this.width, this.height);
-            
+            currentOverlay.render(guiGraphics, x, y, this.width, this.height);
             guiGraphics.pose().popPose();
             RenderSystem.disableBlend();
         }

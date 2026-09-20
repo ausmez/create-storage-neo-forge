@@ -164,6 +164,9 @@ dependencies {
     // Waila / Jade
     implementation "maven.modrinth:jade:${jade_version}"
 
+    // Thirst Was Reclaimed
+    compileOnly "curse.maven:thirst-was-reclaimed-884742:8391910"
+
     // Other mods to include at runtime during development/testing
     runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
     runtimeOnly "maven.modrinth:jade-addons-forge:${jadeaddon_version}"

@@ -224,14 +224,13 @@ public class ClientEventHandler {
     }
 
     private static boolean tryScrollMountedCompactingTier(Minecraft mc, int delta) {
-        if (mc.player == null) return false;
+        if (mc.player == null || mc.level == null) return false;
         var rayInputs = ContraptionHandlerClient.getRayInputs(mc.player);
         Vec3 origin = rayInputs.getFirst();
         Vec3 target = rayInputs.getSecond();
         AABB aabb = new AABB(origin, target).inflate(16);
 
         var contraptionsMap = ContraptionHandler.loadedContraptions.get(mc.level);
-        if (contraptionsMap == null) return false;
 
         Collection<WeakReference<AbstractContraptionEntity>> contraptions = contraptionsMap.values();
         for (WeakReference<AbstractContraptionEntity> ref : contraptions) {
@@ -258,9 +257,9 @@ public class ClientEventHandler {
             if (filterItem.isEmpty()) continue;
 
             if (CompactingRecipeHelper.isEmpty()) {
-                CompactingRecipeHelper.rebuild(mc.level.getRecipeManager(), mc.level.registryAccess());
+                CompactingRecipeHelper.rebuild();
             }
-            CompactingChain chain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+            CompactingChain chain = CompactingRecipeHelper.buildChain(mc.level, filterItem.getItem());
             if (chain == null) continue;
 
             int newTier = Math.floorMod(tag.getInt("CompactingSelectedTier") + delta, chain.tiers());

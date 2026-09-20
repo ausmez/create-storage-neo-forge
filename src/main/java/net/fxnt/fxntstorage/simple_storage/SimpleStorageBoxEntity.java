@@ -267,7 +267,7 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     private void buildCompactingChain() {
         if (!filterItem.isEmpty() && level != null && !CompactingRecipeHelper.isEmpty()) {
-            compactingChain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+            compactingChain = CompactingRecipeHelper.buildChain(level, filterItem.getItem());
             if (compactingChain != null) {
                 compactingSelectedTier = Math.min(compactingSelectedTier, compactingChain.tiers() - 1);
             }
@@ -276,25 +276,29 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
         }
     }
 
+    // Stored contents must be re-evaluated against the current tier chain, as shared ingredient
+    // tags can introduce lower tiers and change how items from older saves are interpreted
+    private void normaliseStoredToChainBase() {
+        if (compactingChain == null || level == null || level.isClientSide) return;
+
+        ItemStack stored = itemHandler.getStackInSlot(0);
+        if (stored.isEmpty() || stored.getItem() == compactingChain.t0()) return;
+
+        int t0Units = compactingChain.toT0Units(stored.getItem(), stored.getCount());
+        if (t0Units <= 0) return;
+
+        filterItem = new ItemStack(compactingChain.t0());
+        itemHandler.setStackInSlot(0, new ItemStack(compactingChain.t0(), Math.min(t0Units, computeCapacity())));
+    }
+
     public void onCompactingUpgradeInstalled() { // Public for ponder scene
         compactingSelectedTier = 0;
         // Ensure recipe data is available
         if (level != null && CompactingRecipeHelper.isEmpty()) {
-            CompactingRecipeHelper.rebuild(level.getRecipeManager(), level.registryAccess());
+            CompactingRecipeHelper.rebuild();
         }
         buildCompactingChain();
-        if (compactingChain != null) {
-            // Convert stored items to T0 if they're currently T1/T2
-            ItemStack stored = itemHandler.getStackInSlot(0);
-            if (!stored.isEmpty() && stored.getItem() != compactingChain.t0()) {
-                int t0Units = compactingChain.toT0Units(stored.getItem(), stored.getCount());
-                if (t0Units > 0) {
-                    filterItem = new ItemStack(compactingChain.t0());
-                    // Capacity is now scaled off the highest tier, so recompute before clamping.
-                    itemHandler.setStackInSlot(0, new ItemStack(compactingChain.t0(), Math.min(t0Units, computeCapacity())));
-                }
-            }
-        }
+        normaliseStoredToChainBase();
     }
 
     private void onCompactingUpgradeRemoved() {
@@ -447,9 +451,10 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
             pendingLightFix = true; // Deferred to first tick so chunk is fully loaded
         if (compactingUpgrade) {
             if (CompactingRecipeHelper.isEmpty() && level != null) {
-                CompactingRecipeHelper.rebuild(level.getRecipeManager(), level.registryAccess());
+                CompactingRecipeHelper.rebuild();
             }
             buildCompactingChain();
+            normaliseStoredToChainBase();
         }
     }
 
@@ -801,7 +806,12 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     public void setFilter(ItemStack itemStack) {
         this.filterItem = itemStack.copyWithCount(1);
-        if (compactingUpgrade) buildCompactingChain();
+        if (compactingUpgrade) {
+            buildCompactingChain();
+            // The filter is set by the first raw insert into an empty box, so slot 0 can be holding a
+            // higher tier than the chain it just produced
+            normaliseStoredToChainBase();
+        }
     }
 
     public boolean filterTest(ItemStack stack) {

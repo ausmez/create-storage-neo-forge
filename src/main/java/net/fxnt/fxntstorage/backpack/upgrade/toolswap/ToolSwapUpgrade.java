@@ -2,6 +2,8 @@ package net.fxnt.fxntstorage.backpack.upgrade.toolswap;
 
 import com.simibubi.create.AllItems;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIcon;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIconSprites;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
@@ -9,7 +11,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -88,10 +89,10 @@ public class ToolSwapUpgrade extends AbstractUpgrade {
         public record ToolSwapState(boolean preferSword, boolean preferSilkTouch) {
         }
 
-        private static final WidgetSprites SWORD_ON = UpgradePanel.createWidgetSprites("sword_on");
-        private static final WidgetSprites SWORD_OFF = UpgradePanel.createWidgetSprites("sword_off");
-        private static final WidgetSprites SILK_ON = UpgradePanel.createWidgetSprites("silk_touch_on");
-        private static final WidgetSprites SILK_OFF = UpgradePanel.createWidgetSprites("silk_touch_off");
+        private static final GuiIconSprites SWORD_ON = new GuiIconSprites(GuiIcon.SWORD_ON);
+        private static final GuiIconSprites SWORD_OFF = new GuiIconSprites(GuiIcon.SWORD_OFF);
+        private static final GuiIconSprites SILK_ON = new GuiIconSprites(GuiIcon.SILK_TOUCH_ON);
+        private static final GuiIconSprites SILK_OFF = new GuiIconSprites(GuiIcon.SILK_TOUCH_OFF);
 
         private int panelX;
         private int panelY;

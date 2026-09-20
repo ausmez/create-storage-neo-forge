@@ -4,12 +4,14 @@ import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
+import net.fxnt.fxntstorage.backpack.upgrade.voiding.VoidUpgrade;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.init.ModAttachmentTypes;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.network.packet.SetActivePanelPacket;
 import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
 import net.fxnt.fxntstorage.network.packet.UpgradeDataPacket;
+import net.fxnt.fxntstorage.network.packet.UpgradeIntDataPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
@@ -195,6 +197,19 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
     }
 
     @Override
+    public int getUpgradeIntSetting(UpgradeDataSync.Field setting) {
+        return upgradeData.getIntSetting(setting);
+    }
+
+    @Override
+    public void setUpgradeIntSetting(UpgradeDataSync.Field setting, int value) {
+        upgradeData.setIntSetting(setting, value);
+        if (player != null && player.level().isClientSide)
+            PacketDistributor.sendToServer(new UpgradeIntDataPacket(setting.getIndex(), value));
+        setDataChanged();
+    }
+
+    @Override
     public int getSlots() {
         return itemHandler.getSlots();
     }
@@ -211,8 +226,13 @@ public class BackpackContainer implements IBackpackContainer, IItemHandlerModifi
 
     @Override
     public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack itemStack, boolean simulate) {
-        ItemStack remainder = itemHandler.insertItem(slot, itemStack, simulate);
-        if (!simulate && remainder.getCount() != itemStack.getCount())
+        ItemStack toInsert = player != null && layout.items().contains(slot)
+                ? VoidUpgrade.acceptableInsert(this, player.level(), itemStack)
+                : itemStack;
+        if (toInsert.isEmpty()) return ItemStack.EMPTY;
+
+        ItemStack remainder = itemHandler.insertItem(slot, toInsert, simulate);
+        if (!simulate && remainder.getCount() != toInsert.getCount())
             saveItemsToStack();
         return remainder;
     }

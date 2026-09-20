@@ -13,6 +13,7 @@ import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxItem;
 import net.fxnt.fxntstorage.simple_storage.CompactingChain;
 import net.fxnt.fxntstorage.simple_storage.CompactingRecipeHelper;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxItem;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -21,6 +22,7 @@ import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,13 +84,15 @@ public class BackpackTooltip implements TooltipComponent {
 
             // Express slot0 as the whole amount in each tier so the tooltip
             // reflects the box contents the way the in-world block does
+            Level level = Minecraft.getInstance().level;
             if (item instanceof SimpleStorageBoxItem
                     && COMPACTING_UPGRADE_SLOT < contents.size()
                     && contents.get(COMPACTING_UPGRADE_SLOT).is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE.get())
+                    && level != null
                     && !CompactingRecipeHelper.isEmpty()) {
                 ItemStack stored = contents.getFirst();
                 if (!stored.isEmpty()) {
-                    CompactingChain chain = CompactingRecipeHelper.buildChain(stored.getItem());
+                    CompactingChain chain = CompactingRecipeHelper.buildChain(level, stored.getItem());
                     if (chain != null) {
                         int t0Units = chain.toT0Units(stored.getItem(), stored.getCount());
                         this.storage = chain.tierViews(t0Units);
@@ -104,7 +108,7 @@ public class BackpackTooltip implements TooltipComponent {
                             this.upgrades.add(contents.get(i));
                         if (i == COMPACTING_UPGRADE_SLOT) // Compacting Upgrade
                             this.upgrades.add(contents.get(i));
-                        if (i > VOID_UPGRADE_SLOT) // Capacity Upgrades
+                        if (i > COMPACTING_UPGRADE_SLOT) // Capacity Upgrades
                             capUpgrades.grow(1);
                     }
                 }

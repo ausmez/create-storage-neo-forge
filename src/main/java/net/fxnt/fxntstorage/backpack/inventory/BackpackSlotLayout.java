@@ -2,6 +2,7 @@ package net.fxnt.fxntstorage.backpack.inventory;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BackpackSlotLayout {
@@ -16,6 +17,8 @@ public class BackpackSlotLayout {
     private final SlotSection craftingMatrix;
     private final SlotSection craftingResult;
     private final SlotSection workshop;
+    private final SlotSection thirstFilter;
+    private final SlotSection voidFilter;
 
     private final int totalSlots;
 
@@ -28,8 +31,9 @@ public class BackpackSlotLayout {
     private static final int FEEDER_FILTER_SLOTS = 1;
     private static final int CRAFTING_MATRIX_SLOTS = 9;
     private static final int CRAFTING_RESULT_SLOTS = 1;
-    // Workshop upgrade: machine, deployer-held, flywheel, crafting input, crafting output.
     private static final int WORKSHOP_SLOTS = 5;
+    private static final int THIRST_FILTER_SLOTS = 1;
+    private static final int VOID_FILTER_SLOTS = 1;
     private static final int PLAYER_INV_SLOTS = 27;
     private static final int PLAYER_HOTBAR_SLOTS = 9;
 
@@ -45,6 +49,8 @@ public class BackpackSlotLayout {
                 .craftingMatrix(CRAFTING_MATRIX_SLOTS)
                 .craftingResult(CRAFTING_RESULT_SLOTS)
                 .workshop(WORKSHOP_SLOTS)
+                .thirstFilter(THIRST_FILTER_SLOTS)
+                .voidFilter(VOID_FILTER_SLOTS)
                 .build();
     }
 
@@ -77,6 +83,12 @@ public class BackpackSlotLayout {
 
         this.workshop = new SlotSection("Workshop", offset, builder.workshop);
         offset += builder.workshop;
+
+        this.thirstFilter = new SlotSection("ThirstFilter", offset, builder.thirstFilter);
+        offset += builder.thirstFilter;
+
+        this.voidFilter = new SlotSection("VoidFilter", offset, builder.voidFilter);
+        offset += builder.voidFilter;
 
         this.totalSlots = offset;
     }
@@ -118,6 +130,14 @@ public class BackpackSlotLayout {
         return workshop;
     }
 
+    public SlotSection thirstFilter() {
+        return thirstFilter;
+    }
+
+    public SlotSection voidFilter() {
+        return voidFilter;
+    }
+
     public int getTotalSlots() {
         return totalSlots;
     }
@@ -142,6 +162,8 @@ public class BackpackSlotLayout {
         if (craftingMatrix.contains(slotIndex)) return craftingMatrix;
         if (craftingResult.contains(slotIndex)) return craftingResult;
         if (workshop.contains(slotIndex)) return workshop;
+        if (thirstFilter.contains(slotIndex)) return thirstFilter;
+        if (voidFilter.contains(slotIndex)) return voidFilter;
 
         if (playerInventory().contains(slotIndex)) return playerInventory();
         if (playerHotbar().contains(slotIndex)) return playerHotbar();
@@ -151,7 +173,7 @@ public class BackpackSlotLayout {
 
     // Gets all sections in order
     public List<SlotSection> getAllSections() {
-        return List.of(items, tools, upgrades, jukeboxDiscs, magnetFilter, feederFilter, craftingMatrix, craftingResult, workshop);
+        return List.of(items, tools, upgrades, jukeboxDiscs, magnetFilter, feederFilter, craftingMatrix, craftingResult, workshop, thirstFilter, voidFilter);
     }
 
     // Represents a contiguous section of slots
@@ -217,8 +239,15 @@ public class BackpackSlotLayout {
         return getMultiRange(items, tools);
     }
 
-    public IntRange getFiltersRange() {
-        return getMultiRange(magnetFilter, feederFilter);
+    // Filter slots are not contiguous, so callers needing "every ghost-filter slot" should use this
+    public List<Integer> getFilterSlotIndices() {
+        List<Integer> indices = new ArrayList<>();
+        for (SlotSection section : List.of(magnetFilter, feederFilter, thirstFilter, voidFilter)) {
+            for (int i : section.range()) {
+                indices.add(i);
+            }
+        }
+        return indices;
     }
 
     public static class IntRange implements Iterable<Integer> {
@@ -280,6 +309,16 @@ public class BackpackSlotLayout {
 
         // Feeder Filter - don't sort
         if (feederFilter().contains(slotIndex)) {
+            return SortRange.NONE;
+        }
+
+        // Thirst Filter - don't sort
+        if (thirstFilter().contains(slotIndex)) {
+            return SortRange.NONE;
+        }
+
+        // Void Filter - don't sort
+        if (voidFilter().contains(slotIndex)) {
             return SortRange.NONE;
         }
 
@@ -356,6 +395,8 @@ public class BackpackSlotLayout {
         private int craftingMatrix = 0;
         private int craftingResult = 0;
         private int workshop = 0;
+        private int thirstFilter = 0;
+        private int voidFilter = 0;
 
         public Builder items(int count) {
             this.itemSlots = count;
@@ -399,6 +440,16 @@ public class BackpackSlotLayout {
 
         public Builder workshop(int count) {
             this.workshop = count;
+            return this;
+        }
+
+        public Builder thirstFilter(int count) {
+            this.thirstFilter = count;
+            return this;
+        }
+
+        public Builder voidFilter(int count) {
+            this.voidFilter = count;
             return this;
         }
 

@@ -1,11 +1,14 @@
 package net.fxnt.fxntstorage.datagen.helper;
 
+import cn.mlus.thirst.content.registry.ItemInit;
+import cn.mlus.thirst.content.registry.ThirstComponent;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.content.decoration.encasing.CasingBlock;
 import com.tterrag.registrate.providers.DataGenContext;
 import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
+import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.controller.StorageController;
@@ -30,6 +33,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
+import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
 
 import java.util.Set;
 import java.util.function.Supplier;
@@ -185,6 +189,27 @@ public class ModRecipeHelper {
                 .group("backpack")
                 .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
                 .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName()));
+    }
+
+    public static NonNullBiConsumer<DataGenContext<Item, UpgradeItem>, RegistrateRecipeProvider> thirstUpgradeItem() {
+        return (ctx, prov) -> {
+            if (!FXNTStorage.THIRST_LOADED) return;
+
+            ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                    .define('B', ModItems.BACKPACK_BLANK_UPGRADE)
+                    .define('R', AllBlocks.REDSTONE_LINK)
+                    .define('I', AllItems.IRON_SHEET)
+                    .define('X', DataComponentIngredient.of(false, ThirstComponent.PURITY, 1, ItemInit.TERRACOTTA_WATER_BOWL))
+                    .define('Y', DataComponentIngredient.of(false, ThirstComponent.PURITY, 2, ItemInit.TERRACOTTA_WATER_BOWL))
+                    .define('Z', DataComponentIngredient.of(false, ThirstComponent.PURITY, 3, ItemInit.TERRACOTTA_WATER_BOWL))
+                    .pattern(" R ")
+                    .pattern("IBI")
+                    .pattern("XYZ")
+                    .group("backpack")
+                    .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
+                    .save(prov.withConditions(new ModLoadedCondition(ModCompats.THIRST_WAS_RECLAIMED)),
+                            modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName()));
+        };
     }
 
     public static NonNullBiConsumer<DataGenContext<Block, StorageController>, RegistrateRecipeProvider> storageController() {

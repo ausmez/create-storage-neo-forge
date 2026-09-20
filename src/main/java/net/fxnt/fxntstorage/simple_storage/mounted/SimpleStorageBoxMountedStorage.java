@@ -72,7 +72,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     private @Nullable Level world = null;
     private boolean lastRegisteredCompacting = false;
 
-    // Tracks each player's last front-display click time (game ticks) to detect a double-click,
+    // Tracks each player's last front-display click time (game ticks) to detect a double click,
     // mirroring the placed block's ClickData in SimpleStorageBox. One storage per mounted box, so
     // the block position is implicit and only the per-player timestamp is needed.
     private final Map<Player, Long> lastClickTimes = new WeakHashMap<>();
@@ -186,22 +186,30 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             return;
         }
         if (CompactingRecipeHelper.isEmpty()) {
-            CompactingRecipeHelper.rebuild(world.getRecipeManager(), world.registryAccess());
+            CompactingRecipeHelper.rebuild();
         }
-        compactingChain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+        compactingChain = CompactingRecipeHelper.buildChain(world, filterItem.getItem());
+    }
+
+    // Contents are always held as T0. A chain can gain a lower tier - another mod joining a shared
+    // ingredient tag can reveal a nugget step that was previously invisible - so a contraption loaded
+    // from an older save may be holding what is now T1 or T2. Mirrors SimpleStorageBoxEntity.
+    private void normaliseStoredToChainBase() {
+        if (compactingChain == null || world == null || world.isClientSide) return;
+
+        ItemStack stored = getStackInSlot(0);
+        if (stored.isEmpty() || stored.getItem() == compactingChain.t0()) return;
+
+        int t0Units = compactingChain.toT0Units(stored.getItem(), stored.getCount());
+        if (t0Units <= 0) return;
+
+        setStackInSlot(0, new ItemStack(compactingChain.t0(), Math.min(t0Units, getMaxItemCapacity())));
+        filterItem = new ItemStack(compactingChain.t0());
     }
 
     private void onCompactingUpgradeInstalled() {
         compactingSelectedTier = 0;
-        if (compactingChain == null) return;
-        ItemStack stored = getStackInSlot(0);
-        if (!stored.isEmpty() && stored.getItem() != compactingChain.t0()) {
-            int t0Units = compactingChain.toT0Units(stored.getItem(), stored.getCount());
-            if (t0Units > 0) {
-                setStackInSlot(0, new ItemStack(compactingChain.t0(), Math.min(t0Units, getMaxItemCapacity())));
-                filterItem = new ItemStack(compactingChain.t0());
-            }
-        }
+        normaliseStoredToChainBase();
     }
 
     private void onCompactingUpgradeRemoved() {
@@ -414,6 +422,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     private ItemStack insertCompacting(ItemStack stack, boolean simulate) {
+        if (compactingChain == null) return ItemStack.EMPTY;
         int t0PerUnit = compactingChain.toT0Units(stack.getItem(), 1);
         if (t0PerUnit <= 0) return stack;
 
@@ -590,6 +599,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         this.compactingSelectedTier = context.blockEntityData.getInt("CompactingSelectedTier");
         if (this.compactingUpgrade) {
             buildCompactingChain();
+            normaliseStoredToChainBase();
         }
 
         if (this.currentContraption != null && !filterItem.isEmpty()) {
@@ -597,7 +607,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             ContraptionStorageFilters registry = ContraptionStorageFilters.getOrCreate(currentContraption);
             registry.register(this, filterWrapper);
             if (compactingUpgrade && compactingChain != null) {
-                if (compactingChain.t1() != null) registry.register(this, new ItemStack(compactingChain.t1()));
+                registry.register(this, new ItemStack(compactingChain.t1()));
                 if (compactingChain.t2() != null) registry.register(this, new ItemStack(compactingChain.t2()));
             }
             lastRegisteredFilter = filterWrapper;
@@ -639,7 +649,6 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             return; // nothing changed
         }
 
-        // Remove old filter(s)
         if (lastRegisteredFilter != null) {
             registry.unregister(this);
         }
@@ -648,7 +657,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         if (newFilter != null) {
             registry.register(this, newFilter);
             if (compactingUpgrade && compactingChain != null) {
-                if (compactingChain.t1() != null) registry.register(this, new ItemStack(compactingChain.t1()));
+                registry.register(this, new ItemStack(compactingChain.t1()));
                 if (compactingChain.t2() != null) registry.register(this, new ItemStack(compactingChain.t2()));
             }
         }
@@ -658,10 +667,10 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
     }
 
     private ItemStackHandler migrateSlotItems(ItemStackHandler oldHandler) {
-        // The new layout is: 0=storage, 1=void, 2=compacting, 3-11=capacity.
+        // The new layout is: 0=storage, 1=void, 2=compacting, 3-11=capacity
         ItemStackHandler newHandler = new ItemStackHandler(SLOT_COUNT);
         if (oldHandler.getSlots() == 11) {
-            // 1.1.2 layout: 0=storage, 1=shared void/compacting upgrade, 2-10=capacity.
+            // 1.1.2 layout: 0=storage, 1=void upgrade, 2-10=capacity
             newHandler.setStackInSlot(0, oldHandler.getStackInSlot(0).copy());
             placeMigratedUpgrade(newHandler, oldHandler.getStackInSlot(1));
             for (int oldSlot = 2; oldSlot <= 10; oldSlot++) {
@@ -671,7 +680,7 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
                 }
             }
         } else {
-            // Pre-1.1.2 layout: 0+1=storage halves, 3=shared void/compacting upgrade, 4-12=capacity.
+            // Pre-1.1.2 layout: 0+1=storage halves, 3=void upgrade, 4-12=capacity
             ItemStack slot0 = oldHandler.getStackInSlot(0);
             ItemStack slot1 = oldHandler.getStackInSlot(1);
 

@@ -149,6 +149,18 @@ public class BackpackMenu extends AbstractContainerMenu {
                 .withBoolean(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE,
                         () -> container.getUpgradeSetting(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE),
                         (idx, val) -> container.setUpgradeSetting(UpgradeDataSync.Field.FEEDER_DISPLAY_MESSAGE, val))
+                .withBoolean(UpgradeDataSync.Field.THIRST_DISPLAY_MESSAGE,
+                        () -> container.getUpgradeSetting(UpgradeDataSync.Field.THIRST_DISPLAY_MESSAGE),
+                        (idx, val) -> container.setUpgradeSetting(UpgradeDataSync.Field.THIRST_DISPLAY_MESSAGE, val))
+                .withInteger(UpgradeDataSync.Field.THIRST_MIN_PURITY,
+                        () -> container.getUpgradeIntSetting(UpgradeDataSync.Field.THIRST_MIN_PURITY),
+                        (idx, val) -> container.setUpgradeIntSetting(UpgradeDataSync.Field.THIRST_MIN_PURITY, val))
+                .withInteger(UpgradeDataSync.Field.VOID_MODE,
+                        () -> container.getUpgradeIntSetting(UpgradeDataSync.Field.VOID_MODE),
+                        (idx, val) -> container.setUpgradeIntSetting(UpgradeDataSync.Field.VOID_MODE, val))
+                .withBoolean(UpgradeDataSync.Field.VOID_GUI_ALLOW,
+                        () -> container.getUpgradeSetting(UpgradeDataSync.Field.VOID_GUI_ALLOW),
+                        (idx, val) -> container.setUpgradeSetting(UpgradeDataSync.Field.VOID_GUI_ALLOW, val))
                 .withBoolean(UpgradeDataSync.Field.JETPACK_OVERLAY,
                         () -> container.getUpgradeSetting(UpgradeDataSync.Field.JETPACK_OVERLAY),
                         (idx, val) -> container.setUpgradeSetting(UpgradeDataSync.Field.JETPACK_OVERLAY, val))
@@ -522,6 +534,10 @@ public class BackpackMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
 
+                if (layout.upgrades().contains(index)) {
+                    onUpgradeItemTaken(itemStack);
+                }
+
                 slot.onTake(player, itemStack2);
             }
             return itemStack;
@@ -794,6 +810,9 @@ public class BackpackMenu extends AbstractContainerMenu {
             if (upgrade != null) {
                 UpgradeContext context = UpgradeContext.forMenu(this, player, container.getItemHandler(), type, blockPos);
                 upgrade.onRemoved(context);
+                // The item has actually left the slot here, so anything held on the player's behalf
+                // (a real Create filter) goes back now - deactivation alone must not do this
+                upgrade.onUninstalled(context);
             }
         }
     }
@@ -987,6 +1006,17 @@ public class BackpackMenu extends AbstractContainerMenu {
         }
     }
 
+    public void setUpgradeIntSetting(UpgradeDataSync.Field setting, int value) {
+        if (container.getUpgradeIntSetting(setting) == value) return;
+        container.setUpgradeIntSetting(setting, value);
+
+        if (player.level().isClientSide) {
+            upgradeSync.setLocalIntValue(setting, value);
+        } else {
+            updateBackpackDataFromContainer();
+        }
+    }
+
     public void sortBackpackItems(int startIndex, SortOrder sortOrder) {
         int stackMultiplier = container.getStackMultiplier();
         ServerPlayer sp = (ServerPlayer) player;
@@ -1134,6 +1164,16 @@ public class BackpackMenu extends AbstractContainerMenu {
 
         boolean current = isUpgradeSettingEnabled(setting);
         setUpgradeSetting(setting, !current);
+        container.saveSettings();
+    }
+
+    // Advances a multi-state (int) setting, wrapping back round to min once it passes max
+    public void cycleUpgradeIntSetting(UpgradeDataSync.Field setting, int min, int max) {
+        if (!player.level().isClientSide) return;
+
+        int current = getUpgradeSyncValue(setting);
+        int next = current >= max || current < min ? min : current + 1;
+        setUpgradeIntSetting(setting, next);
         container.saveSettings();
     }
 

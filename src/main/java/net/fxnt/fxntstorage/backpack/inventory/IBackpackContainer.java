@@ -38,5 +38,9 @@ public interface IBackpackContainer {
 
     void setUpgradeSetting(UpgradeDataSync.Field upgrade, boolean value);
 
+    int getUpgradeIntSetting(UpgradeDataSync.Field upgrade);
+
+    void setUpgradeIntSetting(UpgradeDataSync.Field upgrade, int value);
+
     void saveSettings();
 }

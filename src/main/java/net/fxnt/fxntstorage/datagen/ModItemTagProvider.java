@@ -30,6 +30,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.BACKPACK_FLIGHT_UPGRADE.get())
                 .add(ModItems.BACKPACK_REFILL_UPGRADE.get())
                 .add(ModItems.BACKPACK_FEEDER_UPGRADE.get())
+                .add(ModItems.BACKPACK_THIRST_UPGRADE.get())
                 .add(ModItems.BACKPACK_TOOLSWAP_UPGRADE.get())
                 .add(ModItems.BACKPACK_FALLDAMAGE_UPGRADE.get())
                 .add(ModItems.BACKPACK_OREMINING_UPGRADE.get())
@@ -38,6 +39,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.BACKPACK_HEALTH_UPGRADE.get())
                 .add(ModItems.BACKPACK_CRAFTING_UPGRADE.get())
                 .add(ModItems.BACKPACK_WORKSHOP_UPGRADE.get())
+                .add(ModItems.BACKPACK_VOID_UPGRADE.get())
                 .addTag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED);
 
         tag(ModTags.Items.CURIOS_BACK).addTag(ModTags.Items.BACKPACK_ITEM);

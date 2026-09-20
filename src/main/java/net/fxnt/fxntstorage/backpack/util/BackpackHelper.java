@@ -6,6 +6,7 @@ import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
+import net.fxnt.fxntstorage.backpack.upgrade.voiding.VoidUpgrade;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -181,6 +182,18 @@ public class BackpackHelper {
         boolean changed = false;
         int maxStackSize = container.getStackMultiplier() * stack.getMaxStackSize();
         List<Integer> changedSlots = new ArrayList<>();
+
+        // Void whatever the upgrade would delete before it is stored, so it never shows up in a slot
+        int voided = stack.getCount()
+                - VoidUpgrade.acceptableInsert(container, itemEntity.level(), stack).getCount();
+        if (voided > 0) {
+            stack.shrink(voided);
+            changed = true;
+            if (stack.isEmpty()) {
+                container.setDataChanged();
+                return true;
+            }
+        }
 
         // If matching slot stack exists
         if (!stack.isDamageableItem() && !stack.isBarVisible()) {

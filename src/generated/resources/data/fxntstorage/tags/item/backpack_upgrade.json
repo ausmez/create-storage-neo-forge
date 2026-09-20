@@ -6,6 +6,7 @@
     "fxntstorage:backpack_flight_upgrade",
     "fxntstorage:backpack_refill_upgrade",
     "fxntstorage:backpack_feeder_upgrade",
+    "fxntstorage:backpack_thirst_upgrade",
     "fxntstorage:backpack_toolswap_upgrade",
     "fxntstorage:backpack_falldamage_upgrade",
     "fxntstorage:backpack_oremining_upgrade",
@@ -14,6 +15,7 @@
     "fxntstorage:backpack_health_upgrade",
     "fxntstorage:backpack_crafting_upgrade",
     "fxntstorage:backpack_workshop_upgrade",
+    "fxntstorage:backpack_void_upgrade",
     "#fxntstorage:backpack_upgrade_deactivated"
   ]
 }

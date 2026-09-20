@@ -3,13 +3,10 @@ package net.fxnt.fxntstorage.backpack.upgrade;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.world.inventory.Slot;
 
 import java.util.List;
 import java.util.function.Consumer;
-
-import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 
 public interface UpgradePanel {
 
@@ -49,12 +46,5 @@ public interface UpgradePanel {
         for (Slot slot : slots) {
             slot.y = relativeTabY + 22;
         }
-    }
-
-    static WidgetSprites createWidgetSprites(String name) {
-        return new WidgetSprites(
-                modLoc(name),
-                modLoc(name + "_highlight")
-        );
     }
 }

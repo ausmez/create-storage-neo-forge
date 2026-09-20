@@ -22,6 +22,8 @@ public class BackpackMovementBehaviour implements MovementBehaviour {
             storage.tickMagnet(context);
         if (storage.hasActiveUpgrade(UpgradeType.WORKSHOP))
             storage.tickWorkshop(context);
+        if (storage.hasActiveUpgrade(UpgradeType.VOID))
+            storage.tickVoid(context);
     }
 
     private @Nullable BackpackMountedStorage getMountedStorage(MovementContext context) {

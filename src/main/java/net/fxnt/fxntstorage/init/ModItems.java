@@ -138,7 +138,6 @@ public class ModItems {
             .properties(properties -> properties.stacksTo(1))
             .recipe((ctx, prov) -> MechanicalCraftingRecipeBuilder.shapedRecipe(ctx.get())
                     .key('B', ModItems.BACKPACK_BLANK_UPGRADE)
-//                    .key('I', AllItems.IRON_SHEET)
                     .key('C', AllBlocks.COGWHEEL)
                     .key('F', AllBlocks.ENCASED_FAN)
                     .key('P', AllItems.PROPELLER)
@@ -386,12 +385,50 @@ public class ModItems {
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
                     .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
-
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_WORKSHOP_UPGRADE_DEACTIVATED = REGISTRATE
             .item(Util.WORKSHOP_UPGRADE_DEACTIVATED, properties -> new UpgradeItem(properties, Util.WORKSHOP_UPGRADE_DEACTIVATED))
             .lang("Portable Workshop Upgrade")
+            .properties(properties -> properties.stacksTo(1))
+            .tag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED)
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_THIRST_UPGRADE = REGISTRATE
+            .item(Util.THIRST_UPGRADE, properties -> new UpgradeItem(properties, Util.THIRST_UPGRADE))
+            .lang("Thirst Upgrade")
+            .properties(properties -> properties.stacksTo(1))
+            .recipe(ModRecipeHelper.thirstUpgradeItem())
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_THIRST_UPGRADE_DEACTIVATED = REGISTRATE
+            .item(Util.THIRST_UPGRADE_DEACTIVATED, properties -> new UpgradeItem(properties, Util.THIRST_UPGRADE_DEACTIVATED))
+            .lang("Thirst Upgrade")
+            .properties(properties -> properties.stacksTo(1))
+            .tag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED)
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_VOID_UPGRADE = REGISTRATE
+            .item(Util.VOID_UPGRADE, properties -> new UpgradeItem(properties, Util.VOID_UPGRADE))
+            .lang("Void Upgrade")
+            .properties(properties -> properties.stacksTo(1))
+            .recipe((ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
+                    .define('B', ModItems.BACKPACK_BLANK_UPGRADE)
+                    .define('R', AllBlocks.REDSTONE_LINK)
+                    .define('I', AllItems.IRON_SHEET)
+                    .define('E', Items.ENDER_PEARL)
+                    .define('O', Blocks.OBSIDIAN)
+                    .pattern(" R ")
+                    .pattern("IBI")
+                    .pattern("OEO")
+                    .group("backpack")
+                    .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
+                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+            .register();
+
+    public static final ItemEntry<UpgradeItem> BACKPACK_VOID_UPGRADE_DEACTIVATED = REGISTRATE
+            .item(Util.VOID_UPGRADE_DEACTIVATED, properties -> new UpgradeItem(properties, Util.VOID_UPGRADE_DEACTIVATED))
+            .lang("Void Upgrade")
             .properties(properties -> properties.stacksTo(1))
             .tag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED)
             .register();

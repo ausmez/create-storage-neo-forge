@@ -56,6 +56,8 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
     // Panel dimensions
     private static final int PANEL_EXPANDED_HEIGHT = 47;
     private static final int PANEL_COLLAPSED_HEIGHT = 32;
+    private static final int PANEL_TAB_TEXTURE_SIZE = 24;
+    private static final int PANEL_BACKGROUND_OVERLAP = 3;
     private static final int PANEL_TAB_WIDTH = 18;
     private static final int PANEL_TAB_HEIGHT = 20;
     private static final int PANEL_TAB_SPACING = 4;
@@ -548,15 +550,15 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
             if (panel.expanded) {
                 // Render expanded panel background
-                graphics.blit(PANEL_TEXTURE, panelX - 3, panelY,
+                graphics.blit(PANEL_TEXTURE, panelX - PANEL_BACKGROUND_OVERLAP, panelY,
                         panel.panel.getTextureU(), panel.panel.getTextureV(),
                         panel.panel.getExpandedWidth(), panel.panel.getExpandedHeight(), 256, 256);
                 panel.panel.render(graphics, mouseX, mouseY);
 
             } else {
                 // Render collapsed tab
-                graphics.blit(PANEL_TEXTURE, panelX - 3, panelY,
-                        0, PANEL_EXPANDED_HEIGHT, 24, 24, 256, 256);
+                graphics.blit(PANEL_TEXTURE, panelX - PANEL_BACKGROUND_OVERLAP, panelY,
+                        0, PANEL_EXPANDED_HEIGHT, PANEL_TAB_TEXTURE_SIZE, PANEL_TAB_TEXTURE_SIZE, 256, 256);
             }
         }
     }
@@ -826,10 +828,73 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
     @Override
     protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top, int button) {
-        for (Rect2i zone : getExclusionZones()) {
-            if (zone.contains((int) mouseX, (int) mouseY)) return false;
-        }
+        Rect2i column = getPanelColumnBounds();
+        if (column != null && column.contains((int) mouseX, (int) mouseY)) return false;
+
         return super.hasClickedOutside(mouseX, mouseY, left, top, button);
+    }
+
+    @NotNull
+    public Rect2i getScreenBounds() {
+        int right = leftPos + imageWidth;
+        int top = topPos;
+        int bottom = topPos + imageHeight;
+
+        for (Rect2i tab : getTabZones()) {
+            right = Math.max(right, tab.getX() + tab.getWidth());
+            top = Math.min(top, tab.getY());
+            bottom = Math.max(bottom, tab.getY() + tab.getHeight());
+        }
+
+        return new Rect2i(leftPos, top, right - leftPos, bottom - top);
+    }
+
+    @NotNull
+    public List<Rect2i> getProtrudingPanelZones() {
+        List<Rect2i> zones = new ArrayList<>();
+        int tabRight = leftPos + imageWidth + PANEL_TAB_TEXTURE_SIZE - PANEL_BACKGROUND_OVERLAP;
+
+        for (Rect2i zone : getExclusionZones()) {
+            int right = zone.getX() + zone.getWidth();
+            if (right <= tabRight) continue;
+
+            zones.add(new Rect2i(tabRight, zone.getY(), right - tabRight, zone.getHeight()));
+        }
+
+        return zones;
+    }
+
+    @NotNull
+    private List<Rect2i> getTabZones() {
+        int panelX = leftPos + imageWidth;
+        List<Rect2i> tabs = new ArrayList<>(upgradePanels.size());
+
+        for (PanelState panel : upgradePanels) {
+            tabs.add(new Rect2i(panelX, panel.tabY - 2,
+                    PANEL_TAB_TEXTURE_SIZE - PANEL_BACKGROUND_OVERLAP, PANEL_TAB_TEXTURE_SIZE));
+        }
+
+        return tabs;
+    }
+
+    @Nullable
+    private Rect2i getPanelColumnBounds() {
+        List<Rect2i> zones = getExclusionZones();
+        if (zones.isEmpty()) return null;
+
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+
+        for (Rect2i zone : zones) {
+            minX = Math.min(minX, zone.getX());
+            minY = Math.min(minY, zone.getY());
+            maxX = Math.max(maxX, zone.getX() + zone.getWidth());
+            maxY = Math.max(maxY, zone.getY() + zone.getHeight());
+        }
+
+        return new Rect2i(minX, minY, maxX - minX, maxY - minY);
     }
 
     @NotNull
@@ -839,21 +904,16 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             return List.of();
 
         int panelX = leftPos + imageWidth;
-        int minTop = Integer.MAX_VALUE;
-        int maxBottom = Integer.MIN_VALUE;
-        int maxWidth = 0;
+        List<Rect2i> zones = new ArrayList<>(upgradePanels.size());
 
         for (PanelState panel : upgradePanels) {
-            int top = panel.tabY - 2;
-            int width = panel.expanded ? panel.panel.getExpandedWidth() - 3 : PANEL_TAB_WIDTH + 2;
-            int height = panel.expanded ? panel.panel.getExpandedHeight() : PANEL_TAB_HEIGHT + 3;
+            int width = panel.expanded ? panel.panel.getExpandedWidth() : PANEL_TAB_TEXTURE_SIZE;
+            int height = panel.expanded ? panel.panel.getExpandedHeight() : PANEL_TAB_TEXTURE_SIZE;
 
-            minTop = Math.min(minTop, top);
-            maxBottom = Math.max(maxBottom, top + height);
-            maxWidth = Math.max(maxWidth, width);
+            zones.add(new Rect2i(panelX, panel.tabY - 2, width - PANEL_BACKGROUND_OVERLAP, height));
         }
 
-        return List.of(new Rect2i(panelX, minTop, maxWidth, maxBottom - minTop));
+        return zones;
     }
 
     private record GuiTextureConfig(ResourceLocation texture, int height, int rows) {

@@ -48,6 +48,7 @@ public class ModTabs {
                 ModItems.BACKPACK_FLIGHT_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_REFILL_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_FEEDER_UPGRADE_DEACTIVATED.asItem(),
+                ModItems.BACKPACK_THIRST_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_TOOLSWAP_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_FALLDAMAGE_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_OREMINING_UPGRADE_DEACTIVATED.asItem(),
@@ -55,11 +56,16 @@ public class ModTabs {
                 ModItems.BACKPACK_JUKEBOX_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_HEALTH_UPGRADE_DEACTIVATED.asItem(),
                 ModItems.BACKPACK_CRAFTING_UPGRADE_DEACTIVATED.asItem(),
-                ModItems.BACKPACK_WORKSHOP_UPGRADE_DEACTIVATED.asItem()
+                ModItems.BACKPACK_WORKSHOP_UPGRADE_DEACTIVATED.asItem(),
+                ModItems.BACKPACK_VOID_UPGRADE_DEACTIVATED.asItem()
         );
 
+        private static final Set<Item> CONDITIONAL_ITEMS = FXNTStorage.THIRST_LOADED
+                ? Set.of()
+                : Set.of(ModItems.BACKPACK_THIRST_UPGRADE.asItem());
+
         private static Predicate<Item> exclusionPredicate() {
-            return EXCLUDED_ITEMS::contains;
+            return item -> EXCLUDED_ITEMS.contains(item) || CONDITIONAL_ITEMS.contains(item);
         }
 
         private static List<ItemOrdering> makeOrdering() {

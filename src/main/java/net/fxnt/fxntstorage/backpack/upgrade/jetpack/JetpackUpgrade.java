@@ -1,6 +1,8 @@
 package net.fxnt.fxntstorage.backpack.upgrade.jetpack;
 
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIcon;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIconSprites;
 import net.fxnt.fxntstorage.backpack.client.menu.button.SpriteButton;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
 import net.fxnt.fxntstorage.network.packet.JetpackStateResetPacket;
@@ -8,7 +10,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -67,10 +68,10 @@ public class JetpackUpgrade extends AbstractUpgrade {
         public record JetpackState(boolean bobbing, boolean overlay) {
         }
 
-        private static final WidgetSprites BOBBING_ON = UpgradePanel.createWidgetSprites("jetpack_bobbing_on");
-        private static final WidgetSprites BOBBING_OFF = UpgradePanel.createWidgetSprites("jetpack_bobbing_off");
-        private static final WidgetSprites OVERLAY_ON = UpgradePanel.createWidgetSprites("jetpack_overlay_on");
-        private static final WidgetSprites OVERLAY_OFF = UpgradePanel.createWidgetSprites("jetpack_overlay_off");
+        private static final GuiIconSprites BOBBING_ON = new GuiIconSprites(GuiIcon.JETPACK_BOBBING_ON);
+        private static final GuiIconSprites BOBBING_OFF = new GuiIconSprites(GuiIcon.JETPACK_BOBBING_OFF);
+        private static final GuiIconSprites OVERLAY_ON = new GuiIconSprites(GuiIcon.JETPACK_OVERLAY_ON);
+        private static final GuiIconSprites OVERLAY_OFF = new GuiIconSprites(GuiIcon.JETPACK_OVERLAY_OFF);
 
         private int panelX;
         private int panelY;

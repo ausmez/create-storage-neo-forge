@@ -10,7 +10,6 @@ import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.CyclingSlotBackground;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -30,10 +29,8 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
             FXNTStorage.MOD_ID, "textures/gui/container/simple_storage_box_screen.png");
     private static final int GUI_TEXTURE_WIDTH = 176;
     private static final int GUI_TEXTURE_HEIGHT = 178;
+    private static final int FILTER_SLOT_SIZE = 34;
 
-    // Empty-slot icons for the void (menu slot 0) and compacting (menu slot 1) upgrade slots.
-    private final CyclingSlotBackground voidIcon = new CyclingSlotBackground(0);
-    private final CyclingSlotBackground compactingIcon = new CyclingSlotBackground(1);
     private final TruncatedTitle titleRenderer = new TruncatedTitle();
 
     protected AbstractSimpleStorageBoxScreen(M menu, Inventory playerInventory, Component title) {
@@ -51,12 +48,12 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         this.renderBackground(graphics, mouseX, mouseY, delta);
         super.render(graphics, mouseX, mouseY, delta);
-        int filterX = leftPos + 32;
-        int filterY = topPos + 22;
-        renderFilterItem(graphics, filterX, filterY);
+        int slotX = leftPos + 30;
+        int slotY = topPos + 20;
+        renderFilterItem(graphics, slotX, slotY);
         this.renderTooltip(graphics, mouseX, mouseY);
         ItemStack filterItem = menu.getDisplayedItem();
-        if (!filterItem.isEmpty() && mouseX >= filterX && mouseX < filterX + 34 && mouseY >= filterY && mouseY < filterY + 34) {
+        if (!filterItem.isEmpty() && mouseX >= slotX && mouseX < slotX + FILTER_SLOT_SIZE && mouseY >= slotY && mouseY < slotY + FILTER_SLOT_SIZE) {
             graphics.renderTooltip(font, filterItem, mouseX, mouseY);
         }
         titleRenderer.renderTooltipIfHovered(graphics, font, leftPos, topPos, mouseX, mouseY);
@@ -66,8 +63,6 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
     protected void renderBg(GuiGraphics graphics, float delta, int mouseX, int mouseY) {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         graphics.blit(GUI_TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, GUI_TEXTURE_WIDTH, GUI_TEXTURE_HEIGHT);
-        this.voidIcon.render(this.menu, graphics, delta, this.leftPos, this.topPos);
-        this.compactingIcon.render(this.menu, graphics, delta, this.leftPos, this.topPos);
     }
 
     @Override
@@ -84,7 +79,6 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
         graphics.drawString(font, voidText + getUpgradeLabel(), 68, 45, 0x404040, false);
     }
 
-    // Void upgrade lives in menu slot 0, compacting in menu slot 1; both can be installed at once.
     private String getUpgradeLabel() {
         boolean hasVoid = menu.getSlot(0).getItem().is(ModItems.STORAGE_BOX_VOID_UPGRADE);
         boolean hasCompacting = menu.getSlot(1).getItem().is(ModItems.STORAGE_BOX_COMPACTING_UPGRADE);
@@ -102,8 +96,8 @@ public abstract class AbstractSimpleStorageBoxScreen<M extends AbstractContainer
     private void renderFilterItem(GuiGraphics graphics, int x, int y) {
         ItemStack itemStack = menu.getDisplayedItem();
         if (!itemStack.isEmpty()) {
-            renderFilterItemStack(graphics, itemStack, x + 15f, y + 15f);
-            renderFilterItemDecoration(graphics, font, itemStack, x, y, menu.getDisplayedStoredAmount());
+            renderFilterItemStack(graphics, itemStack, x + FILTER_SLOT_SIZE / 2f, y + FILTER_SLOT_SIZE / 2f);
+            renderFilterItemDecoration(graphics, font, itemStack, x + 2, y + 2, menu.getDisplayedStoredAmount());
         }
     }
 

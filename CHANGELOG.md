@@ -1,14 +1,44 @@
 # Changelog
 
+## 1.3.5 - 2026-09-20
+
+## Bug Fixes
+- Fixed the Compacting upgrade not compacting items whose recipe uses a common item tag. (#83)
+- Fixed the Simple Storage Box tooltip from showing the incorrect number of Capacity upgrades installed. 
+- Fixed the tooltip of the stored item in the Simple Storage Box screen being offset a few pixels.
+- Fixed the Magnet and Feeder upgrades keeping a Create filter item when the upgrade was removed. The filter is now returned to the inventory, or dropped if there is no room.
+- Deactivating the Jukebox upgrade no longer ejects the music disc into the inventory.
+- Fixed the JEI/EMI/REI item list dropping to the bottom half of the screen when an upgrade panel was expanded.
+- Fixed an issue with the Feeder upgrade deleting bowl/bottle after consuming food when inventory is full.
+- Fixed an NPE when using the Compacting upgrade wheel menu while changing worlds.
+
+## Changes
+- Added new **Void Upgrade** for backpacks that voids items from item storage slots (must match filter).
+  - Supports three modes: Always, Slot Overflow, or Backpack Overflow  
+- Added new **Thirst Upgrade** for backpacks for compatibility with 'Thirst Was Reclaimed' mod that will automatically drink stored items when thirsty. (#84)
+  - Supports minimum purity settings and item filters.
+  - `thirst_level` added to config settings to control when the upgrade drinks.
+- Create Smart Observers can now detect items being transferred through a Passer or Smart Passer Block.
+- Updated Chinese (Simplified) translation (`zh_cn`) and added Chinese (Traditional) translation (`zh_tw`) - Thanks @SkyEye-FAST (#81)
+- Backpacks now show installed upgrades as a row of icons at the top of the Jade tooltip.
+  - Upgrade, filter and other working slots no longer show as part of the tooltip's inventory contents.
+- Minor update to Feeder and Torch Deployer upgrade item textures.
+
+---
+
 ## 1.3.4 - 2026-08-19
 
 ## Changes
 - Updated the Feeder upgrade display message
 
+---
+
 ## 1.3.3 - 2026-08-09
 
 ## Changes
 - Added Chinese (Simplified) translation (`zh_cn`) - Thanks @VoidCat
+
+---
 
 ## 1.3.2 - 2026-07-21
 

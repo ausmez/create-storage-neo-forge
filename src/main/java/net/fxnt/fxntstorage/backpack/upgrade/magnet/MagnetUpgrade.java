@@ -1,11 +1,11 @@
 package net.fxnt.fxntstorage.backpack.upgrade.magnet;
 
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.content.logistics.filter.FilterItem;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import net.fxnt.fxntstorage.backpack.BackpackEntity;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIcon;
 import net.fxnt.fxntstorage.backpack.client.menu.button.ItemSpriteButton;
 import net.fxnt.fxntstorage.backpack.client.menu.slot.MagnetFilterSlot;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
@@ -22,7 +22,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -34,9 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
-import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 
 public class MagnetUpgrade extends AbstractUpgrade {
 
@@ -72,75 +69,22 @@ public class MagnetUpgrade extends AbstractUpgrade {
     }
 
     @Override
+    public int getFilterSlotIndex(BackpackSlotLayout layout) {
+        return layout.magnetFilter().getStartIndex();
+    }
+
+    @Override
+    public void onUninstalled(UpgradeContext context) {
+        GhostFilterHelper.returnFilterItem(context, getFilterSlotIndex(BackpackSlotLayout.createLayout()));
+    }
+
+    @Override
     public boolean clicked(UpgradeContext context) {
         BackpackSlotLayout layout = BackpackSlotLayout.createLayout();
+        if (context.slotId() != getFilterSlotIndex(layout)) return false;
 
-        if (layout.magnetFilter().contains(context.slotId())) {
-            if (context.clickType() != ClickType.PICKUP) return true;
-
-            Slot slot = context.player().containerMenu.slots.get(context.slotId());
-            ItemStack carried = context.player().containerMenu.getCarried();
-            ItemStack existing = slot.getItem();
-
-            Predicate<ItemStack> isCreateFilter = stack -> stack.getItem() instanceof FilterItem;
-
-            boolean carriedIsFilter = !carried.isEmpty() && isCreateFilter.test(carried);
-            boolean existingIsFilter = !existing.isEmpty() && isCreateFilter.test(existing);
-
-            // RIGHT CLICK: clear slot
-            if (context.button() == 1 && !existingIsFilter) {
-                slot.set(ItemStack.EMPTY);
-                context.container().setDataChanged();
-                return true;
-            }
-
-            // PICK UP existing filter
-            if (existingIsFilter && carried.isEmpty()) {
-                context.player().containerMenu.setCarried(existing);
-                slot.set(ItemStack.EMPTY);
-                context.container().setDataChanged();
-                return true;
-            }
-
-            if (existingIsFilter && carriedIsFilter) {
-                if (carried.getCount() > 1) {
-                    context.player().drop(existing, true);
-                    slot.set(carried.copyWithCount(1));
-                    carried.shrink(1);
-                } else {
-                    context.player().containerMenu.setCarried(existing);
-                    slot.set(carried);
-                }
-                context.container().setDataChanged();
-                return true;
-            }
-
-            if (existingIsFilter || carried.isEmpty()) return true;
-
-            ItemStack ghost;
-            if (carriedIsFilter) {
-                if (carried.getCount() == 1) {
-                    ghost = carried;
-                    context.player().containerMenu.setCarried(ItemStack.EMPTY);
-                } else {
-                    ghost = carried.copyWithCount(1);
-                    carried.shrink(1);
-                    context.player().containerMenu.setCarried(carried);
-                }
-            } else {
-                if (carried.has(DataComponents.POTION_CONTENTS)) {
-                    ghost = carried.copyWithCount(1);
-                } else {
-                    ghost = new ItemStack(carried.getItem(), 1);
-                }
-            }
-
-            slot.set(ghost);
-            context.container().setDataChanged();
-        } else {
-            return false;
-        }
-        return true;
+        // No filterAccepts override: the magnet filters on anything
+        return GhostFilterHelper.handleClick(context, stack -> filterAccepts(context, stack));
     }
 
     @Override
@@ -281,7 +225,7 @@ public class MagnetUpgrade extends AbstractUpgrade {
                     new ItemSpriteButton<>(
                             panelX + 22, panelY + 31, 18, 18,
                             initialState,
-                            state -> state.ignoreFan() ? modLoc("cross") : modLoc("check"),
+                            state -> state.ignoreFan() ? GuiIcon.CROSS : GuiIcon.CHECK,
                             state -> state.ignoreFan()
                                     ? Component.translatable("tooltip.fxntstorage.backpack_magnet_upgrade.panel.ignore_fan_items").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_magnet_upgrade.panel.ignore_fan_items.description").withStyle(ChatFormatting.DARK_GRAY))
                                     : Component.translatable("tooltip.fxntstorage.backpack_magnet_upgrade.panel.pull_fan_items").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_magnet_upgrade.panel.pull_fan_items.description").withStyle(ChatFormatting.DARK_GRAY)),

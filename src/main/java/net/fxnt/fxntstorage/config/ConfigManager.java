@@ -185,6 +185,7 @@ public class ConfigManager {
         public static ModConfigSpec.BooleanValue CHECK_BACKPACK_FOR_TOOLBOX_ITEMS;
         public static ModConfigSpec.IntValue FEEDER_HUNGER_LEVEL;
         public static ModConfigSpec.IntValue FEEDER_HEALTH_THRESHOLD;
+        public static ModConfigSpec.IntValue THIRST_LEVEL;
         public static ModConfigSpec.EnumValue<SimpleStorageBoxGoggleOverlay> SIMPLE_STORAGE_GOGGLE_INFO;
         public static ModConfigSpec.EnumValue<SimpleStorageBoxConnectedTextures> SIMPLE_STORAGE_CONNECTED_TEXTURES;
         public static ModConfigSpec.ConfigValue<List<? extends String>> REFILL_BLACKLIST;
@@ -230,6 +231,16 @@ public class ConfigManager {
                             .comment("Feeder Upgrade activates when hunger falls below this value. One point = half a drumstick")
                             .translation("fxntstorage.configuration.feederHungerLevel")
                             .defineInRange("feederHungerLevel", 18, 1, 20)
+            );
+            CLIENT_BUILDER.pop();
+
+            CLIENT_BUILDER.comment("Thirst Upgrade").push("thirst_upgrade");
+            THIRST_LEVEL = sync(
+                    "ThirstLevel",
+                    CLIENT_BUILDER
+                            .comment("Thirst Upgrade activates when thirst falls below this value. Requires Thirst Was Reclaimed.")
+                            .translation("fxntstorage.configuration.thirstLevel")
+                            .defineInRange("thirstLevel", 18, 1, 20)
             );
             CLIENT_BUILDER.pop();
 

@@ -55,24 +55,28 @@ public class UpgradeItem extends Item {
             case Util.FLIGHT_UPGRADE_DEACTIVATED:
             case Util.REFILL_UPGRADE_DEACTIVATED:
             case Util.FEEDER_UPGRADE_DEACTIVATED:
+            case Util.THIRST_UPGRADE_DEACTIVATED:
             case Util.TOOLSWAP_UPGRADE_DEACTIVATED:
             case Util.FALLDAMAGE_UPGRADE_DEACTIVATED:
             case Util.OREMINING_UPGRADE_DEACTIVATED:
             case Util.TORCHDEPLOYER_UPGRADE_DEACTIVATED:
             case Util.JUKEBOX_UPGRADE_DEACTIVATED:
             case Util.HEALTH_UPGRADE_DEACTIVATED:
+            case Util.VOID_UPGRADE_DEACTIVATED:
                 pTooltipComponents.add(Component.translatable("tooltip.fxntstorage.upgrade_deactivated").withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD));
             case Util.MAGNET_UPGRADE:
             case Util.PICKBLOCK_UPGRADE:
             case Util.ITEMPICKUP_UPGRADE:
             case Util.REFILL_UPGRADE:
             case Util.FEEDER_UPGRADE:
+            case Util.THIRST_UPGRADE:
             case Util.TOOLSWAP_UPGRADE:
             case Util.FALLDAMAGE_UPGRADE:
             case Util.OREMINING_UPGRADE:
             case Util.TORCHDEPLOYER_UPGRADE:
             case Util.JUKEBOX_UPGRADE:
             case Util.HEALTH_UPGRADE:
+            case Util.VOID_UPGRADE:
             case Util.CRAFTING_UPGRADE:
             case Util.WORKSHOP_UPGRADE:
             case Util.STORAGE_BOX_VOID_UPGRADE:

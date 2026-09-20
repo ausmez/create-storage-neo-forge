@@ -184,6 +184,7 @@ public class KeybindHandler {
     }
 
     private static void openMountedCompactingWheel(Minecraft mc) {
+        if (mc.player == null || mc.level == null) return;
         var rayInputs = ContraptionHandlerClient.getRayInputs(mc.player);
         Vec3 origin = rayInputs.getFirst();
         Vec3 target = rayInputs.getSecond();
@@ -216,9 +217,9 @@ public class KeybindHandler {
             if (filterItem.isEmpty()) continue;
 
             if (CompactingRecipeHelper.isEmpty()) {
-                CompactingRecipeHelper.rebuild(mc.level.getRecipeManager(), mc.level.registryAccess());
+                CompactingRecipeHelper.rebuild();
             }
-            CompactingChain chain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+            CompactingChain chain = CompactingRecipeHelper.buildChain(mc.level, filterItem.getItem());
             if (chain == null) continue;
 
             int t0Stored = tag.getInt("StoredAmount");

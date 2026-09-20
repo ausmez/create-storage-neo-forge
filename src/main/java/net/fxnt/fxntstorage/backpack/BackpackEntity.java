@@ -6,12 +6,14 @@ import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
 import net.fxnt.fxntstorage.backpack.upgrade.jukebox.JukeboxHandler;
+import net.fxnt.fxntstorage.backpack.upgrade.voiding.VoidUpgrade;
 import net.fxnt.fxntstorage.backpack.upgrade.workshop.FlywheelSpin;
 import net.fxnt.fxntstorage.init.ModDataComponents;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.fxnt.fxntstorage.item.upgrades.UpgradeItem;
 import net.fxnt.fxntstorage.network.packet.SetSortOrderPacket;
 import net.fxnt.fxntstorage.network.packet.UpgradeDataPacket;
+import net.fxnt.fxntstorage.network.packet.UpgradeIntDataPacket;
 import net.fxnt.fxntstorage.util.SortOrder;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.core.BlockPos;
@@ -93,6 +95,16 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
                 if (isPlayerInteraction || layout.items().contains(slot))
                     return super.extractItem(slot, amount, simulate);
                 return ItemStack.EMPTY;
+            }
+
+            @Override
+            public @NotNull ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+                ItemStack toInsert = !filterTest(stack) && layout.items().contains(slot)
+                        ? VoidUpgrade.acceptableInsert(BackpackEntity.this, level, stack)
+                        : stack;
+                if (toInsert.isEmpty()) return ItemStack.EMPTY;
+
+                return super.insertItem(slot, toInsert, simulate);
             }
 
             @Override
@@ -246,6 +258,21 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
     }
 
     @Override
+    public int getUpgradeIntSetting(UpgradeDataSync.Field setting) {
+        return upgradeData.getIntSetting(setting);
+    }
+
+    @Override
+    public void setUpgradeIntSetting(UpgradeDataSync.Field setting, int value) {
+        if (getUpgradeIntSetting(setting) == value) return;
+
+        upgradeData.setIntSetting(setting, value);
+        if (this.level != null && this.level.isClientSide)
+            PacketDistributor.sendToServer(new UpgradeIntDataPacket(setting.getIndex(), value));
+        setChanged();
+    }
+
+    @Override
     public void saveSettings() {
         setChanged();
     }
@@ -361,6 +388,12 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
                 boolean defaultSetting = UpgradeRegistry.getDefaultSetting(field);
                 upgradeData.setSetting(field, componentInput.getOrDefault(component, defaultSetting));
             }
+
+            DataComponentType<Integer> intComponent = ModDataComponents.getIntComponentForField(field);
+            if (intComponent != null) {
+                int defaultSetting = UpgradeRegistry.getDefaultIntSetting(field);
+                upgradeData.setIntSetting(field, componentInput.getOrDefault(intComponent, defaultSetting));
+            }
         }
         populateDefaultsForInstalledUpgrades();
     }
@@ -382,6 +415,11 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
             if (component != null) {
                 boolean defaultSetting = UpgradeRegistry.getDefaultSetting(field);
                 components.set(component, upgradeData.getSetting(field, defaultSetting));
+            }
+
+            DataComponentType<Integer> intComponent = ModDataComponents.getIntComponentForField(field);
+            if (intComponent != null) {
+                components.set(intComponent, upgradeData.getIntSetting(field));
             }
         }
     }
@@ -513,7 +551,7 @@ public class BackpackEntity extends BlockEntity implements IBackpackContainer, M
         if (!level.isClientSide) {
             for (IUpgrade upgrade : UpgradeRegistry.getAll()) {
                 if (upgrade.getType().equals(UpgradeType.MAGNET) || upgrade.getType().equals(UpgradeType.JUKEBOX)
-                        || upgrade.getType().equals(UpgradeType.WORKSHOP)) {
+                        || upgrade.getType().equals(UpgradeType.WORKSHOP) || upgrade.getType().equals(UpgradeType.VOID)) {
                     UpgradeContext ctx = UpgradeContext.forBlock(
                             this, level, BackpackMenu.BackpackType.BLOCK, worldPosition
                     );

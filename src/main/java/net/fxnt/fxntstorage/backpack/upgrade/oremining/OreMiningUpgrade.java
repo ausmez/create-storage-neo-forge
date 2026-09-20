@@ -1,6 +1,7 @@
 package net.fxnt.fxntstorage.backpack.upgrade.oremining;
 
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
+import net.fxnt.fxntstorage.backpack.client.menu.button.GuiIcon;
 import net.fxnt.fxntstorage.backpack.client.menu.button.ItemSpriteButton;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
 import net.fxnt.fxntstorage.config.ConfigManager;
@@ -35,7 +36,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 import static net.fxnt.fxntstorage.util.KeybindHandler.ORE_MINE_ANY_BLOCK;
 
 public class OreMiningUpgrade extends AbstractUpgrade {
@@ -271,10 +271,10 @@ public class OreMiningUpgrade extends AbstractUpgrade {
                             panelX + 3, panelY + 31, 18, 18,
                             initialState,
                             state -> state.oresOnly()
-                                    ? modLoc("check")
+                                    ? GuiIcon.CHECK
                                     : serverMineOresOnly
-                                    ? modLoc("cross")
-                                    : modLoc("tilde"),
+                                    ? GuiIcon.CROSS
+                                    : GuiIcon.TILDE,
                             state -> state.oresOnly()
                                     ? Component.translatable("tooltip.fxntstorage.backpack_oremining_upgrade.panel.mine_ores_only").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_oremining_upgrade.panel.mine_ores_only.description").withStyle(ChatFormatting.DARK_GRAY))
                                     : mineOresOnlyTooltip,
@@ -288,8 +288,8 @@ public class OreMiningUpgrade extends AbstractUpgrade {
                             panelX + 22, panelY + 31, 18, 18,
                             initialState,
                             state -> state.oresPreview()
-                                    ? modLoc("check")
-                                    : modLoc("cross"),
+                                    ? GuiIcon.CHECK
+                                    : GuiIcon.CROSS,
                             state -> state.oresPreview()
                                     ? Component.translatable("tooltip.fxntstorage.backpack_oremining_upgrade.panel.preview_ore_veins").append("\n").append(Component.translatable("tooltip.fxntstorage.backpack_oremining_upgrade.panel.preview_ore_veins.description_before_key").withStyle(ChatFormatting.DARK_GRAY)).append(Component.literal(ORE_MINE_ANY_BLOCK.getKey().getDisplayName().getString()).withStyle(ChatFormatting.GRAY)).append(Component.translatable("tooltip.fxntstorage.backpack_oremining_upgrade.panel.preview_ore_veins.description_after_key").withStyle(ChatFormatting.DARK_GRAY))
                                     : previewOreVeinTooltip,

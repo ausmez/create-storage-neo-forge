@@ -7,11 +7,10 @@ import dev.emi.emi.api.EmiDragDropHandler;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
-import net.fxnt.fxntstorage.backpack.client.menu.slot.FeederFilterSlot;
 import net.fxnt.fxntstorage.backpack.client.menu.slot.FilterSlot;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.upgrade.GhostFilterHelper;
 import net.fxnt.fxntstorage.network.packet.GhostItemPacket;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -42,16 +41,13 @@ public class EMIDragDropFilterHandler implements EmiDragDropHandler<BackpackScre
         EmiStack slotItem = EmiStack.of(slot.getItem());
         if (createFilter.test(slotItem)) return false;
 
-        if (slot instanceof FeederFilterSlot) {
-            if (stack.getEmiStacks().isEmpty()) return false;
-            ItemStack food = stack.getEmiStacks().getFirst().getItemStack();
-            if (!Util.isEdible(food, screen.getMenu().player) || Util.hasNegativeEffects(food, screen.getMenu().player))
-                return false;
-        }
-
         for (EmiStack emiStack : stack.getEmiStacks()) {
-            screen.getMenu().container.getItemHandler().setStackInSlot(slot.index, emiStack.getItemStack());
-            PacketDistributor.sendToServer(new GhostItemPacket(emiStack.getItemStack(), slot.index));
+            ItemStack dropped = emiStack.getItemStack();
+
+            if (!GhostFilterHelper.accepts(screen.getMenu(), slot.index, dropped)) return false;
+
+            screen.getMenu().container.getItemHandler().setStackInSlot(slot.index, dropped);
+            PacketDistributor.sendToServer(new GhostItemPacket(dropped, slot.index));
             return true;
         }
 
@@ -62,15 +58,16 @@ public class EMIDragDropFilterHandler implements EmiDragDropHandler<BackpackScre
     public void render(BackpackScreen screen, EmiIngredient dragged, GuiGraphics draw, int mouseX, int mouseY, float delta) {
         boolean isCreateFilter = dragged.getEmiStacks().stream().anyMatch(createFilter);
         if (isCreateFilter) return;
+        if (dragged.getEmiStacks().isEmpty()) return;
 
-        for (int i : layout.getFiltersRange()) {
+        ItemStack draggedStack = dragged.getEmiStacks().getFirst().getItemStack();
+
+        for (int i : layout.getFilterSlotIndices()) {
             Slot slot = screen.getMenu().getSlot(i);
             EmiStack slotItem = EmiStack.of(slot.getItem());
             if (createFilter.test(slotItem) || !slot.isActive()) continue;
 
-            if (slot instanceof FeederFilterSlot
-                    && (!Util.isEdible(dragged.getEmiStacks().getFirst().getItemStack(), screen.getMenu().player) || Util.hasNegativeEffects(dragged.getEmiStacks().getFirst().getItemStack(), screen.getMenu().player)))
-                continue;
+            if (!GhostFilterHelper.accepts(screen.getMenu(), i, draggedStack)) continue;
 
             draw.fill(screen.getGuiLeft() + slot.x, screen.getGuiTop() + slot.y, screen.getGuiLeft() + slot.x + 16, screen.getGuiTop() + slot.y + 16, 0x8822bb33);
         }

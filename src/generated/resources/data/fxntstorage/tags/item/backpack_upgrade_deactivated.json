@@ -13,6 +13,8 @@
     "fxntstorage:backpack_jukebox_upgrade_deactivated",
     "fxntstorage:backpack_health_upgrade_deactivated",
     "fxntstorage:backpack_crafting_upgrade_deactivated",
-    "fxntstorage:backpack_workshop_upgrade_deactivated"
+    "fxntstorage:backpack_workshop_upgrade_deactivated",
+    "fxntstorage:backpack_thirst_upgrade_deactivated",
+    "fxntstorage:backpack_void_upgrade_deactivated"
   ]
 }

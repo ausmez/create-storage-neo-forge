@@ -52,7 +52,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         String line1 = Util.formatNumber(amount);
         String line2 = hasVoidUpgrade
                 ? Component.translatable("container.fxntstorage.void_mode").getString()
-                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
+                : Component.translatable("container.fxntstorage.percent_used", percentUsed).getString();
 
         Direction side = state.getValue(HorizontalDirectionalBlock.FACING);
 
@@ -96,11 +96,11 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
         if (hasCompUpgrade) {
             CompactingChain chain = null;
-            if (!filterItem.isEmpty()) {
-                if (CompactingRecipeHelper.isEmpty() && mc.level != null) {
-                    CompactingRecipeHelper.rebuild(mc.level.getRecipeManager(), mc.level.registryAccess());
+            if (!filterItem.isEmpty() && mc.level != null) {
+                if (CompactingRecipeHelper.isEmpty()) {
+                    CompactingRecipeHelper.rebuild();
                 }
-                chain = CompactingRecipeHelper.buildChain(filterItem.getItem());
+                chain = CompactingRecipeHelper.buildChain(mc.level, filterItem.getItem());
             }
             if (chain != null) {
                 int selected = Math.min(tag.getInt("CompactingSelectedTier"), chain.tiers() - 1);
@@ -148,7 +148,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
         String line1 = Util.formatNumber(amount);
         String line2 = blockEntity.hasVoidUpgrade()
                 ? Component.translatable("container.fxntstorage.void_mode").getString()
-                : percentUsed + Component.translatable("container.fxntstorage.percent_used").getString();
+                : Component.translatable("container.fxntstorage.percent_used", percentUsed).getString();
 
         float distance = (float) Math.sqrt(blockEntity.getBlockPos().distToCenterSqr(player.position()));
 
@@ -201,7 +201,7 @@ public class SimpleStorageBoxEntityRenderer implements BlockEntityRenderer<Simpl
 
     private static void renderPips(int tiers, int selected, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         Font font = Minecraft.getInstance().font;
-        String pip = "■"; // ■ BLACK SQUARE
+        String pip = "■";
         int pipPx = font.width(pip);
         int gapPx = 3;
         float totalPx = tiers * pipPx + (tiers - 1) * gapPx;

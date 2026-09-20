@@ -8,10 +8,9 @@ import me.shedaniel.math.Rectangle;
 import me.shedaniel.rei.api.client.gui.drag.*;
 import me.shedaniel.rei.api.common.entry.EntryStack;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
-import net.fxnt.fxntstorage.backpack.client.menu.slot.FeederFilterSlot;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
+import net.fxnt.fxntstorage.backpack.upgrade.GhostFilterHelper;
 import net.fxnt.fxntstorage.network.packet.GhostItemPacket;
-import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -49,7 +48,7 @@ public class REIDraggableStackVisitorHandler implements DraggableStackVisitor<Ba
 
         BackpackScreen screen = context.getScreen();
 
-        for (int i : layout.getFiltersRange()) {
+        for (int i : layout.getFilterSlotIndices()) {
             Slot slot = screen.getMenu().getSlot(i);
             if (!slot.isActive())
                 continue;
@@ -58,10 +57,7 @@ public class REIDraggableStackVisitorHandler implements DraggableStackVisitor<Ba
             if (createFilter.test(existingStack))
                 continue;
 
-            if (slot instanceof FeederFilterSlot) {
-                if (!Util.isEdible(itemStack, context.getScreen().getMenu().player) || Util.hasNegativeEffects(itemStack, context.getScreen().getMenu().player))
-                    continue;
-            }
+            if (!GhostFilterHelper.accepts(screen.getMenu(), i, itemStack)) continue;
 
             int slotX = screen.getGuiLeft() + slot.x;
             int slotY = screen.getGuiTop() + slot.y;
@@ -84,16 +80,12 @@ public class REIDraggableStackVisitorHandler implements DraggableStackVisitor<Ba
         List<BoundsProvider> targets = new ArrayList<>();
         BackpackScreen screen = context.getScreen();
 
-        for (int i : layout.getFiltersRange()) {
+        for (int i : layout.getFilterSlotIndices()) {
             Slot slot = screen.getMenu().getSlot(i);
             if (createFilter.test(slot.getItem()) || !slot.isActive())
                 continue;
 
-            if (slot instanceof FeederFilterSlot) {
-                if (!Util.isEdible(itemStack, context.getScreen().getMenu().player)
-                        || Util.hasNegativeEffects(itemStack, context.getScreen().getMenu().player))
-                    continue;
-            }
+            if (!GhostFilterHelper.accepts(screen.getMenu(), i, itemStack)) continue;
 
             targets.add(new BackpackBoundsProvider(
                     screen.getGuiLeft() + slot.x,

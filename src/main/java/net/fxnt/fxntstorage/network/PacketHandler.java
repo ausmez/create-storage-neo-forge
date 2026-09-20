@@ -44,5 +44,6 @@ public class PacketHandler {
         registrar.playToServer(SyncClientSettingsPacket.TYPE, SyncClientSettingsPacket.STREAM_CODEC, SyncClientSettingsPacket::handle);
         registrar.playToServer(TransferRecipePacket.TYPE, TransferRecipePacket.STREAM_CODEC, TransferRecipePacket::handle);
         registrar.playToServer(UpgradeDataPacket.TYPE, UpgradeDataPacket.STREAM_CODEC, UpgradeDataPacket::handle);
+        registrar.playToServer(UpgradeIntDataPacket.TYPE, UpgradeIntDataPacket.STREAM_CODEC, UpgradeIntDataPacket::handle);
     }
 }
