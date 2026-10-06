@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.7 - 2026-10-07
+
+## Bug Fixes
+- Fixed packagers connected to a Storage Controller or Storage Interface rejecting packages when inserting into a Compacting Simple Storage Box. (#90)
+- Fixed items getting stuck at a nearly full Compacting Simple Storage Box in a storage network instead of moving on to the next box.
+- Fixed overflow items spilling into empty Simple Storage Boxes when a matching box was full and had a Void upgrade. The extra items are now voided as expected.
+- Fixed the Compacting upgrade not accepting the same item from a different mod (e.g. Create's copper nuggets in a box of vanilla copper nuggets).
+- Fixed Create funnels and chutes on a Storage Interface or Filtered Storage Interface still sending items into the network for a few seconds after being disconnected, and being slow to notice filter changes.
+- Fixed a Filtered Storage Interface set to skip empty storage still filling empty Simple Storage Boxes.
+- Fixed some mods that work with Storage Networks putting the wrong item into a Compacting Simple Storage Box.
+- Fixed spears not moving to the tool slots in a backpack when shift-clicked from the player inventory.
+
+---
+
 ## 1.3.6 - 2026-10-06
 
 ## Bug Fixes

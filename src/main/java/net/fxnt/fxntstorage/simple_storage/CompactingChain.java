@@ -6,8 +6,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-public record CompactingChain(Item t0, Item t1, int t0ToT1, @Nullable Item t2, int t1ToT2) {
+public record CompactingChain(Item t0, Item t1, int t0ToT1, @Nullable Item t2, int t1ToT2,
+                              Set<Item> t0Variants, Set<Item> t1Variants) {
 
     public record TierResult(Item item, int count) {}
 
@@ -45,11 +47,32 @@ public record CompactingChain(Item t0, Item t1, int t0ToT1, @Nullable Item t2, i
         };
     }
 
+    // Tier index (0 = T0) of the item or one of its variants, -1 if it isn't part of this chain
+    public int tierOf(Item item) {
+        if (item == t0 || t0Variants.contains(item)) return 0;
+        if (item == t1 || t1Variants.contains(item)) return 1;
+        if (t2 != null && item == t2) return 2;
+        return -1;
+    }
+
     public int toT0Units(Item item, int count) {
-        if (item == t0) return count;
-        if (item == t1) return count * t0ToT1;
-        if (item == t2) return count * t0ToT1 * t1ToT2;
-        return 0;
+        return switch (tierOf(item)) {
+            case 0 -> count;
+            case 1 -> count * t0ToT1;
+            case 2 -> count * t0ToT1 * t1ToT2;
+            default -> 0;
+        };
+    }
+
+    // Every item the chain accepts
+    public List<Item> acceptedItems() {
+        List<Item> result = new ArrayList<>();
+        result.add(t0);
+        result.addAll(t0Variants);
+        result.add(t1);
+        result.addAll(t1Variants);
+        if (t2 != null) result.add(t2);
+        return result;
     }
 
     public int t1Count(int t0Stored) {

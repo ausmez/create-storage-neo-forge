@@ -2,7 +2,7 @@ package net.fxnt.fxntstorage.simple_storage;
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.IItemHandlerModifiable;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * Slot 1 = middle tier (T1 for 3-tier, T0 for 2-tier).
  * Slot 2 = T0 (3-tier chains only).
  */
-public class CompactingItemHandler implements IItemHandler {
+public class CompactingItemHandler implements IItemHandlerModifiable {
     private final SimpleStorageBoxEntity entity;
     private final CompactingChain chain;
 
@@ -39,8 +39,7 @@ public class CompactingItemHandler implements IItemHandler {
     public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
         if (stack.isEmpty() || slot >= getSlots()) return stack;
 
-        Item tieredItem = slotItem(slot);
-        if (tieredItem == null || stack.getItem() != tieredItem) return stack;
+        if (slotItem(slot) == null || chain.tierOf(stack.getItem()) != tierIndex(slot)) return stack;
 
         int t0PerUnit = t0PerUnit(slot);
         int t0Units = stack.getCount() * t0PerUnit;
@@ -94,6 +93,22 @@ public class CompactingItemHandler implements IItemHandler {
         return new ItemStack(item, toExtract);
     }
 
+    // Sets how many of this slot's tier the box holds, keeping any lower-tier remainder
+    // Items that aren't this slot's tier are ignored
+    @Override
+    public void setStackInSlot(int slot, ItemStack stack) {
+        if (slot < 0 || slot >= getSlots()) return;
+        if (!stack.isEmpty() && chain.tierOf(stack.getItem()) != tierIndex(slot)) return;
+
+        int t0PerUnit = t0PerUnit(slot);
+        int t0Stored = entity.itemHandler.getStackInSlot(0).getCount();
+        long newT0 = t0Stored - (long) (t0Stored / t0PerUnit) * t0PerUnit + (long) stack.getCount() * t0PerUnit;
+        int clamped = (int) Math.max(0, Math.min(newT0, entity.getMaxItemCapacity()));
+
+        entity.itemHandler.setStackInSlot(0, clamped > 0 ? new ItemStack(chain.t0(), clamped) : ItemStack.EMPTY);
+        entity.setChanged();
+    }
+
     @Override
     public int getSlotLimit(int slot) {
         int t0PerUnit = t0PerUnit(slot);
@@ -102,8 +117,7 @@ public class CompactingItemHandler implements IItemHandler {
 
     @Override
     public boolean isItemValid(int slot, ItemStack stack) {
-        Item item = slotItem(slot);
-        return item != null && stack.getItem() == item;
+        return slotItem(slot) != null && chain.tierOf(stack.getItem()) == tierIndex(slot);
     }
 
     // slot 0 = highest tier, slot (tiers-1) = T0

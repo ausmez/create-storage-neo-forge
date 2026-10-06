@@ -15,6 +15,7 @@ import net.createmod.catnip.lang.Lang;
 import net.createmod.catnip.math.AngleHelper;
 import net.createmod.catnip.math.VecHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.storage_network.StorageNetwork;
 import net.fxnt.fxntstorage.util.Icons;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,7 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.IItemHandlerModifiable;
-import net.neoforged.neoforge.items.wrapper.EmptyItemHandler;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,18 +52,35 @@ public class StorageInterfaceFilteredEntity extends StorageInterfaceEntity {
         behaviours.add(includeEmptyStorage);
     }
 
+    private @Nullable FilteredItemHandler cachedFiltered;
+    private long cachedTick = -1;
+    private @Nullable StorageNetwork cachedNetwork;
+    private ItemStack cachedFilter = ItemStack.EMPTY;
+    private int cachedScope = -1;
+
     @Override
-    public IItemHandlerModifiable getItemHandler() {
-        if (controller == null)
-            return new EmptyItemHandler();
+    protected IItemHandlerModifiable currentHandler() {
+        if (controller == null || filter == null || filter.getFilter().isEmpty())
+            return super.currentHandler();
 
-        IItemHandlerModifiable handler = controller.getItemHandler();
+        StorageNetwork network = controller.getConnectedNetwork();
+        int scope = includesEmptyStorage() ? 0 : 1;
+        long tick = level != null ? level.getGameTime() : 0;
 
-        if (filter == null || filter.getFilter().isEmpty())
-            return handler;
+        if (cachedFiltered == null || cachedTick != tick || cachedNetwork != network || cachedScope != scope
+                || !ItemStack.isSameItemSameComponents(cachedFilter, filter.getFilter())) {
+            cachedFiltered = new FilteredItemHandler(network, filter, scope == 0);
+            cachedTick = tick;
+            cachedNetwork = network;
+            cachedScope = scope;
+            cachedFilter = filter.getFilter().copy();
+        }
+        return cachedFiltered;
+    }
 
+    public boolean includesEmptyStorage() {
         ScrollValueBehaviour behaviour = getBehaviour(ScrollOptionBehaviour.TYPE);
-        return new FilteredItemHandler(handler, filter, behaviour);
+        return behaviour == null || behaviour.getValue() == 0;
     }
 
     @Override
@@ -127,15 +145,17 @@ public class StorageInterfaceFilteredEntity extends StorageInterfaceEntity {
     }
 
     public static class FilteredItemHandler implements IItemHandlerModifiable {
+        private final StorageNetwork network;
         private final IItemHandlerModifiable source;
         private final FilteringBehaviour filter;
+        private final boolean includeEmpty;
         private final List<Integer> filteredSlots = new ArrayList<>();
 
-        public FilteredItemHandler(IItemHandlerModifiable source, FilteringBehaviour filter, ScrollValueBehaviour behaviour) {
-            this.source = source;
+        public FilteredItemHandler(StorageNetwork network, FilteringBehaviour filter, boolean includeEmpty) {
+            this.network = network;
+            this.source = network.getItemHandler();
             this.filter = filter;
-
-            boolean includeEmpty = behaviour.getValue() == 0;
+            this.includeEmpty = includeEmpty;
 
             // Precompute the slots that pass the filter
             for (int i = 0; i < source.getSlots(); i++) {
@@ -151,37 +171,49 @@ public class StorageInterfaceFilteredEntity extends StorageInterfaceEntity {
             return filteredSlots.size();
         }
 
+        // Source slot for a filtered slot, or -1 if either index is out of range (the network can shrink mid-tick)
+        private int sourceSlot(int slot) {
+            if (slot < 0 || slot >= filteredSlots.size()) return -1;
+            int sourceSlot = filteredSlots.get(slot);
+            return sourceSlot < source.getSlots() ? sourceSlot : -1;
+        }
+
         @Override
         public ItemStack getStackInSlot(int slot) {
-            if (slot < 0 || slot >= source.getSlots())
-                return ItemStack.EMPTY;
-            return source.getStackInSlot(filteredSlots.get(slot));
+            int s = sourceSlot(slot);
+            return s < 0 ? ItemStack.EMPTY : source.getStackInSlot(s);
         }
 
         @Override
         public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-            if (!filter.test(stack)) return stack;
-            return source.insertItem(filteredSlots.get(slot), stack, simulate);
+            int s = sourceSlot(slot);
+            if (s < 0 || !filter.test(stack)) return stack;
+            // The network routes by item, not slot, so the scope has to be passed on for exclude-empty to hold
+            return network.insertItem(stack, simulate, includeEmpty);
         }
 
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return source.extractItem(filteredSlots.get(slot), amount, simulate);
+            int s = sourceSlot(slot);
+            return s < 0 ? ItemStack.EMPTY : source.extractItem(s, amount, simulate);
         }
 
         @Override
         public int getSlotLimit(int slot) {
-            return source.getSlotLimit(filteredSlots.get(slot));
+            int s = sourceSlot(slot);
+            return s < 0 ? 0 : source.getSlotLimit(s);
         }
 
         @Override
         public boolean isItemValid(int slot, ItemStack stack) {
-            return filter.test(stack) && source.isItemValid(filteredSlots.get(slot), stack);
+            int s = sourceSlot(slot);
+            return s >= 0 && filter.test(stack) && source.isItemValid(s, stack);
         }
 
         @Override
         public void setStackInSlot(int slot, ItemStack stack) {
-            source.setStackInSlot(filteredSlots.get(slot), stack);
+            int s = sourceSlot(slot);
+            if (s >= 0) source.setStackInSlot(s, stack);
         }
     }
 

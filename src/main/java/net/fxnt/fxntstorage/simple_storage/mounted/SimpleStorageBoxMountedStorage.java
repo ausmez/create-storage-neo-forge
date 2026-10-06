@@ -34,6 +34,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -612,8 +613,9 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
             ContraptionStorageFilters registry = ContraptionStorageFilters.getOrCreate(currentContraption);
             registry.register(this, filterWrapper);
             if (compactingUpgrade && compactingChain != null) {
-                registry.register(this, new ItemStack(compactingChain.t1()));
-                if (compactingChain.t2() != null) registry.register(this, new ItemStack(compactingChain.t2()));
+                for (Item item : compactingChain.acceptedItems()) {
+                    if (item != filterItem.getItem()) registry.register(this, new ItemStack(item));
+                }
             }
             lastRegisteredFilter = filterWrapper;
             lastRegisteredCompacting = compactingUpgrade;
@@ -662,8 +664,9 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         if (newFilter != null) {
             registry.register(this, newFilter);
             if (compactingUpgrade && compactingChain != null) {
-                registry.register(this, new ItemStack(compactingChain.t1()));
-                if (compactingChain.t2() != null) registry.register(this, new ItemStack(compactingChain.t2()));
+                for (Item item : compactingChain.acceptedItems()) {
+                    if (item != filterItem.getItem()) registry.register(this, new ItemStack(item));
+                }
             }
         }
 

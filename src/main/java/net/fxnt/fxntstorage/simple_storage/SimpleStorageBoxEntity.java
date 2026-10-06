@@ -218,11 +218,8 @@ public class SimpleStorageBoxEntity extends BlockEntity implements MenuProvider,
 
     private int compactingSlotFor(ItemStack stack) {
         if (compactingChain == null) return -1;
-        int tiers = compactingChain.tiers();
-        if (stack.getItem() == compactingChain.t0()) return tiers - 1;
-        if (stack.getItem() == compactingChain.t1()) return tiers - 2;
-        if (compactingChain.t2() != null && stack.getItem() == compactingChain.t2()) return 0;
-        return -1;
+        int tier = compactingChain.tierOf(stack.getItem());
+        return tier < 0 ? -1 : compactingChain.tiers() - 1 - tier;
     }
 
     public IItemHandler getCapabilityHandler() {

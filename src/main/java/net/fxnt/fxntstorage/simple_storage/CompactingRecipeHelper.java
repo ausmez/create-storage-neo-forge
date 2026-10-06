@@ -71,7 +71,9 @@ public class CompactingRecipeHelper {
 
         Item t2 = items.size() > 2 ? items.get(2) : null;
         int t1ToT2 = items.size() > 2 ? ratios.get(1) : 1;
-        return new CompactingChain(items.get(0), items.get(1), ratios.get(0), t2, t1ToT2);
+        Set<Item> t0Variants = lowerTierVariants(level, items, ratios, 0);
+        Set<Item> t1Variants = t2 != null ? lowerTierVariants(level, items, ratios, 1) : Set.of();
+        return new CompactingChain(items.get(0), items.get(1), ratios.get(0), t2, t1ToT2, t0Variants, t1Variants);
     }
 
     // What a full grid of this item crafts into, 3x3 preferred over 2x2.
@@ -102,9 +104,26 @@ public class CompactingRecipeHelper {
         return pick(candidates, item, ratio);
     }
 
+    // Other items that pack into the tier above at the same ratio, so they can stand in for this tier
+    private static Set<Item> lowerTierVariants(Level level, List<Item> items, List<Integer> ratios, int tier) {
+        LowerTierCandidates found = lowerTierCandidates(level, items.get(tier + 1));
+        if (found.ratio() != ratios.get(tier)) return Set.of();
+
+        Set<Item> variants = new HashSet<>(found.items());
+        items.forEach(variants::remove); // never let a variant shadow another tier of the chain
+        return Set.copyOf(variants);
+    }
+
     // What this item is a packed form of, found by scanning for recipes that produce it
     @Nullable
     private static Step findLowerTier(Level level, Item item) {
+        LowerTierCandidates found = lowerTierCandidates(level, item);
+        return pick(found.items(), item, found.ratio());
+    }
+
+    private record LowerTierCandidates(List<Item> items, int ratio) {}
+
+    private static LowerTierCandidates lowerTierCandidates(Level level, Item item) {
         List<Item> candidates = new ArrayList<>();
         int bestRatio = 0;
 
@@ -132,7 +151,7 @@ public class CompactingRecipeHelper {
             }
         }
 
-        return pick(candidates, item, bestRatio);
+        return new LowerTierCandidates(candidates, bestRatio);
     }
 
     private static List<Item> uniformIngredientItems(List<Ingredient> ingredients) {

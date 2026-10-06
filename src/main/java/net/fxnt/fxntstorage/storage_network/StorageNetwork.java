@@ -7,15 +7,17 @@ import net.fxnt.fxntstorage.controller.StorageControllerEntity;
 import net.fxnt.fxntstorage.controller.StorageInterfaceEntity;
 import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.network.packet.StorageNetworkSyncPacket;
-import net.fxnt.fxntstorage.simple_storage.CompactingChain;
+import net.fxnt.fxntstorage.simple_storage.CompactingItemHandler;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
@@ -147,10 +149,7 @@ public class StorageNetwork {
         for (StorageNetworkItem box : boxes) {
             SimpleStorageBoxEntity entity = box.simpleStorageBoxEntity;
             if (entity.compactingUpgrade && entity.compactingChain != null) {
-                CompactingChain chain = entity.compactingChain;
-                items.add(new ItemStack(chain.t0()));
-                items.add(new ItemStack(chain.t1()));
-                if (chain.t2() != null) items.add(new ItemStack(chain.t2()));
+                for (Item item : entity.compactingChain.acceptedItems()) items.add(new ItemStack(item));
             } else {
                 ItemStack filterItem = entity.getFilterItem();
                 if (!filterItem.isEmpty()) items.add(filterItem.copy());
@@ -232,10 +231,14 @@ public class StorageNetwork {
     }
 
     public void insertItems(ItemStack itemStack) {
+        insertItems(itemStack, true);
+    }
+
+    public void insertItems(ItemStack itemStack, boolean allowEmpty) {
         ItemStack remaining = itemStack.copy();
 
         while (!remaining.isEmpty()) {
-            SimpleStorageBoxEntity targetBox = StorageNetwork.this.findBestTargetBox(remaining);
+            SimpleStorageBoxEntity targetBox = findBestTargetBox(remaining, Map.of(), Map.of(), allowEmpty);
             if (targetBox == null) break;
 
             ItemStack beforeInsertion = remaining.copy();
@@ -251,6 +254,29 @@ public class StorageNetwork {
 
     public IItemHandlerModifiable getItemHandler() {
         return itemHandler;
+    }
+
+    public boolean unpackItems(Level level, BlockPos pos, Direction side, List<ItemStack> items, boolean allowEmpty) {
+        boolean allStored = true;
+        for (ItemStack itemStack : items) {
+            ItemStack remaining = itemStack.copy();
+            insertItems(remaining, allowEmpty);
+            if (remaining.isEmpty()) continue;
+
+            allStored = false;
+            Block.popResourceFromFace(level, pos.relative(side), side, remaining);
+        }
+        return allStored;
+    }
+
+    // One routing pass into the best box, as an item handler insert (callers re-insert any remainder)
+    public ItemStack insertItem(ItemStack itemStack, boolean simulate, boolean allowEmpty) {
+        if (itemStack.isEmpty()) return ItemStack.EMPTY;
+
+        SimpleStorageBoxEntity targetBox = findBestTargetBox(itemStack, Map.of(), Map.of(), allowEmpty);
+        if (targetBox == null) return itemStack;
+
+        return insertIntoBox(targetBox, itemStack, simulate);
     }
 
     public List<StorageNetworkItem> getBoxes() {
@@ -282,30 +308,95 @@ public class StorageNetwork {
     }
 
     private @Nullable SimpleStorageBoxEntity findBestTargetBox(ItemStack itemStack) {
+        return findBestTargetBox(itemStack, Map.of(), Map.of(), true);
+    }
+
+    private @Nullable SimpleStorageBoxEntity findBestTargetBox(ItemStack itemStack,
+                                                               Map<SimpleStorageBoxEntity, Integer> reservedUnits,
+                                                               Map<SimpleStorageBoxEntity, ItemStack> claimedFilters,
+                                                               boolean allowEmpty) {
         SimpleStorageBoxEntity emptyBox = null;
         SimpleStorageBoxEntity voidBox = null;
 
         for (StorageNetworkItem networkItem : boxes) {
             SimpleStorageBoxEntity box = networkItem.simpleStorageBoxEntity;
-            boolean hasRealSpace = box.getMaxItemCapacity() - box.getStoredAmount() > 0;
+            boolean hasRealSpace = fitCount(box, itemStack, reservedUnits.getOrDefault(box, 0)) > 0;
+            ItemStack filter = claimedFilters.getOrDefault(box, box.getFilterItem());
 
             if (box.compactingUpgrade && box.compactingChain != null) {
                 if (acceptsCompactingItem(box, itemStack)) {
                     if (hasRealSpace) return box;
                     if (box.hasVoidUpgrade() && voidBox == null) voidBox = box;
                 }
-            } else if (ItemStack.isSameItemSameComponents(box.getFilterItem(), itemStack)) {
+            } else if (ItemStack.isSameItemSameComponents(filter, itemStack)) {
                 if (hasRealSpace) return box;
                 if (box.hasVoidUpgrade() && voidBox == null) voidBox = box;
-            } else if (box.getFilterItem().isEmpty() && hasRealSpace && emptyBox == null) {
+            } else if (filter.isEmpty() && hasRealSpace && emptyBox == null) {
                 emptyBox = box;
             }
         }
 
+        // A matching void box is the item's home, so it voids overflow rather than claiming an empty box
+        if (voidBox != null) return voidBox;
+
+        return allowEmpty && emptyFillAllowed() ? emptyBox : null;
+    }
+
+    // The controller's "fill empty storage" option
+    private boolean emptyFillAllowed() {
         ScrollValueBehaviour behaviour = controller.getBehaviour(ScrollOptionBehaviour.TYPE);
-        boolean allowEmpty = behaviour == null || behaviour.getValue() == 0;
-        if (allowEmpty && emptyBox != null) return emptyBox;
-        return voidBox;
+        return behaviour == null || behaviour.getValue() == 0;
+    }
+
+    private int fitCount(SimpleStorageBoxEntity box, ItemStack itemStack, int reservedUnits) {
+        int free = box.getMaxItemCapacity() - box.getStoredAmount() - reservedUnits;
+        if (free <= 0) return 0;
+        if (box.compactingUpgrade && box.compactingChain != null) {
+            int unitsPerItem = box.compactingChain.toT0Units(itemStack.getItem(), 1);
+            return unitsPerItem > 0 ? free / unitsPerItem : 0;
+        }
+        return free;
+    }
+
+    private int unitsPerItem(SimpleStorageBoxEntity box, ItemStack itemStack) {
+        if (box.compactingUpgrade && box.compactingChain != null) {
+            return Math.max(1, box.compactingChain.toT0Units(itemStack.getItem(), 1));
+        }
+        return 1;
+    }
+
+    public boolean canInsertAll(List<ItemStack> items) {
+        return canInsertAll(items, true);
+    }
+
+    public boolean canInsertAll(List<ItemStack> items, boolean allowEmpty) {
+        Map<SimpleStorageBoxEntity, Integer> reservedUnits = new IdentityHashMap<>();
+        Map<SimpleStorageBoxEntity, ItemStack> claimedFilters = new IdentityHashMap<>();
+
+        for (ItemStack itemStack : items) {
+            if (itemStack.isEmpty()) continue;
+            int remaining = itemStack.getCount();
+
+            while (remaining > 0) {
+                SimpleStorageBoxEntity box = findBestTargetBox(itemStack, reservedUnits, claimedFilters, allowEmpty);
+                if (box == null) return false;
+
+                int reserved = reservedUnits.getOrDefault(box, 0);
+                int toInsert = Math.min(remaining, fitCount(box, itemStack, reserved));
+                if (toInsert <= 0) {
+                    // Only a full void box is returned without space; it destroys the rest
+                    if (box.hasVoidUpgrade()) break;
+                    return false;
+                }
+
+                reservedUnits.put(box, reserved + toInsert * unitsPerItem(box, itemStack));
+                if (box.getFilterItem().isEmpty() && !(box.compactingUpgrade && box.compactingChain != null)) {
+                    claimedFilters.putIfAbsent(box, itemStack.copyWithCount(1));
+                }
+                remaining -= toInsert;
+            }
+        }
+        return true;
     }
 
     private boolean acceptsCompactingItem(SimpleStorageBoxEntity box, ItemStack itemStack) {
@@ -390,12 +481,7 @@ public class StorageNetwork {
         @Override
         public ItemStack insertItem(int slot, ItemStack itemStack, boolean simulate) {
             if (slot < 0 || slot >= slotMappings.size()) return itemStack;
-            if (itemStack.isEmpty()) return ItemStack.EMPTY;
-
-            SimpleStorageBoxEntity targetBox = StorageNetwork.this.findBestTargetBox(itemStack);
-            if (targetBox == null) return itemStack;
-
-            return StorageNetwork.this.insertIntoBox(targetBox, itemStack, simulate);
+            return StorageNetwork.this.insertItem(itemStack, simulate, true);
         }
 
         @Override
@@ -424,9 +510,15 @@ public class StorageNetwork {
 
         @Override
         public void setStackInSlot(int slot, ItemStack stack) {
-            if (slot >= slotMappings.size()) return;
+            if (slot < 0 || slot >= slotMappings.size()) return;
             SlotMapping mapping = slotMappings.get(slot);
-            boxes.get(mapping.boxIndex()).simpleStorageBoxEntity.getItemHandler().setStackInSlot(0, stack);
+            SimpleStorageBoxEntity box = boxes.get(mapping.boxIndex()).simpleStorageBoxEntity;
+            if (box.compactingUpgrade && box.compactingChain != null) {
+                // Tier slots are views over one T0 count, so set the tier rather than raw slot 0
+                new CompactingItemHandler(box, box.compactingChain).setStackInSlot(mapping.tierSlot(), stack);
+            } else {
+                box.getItemHandler().setStackInSlot(0, stack);
+            }
         }
     }
 }

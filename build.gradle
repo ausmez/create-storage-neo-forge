@@ -147,8 +147,8 @@ dependencies {
     }
 
     // Vanilla Backport
-    runtimeOnly files("libs/VanillaBackport-neoforge-1.21.1-1.2.0.2638.3.jar")
-    runtimeOnly files("libs/Platform-neoforge-1.21.1-1.4.0.2637.3.jar")
+    runtimeOnly files("libs/VanillaBackport-neoforge-1.21.1-1.2.0.2639.1.jar")
+    runtimeOnly files("libs/Platform-neoforge-1.21.1-1.4.0.2639.1.jar")
 
     // Every Compat
     compileOnly "curse.maven:every-compat-628539:${everycomp_version}"
