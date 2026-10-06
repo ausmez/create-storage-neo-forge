@@ -56,5 +56,6 @@ public class ContraptionStorageFilters {
     }
 
     public interface FilteredMountedStorage {
+        boolean prefersItem(ItemStack stack);
     }
 }

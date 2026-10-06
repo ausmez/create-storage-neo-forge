@@ -10,6 +10,7 @@ import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeEnabledCondition;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.controller.StorageController;
 import net.fxnt.fxntstorage.controller.StorageInterface;
@@ -32,23 +33,21 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.neoforged.neoforge.common.conditions.ItemExistsCondition;
 import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
 import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
 
-import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 
 public class ModRecipeHelper {
-    private static final Set<String> VANILLA_BACKPORT_WOODS = Set.of("pale_oak");
-
-    private static RecipeOutput conditionalOutput(RegistrateRecipeProvider prov, Block planks, String woodType) {
-        ResourceLocation planksId = BuiltInRegistries.BLOCK.getKey(planks);
-        if (planksId.getNamespace().equals(ModCompats.VANILLA_BACKPORT) || VANILLA_BACKPORT_WOODS.contains(woodType)) {
-            return prov.withConditions(new ModLoadedCondition(ModCompats.VANILLA_BACKPORT));
-        }
-        return prov;
+    // Recipes for planks from optional VanillaBackport, gated on the planks existing, and skipped if they're absent at datagen
+    private static void withOptionalPlanks(RegistrateRecipeProvider prov, ResourceLocation planksId, BiConsumer<RecipeOutput, Block> generator) {
+        BuiltInRegistries.BLOCK.getOptional(planksId).ifPresentOrElse(
+                planks -> generator.accept(prov.withConditions(new ItemExistsCondition(planksId)), planks),
+                () -> FXNTStorage.LOGGER.warn("Skipping recipe datagen for missing planks {}", planksId));
     }
 
     public static NonNullBiConsumer<DataGenContext<Block, StorageBox>, RegistrateRecipeProvider> storageBox(Supplier<? extends Block> supplier) {
@@ -80,11 +79,13 @@ public class ModRecipeHelper {
         return (ctx, prov) -> generateSimpleStorageBox(ctx, prov, planks.get());
     }
 
-    private static void generateSimpleStorageBox(DataGenContext<Block, SimpleStorageBox> ctx, RegistrateRecipeProvider prov, Block planks) {
+    public static NonNullBiConsumer<DataGenContext<Block, SimpleStorageBox>, RegistrateRecipeProvider> simpleStorageBox(ResourceLocation optionalPlanksId) {
+        return (ctx, prov) -> withOptionalPlanks(prov, optionalPlanksId, (output, planks) -> generateSimpleStorageBox(ctx, output, planks));
+    }
+
+    private static void generateSimpleStorageBox(DataGenContext<Block, SimpleStorageBox> ctx, RecipeOutput output, Block planks) {
         String path = BuiltInRegistries.BLOCK.getKey(planks).getPath();
         String woodType = path.substring(0, path.indexOf("_planks"));
-
-        RecipeOutput output = conditionalOutput(prov, planks, woodType);
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
                 .define('A', AllItems.ANDESITE_ALLOY)
@@ -107,11 +108,13 @@ public class ModRecipeHelper {
         return (ctx, prov) -> genStorageTrim(ctx, prov, planks.get());
     }
 
-    public static void genStorageTrim(DataGenContext<Block, CasingBlock> ctx, RegistrateRecipeProvider prov, Block planks) {
+    public static NonNullBiConsumer<DataGenContext<Block, CasingBlock>, RegistrateRecipeProvider> storageTrim(ResourceLocation optionalPlanksId) {
+        return (ctx, prov) -> withOptionalPlanks(prov, optionalPlanksId, (output, planks) -> genStorageTrim(ctx, output, planks));
+    }
+
+    public static void genStorageTrim(DataGenContext<Block, CasingBlock> ctx, RecipeOutput output, Block planks) {
         String path = BuiltInRegistries.BLOCK.getKey(planks).getPath();
         String woodType = path.substring(0, path.indexOf("_planks"));
-
-        RecipeOutput output = conditionalOutput(prov, planks, woodType);
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get(), 4)
                 .define('A', AllItems.ANDESITE_ALLOY)
@@ -163,6 +166,11 @@ public class ModRecipeHelper {
                 .save(prov, modLoc("crafting_shaped/" + ctx.getName()));
     }
 
+    // Drop the recipe when a modpack adds the upgrade to disabled_backpack_upgrades
+    public static RecipeOutput enabledUpgrade(RecipeOutput output, Item upgrade) {
+        return output.withConditions(new UpgradeEnabledCondition(upgrade));
+    }
+
     public static NonNullBiConsumer<DataGenContext<Item, UpgradeItem>, RegistrateRecipeProvider> backpackUpgradeBlock(Supplier<? extends Block> supplier) {
         return (ctx, prov) -> ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
                 .define('B', ModItems.BACKPACK_BLANK_UPGRADE)
@@ -174,7 +182,7 @@ public class ModRecipeHelper {
                 .pattern(" X ")
                 .group("backpack")
                 .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName()));
+                .save(enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName()));
     }
 
     public static NonNullBiConsumer<DataGenContext<Item, UpgradeItem>, RegistrateRecipeProvider> backpackUpgradeItem(Supplier<? extends Item> supplier) {
@@ -188,12 +196,15 @@ public class ModRecipeHelper {
                 .pattern(" X ")
                 .group("backpack")
                 .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName()));
+                .save(enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName()));
     }
 
     public static NonNullBiConsumer<DataGenContext<Item, UpgradeItem>, RegistrateRecipeProvider> thirstUpgradeItem() {
         return (ctx, prov) -> {
-            if (!FXNTStorage.THIRST_LOADED) return;
+            // The ingredients need Thirst's registered objects. Fail rather than silently drop the recipe,
+            // which is how it went missing from 1.3.5. Thirst stays an optional dependency for players.
+            if (!FXNTStorage.THIRST_LOADED)
+                throw new IllegalStateException("Thirst Was Reclaimed must be on the runtime classpath to generate " + ctx.getName());
 
             ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ctx.get())
                     .define('B', ModItems.BACKPACK_BLANK_UPGRADE)
@@ -207,7 +218,7 @@ public class ModRecipeHelper {
                     .pattern("XYZ")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov.withConditions(new ModLoadedCondition(ModCompats.THIRST_WAS_RECLAIMED)),
+                    .save(prov.withConditions(new ModLoadedCondition(ModCompats.THIRST_WAS_RECLAIMED), new UpgradeEnabledCondition(ctx.get())),
                             modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName()));
         };
     }

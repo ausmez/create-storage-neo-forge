@@ -19,6 +19,7 @@ public class BackpackSlotLayout {
     private final SlotSection workshop;
     private final SlotSection thirstFilter;
     private final SlotSection voidFilter;
+    private final SlotSection jetpackModifier;
 
     private final int totalSlots;
 
@@ -34,6 +35,7 @@ public class BackpackSlotLayout {
     private static final int WORKSHOP_SLOTS = 5;
     private static final int THIRST_FILTER_SLOTS = 1;
     private static final int VOID_FILTER_SLOTS = 1;
+    private static final int JETPACK_MODIFIER_SLOTS = 1;
     private static final int PLAYER_INV_SLOTS = 27;
     private static final int PLAYER_HOTBAR_SLOTS = 9;
 
@@ -51,6 +53,7 @@ public class BackpackSlotLayout {
                 .workshop(WORKSHOP_SLOTS)
                 .thirstFilter(THIRST_FILTER_SLOTS)
                 .voidFilter(VOID_FILTER_SLOTS)
+                .jetpackModifier(JETPACK_MODIFIER_SLOTS)
                 .build();
     }
 
@@ -89,6 +92,9 @@ public class BackpackSlotLayout {
 
         this.voidFilter = new SlotSection("VoidFilter", offset, builder.voidFilter);
         offset += builder.voidFilter;
+
+        this.jetpackModifier = new SlotSection("JetpackModifier", offset, builder.jetpackModifier);
+        offset += builder.jetpackModifier;
 
         this.totalSlots = offset;
     }
@@ -138,6 +144,10 @@ public class BackpackSlotLayout {
         return voidFilter;
     }
 
+    public SlotSection jetpackModifier() {
+        return jetpackModifier;
+    }
+
     public int getTotalSlots() {
         return totalSlots;
     }
@@ -164,6 +174,7 @@ public class BackpackSlotLayout {
         if (workshop.contains(slotIndex)) return workshop;
         if (thirstFilter.contains(slotIndex)) return thirstFilter;
         if (voidFilter.contains(slotIndex)) return voidFilter;
+        if (jetpackModifier.contains(slotIndex)) return jetpackModifier;
 
         if (playerInventory().contains(slotIndex)) return playerInventory();
         if (playerHotbar().contains(slotIndex)) return playerHotbar();
@@ -173,7 +184,7 @@ public class BackpackSlotLayout {
 
     // Gets all sections in order
     public List<SlotSection> getAllSections() {
-        return List.of(items, tools, upgrades, jukeboxDiscs, magnetFilter, feederFilter, craftingMatrix, craftingResult, workshop, thirstFilter, voidFilter);
+        return List.of(items, tools, upgrades, jukeboxDiscs, magnetFilter, feederFilter, craftingMatrix, craftingResult, workshop, thirstFilter, voidFilter, jetpackModifier);
     }
 
     // Represents a contiguous section of slots
@@ -322,6 +333,11 @@ public class BackpackSlotLayout {
             return SortRange.NONE;
         }
 
+        // Jetpack Modifier - don't sort
+        if (jetpackModifier().contains(slotIndex)) {
+            return SortRange.NONE;
+        }
+
         // Crafting slots - don't sort
         if (craftingMatrix().contains(slotIndex) || craftingResult().contains(slotIndex)) {
             return SortRange.NONE;
@@ -397,6 +413,7 @@ public class BackpackSlotLayout {
         private int workshop = 0;
         private int thirstFilter = 0;
         private int voidFilter = 0;
+        private int jetpackModifier = 0;
 
         public Builder items(int count) {
             this.itemSlots = count;
@@ -450,6 +467,11 @@ public class BackpackSlotLayout {
 
         public Builder voidFilter(int count) {
             this.voidFilter = count;
+            return this;
+        }
+
+        public Builder jetpackModifier(int count) {
+            this.jetpackModifier = count;
             return this;
         }
 

@@ -1,0 +1,10 @@
+{
+  "parent": "fxntstorage:block/storage_box_base",
+  "textures": {
+    "back": "fxntstorage:block/casings/poplar_casing",
+    "casing": "fxntstorage:block/casings/poplar_casing",
+    "particle": "fxntstorage:block/casings/poplar_casing",
+    "top": "fxntstorage:block/casings/poplar_casing",
+    "trim": "fxntstorage:block/casings/casing_trim"
+  }
+}

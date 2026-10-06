@@ -12,6 +12,7 @@ import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
 import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackHandler;
 import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackManager;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
+import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.network.packet.JetpackFlyingPacket;
 import net.fxnt.fxntstorage.network.packet.KeyPressedPacket;
 import net.fxnt.fxntstorage.simple_storage.*;
@@ -51,12 +52,15 @@ public class KeybindHandler {
     public static final KeyMapping FLY_JETPACK = new KeyMapping("hotKey.fxntstorage.fly_jetpack", GLFW.GLFW_KEY_SPACE, KEY_CATEGORY_FXNTSTORAGE);
     public static final KeyMapping COMPACTING_WHEEL_KEY = new KeyMapping("hotKey.fxntstorage.compacting_wheel", GLFW.GLFW_KEY_TAB, KEY_CATEGORY_FXNTSTORAGE);
 
+    private static final int FLIGHT_DOUBLE_TAP_TICKS = 7; // Same window as vanilla creative flight
     private static boolean flykeyWasDown = false;
+    private static int flightDoubleTapTicks = 0; // Counts down after a jump press, like vanilla's jumpTriggerTime
     private static boolean minekeyWasDown = false;
     private static boolean minePreviewActive = false;
 
     public static void resetFlyKeyState() {
         flykeyWasDown = false;
+        flightDoubleTapTicks = 0;
     }
 
     @EventBusSubscriber(modid = FXNTStorage.MOD_ID, value = Dist.CLIENT)
@@ -131,11 +135,27 @@ public class KeybindHandler {
             // === FLY JETPACK KEY ===
             boolean flykeyIsDown = FLY_JETPACK.isDown();
             boolean shiftIsDown = player.isShiftKeyDown();
+            if (flightDoubleTapTicks > 0) flightDoubleTapTicks--;
 
             if (flykeyIsDown != flykeyWasDown && isSurvival && isWearingBackpack
                     && UpgradeHelper.hasActiveUpgrade(backpackContainer.getItemHandler(), UpgradeType.FLIGHT)) {
-                PacketDistributor.sendToServer(new JetpackFlyingPacket(flykeyIsDown, shiftIsDown));
-                JetpackManager.getJetpackHandler(player).processPlayerFlyingPacket(flykeyIsDown, shiftIsDown);
+                JetpackHandler jetpackHandler = JetpackManager.getJetpackHandler(player);
+                boolean hovering = shiftIsDown;
+
+                if (ConfigManager.ClientConfig.JETPACK_HOVER_MODE.get() == ConfigManager.ClientConfig.JetpackHoverMode.ALTERNATE) {
+                    if (flykeyIsDown) {
+                        if (flightDoubleTapTicks > 0) {
+                            jetpackHandler.toggleAlternateFlight();
+                            flightDoubleTapTicks = 0;
+                        } else {
+                            flightDoubleTapTicks = FLIGHT_DOUBLE_TAP_TICKS;
+                        }
+                    }
+                    hovering = jetpackHandler.isHovering();
+                }
+
+                PacketDistributor.sendToServer(new JetpackFlyingPacket(flykeyIsDown, hovering));
+                jetpackHandler.processPlayerFlyingPacket(flykeyIsDown, hovering);
             }
 
             flykeyWasDown = flykeyIsDown;

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.slot.UpgradeSlot;
 import net.fxnt.fxntstorage.backpack.upgrade.*;
+import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackModifier;
 import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopRecipeHelper;
 import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopUpgrade;
 import net.fxnt.fxntstorage.compat.emi.EMICompat;
@@ -234,7 +235,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
             ItemStack upgradeItem = menu.getSlot(i).getItem();
             UpgradeType upgradeType = UpgradeType.fromItem(upgradeItem.getItem());
 
-            if (upgradeItem.isEmpty() || upgradeType == null || !upgradeType.hasPanel()
+            if (upgradeItem.isEmpty() || upgradeType == null || !upgradeType.hasPanel() || upgradeType.isDisabled()
                     || upgradeType.isPlayerOnly() && menu.getBackpackType().equals(BackpackMenu.BackpackType.CONTRAPTION))
                 continue;
 
@@ -523,6 +524,7 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
 
         Slot heldSlot = slots.get(WorkshopUpgrade.HELD_SLOT);
         if (heldSlot.y < -100) return; // panel collapsed / slot parked off-screen
+        if (!heldSlot.isActive()) return;
 
         Slot machineSlot = slots.get(WorkshopUpgrade.MACHINE_SLOT);
         if (!WorkshopRecipeHelper.isPress(machineSlot.getItem())) return;
@@ -924,6 +926,12 @@ public class BackpackScreen extends AbstractContainerScreen<BackpackMenu> {
         if (!(mc.screen instanceof BackpackScreen screen)) return false;
         if (screen.getMenu().getBackpackType() != BackpackMenu.BackpackType.CONTRAPTION) return false;
         return screen.hoveredSlot instanceof UpgradeSlot;
+    }
+
+    public static JetpackModifier getOpenBackpackModifier() {
+        if (!(Minecraft.getInstance().screen instanceof BackpackScreen screen)) return JetpackModifier.NONE;
+        BackpackMenu menu = screen.getMenu();
+        return JetpackModifier.fromStack(menu.getSlot(menu.layout.jetpackModifier().getStartIndex()).getItem());
     }
 
     private static class LayoutPositions {

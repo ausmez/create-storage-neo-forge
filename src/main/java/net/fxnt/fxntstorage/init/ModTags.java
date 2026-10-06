@@ -40,6 +40,7 @@ public class ModTags {
         public static final TagKey<Item> BACKPACK_ITEM = itemTag("backpack");
         public static final TagKey<Item> BACKPACK_UPGRADE = itemTag("backpack_upgrade");
         public static final TagKey<Item> BACKPACK_UPGRADE_DEACTIVATED = itemTag("backpack_upgrade_deactivated");
+        public static final TagKey<Item> DISABLED_BACKPACK_UPGRADES = itemTag("disabled_backpack_upgrades");
         public static final TagKey<Item> STORAGE_BOX_ITEM = itemTag("storage_box");
         public static final TagKey<Item> STORAGE_BOX_UPGRADE = itemTag("storage_box_upgrade");
         public static final TagKey<Item> REFILL_BLACKLIST = itemTag("refill_blacklist");

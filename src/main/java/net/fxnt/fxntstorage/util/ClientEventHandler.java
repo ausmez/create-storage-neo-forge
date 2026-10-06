@@ -19,6 +19,7 @@ import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.container.ISortableStorageBox;
 import net.fxnt.fxntstorage.controller.StorageControllerHighlight;
+import net.fxnt.fxntstorage.init.ModTabs;
 import net.fxnt.fxntstorage.network.packet.CompactingTierScrollPacket;
 import net.fxnt.fxntstorage.network.packet.PickBlockUpgradePacket;
 import net.fxnt.fxntstorage.network.packet.PlayerInputPacket;
@@ -38,6 +39,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -49,6 +51,7 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.lang.ref.WeakReference;
@@ -60,6 +63,19 @@ import java.util.Set;
 public class ClientEventHandler {
     private static double lastForwardImpulse = -99;
     private static double lastLeftImpulse = -99;
+
+    @SubscribeEvent
+    public static void onTagsUpdated(TagsUpdatedEvent event) {
+        if (event.getUpdateCause() != TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED) return;
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player == null) return; // Initial join. The tab is built when the creative screen first opens
+
+        ModTabs.CREATIVE_MODE_TAB.get().buildContents(new CreativeModeTab.ItemDisplayParameters(
+                player.connection.enabledFeatures(),
+                player.canUseGameMasterBlocks() && mc.options.operatorItemsTab().get(),
+                player.level().registryAccess()));
+    }
 
     private record SlotRange(int start, int end) {
     }

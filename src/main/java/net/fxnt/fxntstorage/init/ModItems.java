@@ -150,7 +150,7 @@ public class ModItems {
                     .patternLine(" SBS ")
                     .patternLine(" #C# ")
                     .patternLine("  N  ")
-                    .build(prov, modLoc("mechanical_crafting/" + ctx.getName())))
+                    .build(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("mechanical_crafting/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_FLIGHT_UPGRADE_DEACTIVATED = REGISTRATE
@@ -190,7 +190,7 @@ public class ModItems {
                     .pattern("XYZ")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+                    .save(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_FEEDER_UPGRADE_DEACTIVATED = REGISTRATE
@@ -216,7 +216,7 @@ public class ModItems {
                     .pattern("XYZ")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+                    .save(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_TOOLSWAP_UPGRADE_DEACTIVATED = REGISTRATE
@@ -242,7 +242,7 @@ public class ModItems {
                     .pattern("XYX")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+                    .save(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_FALLDAMAGE_UPGRADE_DEACTIVATED = REGISTRATE
@@ -266,7 +266,7 @@ public class ModItems {
                     .pattern("DDD")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+                    .save(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_OREMINING_UPGRADE_DEACTIVATED = REGISTRATE
@@ -291,7 +291,7 @@ public class ModItems {
                     .pattern("CXC")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+                    .save(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_TORCHDEPLOYER_UPGRADE_DEACTIVATED = REGISTRATE
@@ -316,7 +316,7 @@ public class ModItems {
                     .pattern("CXC")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+                    .save(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_JUKEBOX_UPGRADE_DEACTIVATED = REGISTRATE
@@ -345,7 +345,7 @@ public class ModItems {
                     .patternLine("SIBIS")
                     .patternLine(" CHC ")
                     .patternLine("  L  ")
-                    .build(prov, modLoc("mechanical_crafting/" + ctx.getName())))
+                    .build(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("mechanical_crafting/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_HEALTH_UPGRADE_DEACTIVATED = REGISTRATE
@@ -384,7 +384,7 @@ public class ModItems {
                     .pattern("FXF")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+                    .save(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_WORKSHOP_UPGRADE_DEACTIVATED = REGISTRATE
@@ -423,7 +423,7 @@ public class ModItems {
                     .pattern("OEO")
                     .group("backpack")
                     .unlockedBy("has_blank_upgrade", RegistrateRecipeProvider.has(ModItems.BACKPACK_BLANK_UPGRADE))
-                    .save(prov, modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
+                    .save(ModRecipeHelper.enabledUpgrade(prov, ctx.get()), modLoc("crafting_shaped/backpack_upgrade/" + ctx.getName())))
             .register();
 
     public static final ItemEntry<UpgradeItem> BACKPACK_VOID_UPGRADE_DEACTIVATED = REGISTRATE

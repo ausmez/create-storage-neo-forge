@@ -1,4 +1,10 @@
 {
+  "neoforge:conditions": [
+    {
+      "type": "fxntstorage:backpack_upgrade_enabled",
+      "upgrade": "fxntstorage:backpack_feeder_upgrade"
+    }
+  ],
   "parent": "minecraft:recipes/root",
   "criteria": {
     "has_blank_upgrade": {

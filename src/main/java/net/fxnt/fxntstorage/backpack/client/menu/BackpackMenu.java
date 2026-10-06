@@ -429,7 +429,8 @@ public class BackpackMenu extends AbstractContainerMenu {
         }
 
         // If item is an upgrade item, put it into upgrade slot (Only from player inventory)
-        if (slotItem.is(ModTags.Items.BACKPACK_UPGRADE)) {
+        // Disabled upgrades skip this and move like any other item which also lets them be quick moved out
+        if (slotItem.is(ModTags.Items.BACKPACK_UPGRADE) && !UpgradeType.isDisabled(slotItem)) {
             if (player instanceof ServerPlayer serverPlayer)
                 PacketDistributor.sendToPlayer(serverPlayer, new SetCarriedPacket(ItemStack.EMPTY));
 
@@ -683,6 +684,7 @@ public class BackpackMenu extends AbstractContainerMenu {
         if (itemStack.getItem().equals(ModItems.BACKPACK_WORKSHOP_UPGRADE.get())) return;
 
         UpgradeType toggledType = UpgradeType.fromItem(itemStack.getItem());
+        if (toggledType != null && toggledType.isDisabled()) return;
         boolean wasActive = toggledType != null
                 && UpgradeHelper.hasActiveUpgrade(container.getItemHandler(), toggledType);
 

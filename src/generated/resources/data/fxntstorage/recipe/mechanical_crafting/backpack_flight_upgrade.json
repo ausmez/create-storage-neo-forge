@@ -1,4 +1,10 @@
 {
+  "neoforge:conditions": [
+    {
+      "type": "fxntstorage:backpack_upgrade_enabled",
+      "upgrade": "fxntstorage:backpack_flight_upgrade"
+    }
+  ],
   "type": "create:mechanical_crafting",
   "accept_mirrored": true,
   "category": "misc",

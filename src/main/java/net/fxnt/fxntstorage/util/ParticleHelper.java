@@ -11,10 +11,10 @@ import net.minecraft.world.phys.Vec3;
 
 public class ParticleHelper {
 
-    public static void jetpackParticles(Player player) {
+    public static void jetpackParticles(Player player, boolean afterburning) {
         LevelAccessor world = player.level();
         ParticleOptions particleType = player.isInWater() ? ParticleTypes.BUBBLE_COLUMN_UP
-                : player.isInLava() ? ParticleTypes.FLAME
+                : player.isInLava() || afterburning ? ParticleTypes.FLAME
                 : ParticleTypes.CLOUD;
 
         Vec3 position = player.position();

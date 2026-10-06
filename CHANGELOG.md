@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.3.6 - 2026-10-06
+
+## Bug Fixes
+- Fixed filtered Simple Storage and Storage Boxes on contraptions not being preferred over other storage.
+- Fixed packagers connected to a Simple Storage Box with a Compacting update refusing higher tier items (e.g. iron ingots/blocks). (#89)
+- Fixed a disconnect when clicking a Backpack, Storage Box, Simple Storage Box, or Reserve Storage Box block while in spectator mode.
+- Fixed the Thirst Upgrade having no crafting recipe.
+- Fixed Music Disc 5 not giving its Jukebox Upgrade buffs.
+- Fixed the server's `mineOresOnly` config option turning off the Ore Mining Upgrade entirely.
+- The Ore Mining Upgrade's vein preview now uses the `fxntstorage:ore_mining_block` tag, so modded ores added to the tag can be previewed.
+- Fixed the handle on the backpack model so it no longer floats.
+
+## Changes
+- Added Jetpack Modifiers, allowing players to customize the jetpack with different flight, fuel, and utility options.
+  - Elytra Boost now requires the Firework Rocket modifier
+  - The `elytraBoostEnabled`, `elytraBoostMultiplier` and `elytraBoostSpeedMultiplier` server config options have been removed.
+- Backpack models and textures can now be fully customized with resource packs. See the wiki's resource pack guide. (#88)
+- Modpacks can now disable backpack upgrades by adding them to the `fxntstorage:disabled_backpack_upgrades` item tag. Disabled upgrades:
+  - Can't be crafted, and are hidden from JEI/EMI/REI and the creative tab.
+  - Can't be installed, and any existing upgrades stop working but can still be removed.
+- The Jetpack's `ALTERNATE` hover mode now works just like creative flight. (#87)
+- Added Poplar variants of the Simple Storage Box and Storage Trim when 'VanillaBackport' 1.2.x is present.
+- 'VanillaBackport' compatibility can now support either 1.1.x or 1.2.x.
+- Existing Simple Storage Boxes now keep their contents if 'VanillaBackport' is removed or downgraded.
+
+---
+
 ## 1.3.5 - 2026-09-20
 
 ## Bug Fixes

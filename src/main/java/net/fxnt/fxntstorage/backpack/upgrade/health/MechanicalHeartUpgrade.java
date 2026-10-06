@@ -36,6 +36,16 @@ public class MechanicalHeartUpgrade extends AbstractUpgrade {
     }
 
     @Override
+    public void tick(UpgradeContext context) {
+        // A modpack can disable the upgrade mid-session (/reload) so drop the bonus
+        if (getType().isDisabled() && context.backpackType() == BackpackMenu.BackpackType.WORN) {
+            AttributeInstance attribute = context.player().getAttribute(Attributes.MAX_HEALTH);
+            if (attribute != null && attribute.hasModifier(HEALTH_MODIFIER_ID)) removeModifier(context.player());
+        }
+        super.tick(context);
+    }
+
+    @Override
     public void onBackpackEquipped(UpgradeContext context) {
         Player player = context.player();
         applyModifier(player);

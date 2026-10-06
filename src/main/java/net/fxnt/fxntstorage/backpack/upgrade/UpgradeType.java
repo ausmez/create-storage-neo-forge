@@ -1,9 +1,13 @@
 package net.fxnt.fxntstorage.backpack.upgrade;
 
 import net.fxnt.fxntstorage.init.ModItems;
+import net.fxnt.fxntstorage.init.ModTags;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Supplier;
 
 public enum UpgradeType {
@@ -15,9 +19,9 @@ public enum UpgradeType {
     WORKSHOP("workshop", ModItems.BACKPACK_WORKSHOP_UPGRADE::get, ModItems.BACKPACK_WORKSHOP_UPGRADE_DEACTIVATED::get, true),
     THIRST("thirst", ModItems.BACKPACK_THIRST_UPGRADE::get, ModItems.BACKPACK_THIRST_UPGRADE_DEACTIVATED::get, true),
     VOID("void", ModItems.BACKPACK_VOID_UPGRADE::get, ModItems.BACKPACK_VOID_UPGRADE_DEACTIVATED::get, true),
+    FLIGHT("flight", ModItems.BACKPACK_FLIGHT_UPGRADE::get, ModItems.BACKPACK_FLIGHT_UPGRADE_DEACTIVATED::get, true),
 
     // Upgrades with panels but no slots
-    FLIGHT("flight", ModItems.BACKPACK_FLIGHT_UPGRADE::get, ModItems.BACKPACK_FLIGHT_UPGRADE_DEACTIVATED::get, true),
     OREMINING("oremining", ModItems.BACKPACK_OREMINING_UPGRADE::get, ModItems.BACKPACK_OREMINING_UPGRADE_DEACTIVATED::get, true),
     TOOLSWAP("toolswap", ModItems.BACKPACK_TOOLSWAP_UPGRADE::get, ModItems.BACKPACK_TOOLSWAP_UPGRADE_DEACTIVATED::get, true),
 
@@ -94,6 +98,28 @@ public enum UpgradeType {
 
     public boolean isPlayerOnly() {
         return this != MAGNET && this != JUKEBOX && this != CRAFTING && this != WORKSHOP && this != VOID;
+    }
+
+    // Whether a pack disabled this upgrade via disabled_backpack_upgrades tag
+    public boolean isDisabled() {
+        return BuiltInRegistries.ITEM.wrapAsHolder(getActiveItem()).is(ModTags.Items.DISABLED_BACKPACK_UPGRADES)
+                || BuiltInRegistries.ITEM.wrapAsHolder(getDeactivatedItem()).is(ModTags.Items.DISABLED_BACKPACK_UPGRADES);
+    }
+
+    public static boolean isDisabled(ItemStack stack) {
+        UpgradeType type = fromItem(stack.getItem());
+        return type != null && type.isDisabled();
+    }
+
+    // Active and deactivated items of every disabled upgrade, for hiding them from item lists
+    public static List<ItemStack> disabledStacks() {
+        List<ItemStack> stacks = new ArrayList<>();
+        for (UpgradeType type : values()) {
+            if (!type.isDisabled()) continue;
+            stacks.add(type.getActiveStack());
+            stacks.add(type.getDeactivatedStack());
+        }
+        return stacks;
     }
 
     public boolean isThisUpgrade(Item item) {

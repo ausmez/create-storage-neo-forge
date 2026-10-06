@@ -6,6 +6,7 @@ import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.widget.Bounds;
 import dev.emi.emi.screen.EmiScreenManager;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
 import net.fxnt.fxntstorage.container.StorageBoxScreen;
 import net.fxnt.fxntstorage.init.ModMenuTypes;
 import net.fxnt.fxntstorage.reserve_storage.ReserveStorageBoxScreen;
@@ -42,5 +43,7 @@ public class EMICompat implements EmiPlugin {
         registry.addDragDropHandler(ReserveStorageBoxScreen.class, new EMIReserveStorageDragDropHandler());
 
         registry.addRecipeHandler(ModMenuTypes.BACKPACK_MENU.get(), new EMIBackpackCraftingRecipeHandler());
+
+        registry.removeEmiStacks(stack -> UpgradeType.isDisabled(stack.getItemStack()));
     }
 }

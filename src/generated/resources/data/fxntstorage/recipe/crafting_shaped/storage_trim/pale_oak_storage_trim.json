@@ -1,8 +1,8 @@
 {
   "neoforge:conditions": [
     {
-      "type": "neoforge:mod_loaded",
-      "modid": "vanillabackport"
+      "type": "neoforge:item_exists",
+      "item": "minecraft:pale_oak_planks"
     }
   ],
   "type": "minecraft:crafting_shaped",

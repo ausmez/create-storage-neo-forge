@@ -29,6 +29,8 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
 
             if (targetInv == null) {
                 return false;
+            } else if (ssbe.hasCompactingUpgrade() && ssbe.compactingChain != null) {
+                return unpackCompacting(ssbe, ssbe.compactingChain, items, simulate);
             } else if (!simulate) {
                 for (ItemStack itemStack : items) {
                     ItemHandlerHelper.insertItemStacked(targetInv, itemStack.copy(), false);
@@ -60,5 +62,26 @@ public enum SimpleStorageBoxUnpacking implements UnpackingHandler {
                 return false;
             }
         }
+    }
+
+    private static boolean unpackCompacting(SimpleStorageBoxEntity ssbe, CompactingChain chain, List<ItemStack> items, boolean simulate) {
+        if (!simulate) {
+            IItemHandler handler = ssbe.getCapabilityHandler();
+            for (ItemStack itemStack : items) {
+                ItemHandlerHelper.insertItem(handler, itemStack.copy(), false);
+            }
+            return true;
+        }
+
+        long t0ToInsert = 0;
+        for (ItemStack itemStack : items) {
+            if (itemStack == null || itemStack.isEmpty()) continue;
+            int t0Units = chain.toT0Units(itemStack.getItem(), itemStack.getCount());
+            if (t0Units <= 0) return false;
+            t0ToInsert += t0Units;
+        }
+
+        if (ssbe.voidUpgrade) return true;
+        return t0ToInsert + ssbe.getStoredAmount() <= ssbe.getMaxItemCapacity();
     }
 }

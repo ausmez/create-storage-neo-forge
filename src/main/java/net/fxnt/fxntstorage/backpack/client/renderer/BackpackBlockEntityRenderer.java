@@ -7,7 +7,6 @@ import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.BackpackEntity;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeHelper;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
-import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopFlywheelPlacement;
 import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopFlywheelRenderer;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -37,11 +36,12 @@ public class BackpackBlockEntityRenderer implements BlockEntityRenderer<Backpack
         VertexConsumer consumer = buffer.getBuffer(RenderType.solid());
 
         poseStack.pushPose();
+        // Rotate into the backpack model's space the same way the blockstate does
         poseStack.translate(0.5, 0.5, 0.5);
-        poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
-        WorkshopFlywheelRenderer.renderPair(poseStack, consumer, packedLight, angle,
-                WorkshopFlywheelPlacement.BLOCK_OFFSET_X, WorkshopFlywheelPlacement.BLOCK_OFFSET_Y,
-                WorkshopFlywheelPlacement.BLOCK_OFFSET_Z, WorkshopFlywheelPlacement.BLOCK_SCALE);
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - facing.toYRot()));
+        poseStack.translate(-0.5, -0.5, -0.5);
+        WorkshopFlywheelRenderer.render(backpack.getBlockState().getBlock().asItem(), false,
+                poseStack, consumer, packedLight, angle);
         poseStack.popPose();
     }
 }

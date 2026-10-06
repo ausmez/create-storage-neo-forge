@@ -36,6 +36,7 @@ public class UpgradeHelper {
     }
 
     public static Boolean toggleWornUpgrade(ServerPlayer player, UpgradeType type) {
+        if (type.isDisabled()) return null;
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         if (backpack.isEmpty()) {
             return null;
@@ -68,7 +69,9 @@ public class UpgradeHelper {
         return null;
     }
 
+    // Disabled upgrades count as not installed, so their panels, slots and hotkeys are hidden
     public static boolean hasUpgrade(IItemHandler handler, UpgradeType type) {
+        if (type.isDisabled()) return false;
         for (int i : LAYOUT.upgrades().range()) {
             ItemStack stack = handler.getStackInSlot(i);
             if (type.isInStack(stack)) {
@@ -78,7 +81,9 @@ public class UpgradeHelper {
         return false;
     }
 
+    // Every upgrade behavior gates on this, so disabled upgrades already installed stop working
     public static boolean hasActiveUpgrade(IItemHandler handler, UpgradeType type) {
+        if (type.isDisabled()) return false;
         for (int i : LAYOUT.upgrades().range()) {
             ItemStack stack = handler.getStackInSlot(i);
             if (stack.getItem() == type.getActiveItem()) {

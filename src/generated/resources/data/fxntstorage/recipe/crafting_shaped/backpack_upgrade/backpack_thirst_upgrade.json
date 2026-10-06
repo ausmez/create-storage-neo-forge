@@ -1,0 +1,56 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "thirst"
+    },
+    {
+      "type": "fxntstorage:backpack_upgrade_enabled",
+      "upgrade": "fxntstorage:backpack_thirst_upgrade"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "backpack",
+  "key": {
+    "B": {
+      "item": "fxntstorage:backpack_blank_upgrade"
+    },
+    "I": {
+      "item": "create:iron_sheet"
+    },
+    "R": {
+      "item": "create:redstone_link"
+    },
+    "X": {
+      "type": "neoforge:components",
+      "components": {
+        "thirst:purity": 1
+      },
+      "items": "thirst:terracotta_water_bowl"
+    },
+    "Y": {
+      "type": "neoforge:components",
+      "components": {
+        "thirst:purity": 2
+      },
+      "items": "thirst:terracotta_water_bowl"
+    },
+    "Z": {
+      "type": "neoforge:components",
+      "components": {
+        "thirst:purity": 3
+      },
+      "items": "thirst:terracotta_water_bowl"
+    }
+  },
+  "pattern": [
+    " R ",
+    "IBI",
+    "XYZ"
+  ],
+  "result": {
+    "count": 1,
+    "id": "fxntstorage:backpack_thirst_upgrade"
+  }
+}

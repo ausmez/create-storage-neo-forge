@@ -9,9 +9,9 @@ import net.createmod.ponder.api.element.EntityElement;
 import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
+import net.fxnt.fxntstorage.compat.vanillabackport.VanillaBackportCompat;
 import net.fxnt.fxntstorage.container.EnumProperties;
 import net.fxnt.fxntstorage.init.ModBlocks;
-import net.fxnt.fxntstorage.init.ModCompats;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBoxEntity;
 import net.minecraft.core.BlockPos;
@@ -22,7 +22,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.fml.ModList;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,13 +42,13 @@ public class SimpleStorageBoxScenes {
         Selection supportBlocks1, supportBlocks2;
         BlockState state1, state2, state3;
 
-        if (ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT)) {
+        if (VanillaBackportCompat.planksExist(VanillaBackportCompat.PALE_OAK_PLANKS)) {
             storageBoxes = Arrays.asList(
                     util.select().position(4, 1, 1), util.select().position(3, 1, 1),
                     util.select().position(2, 1, 1), util.select().position(1, 1, 1),
                     util.select().position(0, 1, 1), util.select().position(4, 2, 2), util.select().position(3, 2, 2),
                     util.select().position(2, 2, 2), util.select().position(1, 2, 2), util.select().position(0, 2, 2),
-                    util.select().position(3, 3, 3), util.select().position(1, 3, 3)
+                    util.select().position(3, 3, 3), util.select().position(2, 3, 3), util.select().position(1, 3, 3)
             );
             supportBlocks1 = util.select().fromTo(4, 1, 2, 0, 1, 2);
             supportBlocks2 = util.select().fromTo(3, 1, 3, 1, 2, 3);

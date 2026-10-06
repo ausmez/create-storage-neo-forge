@@ -5,7 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
-import net.fxnt.fxntstorage.cache.PasserShapeCache;
+import net.createmod.catnip.math.VoxelShaper;
 import net.fxnt.fxntstorage.init.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,6 +42,14 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
     public static final DirectionProperty FACING = DirectionalBlock.FACING;
     public static final BooleanProperty POWERED;
     private final boolean isSmart;
+
+    // Modeled facing UP (narrow end on top). VoxelShaper needs the UP base: built from NORTH it flips the UP/DOWN shapes
+    private static final VoxelShaper SHAPE = VoxelShaper.forDirectional(Shapes.or(
+            Block.box(4, 15, 4, 12, 16, 12),
+            Block.box(5, 11, 5, 11, 15, 11),
+            Block.box(4, 7, 4, 12, 11, 12),
+            Block.box(3, 1, 3, 13, 7, 13),
+            Block.box(2, 0, 2, 14, 1, 14)), Direction.UP);
 
     static {
         POWERED = BlockStateProperties.POWERED;
@@ -125,19 +134,16 @@ public class PasserBlock extends BaseEntityBlock implements IWrenchable {
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        Direction direction = pState.getValue(FACING);
-        return PasserShapeCache.getShape(direction);
+        return SHAPE.get(pState.getValue(FACING));
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        Direction direction = pState.getValue(FACING);
-        return PasserShapeCache.getShape(direction);
+        return SHAPE.get(pState.getValue(FACING));
     }
 
     @Override
     public VoxelShape getInteractionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
-        Direction direction = pState.getValue(FACING);
-        return PasserShapeCache.getShape(direction);
+        return SHAPE.get(pState.getValue(FACING));
     }
 }

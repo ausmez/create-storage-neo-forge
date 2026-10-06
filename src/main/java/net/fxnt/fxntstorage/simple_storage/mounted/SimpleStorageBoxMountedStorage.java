@@ -409,10 +409,10 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
                     } else {
                         existing.grow(reachedLimit ? limit : stack.getCount());
                     }
-                }
-                if (filterItem.isEmpty()) filterItem = stack.copyWithCount(1);
+                    if (filterItem.isEmpty()) filterItem = stack.copyWithCount(1);
 
-                markDirty();
+                    markDirty();
+                }
 
                 if (reachedLimit)
                     return (hasVoidUpgrade()) ? ItemStack.EMPTY : stack.copyWithCount(stack.getCount() - limit);
@@ -454,6 +454,11 @@ public class SimpleStorageBoxMountedStorage extends WrapperMountedItemStorage<It
         int remaining = stack.getCount() - consumed;
         if (remaining <= 0) return ItemStack.EMPTY;
         return hasVoidUpgrade() ? ItemStack.EMPTY : stack.copyWithCount(remaining);
+    }
+
+    @Override
+    public boolean prefersItem(ItemStack stack) {
+        return !filterItem.isEmpty() && !stack.isEmpty() && insertItem(0, stack.copyWithCount(1), true).isEmpty();
     }
 
     @Override

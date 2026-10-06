@@ -65,9 +65,6 @@
   "fxntstorage.configuration.mineOresOnly": "Mine Ores Only",
   "fxntstorage.configuration.oreminingPreviewOreVein": "Enable Ore Vein Preview",
   "fxntstorage.configuration.keepBackpackOnDeath": "Keep Backpack On Death",
-  "fxntstorage.configuration.elytraBoostEnabled": "Elytra Boost Enabled",
-  "fxntstorage.configuration.elytraBoostMultiplier": "Elytra Boost Fuel Multiplier",
-  "fxntstorage.configuration.elytraBoostSpeedMultiplier": "Elytra Boost Speed Multiplier",
   "fxntstorage.configuration.jetpackMiningPenalty": "Mining Speed Penalty",
   "fxntstorage.configuration.feeder_upgrade": "Feeder Upgrade",
   "fxntstorage.configuration.thirst_upgrade": "Thirst Upgrade",
@@ -100,6 +97,7 @@
   "fxntstorage.configuration.jetpack_upgrade.tooltip": "Configuration options for the Backpack Jetpack Upgrade",
   "fxntstorage.configuration.invalidBlock": "Not a valid block",
   "fxntstorage.configuration.jetpackAllowVoidFlight": "Allow Void Flight",
+  "fxntstorage.configuration.jetpackModifiersEnabled": "Enable Jetpack Modifiers",
   "fxntstorage.configuration.feederHungerLevel": "Hunger Level",
   "fxntstorage.configuration.feederHealthThreshold": "Health Threshold (%)",
   "fxntstorage.configuration.thirstLevel": "Thirst Level",
@@ -134,5 +132,6 @@
   "effect.fxntstorage.repel_creepers": "Repel Creepers",
   "effect.fxntstorage.phantom_ward": "Phantom Ward",
 
-  "config.jade.plugin_fxntstorage.oak_simple_storage_box": "Simple Storage Box"
+  "config.jade.plugin_fxntstorage.oak_simple_storage_box": "Simple Storage Box",
+  "config.jade.plugin_fxntstorage.backpack": "Backpack"
 }

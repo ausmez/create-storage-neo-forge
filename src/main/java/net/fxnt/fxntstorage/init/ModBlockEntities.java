@@ -47,7 +47,8 @@ public class ModBlockEntities {
                     ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO,
                     ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON,
                     ModBlocks.SIMPLE_STORAGE_BOX_WARPED,
-                    ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK
+                    ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK,
+                    ModBlocks.SIMPLE_STORAGE_BOX_POPLAR
             ).filter(Objects::nonNull).toArray(NonNullSupplier[]::new))
             .register();
 

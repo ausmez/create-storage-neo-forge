@@ -2,10 +2,7 @@ package net.fxnt.fxntstorage.backpack.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
-import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
-import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopFlywheelPlacement;
 import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopFlywheelRenderer;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.init.ModDataComponents;
@@ -17,7 +14,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -55,19 +51,11 @@ public class BackpackItemRenderer extends BlockEntityWithoutLevelRenderer {
 
         if (!hasActiveWorkshop(stack) || !ConfigManager.ClientConfig.WORKSHOP_FLYWHEEL_VISUALS.get()) return;
 
-        Direction facing = state.getValue(BackpackBlock.FACING);
-        VertexConsumer consumer = buffer.getBuffer(RenderType.solid());
-        poseStack.pushPose();
-        poseStack.translate(0.5, 0.5, 0.5);
-        poseStack.mulPose(Axis.YP.rotationDegrees(-facing.toYRot()));
-        WorkshopFlywheelRenderer.renderPair(poseStack, consumer, packedLight, 0f,
-                WorkshopFlywheelPlacement.BLOCK_OFFSET_X, WorkshopFlywheelPlacement.BLOCK_OFFSET_Y,
-                WorkshopFlywheelPlacement.BLOCK_OFFSET_Z, WorkshopFlywheelPlacement.BLOCK_SCALE);
-        poseStack.popPose();
+        WorkshopFlywheelRenderer.render(stack.getItem(), false, poseStack, buffer.getBuffer(RenderType.solid()), packedLight, 0f);
     }
 
     private static boolean hasActiveWorkshop(ItemStack stack) {
         List<String> upgrades = stack.get(ModDataComponents.BACKPACK_UPGRADES);
-        return upgrades != null && upgrades.contains(WORKSHOP_ACTIVE_NAME);
+        return upgrades != null && upgrades.contains(WORKSHOP_ACTIVE_NAME) && !UpgradeType.WORKSHOP.isDisabled();
     }
 }

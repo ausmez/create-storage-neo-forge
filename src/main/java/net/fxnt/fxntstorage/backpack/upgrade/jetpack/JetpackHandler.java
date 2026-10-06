@@ -6,13 +6,13 @@ import com.simibubi.create.AllTags;
 import com.simibubi.create.content.equipment.armor.BacktankUtil;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackMenu;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
+import net.fxnt.fxntstorage.backpack.inventory.BackpackSlotLayout;
 import net.fxnt.fxntstorage.backpack.inventory.IBackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataManager;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeDataSync;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ClientSettings;
 import net.fxnt.fxntstorage.config.ConfigManager;
-import net.fxnt.fxntstorage.network.packet.JetpackFlyingPacket;
 import net.fxnt.fxntstorage.network.packet.JetpackFuelSyncPacket;
 import net.fxnt.fxntstorage.network.packet.VisualJetpackAirPacket;
 import net.fxnt.fxntstorage.util.ParticleHelper;
@@ -28,18 +28,20 @@ import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -52,7 +54,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class JetpackHandler {
-    private static final int MAX_ALLOWED_HEIGHT = 32;
+    private static final BackpackSlotLayout LAYOUT = BackpackSlotLayout.createLayout();
     private static final double GRAVITY = -0.44;
     private static final double ALTERNATE_HOVER_VERTICAL_SPEED = 0.35;
     private static final long FUEL_SYNC_INTERVAL = 1000; // 1 sec
@@ -67,7 +69,6 @@ public class JetpackHandler {
     private boolean airGaugeCleared = false;
     private boolean isJumping = false;
     private boolean isHovering = false;
-    private boolean alternateControlsArmed = false;
     private float forward = 0f;
     private float left = 0f;
     private boolean playedSoundThisJump = false;
@@ -83,6 +84,11 @@ public class JetpackHandler {
     private int missedPackets = 0;
 
     private boolean cleanupNeeded = false;
+
+    // Server reads it from the backpack, client receives it with each fuel sync
+    private JetpackModifier modifier = JetpackModifier.NONE;
+    private JetpackModifier lastSyncedModifier = null;
+    private double fuelDebt = 0;
 
     private IBackpackContainer itemHandler;
 
@@ -115,7 +121,7 @@ public class JetpackHandler {
             hoverHeight = player.getY();
         }
 
-        if (isJumping) {
+        if (isThrusting()) {
             if (predictedFuelRemaining <= 0) {
                 endHovering(false);
                 return;
@@ -124,15 +130,12 @@ public class JetpackHandler {
             player.setNoGravity(true);
             player.resetFallDistance();
 
-            if (isAlternateHover()) {
-                if (!isHovering && player.isShiftKeyDown()) {
+            if (!isAlternateHover()) {
+                if (player.isShiftKeyDown()) {
                     startHovering(true);
-                    PacketDistributor.sendToServer(new JetpackFlyingPacket(isJumping, true));
+                } else if (isHovering) {
+                    endHovering(true);
                 }
-            } else if (player.isShiftKeyDown()) {
-                startHovering(true);
-            } else if (isHovering) {
-                endHovering(true);
             }
 
             updateClientMovementWithInterpolation();
@@ -177,7 +180,7 @@ public class JetpackHandler {
 
         jetPackFuelRemaining = (float) calculateJetPackFuel(player);
 
-        if ((isJumping || isHovering) && jetPackFuelRemaining > 0) {
+        if ((isThrusting() || isHovering) && jetPackFuelRemaining > 0) {
             player.setNoGravity(true);
             depleteJetPackFuel(player);
             validatePlayerMovement();
@@ -188,7 +191,11 @@ public class JetpackHandler {
             }
 
             if (BackpackHelper.isWearingBackpack(player, true)) {
-                ParticleHelper.jetpackParticles(player);
+                ParticleHelper.jetpackParticles(player, isAfterburning());
+            }
+
+            if (isAfterburning()) {
+                igniteExhaustArea();
             }
         } else {
             player.setNoGravity(false);
@@ -199,6 +206,27 @@ public class JetpackHandler {
 
         syncFuelToClient();
         fadeOutVisualAirOverlay();
+    }
+
+    // Afterburner exhaust sets fire to anything beside or beneath the player while firing
+    private void igniteExhaustArea() {
+        AABB area = player.getBoundingBox()
+                .inflate(JetpackModifier.AFTERBURNER_IGNITE_RADIUS, 0, JetpackModifier.AFTERBURNER_IGNITE_RADIUS)
+                .expandTowards(0, -JetpackModifier.AFTERBURNER_IGNITE_DEPTH, 0);
+
+        List<LivingEntity> targets = player.level().getEntitiesOfClass(LivingEntity.class, area, entity ->
+                entity != player && !entity.isSpectator() && !entity.isInWaterRainOrBubble()
+                        && !(entity instanceof Player other && !player.canHarmPlayer(other)));
+        // Re-ignited every tick, so only play the sound when something newly catches fire
+        boolean newlyIgnited = false;
+        for (LivingEntity target : targets) {
+            if (target.getRemainingFireTicks() <= 0) newlyIgnited = true;
+            target.igniteForSeconds(JetpackModifier.AFTERBURNER_IGNITE_SECONDS);
+        }
+        if (newlyIgnited) {
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0f, 1.0f);
+        }
     }
 
     private boolean wasTeleported() {
@@ -214,7 +242,7 @@ public class JetpackHandler {
         if (lastFuelSync == 0 || currentTime - lastFuelSync > FUEL_SYNC_INTERVAL * 2) {
             // Haven't received fuel update in a while, use last known value
             predictedFuelRemaining = jetPackFuelRemaining;
-        } else if (isJumping) {
+        } else if (isThrusting()) {
             // Predict fuel consumption based on time since last sync
             long timeSinceSync = currentTime - lastFuelSync;
             float estimatedConsumption = (float) (timeSinceSync / 1000.0); // 1 sec
@@ -222,7 +250,8 @@ public class JetpackHandler {
         }
     }
 
-    public void onFuelSync(float serverFuel, long serverTime) {
+    public void onFuelSync(float serverFuel, long serverTime, int modifierId) {
+        modifier = JetpackModifier.byId(modifierId);
         jetPackFuelRemaining = serverFuel;
         predictedFuelRemaining = serverFuel;
         lastFuelSync = player.level().getGameTime();
@@ -232,7 +261,7 @@ public class JetpackHandler {
         long estimatedLatency = Math.max(0, clientTime - serverTime);
 
         // Adjust prediction based on latency
-        if (isJumping && estimatedLatency > 0) {
+        if (isThrusting() && estimatedLatency > 0) {
             float latencyConsumption = estimatedLatency / 1000.0f;
             predictedFuelRemaining = Math.max(serverFuel - latencyConsumption, 0);
         }
@@ -274,8 +303,7 @@ public class JetpackHandler {
     }
 
     private void validateAndCorrectPosition() {
-        double distanceToGround = getDistanceToGround(player);
-        if (distanceToGround > MAX_ALLOWED_HEIGHT + 5) { // 5 block buffer
+        if (isAboveHeightLimit(getDistanceToGround(player), 5)) { // 5 block buffer
             Vec3 velocity = player.getDeltaMovement();
             player.setDeltaMovement(velocity.x, Math.min(velocity.y, -0.1), velocity.z); // Gradually pull player down
         }
@@ -286,8 +314,14 @@ public class JetpackHandler {
             playedSoundThisJump = false;
         } else if (!playedSoundThisJump) {
             if (player.level().isClientSide) {
-                player.level().playLocalSound(player.getX(), player.getY(), player.getZ(),
-                        AllSoundEvents.STEAM.getMainEvent(), SoundSource.PLAYERS, 0.1f, 1.0f, false);
+                if (modifier == JetpackModifier.BLAZE_BURNER) {
+                    // Afterburner ignition instead of the usual steam hiss
+                    player.level().playLocalSound(player.getX(), player.getY(), player.getZ(),
+                            SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.3f, 1.2f, false);
+                } else {
+                    player.level().playLocalSound(player.getX(), player.getY(), player.getZ(),
+                            AllSoundEvents.STEAM.getMainEvent(), SoundSource.PLAYERS, 0.1f, 1.0f, false);
+                }
             }
             playedSoundThisJump = true;
         }
@@ -331,6 +365,19 @@ public class JetpackHandler {
         return (ConfigManager.ServerConfig.JETPACK_ALLOW_VOID_FLIGHT.get()) ? -1 : Double.MAX_VALUE;
     }
 
+    private boolean isAboveHeightLimit(double distanceToGround, double buffer) {
+        if (distanceToGround < 0) return false; // Void flight allowed with nothing below
+        if (distanceToGround == Double.MAX_VALUE) return true; // Void flight disallowed with nothing below
+        return modifier.hasHeightLimit() && distanceToGround > modifier.getMaxHeight() + buffer;
+    }
+
+    // Height used for the Encased Fan fuel penalty, falling back to the world floor over the void
+    private double getHeightAboveGround() {
+        double distanceToGround = getDistanceToGround(player);
+        if (distanceToGround >= 0 && distanceToGround != Double.MAX_VALUE) return distanceToGround;
+        return player.getY() - player.level().getMinBuildHeight();
+    }
+
     public void toggleHover() {
         if (player.onGround()) {
             endHovering(false);
@@ -347,7 +394,6 @@ public class JetpackHandler {
     public void startHovering(boolean announce) {
         isHovering = true;
         hoverHeight = player.getY();
-        alternateControlsArmed = false;
         if (announce) displayHoverMessage(true);
     }
 
@@ -359,14 +405,12 @@ public class JetpackHandler {
     }
 
     private void displayHoverMessage(boolean isStarting) {
-        boolean isElytraBoost = player.getItemBySlot(EquipmentSlot.CHEST).getItem().equals(Items.ELYTRA)
-                && player.isFallFlying() && ConfigManager.ServerConfig.ELYTRA_BOOST_ENABLED.get();
         Component state = Component.translatable(isStarting
                         ? "message.fxntstorage.enabled"
                         : "message.fxntstorage.disabled")
                 .withStyle(isStarting ? ChatFormatting.GREEN : ChatFormatting.RED);
 
-        String messageKey = isElytraBoost ? "item.fxntstorage.jetpack.elytra_boost" : "item.fxntstorage.jetpack.hover";
+        String messageKey = isElytraBoosting() ? "item.fxntstorage.jetpack.elytra_boost" : "item.fxntstorage.jetpack.hover";
         player.displayClientMessage(Component.translatable(messageKey).append(Component.literal(": ").append(state)), true);
     }
 
@@ -422,7 +466,7 @@ public class JetpackHandler {
         Vec3 strafeDirection = flatLookDirection.cross(new Vec3(0, 1, 0)).normalize();
 
         double forwardWeight = isHovering ? 1.0 : 1.5;
-        double leftWeight = isHovering ? 0.2 : 0.6;
+        double leftWeight = isHovering ? (isAlternateHover() ? 1.0 : 0.2) : 0.6; // creative-style flight strafes evenly
         Vec3 movementDirection = flatLookDirection.scale(forward * forwardWeight).add(strafeDirection.scale(left * leftWeight));
 
         double horizontalSpeed = calculateHorizontalSpeed();
@@ -445,7 +489,7 @@ public class JetpackHandler {
         float fuelToCheck = player.level().isClientSide ? predictedFuelRemaining : jetPackFuelRemaining;
         double distanceToGround = getDistanceToGround(player);
 
-        if ((fuelToCheck < 10.0f || distanceToGround > MAX_ALLOWED_HEIGHT) && isJumping) {
+        if ((fuelToCheck < 10.0f || isAboveHeightLimit(distanceToGround, 0)) && isThrusting()) {
             velocity = new Vec3(velocity.x, Mth.lerp(velocity.y, GRAVITY / 10, 0.5), velocity.z);
         }
 
@@ -464,7 +508,7 @@ public class JetpackHandler {
                     deltaMovement.y + lookDirection.y * 0.08,
                     deltaMovement.z + lookDirection.z * 0.08
             );
-        } else if (player.isFallFlying() && ConfigManager.ServerConfig.ELYTRA_BOOST_ENABLED.get()) {
+        } else if (isElytraBoosting()) {
             applyElytraBoost();
         } else {
             player.setDeltaMovement(velocity);
@@ -484,7 +528,7 @@ public class JetpackHandler {
         double newZ = motion.z + look.z * horizontalBoost;
 
         // Clamp so we don’t reach insane speeds
-        double maxSpeed = ConfigManager.ServerConfig.ELYTRA_BOOST_SPEED_MULTIPLIER.get();
+        double maxSpeed = modifier.getElytraBoostMaxSpeed();
         Vec3 newMotion = new Vec3(newX, newY, newZ);
         if (newMotion.length() > maxSpeed) {
             newMotion = newMotion.normalize().scale(maxSpeed);
@@ -494,7 +538,9 @@ public class JetpackHandler {
     }
 
     private void syncFuelToClient() {
-        if (player.tickCount % 20 != 0) return; // Every second
+        boolean modifierChanged = modifier != lastSyncedModifier;
+        if (player.tickCount % 20 != 0 && !modifierChanged) return; // Every second, or straight away on a modifier swap
+        lastSyncedModifier = modifier;
 
         ServerPlayer serverPlayer = (ServerPlayer) player;
         int totalAir = (int) jetPackFuelRemaining;
@@ -509,7 +555,7 @@ public class JetpackHandler {
 
         // Send fuel sync packet
         long serverTime = player.level().getGameTime();
-        PacketDistributor.sendToPlayer(serverPlayer, new JetpackFuelSyncPacket(jetPackFuelRemaining, serverTime));
+        PacketDistributor.sendToPlayer(serverPlayer, new JetpackFuelSyncPacket(jetPackFuelRemaining, serverTime, modifier.ordinal()));
     }
 
     private Vec3 applyMovementPhysics(@NotNull Vec3 currentVelocity, @NotNull Vec3 direction, double acceleration, double maxSpeed) {
@@ -561,7 +607,7 @@ public class JetpackHandler {
             horizontalSpeed = (baseSpeed + baseHoverSpeedBoost) * (1.0 + enchantedSpeedMultiplier) + (mobEffectSpeedMultiplier / 10);
         }
 
-        return horizontalSpeed;
+        return horizontalSpeed * modifier.getSpeedMultiplier(isAfterburning());
     }
 
     private double calculateVerticalSpeed() {
@@ -589,26 +635,53 @@ public class JetpackHandler {
         return "ALTERNATE".equals(ClientSettings.getString(player.getUUID(), "JetpackHoverMode"));
     }
 
+    private boolean isThrusting() {
+        if (!isJumping) return false;
+        return !isAlternateHover() || isHovering || player.isFallFlying() || player.isSwimming();
+    }
+
+    public void toggleAlternateFlight() {
+        if (isHovering) {
+            player.setNoGravity(false);
+            endHovering(true);
+        } else if (!player.onGround() && !player.isFallFlying() && calculateJetPackFuel(player) > 0) {
+            startHovering(true);
+        }
+    }
+
+    public boolean isHovering() {
+        return isHovering;
+    }
+
+    public JetpackModifier getModifier() {
+        return modifier;
+    }
+
+    public boolean isAfterburning() {
+        return modifier == JetpackModifier.BLAZE_BURNER && isThrusting();
+    }
+
+    public boolean isElytraBoosting() {
+        return modifier.allowsElytraBoost() && player.isFallFlying();
+    }
+
     private double calculateVerticalAlternateHoverSpeed() {
         boolean jump = isJumping;
         boolean sneak = player.isShiftKeyDown();
-        // Don't act on the ascend/descend keys until the player has released both keys
-        if (!alternateControlsArmed && !jump && !sneak) {
-            alternateControlsArmed = true;
-        }
-        boolean ascending = alternateControlsArmed && jump && !sneak;   // both keys held = stationary
-        boolean descending = alternateControlsArmed && sneak && !jump;
+        boolean ascending = jump && !sneak;   // both keys held = stationary
+        boolean descending = sneak && !jump;
 
         if (ascending) {
             hoverHeight = player.getY();
 
             double dist = getDistanceToGround(player);
+            double maxHeight = modifier.getMaxHeight();
             double up = ALTERNATE_HOVER_VERTICAL_SPEED;
             if (dist >= 0) {
-                if (dist >= MAX_ALLOWED_HEIGHT) {
+                if (dist >= maxHeight) {
                     up = 0.0; // at/above the ceiling: stop rising
-                } else if (dist > MAX_ALLOWED_HEIGHT - 4) {
-                    up *= (MAX_ALLOWED_HEIGHT - dist) / 4.0; // taper over the last few blocks
+                } else if (dist > maxHeight - 4) {
+                    up *= (maxHeight - dist) / 4.0; // taper over the last few blocks
                 }
             }
             double newYVelocity = player.getDeltaMovement().y * 0.8 + up * 0.2;
@@ -655,9 +728,20 @@ public class JetpackHandler {
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         if (backpack.isEmpty()) return 0.0; // No backpack == No flight upgrade
 
+        if (!player.level().isClientSide) {
+            modifier = readModifier(player, backpack);
+        }
+
         List<ItemStack> backtanks = getBacktanksFromPlayer(player, backpack);
 
-        return backtanks.stream().map(BacktankUtil::getAir).reduce(0, Integer::sum);
+        int air = backtanks.stream().map(BacktankUtil::getAir).reduce(0, Integer::sum);
+        return modifier.toEffectiveFuel(air);
+    }
+
+    private static JetpackModifier readModifier(Player player, ItemStack backpack) {
+        IItemHandler inventory = getBackpackContainer(player, backpack).getItemHandler();
+        int slot = LAYOUT.jetpackModifier().getStartIndex();
+        return slot < inventory.getSlots() ? JetpackModifier.fromStack(inventory.getStackInSlot(slot)) : JetpackModifier.NONE;
     }
 
     private void depleteJetPackFuel(Player player) {
@@ -666,14 +750,9 @@ public class JetpackHandler {
         ItemStack backpack = BackpackHelper.getEquippedBackpackStack(player);
         Level world = player.level();
         long currRuntime = world.getGameTime();
-        int elytraMultiplier = ConfigManager.ServerConfig.ELYTRA_BOOST_MULTIPLIER.get();
 
-        if (player.isFallFlying() && ConfigManager.ServerConfig.ELYTRA_BOOST_ENABLED.get()) {
-            if (lastRuntime != 0 && currRuntime - lastRuntime < (20 / elytraMultiplier)) return;
-        } else {
-            // Has 1 second (20 ticks) passed in the game?
-            if (lastRuntime != 0 && currRuntime - lastRuntime < 20) return;
-        }
+        // Has 1 second (20 ticks) passed in the game?
+        if (lastRuntime != 0 && currRuntime - lastRuntime < 20) return;
         lastRuntime = currRuntime;
 
         // Retrieve air tanks from chest and backpack
@@ -686,18 +765,31 @@ public class JetpackHandler {
         backtanks.sort((a, b) -> Float.compare(BacktankUtil.getAir(a), BacktankUtil.getAir(b)));
 
         int totalAir = backtanks.stream().map(BacktankUtil::getAir).reduce(0, Integer::sum);
-        PacketDistributor.sendToPlayer((ServerPlayer) player, new VisualJetpackAirPacket(totalAir));
+        float fuel = (float) modifier.toEffectiveFuel(totalAir);
+        PacketDistributor.sendToPlayer((ServerPlayer) player, new VisualJetpackAirPacket((int) fuel));
         airGaugeCleared = false;
 
-        // If we are here, we assume we have at least 1 tank with some air
-        int air = BacktankUtil.getAir(backtanks.getFirst());
-        int newAir = Math.max(air - 1, 0);
+        // Modifiers scale air use fractionally, so carry the remainder until a whole unit is owed
+        double heightAboveGround = modifier == JetpackModifier.ENCASED_FAN ? getHeightAboveGround() : 0;
+        fuelDebt += modifier.getFuelMultiplier(isAfterburning(), isElytraBoosting(), heightAboveGround) / modifier.getCapacityMultiplier();
+        int toDrain = (int) fuelDebt;
+        if (toDrain <= 0) return;
+        fuelDebt -= toDrain;
 
-        backtanks.getFirst().set(AllDataComponents.BACKTANK_AIR, newAir);
+        // Drain the emptiest tanks first
+        int remaining = toDrain;
+        for (ItemStack tank : backtanks) {
+            int air = BacktankUtil.getAir(tank);
+            int taken = Math.min(air, remaining);
+            tank.set(AllDataComponents.BACKTANK_AIR, air - taken);
+            remaining -= taken;
+            if (remaining <= 0) break;
+        }
         itemHandler.setDataChanged();
 
-        sendFuelWarning(player, totalAir, totalAir - 1, 90);
-        sendFuelWarning(player, totalAir, totalAir - 1, 1);
+        float newFuel = (float) modifier.toEffectiveFuel(Math.max(totalAir - toDrain, 0));
+        sendFuelWarning(player, fuel, newFuel, 90);
+        sendFuelWarning(player, fuel, newFuel, 1);
     }
 
     private static IBackpackContainer getBackpackContainer(Player player, ItemStack backpack) {
@@ -724,6 +816,7 @@ public class JetpackHandler {
             itemHandler = container;
 
             for (int i = 0; i < inventory.getSlots(); i++) {
+                if (LAYOUT.jetpackModifier().contains(i)) continue; // A modifier backtank is not a fuel source
                 ItemStack slotItem = inventory.getStackInSlot(i);
                 if (AllTags.AllItemTags.PRESSURIZED_AIR_SOURCES.matches(slotItem) && BacktankUtil.hasAirRemaining(slotItem)) {
                     backtanks.add(slotItem);
@@ -762,8 +855,10 @@ public class JetpackHandler {
     public void processPlayerFlyingPacket(boolean flying, boolean hovering) {
         this.isJumping = flying;
         if (isAlternateHover()) {
-            if (flying && hovering && !isHovering) {
+            if (hovering && !isHovering) {
                 startHovering(false);
+            } else if (!hovering && isHovering) {
+                endHovering(false);
             }
         } else {
             this.isHovering = hovering;
@@ -793,5 +888,7 @@ public class JetpackHandler {
         lastValidVelocity = Vec3.ZERO;
         predictedFuelRemaining = 0;
         lastFuelSync = 0;
+        fuelDebt = 0;
+        lastSyncedModifier = null;
     }
 }

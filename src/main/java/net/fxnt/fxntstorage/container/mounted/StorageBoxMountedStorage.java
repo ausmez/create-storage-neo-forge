@@ -189,6 +189,18 @@ public class StorageBoxMountedStorage extends WrapperMountedItemStorage<ItemStac
     }
 
     @Override
+    public boolean prefersItem(ItemStack stack) {
+        if (filterItem.isEmpty() || stack.isEmpty() || !filterTest(stack)) return false;
+        if (voidUpgrade) return true;
+
+        ItemStack single = stack.copyWithCount(1);
+        for (int i = 0; i < wrapped.getSlots(); i++) {
+            if (super.insertItem(i, single, true).isEmpty()) return true;
+        }
+        return false;
+    }
+
+    @Override
     public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
         ItemStack stack = super.extractItem(slot, amount, simulate);
         if (!stack.isEmpty() && !simulate)

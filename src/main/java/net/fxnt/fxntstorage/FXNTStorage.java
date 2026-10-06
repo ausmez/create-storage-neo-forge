@@ -6,15 +6,14 @@ import com.tterrag.registrate.providers.ProviderType;
 import net.createmod.ponder.foundation.PonderIndex;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
-import net.fxnt.fxntstorage.backpack.client.renderer.BackpackBlockEntityRenderer;
-import net.fxnt.fxntstorage.backpack.client.renderer.BackpackItemModel;
-import net.fxnt.fxntstorage.backpack.client.renderer.BackpackItemRenderer;
-import net.fxnt.fxntstorage.backpack.client.renderer.BackpackRenderPlayer;
+import net.fxnt.fxntstorage.backpack.client.renderer.*;
 import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackClientTooltip;
 import net.fxnt.fxntstorage.backpack.client.tooltip.BackpackTooltip;
 import net.fxnt.fxntstorage.backpack.inventory.BackpackContainer;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeRegistry;
 import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackAirOverlay;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopFlywheelLayouts;
+import net.fxnt.fxntstorage.backpack.upgrade.workshop.WorkshopFlywheelRenderer;
 import net.fxnt.fxntstorage.compat.CuriosCompat;
 import net.fxnt.fxntstorage.compat.constructionstick.ConstructionStickCompat;
 import net.fxnt.fxntstorage.compat.everycomp.EveryCompCompat;
@@ -90,6 +89,7 @@ public class FXNTStorage {
     public FXNTStorage(IEventBus modEventBus, ModContainer modContainer) {
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ConfigManager.migrateClientConfigFile();
+            WorkshopFlywheelRenderer.init();
         }
         modContainer.registerConfig(ModConfig.Type.CLIENT, ConfigManager.ClientConfig.CLIENT_SPEC);
         modContainer.registerConfig(ModConfig.Type.SERVER, ConfigManager.ServerConfig.SERVER_SPEC);
@@ -113,6 +113,7 @@ public class FXNTStorage {
         ModDataComponents.register(modEventBus);
         ModLootConditionTypes.register(modEventBus);
         ModLootFunctionTypes.register(modEventBus);
+        ModConditions.register(modEventBus);
         ModAttachmentTypes.register(modEventBus);
 
         UpgradeRegistry.register();
@@ -258,6 +259,17 @@ public class FXNTStorage {
                     event.registerItem(extension, item);
                 }
             }
+        }
+
+        @SubscribeEvent
+        public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
+            event.registerReloadListener(new WorkshopFlywheelLayouts.ReloadListener());
+            event.registerReloadListener(new BackpackModelShapes.ReloadListener());
+        }
+
+        @SubscribeEvent
+        public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
+            BackpackWornModels.register(event);
         }
 
         @SubscribeEvent

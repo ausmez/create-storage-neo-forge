@@ -147,8 +147,8 @@ dependencies {
     }
 
     // Vanilla Backport
-    implementation "curse.maven:vanillabackport-417430:${vanillabackport_id}"
-    runtimeOnly "curse.maven:platform-997634:${platform_id}"
+    runtimeOnly files("libs/VanillaBackport-neoforge-1.21.1-1.2.0.2638.3.jar")
+    runtimeOnly files("libs/Platform-neoforge-1.21.1-1.4.0.2637.3.jar")
 
     // Every Compat
     compileOnly "curse.maven:every-compat-628539:${everycomp_version}"
@@ -165,18 +165,19 @@ dependencies {
     implementation "maven.modrinth:jade:${jade_version}"
 
     // Thirst Was Reclaimed
-    compileOnly "curse.maven:thirst-was-reclaimed-884742:8391910"
+    implementation "curse.maven:thirst-was-reclaimed-884742:8391910"
 
     // Other mods to include at runtime during development/testing
     runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
     runtimeOnly "maven.modrinth:jade-addons-forge:${jadeaddon_version}"
-    runtimeOnly "curse.maven:carry-on-274259:7393892"
+    runtimeOnly "curse.maven:carry-on-274259:8512888"
     runtimeOnly "curse.maven:catalogue-459701:6926815"
-    runtimeOnly "curse.maven:xaeros-world-map-317780:7598481"
-    runtimeOnly "curse.maven:xaeros-minimap-263420:7598595"
+    runtimeOnly "curse.maven:xaeros-world-map-317780:8849973"
+    runtimeOnly "curse.maven:xaeros-minimap-263420:8849842"
     runtimeOnly "curse.maven:appleskin-248787:7854442"
     runtimeOnly "curse.maven:irisshaders-455508:6661598"
     runtimeOnly "curse.maven:sodium-394468:6382651"
+    runtimeOnly "curse.maven:create-interval-filter-1530378:8020532"
 
     // Create Aeronautics
 //    runtimeOnly "dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}"

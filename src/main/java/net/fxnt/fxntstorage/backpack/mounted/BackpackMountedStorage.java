@@ -215,7 +215,8 @@ public class BackpackMountedStorage extends WrapperMountedItemStorage<ItemStackH
     }
 
     private static ItemStackHandler toBackpackHandler(ItemStackHandler source, int multiplier) {
-        BackpackItemStackHandler handler = new BackpackItemStackHandler(source.getSlots(), multiplier);
+        // Grow contraptions saved before newer layout sections were appended, so every menu slot index exists
+        BackpackItemStackHandler handler = new BackpackItemStackHandler(Math.max(source.getSlots(), SLOT_COUNT), multiplier);
         for (int i = 0; i < source.getSlots(); i++) {
             handler.setStackInSlot(i, source.getStackInSlot(i));
         }

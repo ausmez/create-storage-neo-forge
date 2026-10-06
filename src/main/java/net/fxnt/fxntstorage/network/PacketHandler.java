@@ -9,7 +9,7 @@ public class PacketHandler {
 
     @SubscribeEvent
     public void registerPackets(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar("1");
+        final PayloadRegistrar registrar = event.registrar("2");
 
         // ClientboundPacket
         registrar.playToClient(JetpackFuelSyncPacket.TYPE, JetpackFuelSyncPacket.STREAM_CODEC, JetpackFuelSyncPacket::handle);

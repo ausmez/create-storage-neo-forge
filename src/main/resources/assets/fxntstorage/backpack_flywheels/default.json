@@ -1,0 +1,6 @@
+{
+	"flywheels": [
+		{ "position": [1.92, 6.4, 8], "size": 2.4, "axis": "x" },
+		{ "position": [14.08, 6.4, 8], "size": 2.4, "axis": "x" }
+	]
+}

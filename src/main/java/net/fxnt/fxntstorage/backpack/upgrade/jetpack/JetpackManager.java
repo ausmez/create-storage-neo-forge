@@ -30,7 +30,7 @@ public class JetpackManager {
         if (!player.level().isClientSide) {
             // Immediately sync fuel so client isn't stuck at 0
             double fuel = handler.calculateJetPackFuel(player);
-            PacketDistributor.sendToPlayer((ServerPlayer) player, new JetpackFuelSyncPacket((float) fuel, System.currentTimeMillis()));
+            PacketDistributor.sendToPlayer((ServerPlayer) player, new JetpackFuelSyncPacket((float) fuel, System.currentTimeMillis(), handler.getModifier().ordinal()));
         }
     }
 

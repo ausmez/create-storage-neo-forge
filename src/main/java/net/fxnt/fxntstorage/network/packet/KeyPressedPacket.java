@@ -12,6 +12,7 @@ import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackManager;
 import net.fxnt.fxntstorage.backpack.upgrade.oremining.OreMiningUpgrade;
 import net.fxnt.fxntstorage.backpack.util.BackpackHelper;
 import net.fxnt.fxntstorage.config.ConfigManager;
+import net.fxnt.fxntstorage.init.ModTags;
 import net.fxnt.fxntstorage.util.Util;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -23,7 +24,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -96,14 +96,14 @@ public record KeyPressedPacket(byte hotKey, boolean pressed, Optional<BlockPos> 
                             boolean isPreviewOreVeinsAllowed = manager.getSetting(UpgradeDataSync.Field.OREMINING_PREVIEW_ORE_VEIN);
                             boolean isServerPreviewAllowed = ConfigManager.ServerConfig.ORE_MINING_PREVIEW_ORE_VEIN.get();
                             boolean isServerOresOnlyOverride = ConfigManager.ServerConfig.ORE_MINING_ORES_ONLY.get();
-                            boolean isStartBlockAnOre = player.level().getBlockState(blockPos).is(Tags.Blocks.ORES);
+                            boolean isStartBlockAnOre = player.level().getBlockState(blockPos).is(ModTags.Blocks.ORE_MINING_BLOCK);
 
                             if (isUpgradeActive && isPreviewOreVeinsAllowed && isServerPreviewAllowed && pressed()) {
                                 List<BlockPos> vein = OreMiningUpgrade.findVein(player,
                                         player.level(),
                                         blockPos,
                                         player.level().getBlockState(blockPos),
-                                        !isServerOresOnlyOverride && (isStartBlockAnOre || !isMineOresOnly),
+                                        isStartBlockAnOre || !(isMineOresOnly || isServerOresOnlyOverride),
                                         64
                                 );
                                 PacketDistributor.sendToPlayer(player, new OreMiningPreviewPacket(vein));

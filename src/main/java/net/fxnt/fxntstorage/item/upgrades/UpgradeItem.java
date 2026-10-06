@@ -5,6 +5,7 @@ import net.createmod.catnip.lang.FontHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.client.menu.BackpackScreen;
 import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
+import net.fxnt.fxntstorage.backpack.upgrade.jetpack.JetpackModifier;
 import net.fxnt.fxntstorage.config.ConfigManager;
 import net.fxnt.fxntstorage.util.KeybindHandler;
 import net.fxnt.fxntstorage.util.Util;
@@ -27,6 +28,9 @@ import static net.fxnt.fxntstorage.util.KeybindHandler.TOGGLE_JETPACK_HOVER_KEY;
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class UpgradeItem extends Item {
+    // Flight upgrade tooltip section that only applies while Jetpack Modifiers are enabled
+    private static final int FLIGHT_MODIFIERS_CONDITION = 4;
+
     public final String name;
 
     public UpgradeItem(Properties pProperties, String name) {
@@ -48,6 +52,9 @@ public class UpgradeItem extends Item {
     @Override
     public void appendHoverText(ItemStack pStack, TooltipContext pContext, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pContext, pTooltipComponents, pIsAdvanced);
+        if (UpgradeType.isDisabled(pStack)) {
+            pTooltipComponents.add(Component.translatable("tooltip.fxntstorage.upgrade_disabled").withStyle(ChatFormatting.RED));
+        }
         switch (name) {
             case Util.MAGNET_UPGRADE_DEACTIVATED:
             case Util.PICKBLOCK_UPGRADE_DEACTIVATED:
@@ -193,12 +200,19 @@ public class UpgradeItem extends Item {
 
         if (Screen.hasControlDown()) {
             String placeholder = TOGGLE_JETPACK_HOVER_KEY.getKey().getDisplayName().getString();
+            JetpackModifier modifier = BackpackScreen.getOpenBackpackModifier();
             text.add(Component.empty());
             for (int i = 1; i < 10; i++) {
                 if (!I18n.exists(translateKey + ".condition" + i)) break;
+                if (!JetpackModifier.isEnabled() && i == FLIGHT_MODIFIERS_CONDITION) continue;
                 text.addAll(TooltipHelper.cutTextComponent(Component.translatable(translateKey + ".condition" + i), FontHelper.Palette.ALL_GRAY));
-                text.addAll(TooltipHelper.cutTextComponent(
-                        Component.translatable(translateKey + ".behaviour" + i, placeholder, placeholder),
+
+                Component behaviour = i != 2
+                        ? Component.translatable(translateKey + ".behaviour" + i, placeholder, placeholder)
+                        : modifier.hasHeightLimit()
+                        ? Component.translatable(translateKey + ".behaviour2", String.valueOf((int) modifier.getMaxHeight()))
+                        : Component.translatable(translateKey + ".behaviour2.unlimited");
+                text.addAll(TooltipHelper.cutTextComponent(behaviour,
                         FontHelper.Palette.PURPLE.primary(), FontHelper.Palette.PURPLE.highlight(), 1));
             }
         }

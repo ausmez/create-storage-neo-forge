@@ -11,6 +11,7 @@ import net.fxnt.fxntstorage.FXNTStorage;
 import net.fxnt.fxntstorage.backpack.BackpackBlock;
 import net.fxnt.fxntstorage.backpack.BackpackItem;
 import net.fxnt.fxntstorage.backpack.mounted.BackpackMovementBehaviour;
+import net.fxnt.fxntstorage.compat.vanillabackport.VanillaBackportCompat;
 import net.fxnt.fxntstorage.container.StorageBox;
 import net.fxnt.fxntstorage.container.StorageBoxItem;
 import net.fxnt.fxntstorage.container.mounted.StorageBoxMovementBehaviour;
@@ -32,7 +33,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
-import net.neoforged.fml.ModList;
 
 import static com.simibubi.create.api.behaviour.movement.MovementBehaviour.movementBehaviour;
 import static com.simibubi.create.api.contraption.storage.item.MountedItemStorageType.mountedItemStorage;
@@ -452,20 +452,33 @@ public class ModBlocks {
             .build()
             .register();
 
-    public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_PALE_OAK =
-            ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT) ? REGISTRATE
-                    .block("pale_oak_simple_storage_box", SimpleStorageBox::new)
-                    .initialProperties(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS::get)
-                    .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
-                    .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
-                    .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.PALE_OAK_CASING, ModBlocks.STORAGE_TRIM_PALE_OAK)))
-                    .blockstate(ModBlockstateHelper.simpleStorageBox(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS))
-                    .loot(ModLootTableHelper.copyComponents())
-                    .recipe(ModRecipeHelper.simpleStorageBox(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS))
-                    .item(SimpleStorageBoxItem::new)
-                    .model((ctx, prov) -> ModModelHelper.simpleStorageBox(ctx, prov, "pale_oak"))
-                    .build()
-                    .register() : null;
+    public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_PALE_OAK = REGISTRATE
+            .block("pale_oak_simple_storage_box", SimpleStorageBox::new)
+            .initialProperties(VanillaBackportCompat.planksOrOak(VanillaBackportCompat.PALE_OAK_PLANKS))
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.PALE_OAK_CASING, ModBlocks.STORAGE_TRIM_PALE_OAK)))
+            .blockstate(ModBlockstateHelper.simpleStorageBox("pale_oak"))
+            .loot(ModLootTableHelper.copyComponents())
+            .recipe(ModRecipeHelper.simpleStorageBox(VanillaBackportCompat.PALE_OAK_PLANKS))
+            .item(SimpleStorageBoxItem::new)
+            .model((ctx, prov) -> ModModelHelper.simpleStorageBox(ctx, prov, "pale_oak"))
+            .build()
+            .register();
+
+    public static final BlockEntry<SimpleStorageBox> SIMPLE_STORAGE_BOX_POPLAR = REGISTRATE
+            .block("poplar_simple_storage_box", SimpleStorageBox::new)
+            .initialProperties(VanillaBackportCompat.planksOrOak(VanillaBackportCompat.POPLAR_PLANKS))
+            .transform(mountedItemStorage(ModMountedStorageTypes.SIMPLE_STORAGE_BOX_MOUNTED))
+            .onRegister(movementBehaviour(new SimpleStorageBoxMovementBehaviour()))
+            .onRegister(connectedTextures(() -> new SimpleStorageBoxCTBehaviour(SpriteShifts.POPLAR_CASING, ModBlocks.STORAGE_TRIM_POPLAR)))
+            .blockstate(ModBlockstateHelper.simpleStorageBox("poplar"))
+            .loot(ModLootTableHelper.copyComponents())
+            .recipe(ModRecipeHelper.simpleStorageBox(VanillaBackportCompat.POPLAR_PLANKS))
+            .item(SimpleStorageBoxItem::new)
+            .model((ctx, prov) -> ModModelHelper.simpleStorageBox(ctx, prov, "poplar"))
+            .build()
+            .register();
 
 
     // CASING BLOCKS //
@@ -569,15 +582,23 @@ public class ModBlocks {
             .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
             .register();
 
-    public static final BlockEntry<CasingBlock> STORAGE_TRIM_PALE_OAK =
-            ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT) ? REGISTRATE
-                    .block("pale_oak_storage_trim", CasingBlock::new)
-                    .properties(properties -> properties.mapColor(MapColor.QUARTZ))
-                    .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.PALE_OAK_CASING, ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK))
-                    .blockstate(ModBlockstateHelper.storageTrim("pale_oak"))
-                    .recipe(ModRecipeHelper.storageTrim(com.blackgear.vanillabackport.common.registries.ModBlocks.PALE_OAK_PLANKS))
-                    .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
-                    .register() : null;
+    public static final BlockEntry<CasingBlock> STORAGE_TRIM_PALE_OAK = REGISTRATE
+            .block("pale_oak_storage_trim", CasingBlock::new)
+            .properties(properties -> properties.mapColor(MapColor.QUARTZ))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.PALE_OAK_CASING, ModBlocks.SIMPLE_STORAGE_BOX_PALE_OAK))
+            .blockstate(ModBlockstateHelper.storageTrim("pale_oak"))
+            .recipe(ModRecipeHelper.storageTrim(VanillaBackportCompat.PALE_OAK_PLANKS))
+            .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
+            .register();
+
+    public static final BlockEntry<CasingBlock> STORAGE_TRIM_POPLAR = REGISTRATE
+            .block("poplar_storage_trim", CasingBlock::new)
+            .properties(properties -> properties.mapColor(MapColor.QUARTZ))
+            .transform(ModBlockBuilderHelper.casing(() -> SpriteShifts.POPLAR_CASING, ModBlocks.SIMPLE_STORAGE_BOX_POPLAR))
+            .blockstate(ModBlockstateHelper.storageTrim("poplar"))
+            .recipe(ModRecipeHelper.storageTrim(VanillaBackportCompat.POPLAR_PLANKS))
+            .removeTag(ProviderType.BLOCK_TAGS, AllTags.AllBlockTags.CASING.tag)
+            .register();
 
     public static void register() {
     }

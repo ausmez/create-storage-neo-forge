@@ -70,13 +70,10 @@ public class OreMiningUpgrade extends AbstractUpgrade {
             return false;
         }
 
-        boolean serverOverride = ConfigManager.ServerConfig.ORE_MINING_ORES_ONLY.get();
-        boolean playerOresOnly = UpgradeDataManager.loadFromItem(context.backpack())
-                .getSetting(UpgradeDataSync.Field.OREMINING_ORES_ONLY);
+        boolean oresOnly = ConfigManager.ServerConfig.ORE_MINING_ORES_ONLY.get()
+                || UpgradeDataManager.loadFromItem(context.backpack()).getSetting(UpgradeDataSync.Field.OREMINING_ORES_ONLY);
 
-        if (!serverOverride && playerOresOnly && !state.is(ModTags.Blocks.ORE_MINING_BLOCK))
-            return false;
-        if (serverOverride)
+        if (oresOnly && !state.is(ModTags.Blocks.ORE_MINING_BLOCK))
             return false;
 
         boolean mineAllBlocks = player.getPersistentData()

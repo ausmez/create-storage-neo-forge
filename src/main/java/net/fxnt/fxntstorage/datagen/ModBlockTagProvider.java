@@ -39,7 +39,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.SIMPLE_STORAGE_BOX_BAMBOO.get())
                 .add(ModBlocks.SIMPLE_STORAGE_BOX_CRIMSON.get())
                 .add(ModBlocks.SIMPLE_STORAGE_BOX_WARPED.get())
-                .addOptional(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "pale_oak_simple_storage_box"));
+                .addOptional(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "pale_oak_simple_storage_box"))
+                .addOptional(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "poplar_simple_storage_box"));
 
         tag(ModTags.Blocks.STORAGE_TRIM)
                 .add(ModBlocks.STORAGE_TRIM_OAK.get())
@@ -53,7 +54,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.STORAGE_TRIM_BAMBOO.get())
                 .add(ModBlocks.STORAGE_TRIM_CRIMSON.get())
                 .add(ModBlocks.STORAGE_TRIM_WARPED.get())
-                .addOptional(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "pale_oak_storage_trim"));
+                .addOptional(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "pale_oak_storage_trim"))
+                .addOptional(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "poplar_storage_trim"));
 
         tag(ModTags.Blocks.BREAKABLE_WITH_ANY_TOOL)
                 .addTag(Tags.Blocks.GLASS_BLOCKS)

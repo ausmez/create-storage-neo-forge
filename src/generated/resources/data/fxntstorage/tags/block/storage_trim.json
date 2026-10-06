@@ -14,6 +14,10 @@
     {
       "id": "fxntstorage:pale_oak_storage_trim",
       "required": false
+    },
+    {
+      "id": "fxntstorage:poplar_storage_trim",
+      "required": false
     }
   ]
 }

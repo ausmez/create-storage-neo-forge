@@ -11,6 +11,7 @@
     "InventoryMenuMixin",
     "ItemEntityMixin",
     "ItemStackMixin",
+    "MountedItemStorageWrapperMixin",
     "PlayerMixin",
     "PotatoCannonItemMixin",
     "StickUtilMixin",

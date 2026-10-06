@@ -42,6 +42,8 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.BACKPACK_VOID_UPGRADE.get())
                 .addTag(ModTags.Items.BACKPACK_UPGRADE_DEACTIVATED);
 
+        tag(ModTags.Items.DISABLED_BACKPACK_UPGRADES);
+
         tag(ModTags.Items.CURIOS_BACK).addTag(ModTags.Items.BACKPACK_ITEM);
     }
 }

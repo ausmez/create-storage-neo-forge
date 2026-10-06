@@ -57,7 +57,7 @@ public class UpgradeSlot extends SlotItemHandler {
 
     @Override
     public boolean mayPlace(ItemStack pStack) {
-        if (pStack.is(ModTags.Items.BACKPACK_UPGRADE)) {
+        if (pStack.is(ModTags.Items.BACKPACK_UPGRADE) && !UpgradeType.isDisabled(pStack)) {
             UpgradeItem item = (UpgradeItem) pStack.getItem();
             return isUniqueUpgrade(backpack.getItemHandler(), item);
         }

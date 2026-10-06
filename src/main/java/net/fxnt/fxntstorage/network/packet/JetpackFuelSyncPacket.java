@@ -11,13 +11,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record JetpackFuelSyncPacket(float fuelRemaining, long serverTime) implements CustomPacketPayload {
+public record JetpackFuelSyncPacket(float fuelRemaining, long serverTime, int modifier) implements CustomPacketPayload {
     public static final Type<JetpackFuelSyncPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "jetpack_fuel_sync"));
 
     public static final StreamCodec<FriendlyByteBuf, JetpackFuelSyncPacket> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.FLOAT, JetpackFuelSyncPacket::fuelRemaining,
             ByteBufCodecs.VAR_LONG, JetpackFuelSyncPacket::serverTime,
+            ByteBufCodecs.VAR_INT, JetpackFuelSyncPacket::modifier,
             JetpackFuelSyncPacket::new
     );
 
@@ -31,7 +32,7 @@ public record JetpackFuelSyncPacket(float fuelRemaining, long serverTime) implem
             if (context.player() instanceof Player player) {
                 JetpackHandler handler = JetpackManager.getJetpackHandler(player);
                 if (handler != null) {
-                    handler.onFuelSync(fuelRemaining(), serverTime());
+                    handler.onFuelSync(fuelRemaining(), serverTime(), modifier());
                 }
             }
         });

@@ -25,7 +25,6 @@ import net.neoforged.neoforge.client.model.generators.VariantBlockStateBuilder;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static net.fxnt.fxntstorage.FXNTStorage.modLoc;
 
@@ -77,14 +76,16 @@ public class ModBlockstateHelper {
         return (ctx, prov) -> generateSimpleStorageBox(ctx, prov, planks);
     }
 
-    public static NonNullBiConsumer<DataGenContext<Block, SimpleStorageBox>, RegistrateBlockstateProvider> simpleStorageBox(Supplier<? extends Block> planks) {
-        return (ctx, prov) -> generateSimpleStorageBox(ctx, prov, planks.get());
+    public static NonNullBiConsumer<DataGenContext<Block, SimpleStorageBox>, RegistrateBlockstateProvider> simpleStorageBox(String woodType) {
+        return (ctx, prov) -> generateSimpleStorageBox(ctx, prov, woodType);
     }
 
     private static void generateSimpleStorageBox(DataGenContext<Block, SimpleStorageBox> ctx, RegistrateBlockstateProvider prov, Block planks) {
         String path = BuiltInRegistries.BLOCK.getKey(planks).getPath();
-        String woodType = path.substring(0, path.indexOf("_planks"));
+        generateSimpleStorageBox(ctx, prov, path.substring(0, path.indexOf("_planks")));
+    }
 
+    private static void generateSimpleStorageBox(DataGenContext<Block, SimpleStorageBox> ctx, RegistrateBlockstateProvider prov, String woodType) {
         if (!prov.models().existingFileHelper.exists(modLoc("block/storage_box_void"), PackType.CLIENT_RESOURCES))
             ModModelHelper.storageBoxLight(prov);
 
@@ -134,6 +135,9 @@ public class ModBlockstateHelper {
 
             if (!name.equals("industrial_iron")) // industrial_iron is the base model
                 ModModelHelper.backpack(prov, name);
+
+            // Worn-on-player model, see BackpackWornModels
+            prov.models().withExistingParent(type + "backpack_worn", prov.modLoc("block/" + type + "backpack"));
 
             MultiPartBlockStateBuilder builder = prov.getMultipartBuilder(ctx.get());
 

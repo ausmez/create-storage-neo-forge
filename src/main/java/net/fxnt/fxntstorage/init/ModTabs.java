@@ -6,6 +6,8 @@ import com.tterrag.registrate.util.entry.ItemProviderEntry;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.backpack.upgrade.UpgradeType;
+import net.fxnt.fxntstorage.compat.vanillabackport.VanillaBackportCompat;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
@@ -14,10 +16,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -60,12 +59,22 @@ public class ModTabs {
                 ModItems.BACKPACK_VOID_UPGRADE_DEACTIVATED.asItem()
         );
 
-        private static final Set<Item> CONDITIONAL_ITEMS = FXNTStorage.THIRST_LOADED
-                ? Set.of()
-                : Set.of(ModItems.BACKPACK_THIRST_UPGRADE.asItem());
+        private static final Set<Item> CONDITIONAL_ITEMS = collectConditionalItems();
+
+        private static Set<Item> collectConditionalItems() {
+            Set<Item> items = new HashSet<>(VanillaBackportCompat.unavailableItems());
+            if (!FXNTStorage.THIRST_LOADED) items.add(ModItems.BACKPACK_THIRST_UPGRADE.asItem());
+            return items;
+        }
 
         private static Predicate<Item> exclusionPredicate() {
-            return item -> EXCLUDED_ITEMS.contains(item) || CONDITIONAL_ITEMS.contains(item);
+            return item -> EXCLUDED_ITEMS.contains(item) || CONDITIONAL_ITEMS.contains(item) || isDisabledUpgrade(item);
+        }
+
+        // Modpack disabled upgrades
+        private static boolean isDisabledUpgrade(Item item) {
+            UpgradeType type = UpgradeType.fromItem(item);
+            return type != null && type.isDisabled();
         }
 
         private static List<ItemOrdering> makeOrdering() {

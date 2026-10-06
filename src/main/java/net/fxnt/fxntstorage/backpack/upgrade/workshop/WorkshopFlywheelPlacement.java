@@ -1,19 +1,17 @@
 package net.fxnt.fxntstorage.backpack.upgrade.workshop;
 
-public final class WorkshopFlywheelPlacement {
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 
-    private WorkshopFlywheelPlacement() {
-    }
+public record WorkshopFlywheelPlacement(Vec3 position, float size, Direction.Axis axis, boolean reverse) {
+    public static final float DEFAULT_SIZE = 2.4f;
 
-    // Worn backpack
-    public static final float WORN_SCALE = 0.15f;
-    public static final float WORN_OFFSET_X = 0.37f;
-    public static final float WORN_OFFSET_Y = -0.40f;
-    public static final float WORN_OFFSET_Z = 0.00f;
-
-    // Placed block
-    public static final float BLOCK_SCALE = 0.15f;
-    public static final float BLOCK_OFFSET_X = 0.37f;
-    public static final float BLOCK_OFFSET_Y = -0.10f;
-    public static final float BLOCK_OFFSET_Z = 0.00f;
+    public static final Codec<WorkshopFlywheelPlacement> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Vec3.CODEC.fieldOf("position").forGetter(WorkshopFlywheelPlacement::position),
+            Codec.floatRange(0f, 64f).optionalFieldOf("size", DEFAULT_SIZE).forGetter(WorkshopFlywheelPlacement::size),
+            Direction.Axis.CODEC.optionalFieldOf("axis", Direction.Axis.X).forGetter(WorkshopFlywheelPlacement::axis),
+            Codec.BOOL.optionalFieldOf("reverse", false).forGetter(WorkshopFlywheelPlacement::reverse)
+    ).apply(instance, WorkshopFlywheelPlacement::new));
 }

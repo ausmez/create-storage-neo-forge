@@ -54,12 +54,10 @@ public class ConfigManager {
         public static final ModConfigSpec.Builder SERVER_BUILDER = new ModConfigSpec.Builder();
 
         public static ModConfigSpec.BooleanValue CURIOS_KEEP_BACKPACK;
-        public static ModConfigSpec.BooleanValue ELYTRA_BOOST_ENABLED;
-        public static ModConfigSpec.IntValue ELYTRA_BOOST_MULTIPLIER;
-        public static ModConfigSpec.DoubleValue ELYTRA_BOOST_SPEED_MULTIPLIER;
         public static ModConfigSpec.IntValue HEALTH_UPGRADE_BONUS;
         public static ModConfigSpec.BooleanValue JETPACK_MINING_PENALTY;
         public static ModConfigSpec.BooleanValue JETPACK_ALLOW_VOID_FLIGHT;
+        public static ModConfigSpec.BooleanValue JETPACK_MODIFIERS_ENABLED;
         public static ModConfigSpec.BooleanValue JUKEBOX_BUFFS_ENABLED;
         public static ModConfigSpec.IntValue JUKEBOX_BUFFS_RANGE;
         public static ModConfigSpec.BooleanValue JUKEBOX_NOTES_ENABLED;
@@ -73,18 +71,6 @@ public class ConfigManager {
 
         static {
             SERVER_BUILDER.comment("Jetpack Upgrade").push("jetpack_upgrade");
-            ELYTRA_BOOST_ENABLED = SERVER_BUILDER
-                    .comment("Enable Jetpack boosting while gliding with an Elytra equipped.")
-                    .translation("fxntstorage.configuration.elytraBoostEnabled")
-                    .define("elytraBoostEnabled", true);
-            ELYTRA_BOOST_MULTIPLIER = SERVER_BUILDER
-                    .comment("Multiplier for Jetpack fuel consumption while Elytra boosting.")
-                    .translation("fxntstorage.configuration.elytraBoostMultiplier")
-                    .defineInRange("elytraBoostMultiplier", 4, 1, 10);
-            ELYTRA_BOOST_SPEED_MULTIPLIER = SERVER_BUILDER
-                    .comment("Multiplier for Jetpack speed while Elytra boosting.")
-                    .translation("fxntstorage.configuration.elytraBoostSpeedMultiplier")
-                    .defineInRange("elytraBoostSpeedMultiplier", 1.5, 1.0, 5.0);
             JETPACK_MINING_PENALTY = SERVER_BUILDER
                     .comment("Should the mining speed penalty be applied when flying with the Jetpack and mining?")
                     .translation("fxntstorage.configuration.jetpackMiningPenalty")
@@ -93,6 +79,10 @@ public class ConfigManager {
                     .comment("Allow the use of the flight upgrade over the void in The End dimension.")
                     .translation("fxntstorage.configuration.jetpackAllowVoidFlight")
                     .define("jetpackAllowVoidFlight", false);
+            JETPACK_MODIFIERS_ENABLED = SERVER_BUILDER
+                    .comment("Enable Jetpack Modifiers. When disabled, the modifier slot is shaded red and accepts no modifiers, and any already fitted have no effect (they can still be removed).")
+                    .translation("fxntstorage.configuration.jetpackModifiersEnabled")
+                    .define("jetpackModifiersEnabled", true);
             SERVER_BUILDER.pop();
 
             SERVER_BUILDER.comment("Jukebox Upgrade").push("jukebox_upgrade");
@@ -250,7 +240,7 @@ public class ConfigManager {
                     CLIENT_BUILDER
                             .comment("Hover behavior for the Jetpack Upgrade.",
                                     "ORIGINAL = hover locks to a fixed altitude,",
-                                    "ALTERNATE = ascend (jump) / descend (sneak) freely while hovering, within flight range.")
+                                    "ALTERNATE = creative-style flight: double-tap jump to start/stop flying, then ascend (jump) / descend (sneak) freely, within flight range.")
                             .translation("fxntstorage.configuration.jetpackHoverMode")
                             .defineEnum("jetpackHoverMode", JetpackHoverMode.ORIGINAL)
             );

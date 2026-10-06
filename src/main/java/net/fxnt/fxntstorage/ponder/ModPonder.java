@@ -6,15 +6,16 @@ import net.createmod.ponder.api.registration.MultiSceneBuilder;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.fxnt.fxntstorage.FXNTStorage;
+import net.fxnt.fxntstorage.compat.vanillabackport.VanillaBackportCompat;
 import net.fxnt.fxntstorage.init.ModBlocks;
-import net.fxnt.fxntstorage.init.ModCompats;
 import net.fxnt.fxntstorage.init.ModItems;
 import net.fxnt.fxntstorage.simple_storage.SimpleStorageBox;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.fml.ModList;
+import net.minecraft.world.item.Item;
 
 import java.util.List;
+import java.util.Set;
 
 public class ModPonder {
     public static final ResourceLocation CREATE_STORAGE = ResourceLocation.fromNamespaceAndPath(FXNTStorage.MOD_ID, "storage");
@@ -61,19 +62,23 @@ public class ModPonder {
                     .addStoryBoard("reservestoragebox/intro", ReserveStorageBoxScenes::intro, CREATE_STORAGE)
                     .addStoryBoard("reservestoragebox/contraption", ReserveStorageBoxScenes::treeFarm, CREATE_STORAGE);
 
+            Set<Item> unavailableBoxes = VanillaBackportCompat.unavailableItems();
             List<ResourceLocation> simpleStorageBoxes = BuiltInRegistries.BLOCK.stream()
                     .filter(block -> {
                         ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
                         return id.getNamespace().equals(FXNTStorage.MOD_ID)
                                 && id.getPath().contains("simple_storage_box")
-                                && block instanceof SimpleStorageBox;
+                                && block instanceof SimpleStorageBox
+                                && !unavailableBoxes.contains(block.asItem());
                     })
                     .map(BuiltInRegistries.BLOCK::getKey)
                     .toList();
 
             MultiSceneBuilder builder = helper.forComponents(simpleStorageBoxes);
 
-            if (ModList.get().isLoaded(ModCompats.VANILLA_BACKPORT)) {
+            if (VanillaBackportCompat.planksExist(VanillaBackportCompat.POPLAR_PLANKS)) {
+                builder.addStoryBoard("simplestoragebox/intro_alt2", SimpleStorageBoxScenes::intro, CREATE_STORAGE);
+            } else if (VanillaBackportCompat.planksExist(VanillaBackportCompat.PALE_OAK_PLANKS)) {
                 builder.addStoryBoard("simplestoragebox/intro_alt", SimpleStorageBoxScenes::intro, CREATE_STORAGE);
             } else {
                 builder.addStoryBoard("simplestoragebox/intro", SimpleStorageBoxScenes::intro, CREATE_STORAGE);
