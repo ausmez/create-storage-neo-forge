@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.8 - 2026-10-07
+
+## Bug Fixes
+- Fixed spear tags failing to load when mods such as Vanilla Backport are not installed. (#91)
+
+---
+
 ## 1.3.7 - 2026-10-07
 
 ## Bug Fixes

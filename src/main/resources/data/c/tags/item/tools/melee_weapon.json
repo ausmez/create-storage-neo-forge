@@ -1,12 +1,33 @@
 {
   "replace": false,
   "values": [
-    "minecraft:wooden_spear",
-    "minecraft:stone_spear",
-    "minecraft:copper_spear",
-    "minecraft:iron_spear",
-    "minecraft:golden_spear",
-    "minecraft:diamond_spear",
-    "minecraft:netherite_spear"
+    {
+      "id": "minecraft:wooden_spear",
+      "required": false
+    },
+    {
+      "id": "minecraft:stone_spear",
+      "required": false
+    },
+    {
+      "id": "minecraft:copper_spear",
+      "required": false
+    },
+    {
+      "id": "minecraft:iron_spear",
+      "required": false
+    },
+    {
+      "id": "minecraft:golden_spear",
+      "required": false
+    },
+    {
+      "id": "minecraft:diamond_spear",
+      "required": false
+    },
+    {
+      "id": "minecraft:netherite_spear",
+      "required": false
+    }
   ]
 }
